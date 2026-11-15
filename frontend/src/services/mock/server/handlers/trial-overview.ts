@@ -40,7 +40,6 @@ function initialProgram(data: OrgData): TrialProgram {
     organizationId: data.organizationId,
     organizationName: data.settings.name,
     stage: 'ASSIGNED',
-    maxParticipants: 100,
     choiceCount: 18,
     essayCount: 0,
     requestedAt: new Date().toISOString(),

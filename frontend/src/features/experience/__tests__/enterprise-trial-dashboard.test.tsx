@@ -24,7 +24,6 @@ const baseContext: TrialContextDto = {
   policyVersion: 'enterprise-trial-v1',
   limits: {
     durationDays: 14,
-    maxAccounts: 5,
     policyVersion: 'enterprise-trial-v1',
     maxDiagnosticAttempts: 1,
     verificationHours: 24,
@@ -84,12 +83,11 @@ beforeEach(() => {
 });
 
 describe('enterprise trial dashboard model', () => {
-  it('derives remaining time, seat usage, progress and the next action from server context', () => {
+  it('derives remaining time, participant count, progress and the next action from server context', () => {
     const model = trialDashboardModel(baseContext, ['OWNER'], new Date('2026-10-07T00:00:00.000Z'));
 
     expect(model.remainingLabel).toBe('Còn 13 ngày');
-    expect(model.usedSeats).toBe(2);
-    expect(model.remainingSeats).toBe(3);
+    expect(model.participantCount).toBe(2);
     expect(model.completedSteps).toBe(0);
     expect(model.progressPercent).toBe(0);
     expect(model.nextAction.label).toBe('Chọn vị trí mẫu');
@@ -113,7 +111,8 @@ describe('enterprise trial dashboard UI', () => {
 
     expect(await screen.findByRole('heading', { name: /Hoàn tất một vòng trải nghiệm/ })).toBeInTheDocument();
     expect(screen.getByText('Còn 13 ngày')).toBeInTheDocument();
-    expect(screen.getByText('2 / 5')).toBeInTheDocument();
+    expect(screen.getByText('Tài khoản và lời mời').parentElement).toHaveTextContent('2');
+    expect(screen.queryByText('2 / 5')).not.toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
     expect(screen.getByRole('link', { name: 'Chọn vị trí mẫu' })).toHaveAttribute('href', '/enterprise/positions');
     expect(api.results).not.toHaveBeenCalled();

@@ -36,7 +36,6 @@ public class GetTrialProgramUseCase : IUseCase<GetTrialProgramUseCaseInput, GetT
             MentorName = await _reader.UserNameAsync(trial.MentorUserId),
             MentorAssignedAt = trial.MentorAssignedAt,
             ReportPublishedAt = trial.ReportPublishedAt,
-            MaxParticipants = TrialProgramRules.MaxParticipants,
             ChoiceCount = domains.Count * 3 * TrialProgramRules.ChoicePerCell,
             EssayCount = 0,
             Participants = await _reader.LoadParticipantsAsync(trial),

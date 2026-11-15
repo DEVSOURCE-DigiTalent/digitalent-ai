@@ -41,7 +41,6 @@ public class InviteTrialParticipantsUseCase : IUseCase<InviteTrialParticipantsUs
         }
 
         var output = new InviteTrialParticipantsUseCaseOutput();
-        var seats = TrialProgramRules.MaxParticipants - (await _reader.LoadParticipantsAsync(trial)).Count;
 
         var structure = await TrialOrgStructure.LoadAsync(_context, trial.OrganizationId);
 
@@ -51,8 +50,7 @@ public class InviteTrialParticipantsUseCase : IUseCase<InviteTrialParticipantsUs
             var email = row.Email?.Trim().ToLowerInvariant() ?? string.Empty;
             var departmentName = TrialOrgStructure.Clean(row.Department);
             var positionName = TrialOrgStructure.Clean(row.Position);
-            var reason = TrialOrgStructure.Problem(departmentName, positionName)
-                         ?? (rows.Count >= seats ? $"Dùng thử tối đa {TrialProgramRules.MaxParticipants} nhân viên." : null);
+            var reason = TrialOrgStructure.Problem(departmentName, positionName);
             if (reason != null)
             {
                 output.Rejected.Add(new TrialRejectedDto { Email = email, Reason = reason });

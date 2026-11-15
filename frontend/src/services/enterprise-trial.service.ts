@@ -34,7 +34,6 @@ export interface TrialAccountDto {
 
 export interface TrialOptions {
   durationDays: number;
-  maxAccounts: number;
   policyVersion: string;
   maxDiagnosticAttempts: number;
   verificationHours: number;

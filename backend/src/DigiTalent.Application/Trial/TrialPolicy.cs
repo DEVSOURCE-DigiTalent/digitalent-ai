@@ -6,7 +6,6 @@ namespace DigiTalent.Application.Trial;
 public sealed record TrialOptions
 {
     public int DurationDays { get; init; } = 14;
-    public int MaxAccounts { get; init; } = 5;
     public int MaxDiagnosticAttempts { get; init; } = 1;
     public int VerificationHours { get; init; } = 24;
     public int InvitationHours { get; init; } = 72;
@@ -22,7 +21,7 @@ public sealed record TrialOptions
 
     public void Validate()
     {
-        if (DurationDays is < 1 or > 90 || MaxAccounts is < 2 or > 100 || MaxDiagnosticAttempts != 1 ||
+        if (DurationDays is < 1 or > 90 || MaxDiagnosticAttempts != 1 ||
             VerificationHours is < 1 or > 168 || InvitationHours is < 1 or > 168 || MaxInvitationSends is < 1 or > 10 ||
             ResendCooldownSeconds is < 1 or > 86400 || string.IsNullOrWhiteSpace(PolicyVersion) ||
             !Uri.TryCreate(PublicAppUrl, UriKind.Absolute, out var uri) || uri.Scheme is not ("https" or "http"))
@@ -37,9 +36,5 @@ public static class TrialPolicy
         if (trial == null) throw new ForbiddenException("No enterprise trial is linked to this account.");
         if (trial.ConvertedAt == null && now >= trial.EndsAt)
             throw new ForbiddenException("The trial has ended. Your data remains available in read-only mode.");
-    }
-    public static void EnsureSeat(int activeAccounts, int pendingSeats, int limit)
-    {
-        if (activeAccounts + pendingSeats >= limit) throw new ConflictException("The trial account limit includes the owner and pending invitations.");
     }
 }

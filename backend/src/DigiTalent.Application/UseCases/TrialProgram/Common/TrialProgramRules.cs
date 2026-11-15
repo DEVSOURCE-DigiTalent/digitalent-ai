@@ -11,9 +11,6 @@ namespace DigiTalent.Application.UseCases.TrialProgram;
 /// </summary>
 public static class TrialProgramRules
 {
-    /// <summary>Số nhân viên tối đa của một doanh nghiệp dùng thử (không tính chủ doanh nghiệp).</summary>
-    public const int MaxParticipants = 30;
-
     /// <summary>Số câu trắc nghiệm cho mỗi (lĩnh vực, cấp): 6 lĩnh vực × 3 cấp × 5 câu → 90 câu (15 câu mỗi lĩnh vực).</summary>
     public const int ChoicePerCell = 5;
 

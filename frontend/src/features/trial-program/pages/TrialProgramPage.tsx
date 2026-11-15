@@ -6,12 +6,10 @@ import {
   BookOpen,
   Briefcase,
   Clock,
-  FileCheck,
   Search,
   Send,
   TrendingUp,
   Users,
-  Zap,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -27,7 +25,6 @@ import type {
   TrialParticipant,
   TrialParticipantRow,
   TrialProgram,
-  TrialReport,
 } from '@/services/trial-program.service';
 import { apiErrorMessage } from '@/lib/utils';
 import { PageLoading } from '@/components/shared/LoadingState';
@@ -189,21 +186,20 @@ function SetupView({ program, step, onStepChange, onInvited }: {
           onChange={setRows}
           departments={program.departments}
           positions={program.positions}
-          limit={program.maxParticipants - existing}
         />
         <InviteResult result={result} />
       </section>}
 
       {/* ── Hạn làm bài ── */}
-      {step === 1 && <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs space-y-4">
-        <div className="pb-3 border-b border-slate-100">
+      {step === 1 && <section className="mx-auto w-full max-w-[45rem] rounded-2xl border border-slate-200/90 bg-white/95 p-4 shadow-xs sm:p-5">
+        <div className="mb-3 border-b border-slate-100 pb-3">
           <h2 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Hạn hoàn thành đánh giá")}</h2>
         </div>
         <ScheduleFields value={schedule} onChange={setSchedule} />
       </section>}
 
       {/* ── Nút kích hoạt ── */}
-      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+      <div className={step === 1 ? "mx-auto flex w-full max-w-[45rem] flex-wrap items-center justify-end gap-3" : "flex flex-wrap items-center justify-end gap-3 pt-2"}>
         {step === 0 ? (
           <button type="button" className="rounded-xl bg-[#137b84] px-5 py-3 text-sm font-bold text-white disabled:opacity-40"
             disabled={busy || invalid || existing + filled.length === 0} onClick={() => onStepChange(1)}>
@@ -212,7 +208,7 @@ function SetupView({ program, step, onStepChange, onInvited }: {
         ) : <>
         <button type="button" className="mr-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-teal-800"
           disabled={busy} onClick={() => onStepChange(0)}>{translateUi('Quay lại danh sách')}</button>
-        {scheduleError && <span className="text-xs font-semibold text-amber-600">{scheduleError}</span>}
+        {scheduleError && <p role="status" className="basis-full text-xs font-semibold text-amber-700 sm:order-last sm:text-right">{scheduleError}</p>}
         <button
           type="button"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#137b84] to-[#0d9488] hover:from-[#0e5968] hover:to-[#0f766e] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#137b84]/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
@@ -265,81 +261,40 @@ function TrackView({ program }: { program: TrialProgram }) {
   const activePage = Math.min(page, pageCount);
   const visibleParticipants = sortedParticipants.slice((activePage - 1) * pageSize, activePage * pageSize);
 
+  const report = program.report && program.report.assessed > 0 ? program.report : null;
+  const reportView = report && (
+    <CompetencyReport report={report} participantCount={program.participants.length} nextSteps={reported && <SetupFramework />} />
+  );
+  const participationStats = [
+    { label: 'Nhân sự tham gia', value: program.participants.length },
+    { label: 'Đã kích hoạt', value: count(['ACTIVE', 'SUBMITTED', 'REVIEWED']) },
+    { label: 'Hoàn thành bài làm', value: count(['SUBMITTED', 'REVIEWED']) },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="trial-participation-stats grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
-        {/* 1. Tổng nhân sự */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-slate-300 transition-all relative overflow-hidden group">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{translateUi("Nhân sự tham gia")}</span>
-            <div className="size-8 rounded-xl bg-teal-50 border border-teal-100/80 flex items-center justify-center text-[#137b84] shadow-2xs">
-              <Users size={16} />
+    <div className="space-y-4 sm:space-y-5">
+      {reported && reportView}
+      <section className="rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:px-5" aria-label={translateUi('Tiến độ đánh giá')}>
+        <dl className="grid grid-cols-3 gap-2">
+          {participationStats.map(({ label, value }) => (
+            <div key={label}>
+              <dt className="text-xs font-medium text-slate-600">{translateUi(label)}</dt>
+              <dd className="mt-0.5 text-xl font-bold tabular-nums text-slate-900">{value}</dd>
             </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
-              {program.participants.length}
-            </span>
-            <span className="text-sm text-slate-500 font-semibold">/ {program.maxParticipants}</span>
-          </div>
-          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">{translateUi("Đã đăng ký danh sách")}</div>
+          ))}
+        </dl>
+        <div className="mt-3 border-t border-slate-100 pt-3">
+          <span className="inline-flex flex-wrap items-center gap-2 text-sm text-slate-700">
+            <Clock size={16} className="text-teal-700" />{translateUi("Hạn hoàn thành bài đánh giá")}<strong className="font-bold text-slate-900">{program.testDeadline ? formatWhen(program.testDeadline) : 'Chưa đặt thời hạn'}</strong>
+          </span>
+          {!reported && <SurveyDeadline program={program} />}
         </div>
-
-        {/* 2. Đã kích hoạt */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-amber-300 transition-all relative overflow-hidden group">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{translateUi("Đã kích hoạt")}</span>
-            <div className="size-8 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-700 shadow-2xs">
-              <Zap size={16} />
-            </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
-              {count(['ACTIVE', 'SUBMITTED', 'REVIEWED'])}
-            </span>
-            <span className="text-xs text-slate-500 font-semibold">
-              ({Math.round((count(['ACTIVE', 'SUBMITTED', 'REVIEWED']) / Math.max(1, program.participants.length)) * 100)}%)
-            </span>
-          </div>
-          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">{translateUi("Đã sẵn sàng làm bài")}</div>
-        </div>
-
-        {/* Người đã nộp hoặc được chấm cùng thuộc một nhóm hoàn thành bài làm. */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-2xs hover:border-blue-300 transition-all relative overflow-hidden group">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{translateUi("Hoàn thành bài làm")}</span>
-            <div className="size-8 rounded-xl bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-700 shadow-2xs">
-              <FileCheck size={16} />
-            </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight tabular-nums">
-              {count(['SUBMITTED', 'REVIEWED'])}
-            </span>
-            <span className="text-sm text-slate-500 font-semibold">/{program.participants.length}</span>
-          </div>
-          <div className="mt-2 text-xs sm:text-[13px] text-slate-600 font-medium">{translateUi("Đã nộp bài đánh giá")}</div>
-        </div>
-      </div>
-
-      <section className="rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50/90 to-white px-5 py-4 shadow-2xs">
-        <span className="inline-flex items-center gap-2 text-sm text-slate-700">
-          <Clock size={16} className="text-teal-700" />{translateUi("Hạn hoàn thành bài đánh giá")}<strong className="font-bold text-slate-900">{program.testDeadline ? formatWhen(program.testDeadline) : 'Chưa đặt thời hạn'}</strong>
-        </span>
-        {!reported && <SurveyDeadline program={program} />}
       </section>
 
       <OwnerSurveyAction program={program} />
 
       {(!program.report || program.report.assessed === 0) && <div className="trial-live-report" role="status"><span className="trial-live-report__dot" /><div><strong>{program.testDeadline && Date.parse(program.testDeadline) <= Date.now() ? 'Đã hết hạn · Chưa có bài nộp' : 'Đang chờ bài nộp đầu tiên'}</strong><p>{program.testDeadline && Date.parse(program.testDeadline) <= Date.now() ? 'Có thể điều chỉnh thời hạn để tiếp tục nhận bài.' : 'Tổng quan sẽ xuất hiện tại đây ngay khi có kết quả.'}</p></div></div>}
-      {/* Tổng quan trực tiếp; chỉ mở thiết lập khung sau khi kết quả đã chốt. */}
-      {program.report && program.report.assessed > 0 && (
-        <div className="space-y-6">
-          <div className="trial-live-report" role="status"><span className="trial-live-report__dot" /><div><strong>{reported ? 'Kết quả đã chốt' : 'Tổng quan đang cập nhật'}</strong><p>{program.report.assessed}/{program.participants.length} người có kết quả{reported ? ' · Đợt khảo sát đã kết thúc.' : ' · Tự cập nhật khi có bài nộp mới.'}</p></div></div>
-          {reported && <SetupFramework report={program.report} />}
-          <CompetencyReport report={program.report} />
-        </div>
-      )}
+      {!reported && reportView}
 
       {/* ── DANH SÁCH NHÂN VIÊN THAM GIA ĐÁNH GIÁ (COLLAPSIBLE / HIỂN THỊ PHỤ) ── */}
       <section className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-xs overflow-hidden transition-all">
@@ -396,7 +351,7 @@ function TrackView({ program }: { program: TrialProgram }) {
                   {filteredParticipants.length ? `${(activePage - 1) * pageSize + 1}–${Math.min(activePage * pageSize, filteredParticipants.length)} / ${filteredParticipants.length}` : '0 người'}
                 </span>
                 <OwnerFilterSelect label={translateUi("Số nhân viên mỗi trang")} value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setPage(1); }} options={[5, 10, 15, 25, 50].map((size) => ({ value: String(size), label: `${size} / trang` }))} />
-                {!reported && program.participants.length < program.maxParticipants && (
+                {!reported && (
                   <button
                     type="button"
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white font-bold text-xs transition-colors shadow-2xs cursor-pointer shrink-0"
@@ -491,73 +446,24 @@ function TrackView({ program }: { program: TrialProgram }) {
   );
 }
 
-/**
- * 3 bước chuẩn hóa năng lực sau đánh giá: thiết kế dạng dải ruy băng tinh tế.
- */
-function SetupFramework(_props: { report: TrialReport }) {
+function SetupFramework() {
   useUiLanguage();
+  const actions = [
+    { to: '/enterprise/setup?tab=ceilings', label: '1. Cài đặt chuẩn vị trí', Icon: Briefcase },
+    { to: '/enterprise/skill-gap', label: '2. Báo cáo khoảng trống', Icon: TrendingUp },
+    { to: '/enterprise/courses', label: '3. Trang bị khóa học', Icon: BookOpen },
+  ];
   return (
-    <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-2xs">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3.5 mb-4 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs">{translateUi("Lộ trình tiếp theo")}</span>
-          <h3 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Chuẩn hóa năng lực sau đánh giá")}</h3>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-        {/* Bước 1 */}
-        <Link
-          to="/enterprise/setup?tab=ceilings"
-          className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-emerald-50/60 to-white hover:border-emerald-500 hover:shadow-xs transition-all"
-        >
-          <div className="flex items-center gap-3.5 min-w-0">
-            <span className="size-10 rounded-xl bg-emerald-100/90 border border-emerald-200 text-emerald-800 grid place-items-center shrink-0 shadow-2xs">
-              <Briefcase className="size-5" />
-            </span>
-            <div className="min-w-0">
-              <strong className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-emerald-700 transition-colors block truncate">{translateUi("1. Cài đặt chuẩn vị trí")}</strong>
-              <span className="text-xs sm:text-[13px] text-slate-600 font-medium block truncate mt-0.5">{translateUi("Khung chuẩn kỳ vọng")}</span>
-            </div>
-          </div>
-          <ArrowRight size={16} className="text-emerald-600 shrink-0 group-hover:translate-x-1 transition-transform" />
-        </Link>
-
-        {/* Bước 2 */}
-        <Link
-          to="/enterprise/skill-gap"
-          className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl border border-blue-200/90 bg-gradient-to-r from-blue-50/60 to-white hover:border-blue-500 hover:shadow-xs transition-all"
-        >
-          <div className="flex items-center gap-3.5 min-w-0">
-            <span className="size-10 rounded-xl bg-blue-100/90 border border-blue-200 text-blue-800 grid place-items-center shrink-0 shadow-2xs">
-              <TrendingUp className="size-5" />
-            </span>
-            <div className="min-w-0">
-              <strong className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-blue-700 transition-colors block truncate">{translateUi("2. Báo cáo khoảng trống")}</strong>
-              <span className="text-xs sm:text-[13px] text-slate-600 font-medium block truncate mt-0.5">{translateUi("Phân tích chênh lệch")}</span>
-            </div>
-          </div>
-          <ArrowRight size={16} className="text-blue-600 shrink-0 group-hover:translate-x-1 transition-transform" />
-        </Link>
-
-        {/* Bước 3 */}
-        <Link
-          to="/enterprise/courses"
-          className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl border border-purple-200/90 bg-gradient-to-r from-purple-50/60 to-white hover:border-purple-500 hover:shadow-xs transition-all"
-        >
-          <div className="flex items-center gap-3.5 min-w-0">
-            <span className="size-10 rounded-xl bg-purple-100/90 border border-purple-200 text-purple-800 grid place-items-center shrink-0 shadow-2xs">
-              <BookOpen className="size-5" />
-            </span>
-            <div className="min-w-0">
-              <strong className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-purple-700 transition-colors block truncate">{translateUi("3. Trang bị khóa học")}</strong>
-              <span className="text-xs sm:text-[13px] text-slate-600 font-medium block truncate mt-0.5">
-                Đào tạo đúng điểm nghẽn
-              </span>
-            </div>
-          </div>
-          <ArrowRight size={16} className="text-purple-600 shrink-0 group-hover:translate-x-1 transition-transform" />
-        </Link>
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+      <h3 className="text-base font-bold text-slate-900">{translateUi('Lộ trình tiếp theo')}</h3>
+      <div className="mt-3 grid gap-2 lg:grid-cols-3">
+        {actions.map(({ to, label, Icon }) => (
+          <Link key={to} to={to} className="group flex items-center gap-2 rounded-xl border border-teal-100 bg-teal-50/50 px-3 py-2.5 text-sm font-semibold text-teal-900 transition-colors hover:bg-teal-100 motion-reduce:transition-none">
+            <Icon size={16} aria-hidden="true" className="shrink-0" />
+            {translateUi(label)}
+            <ArrowRight size={15} aria-hidden="true" className="ml-auto shrink-0 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5" />
+          </Link>
+        ))}
       </div>
     </section>
   );
@@ -621,7 +527,6 @@ function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: (
         onChange={setRows}
         departments={program.departments}
         positions={program.positions}
-        limit={program.maxParticipants - program.participants.length}
       />
       <InviteResult result={result} />
       <div className="flex justify-end pt-2">

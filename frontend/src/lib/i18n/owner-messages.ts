@@ -741,6 +741,8 @@ chưa mua suất, bấm để chọn mua cùng khóa khác|no seats purchased; s
 Giám đốc điều hành|Chief executive officer
 Kinh doanh (CRM)|Sales (CRM)
 Thanh điều hướng|Navigation sidebar
+Tài khoản hoạt động|Active accounts
+Thao tác khung năng lực|Capability framework actions
 DigiTalent Pulse — Tổng quan|DigiTalent Pulse — Overview
 {domain} · {level}|{domain} · {level}
 {hours} giờ {minutes} phút|{hours} hours {minutes} minutes

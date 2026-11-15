@@ -3,7 +3,7 @@ import { ArrowRight, Camera, Clock, GraduationCap, Hourglass, Mic, Monitor, Refr
 import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 import type { PulseOverview } from '@/services/pulse.service';
 import type { MyTrialAssessment } from '@/services/trial-program.service';
-import { TIER_LABELS, formatWhen } from '../lib/trial-format';
+import { formatWhen } from '../lib/trial-format';
 import { TrialEmployeeResults } from './TrialEmployeeResults';
 import '../trial-test.css';
 
@@ -159,6 +159,9 @@ function WaitingWorkbench({ data, refresh, refreshing }: EmployeeSurveyProps) {
 }
 
 function NotStartedIntro({ data }: { data: MyTrialAssessment }) {
+  const domainCount = data.domains.length || TT02_DOMAINS_SUMMARY.length;
+  const questionsPerDomain = data.choiceCount / domainCount;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <section className="tt-intro-hero">
@@ -168,24 +171,18 @@ function NotStartedIntro({ data }: { data: MyTrialAssessment }) {
             <span>Khảo sát năng lực số đầu vào</span>
           </div>
           <h2 className="tt-intro-card-title">
-            Đánh giá 6 lĩnh vực năng lực số đầu vào
+            Đánh giá {domainCount} lĩnh vực năng lực số đầu vào
           </h2>
           <p className="tt-intro-card-desc">
             Bài khảo sát xác định mức năng lực hiện tại theo từng lĩnh vực.
           </p>
         </div>
 
-        {/* 3 Cấp độ bài thi */}
-        <div className="tt-tier-grid">
-          {[1, 2, 3].map((tier) => (
-            <div key={tier} className="tt-tier-card">
-              <span className="tt-tier-tag">Phần {tier}</span>
-              <span className="tt-tier-name">{TIER_LABELS[tier]}</span>
-              <span className="tt-tier-meta">
-                {data.choiceCount > 0 && data.choiceCount % 3 === 0 ? data.choiceCount / 3 + ' câu trắc nghiệm' : 'Trắc nghiệm'}
-              </span>
-            </div>
-          ))}
+        <div className="tt-survey-summary">
+          <strong>{data.choiceCount > 0 ? `${data.choiceCount} câu trắc nghiệm` : 'Trắc nghiệm'}</strong>
+          {data.choiceCount > 0 && Number.isInteger(questionsPerDomain) && (
+            <span>{questionsPerDomain} câu mỗi lĩnh vực</span>
+          )}
         </div>
 
         {/* Pre-flight checklist */}

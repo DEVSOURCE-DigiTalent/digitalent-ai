@@ -262,7 +262,7 @@ public class PulseLearnerReader
         var placementHasResult = TrialAssessmentResults.IsReady(placementTest, placementDomains);
         var placementLevels = placementDomains.ToDictionary(
             d => d.CategoryId,
-            d => (int)(d.MentorLevel ?? (placementHasResult ? d.SuggestedLevel : 0)));
+            d => (d.MentorLevel ?? (placementHasResult ? TrialAssessmentResults.SuggestedLevelOf(d) : 0)));
 
         var placementApprovedCodes = courses
             .Where(c => placementLevels.TryGetValue(c.CategoryId, out var lvl) && lvl >= c.Tier)
@@ -278,7 +278,7 @@ public class PulseLearnerReader
             HasTaken: placementTest != null,
             AssessmentId: placementTest?.Id,
             SubmittedAt: placementTest?.SubmittedAt,
-            PassedDomains: placementDomains.Count(d => (d.MentorLevel ?? d.SuggestedLevel) > 0),
+            PassedDomains: placementLevels.Values.Count(level => level > 0),
             TotalDomains: placementDomains.Count > 0 ? placementDomains.Count : categoryIds.Count,
             ChoiceScore: placementTest?.ChoiceScore,
             ChoiceTotal: placementTest?.ChoiceTotal);

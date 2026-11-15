@@ -113,7 +113,7 @@ export function TrialDashboardOverview({ now = new Date() }: { now?: Date }) {
 
         <div className="grid divide-y divide-ent-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <div className="flex items-center gap-3 px-5 py-4"><Clock3 className="size-5 text-ent-accent" /><div><p className="text-xs text-ent-fg-3">{translateUi("Thời gian còn lại")}</p><p className="font-semibold text-ent-fg">{model.remainingLabel}</p></div></div>
-          <div className="flex items-center gap-3 px-5 py-4"><Users className="size-5 text-ent-accent" /><div><p className="text-xs text-ent-fg-3">Ghế đang giữ</p><p className="font-semibold tabular-nums text-ent-fg">{model.usedSeats} / {value.limits.maxAccounts}</p></div></div>
+          <div className="flex items-center gap-3 px-5 py-4"><Users className="size-5 text-ent-accent" /><div><p className="text-xs text-ent-fg-3">Tài khoản và lời mời</p><p className="font-semibold tabular-nums text-ent-fg">{model.participantCount}</p></div></div>
           <div className="flex items-center gap-3 px-5 py-4"><Sparkles className="size-5 text-ent-accent" /><div><p className="text-xs text-ent-fg-3">{translateUi("Trạng thái")}</p><p className="font-semibold text-ent-fg">{model.writable ? 'Đang dùng thử' : 'Chỉ đọc'}</p></div></div>
         </div>
       </section>
@@ -156,7 +156,7 @@ export function TrialDashboardOverview({ now = new Date() }: { now?: Date }) {
 
           <section className="rounded-xl border border-ent-accent/25 bg-ent-accent/5 p-5">
             <h2 className="font-semibold text-ent-fg">Phạm vi dùng thử</h2>
-            <p className="mt-2 text-sm leading-6 text-ent-fg-2">Tối đa {value.limits.maxAccounts} tài khoản. Một số tính năng nâng cao được khóa và có thể mở sau khi nâng cấp.</p>
+            <p className="mt-2 text-sm leading-6 text-ent-fg-2">Mời đội ngũ tham gia đánh giá và học thử.</p>
             {isOwner && <Link className={`${secondaryButton} mt-4 w-full`} to="/business/pricing">Xem quyền theo từng gói</Link>}
           </section>
         </aside>

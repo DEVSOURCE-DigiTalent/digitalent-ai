@@ -5,7 +5,7 @@ import { TrialProgramPage } from '../pages/TrialProgramPage';
 
 const submit = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock('@/hooks/use-trial-program', () => ({
-  useTrialProgram: () => ({ data: { stage: 'SETUP', organizationName: 'DigiTalent', participants: [{ id: '1' }], departments: [], positions: [], maxParticipants: 30 } }),
+  useTrialProgram: () => ({ data: { stage: 'SETUP', organizationName: 'DigiTalent', participants: [{ id: '1' }], departments: [], positions: [] } }),
   useInviteTrialParticipants: () => ({ isPending: false }),
   useSubmitTrialRequest: () => ({ isPending: false, mutateAsync: submit }),
 }));
@@ -61,4 +61,16 @@ it('blocks out-of-range time and lets a preset replace it', () => {
   expect(hour).toHaveValue('23');
   expect(minute).toHaveValue('59');
   expect(submitButton).toBeEnabled();
+});
+
+it('keeps all survey participants when pasting more than 30 rows', () => {
+  render(<MemoryRouter><TrialProgramPage /></MemoryRouter>);
+  fireEvent.click(screen.getByRole('button', { name: 'Dán dữ liệu trực tiếp từ Excel' }));
+  const rows = Array.from({ length: 35 }, (_, index) => `Nhân viên ${index + 1}\temp${index}@example.test\tKỹ thuật\tChuyên viên`);
+  fireEvent.change(screen.getByPlaceholderText(/Dán các dòng/), { target: { value: rows.join('\n') } });
+  fireEvent.click(screen.getByRole('button', { name: 'Đọc danh sách nhân viên' }));
+  expect(screen.getByText('35 người')).toBeInTheDocument();
+  const pages = screen.getByRole('navigation', { name: 'Phân trang danh sách nhân viên' });
+  for (let index = 0; index < 3; index++) fireEvent.click(within(pages).getByRole('button', { name: 'Sau' }));
+  expect(screen.getByRole('textbox', { name: 'Họ và tên dòng 35' })).toHaveValue('Nhân viên 35');
 });

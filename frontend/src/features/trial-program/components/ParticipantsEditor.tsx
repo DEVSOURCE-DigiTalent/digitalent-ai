@@ -26,7 +26,6 @@ interface ParticipantsEditorProps {
   onChange: (rows: TrialParticipantRow[]) => void;
   departments: string[];
   positions: string[];
-  limit: number;
 }
 
 /**
@@ -41,7 +40,6 @@ export function ParticipantsEditor({
   onChange,
   departments,
   positions,
-  limit,
 }: ParticipantsEditorProps) {
   useUiLanguage();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -190,13 +188,10 @@ export function ParticipantsEditor({
         return;
       }
       const existingFilled = rows.filter((r) => !isRowEmpty(r));
-      const combined = [...existingFilled, ...imported].slice(0, limit);
+      const combined = [...existingFilled, ...imported];
       setPage(1);
       onChange(combined);
       toast.success(`Đã nhập thành công ${imported.length} nhân sự từ file!`);
-      if (existingFilled.length + imported.length > limit) {
-        setFileError(`Gói giới hạn tối đa ${limit} người tham gia. Hệ thống giữ ${limit} nhân viên đầu tiên.`);
-      }
     } catch {
       setFileError('Không thể đọc file. Vui lòng sử dụng định dạng .xlsx hoặc .csv theo mẫu.');
     }
@@ -225,7 +220,7 @@ export function ParticipantsEditor({
       }
 
       const existingFilled = rows.filter((r) => !isRowEmpty(r));
-      const combined = [...existingFilled, ...parsed].slice(0, limit);
+      const combined = [...existingFilled, ...parsed];
       setPage(1);
       onChange(combined);
       setPastedText('');
@@ -254,10 +249,6 @@ export function ParticipantsEditor({
     }
     if (filledRows.some((r) => r.email.trim().toLowerCase() === email)) {
       setManualError('Email này đã có trong danh sách tham gia.');
-      return;
-    }
-    if (filledRows.length >= limit) {
-      setManualError(`Đã đạt giới hạn tối đa ${limit} nhân viên tham gia đợt này.`);
       return;
     }
 
@@ -324,18 +315,13 @@ export function ParticipantsEditor({
             <Download className="size-3.5 text-[#137b84]" />{translateUi("Tải mẫu .csv")}</button>
         </div>
 
-        {/* Capacity Indicator Pill */}
+        {/* Participant count */}
         <div className="flex items-center gap-2">
           <span
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
-            style={{
-              background: filledRows.length >= limit ? '#fef2f2' : '#f0fdf4',
-              color: filledRows.length >= limit ? '#dc2626' : '#166534',
-              border: `1px solid ${filledRows.length >= limit ? '#fecaca' : '#bbf7d0'}`,
-            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-green-200 bg-green-50 text-xs font-bold text-green-800"
           >
             <span className="size-2 rounded-full bg-current animate-pulse" />
-            {filledRows.length}/{limit}{translateUi(" người")}</span>
+            {filledRows.length}{translateUi(" người")}</span>
         </div>
       </div>
 
@@ -375,7 +361,7 @@ export function ParticipantsEditor({
                   <Upload className="size-6" />
                 </div>
                 <span className="text-sm font-bold text-slate-800">{translateUi("Kéo thả danh sách hoặc chọn file")}</span>
-                <span className="mt-1 text-xs text-slate-500">{translateUi("Excel (.xlsx) hoặc CSV · tối đa ")}{limit}{translateUi(" người")}</span>
+                <span className="mt-1 text-xs text-slate-500">{translateUi("Excel (.xlsx) hoặc CSV")}</span>
                 <input
                   ref={fileRef}
                   type="file"
@@ -650,17 +636,16 @@ export function ParticipantsEditor({
         <div className="flex items-center justify-between pt-1">
           <button
             type="button"
-            disabled={rows.length >= limit}
             onClick={() => {
               pendingNewRow.current = true;
               setPage(Math.ceil((rows.length + 1) / pageSize));
               onChange([...rows, { ...EMPTY }]);
             }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
           >
             <Plus className="size-3.5" />{translateUi(" Thêm dòng mới")}</button>
 
-          <span className="text-xs text-slate-500">{translateUi("Tổng cộng: ")}<strong>{filledRows.length}</strong>{translateUi(" / tối đa ")}{limit}{translateUi(" người")}</span>
+          <span className="text-xs text-slate-500">{translateUi("Tổng cộng: ")}<strong>{filledRows.length}</strong>{translateUi(" người")}</span>
         </div>
       </div>
 

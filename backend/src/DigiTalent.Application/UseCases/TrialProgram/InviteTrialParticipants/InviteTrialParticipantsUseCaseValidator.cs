@@ -7,8 +7,6 @@ public class InviteTrialParticipantsUseCaseValidator : AbstractValidator<InviteT
     public InviteTrialParticipantsUseCaseValidator()
     {
         RuleFor(x => x.Rows)
-            .NotEmpty().WithMessage("Thêm ít nhất một nhân viên.")
-            .Must(rows => rows.Count <= TrialProgramRules.MaxParticipants)
-            .WithMessage($"Mỗi lần mời tối đa {TrialProgramRules.MaxParticipants} nhân viên.");
+            .NotEmpty().WithMessage("Thêm ít nhất một nhân viên.");
     }
 }

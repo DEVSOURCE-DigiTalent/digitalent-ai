@@ -15,8 +15,8 @@ const branches = [
   { id: 'standards', label: 'Khung năng lực số', icon: Layers3, path: '/enterprise/setup', tone: 'violet' },
   { id: 'courses', label: 'Khóa học', icon: BookOpen, path: '/enterprise/courses', tone: 'teal' },
   { id: 'training', label: 'Đợt đào tạo', icon: GraduationCap, path: '/enterprise/training-batches', tone: 'teal' },
-  { id: 'certificates', label: 'Chứng nhận', icon: Award, path: '/enterprise/certificates', tone: 'amber' },
-  { id: 'gaps', label: 'Khoảng trống năng lực', icon: TrendingUp, path: '/enterprise/skill-gap', tone: 'violet' },
+  { id: 'certificates', label: 'Chứng nhận', icon: Award, path: '/enterprise/certificates', tone: 'violet' },
+  { id: 'gaps', label: 'Khoảng trống năng lực', icon: TrendingUp, path: '/enterprise/skill-gap', tone: 'amber' },
 ] as const;
 
 type BranchId = typeof branches[number]['id'];

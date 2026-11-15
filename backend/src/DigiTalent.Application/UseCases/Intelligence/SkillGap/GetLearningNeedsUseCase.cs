@@ -128,7 +128,7 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
                 row.Domains.Add(need);
                 need.Competencies = domain.Select(r => new LearningNeedCompetency { CompetencyId = r.CompetencyId, Name = r.Name, RequiredLevel = target }).ToList();
                 if (domainResults == null || !domainResults.TryGetValue(domain.Key, out var result)) continue;
-                var baseline = result.MentorLevel ?? result.SuggestedLevel;
+                var baseline = TrialAssessmentResults.EffectiveLevelOf(result);
                 need.AssessmentLevel = baseline;
                 need.AssessmentReviewedAt = assessedAt;
                 var levels = domain.Select(requirement => {

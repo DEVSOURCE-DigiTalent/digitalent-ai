@@ -9,7 +9,7 @@ import { ENTITLEMENTS } from '@/lib/entitlements';
 import type { SubscriptionContext } from '@/types/session';
 
 const KEY = 'dt-mock-enterprise-guided-trial-v1';
-const limits: TrialOptions = { durationDays: 14, maxAccounts: 5, maxDiagnosticAttempts: 1, verificationHours: 24, invitationHours: 72, maxInvitationSends: 3, resendCooldownSeconds: 60, policyVersion: 'demo-v1', policyApproved: false, dataPolicyNotice: 'Dữ liệu minh họa lưu trong trình duyệt này. Hết 14 ngày chỉ đọc. Xóa dữ liệu trình duyệt để xóa demo; nâng cấp cần xác nhận riêng.', enableDevelopmentCapture: true, enableDevelopmentBundle: true, publicAppUrl: 'http://localhost:5173', developmentEnvironment: true };
+const limits: TrialOptions = { durationDays: 14, maxDiagnosticAttempts: 1, verificationHours: 24, invitationHours: 72, maxInvitationSends: 3, resendCooldownSeconds: 60, policyVersion: 'demo-v1', policyApproved: false, dataPolicyNotice: 'Dữ liệu minh họa lưu trong trình duyệt này. Hết 14 ngày chỉ đọc. Xóa dữ liệu trình duyệt để xóa demo; nâng cấp cần xác nhận riêng.', enableDevelopmentCapture: true, enableDevelopmentBundle: true, publicAppUrl: 'http://localhost:5173', developmentEnvironment: true };
 const readiness = { canRegister: true, productionReady: false, developmentOnly: true, missingReasons: [] };
 const catalog: TrialEligiblePositionDto[] = [{ catalogKey: 'demo-crm', name: 'Kinh doanh (CRM)', requirementVersion: 'demo-req-v1', assessmentVersion: 'demo-assessment-v1', rubricVersion: 'demo-rubric-v1', eligible: true, missingReasons: [], developmentOnly: true, requirements: [{ competencyId: 'crm', name: 'Quản lý dữ liệu khách hàng', requiredLevel: 2, minimumAnswers: 2 }, { competencyId: 'privacy', name: 'Bảo vệ dữ liệu', requiredLevel: 2, minimumAnswers: 2 }] }];
 interface Invitation extends TrialInvitationDto { employeeId: string | null; sends: number }
@@ -112,7 +112,6 @@ export const mockEnterpriseTrialService: EnterpriseTrialService = {
       planName: 'Dùng thử Enterprise',
       status: 'trialing',
       entitlements: [ENTITLEMENTS.PRACTICAL_TASKS, ENTITLEMENTS.PERSONAL_LEARNING_PATH],
-      seatLimit: limits.maxAccounts,
       trialStartedAt: trial.context.startedAt,
       trialEndsAt: trial.context.endsAt,
     });
@@ -140,7 +139,6 @@ export const mockEnterpriseTrialService: EnterpriseTrialService = {
     const w = world(true); owner(w); const selected = w.trial.context.selectedPosition; if (!selected) fail('Chọn vị trí trước.'); if (!['Employee', 'Manager'].includes(role)) fail('Vai trò không hợp lệ.');
     if (role === 'Manager' && w.trial.invitations.some(i => i.role === 'Manager')) fail('Đã có lời mời quản lý.', 409);
     const normalized = email(address); if (findUserByEmail(normalized) || w.trial.invitations.some(i => i.email === normalized)) fail('Email đã có tài khoản hoặc lời mời.', 409);
-    const usage = contextDto(w).usage; if (usage.accounts + usage.pendingInvitations >= limits.maxAccounts) fail('Đã đạt hạn mức ghế.', 409);
     const token = newToken(); const invitation: Invitation = { id: newId('trial-invite'), name: text(name), email: normalized, role, departmentId: selected.departmentId, assignedPositionId: selected.positionId, state: 'pending', sentAt: date(), expiresAt: later(limits.invitationHours), canResend: false, developmentLink: link('accept', token), employeeId: null, sends: 1 };
     save(w, { ...w.trial, invitations: [...w.trial.invitations, invitation] }); return mockOk(invitationDto(invitation));
   },

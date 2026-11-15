@@ -21,6 +21,9 @@ describe('survey level from the share of right answers (same rule as TrialProgra
     });
     expect(totals).toEqual({ correct: 12, total: 15, percent: 80 });
     expect(sharePercent(7, 15)).toBe(47);
+    expect(sharePercent(2, 3)).toBe(67);
+    expect(levelFromShare(2, 3)).toBe(2);
+    expect(sharePercent(179, 300)).toBe(59.6);
     expect(domainTotals(null)).toEqual({ correct: 0, total: 0, percent: 0 });
   });
 });

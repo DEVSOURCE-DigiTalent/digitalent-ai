@@ -5,11 +5,12 @@ import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { PulseOverview } from '@/services/pulse.service';
 import type { MyTrialAssessment } from '@/services/trial-program.service';
-import { TIER_LABELS, domainTotals } from '../lib/trial-format';
+import { LEVEL_LABELS, domainTotals } from '../lib/trial-format';
+import { TrialScoreScale } from './TrialScoreScale';
 import '../trial-employee-results.css';
 
 function levelName(level: number) {
-  return level > 0 ? TIER_LABELS[level as 1 | 2 | 3] : 'Chưa đạt cấp nào';
+  return LEVEL_LABELS[level] ?? LEVEL_LABELS[0];
 }
 
 export function TrialEmployeeResults({ assessment, overview }: {
@@ -68,8 +69,8 @@ export function TrialEmployeeResults({ assessment, overview }: {
                 : 'Bạn có thể học thử các khóa Cơ bản đang công khai.')}</p>
             </div>
           </div>
-          <Link to={roadmapReady ? PULSE_PATHS.today : PULSE_PATHS.path} className="tt-btn-primary tt-action-callout-btn">
-            {translateUi(roadmapReady ? 'Về Tổng quan' : 'Xem khóa học thử')} <ArrowRight size={15} />
+          <Link to={PULSE_PATHS.path} className="tt-btn-primary tt-action-callout-btn">
+            {translateUi(roadmapReady ? 'Xem lộ trình học tập' : 'Xem khóa học thử')} <ArrowRight size={15} />
           </Link>
         </section>
       )}
@@ -81,7 +82,8 @@ export function TrialEmployeeResults({ assessment, overview }: {
             <p className="tt-card-desc">{translateUi('Chọn một lĩnh vực để xem số câu đúng ở từng cấp.')}</p>
           </div>
         </div>
-        <div className="tt-accordion-list">
+        <TrialScoreScale />
+        <div className="tt-accordion-list mt-3">
           {assessment.domains.map((domain, index) => {
             const detail = details.find((item) => item.categoryId === domain.categoryId);
             const open = openCategory === domain.categoryId;
@@ -102,7 +104,7 @@ export function TrialEmployeeResults({ assessment, overview }: {
                       <div className="tt-domain-name">{domain.name}</div>
                       <div className="tt-domain-subline">
                         {translateUi('Hiện tại')}{' '}
-                        <strong className="tt-domain-highlight">{translateUi(levelName(level))}</strong>
+                        <strong className="tt-domain-highlight">{detail?.mentorLevel != null && <>{translateUi('Mentor xác nhận')} · </>}{translateUi(levelName(level))}</strong>
                         {target ? <span> · {translateUi('Mục tiêu')}: {translateUi(levelName(target))}</span> : null}
                       </div>
                     </div>
@@ -113,13 +115,13 @@ export function TrialEmployeeResults({ assessment, overview }: {
                   <div className="tt-domain-body">
                     {detail && (() => {
                       const totals = domainTotals(detail);
-                      return (
+                      return totals.total > 0 && (
                         <p className="tt-card-desc">
-                          {translateUi('Đúng')} <strong>{totals.correct}/{totals.total}</strong> {translateUi('câu')} ({totals.percent}%) ·{' '}
-                          {translateUi('từ 40% Cơ bản, từ 60% Trung cấp, từ 80% Nâng cao')}
+                          {translateUi('Đúng')} <strong>{totals.correct}/{totals.total}</strong> {translateUi('câu')} ({totals.percent}%)
                         </p>
                       );
                     })()}
+                    {level === 0 && <p className="tt-card-desc">{translateUi('Nên bắt đầu từ khóa Cơ bản của lĩnh vực này.')}</p>}
                     <div className="tt-tier-results-grid">
                       {tiers.map(([right, count], tier) => (
                         <div key={tier} className="tt-tier-result-card">

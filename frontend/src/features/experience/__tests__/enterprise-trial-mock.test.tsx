@@ -13,7 +13,7 @@ describe('persisted mock trial lifecycle', () => {
     const login = await service.login('owner@demo.test', 'demo-password-123'); localStorage.setItem('accessToken', login.data.data!.accessToken);
     const owner = (await service.currentUser()).data.data!;
     expect(owner.enterpriseTrialStatus).toBe('trial_active');
-    expect(owner.subscription).toMatchObject({ planCode: 'ENT_TRIAL', status: 'trialing', seatLimit: 5 });
+    expect(owner.subscription).toMatchObject({ planCode: 'ENT_TRIAL', status: 'trialing' });
     const context = (await service.context()).data.data!;
     expect(context.publicationReadiness.developmentOnly).toBe(true); expect(context.publicationReadiness.productionReady).toBe(false);
     await service.selectPosition('demo-crm', 'Team');
@@ -37,6 +37,10 @@ describe('persisted mock trial lifecycle', () => {
     localStorage.setItem('accessToken', login.data.data!.accessToken);
     const rows = (await service.results()).data.data!;
     expect(rows[0].result).toEqual(result); expect(rows[0].state).toBe('learning_in_progress');
+    for (let index = 0; index < 5; index++) {
+      await service.invite(`Employee ${index + 2}`, `employee${index + 2}@demo.test`, 'Employee');
+    }
+    expect((await service.context()).data.data!.usage.pendingInvitations).toBe(5);
     expect((await service.requestConversion()).data.data!.status).toBe('trial_active');
   });
 });
