@@ -50,6 +50,7 @@ describe('Owner progress tabs', () => {
     expect(branches.querySelectorAll('[data-side="right"]')).toHaveLength(3);
     const gap = map.getByRole('button', { name: /^Khoảng trống năng lực/ });
     expect(gap.parentElement).toHaveAttribute('data-side', 'bottom');
+    expect(gap.parentElement).toHaveAttribute('data-tone', 'amber');
     fireEvent.click(gap);
     expect(map.getByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute('href', '/enterprise/skill-gap');
     const team = map.getByRole('button', { name: /Cơ cấu đội ngũ/ });
@@ -59,7 +60,9 @@ describe('Owner progress tabs', () => {
     expect(map.getByRole('progressbar', { name: 'Tài chính' })).toHaveAttribute('max', '6');
     fireEvent.click(map.getByRole('button', { name: /^Khóa học/ }));
     expect(map.getAllByRole('progressbar').map((bar) => bar.getAttribute('value'))).toEqual(['30', '80']);
-    fireEvent.click(map.getByRole('button', { name: /^Chứng nhận/ }));
+    const certificates = map.getByRole('button', { name: /^Chứng nhận/ });
+    expect(certificates.parentElement).toHaveAttribute('data-tone', 'violet');
+    fireEvent.click(certificates);
     expect(map.getByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute('href', '/enterprise/certificates');
 
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Bản đồ doanh nghiệp' }), { key: 'ArrowLeft' });
