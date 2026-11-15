@@ -53,7 +53,7 @@ function CompetencyMatrix({ rows }: { rows: SkillGapRunDetail[] }) {
           <p>{translateUi('Mức hiện tại')} / {translateUi('Mức yêu cầu')}</p></div>
         <div className="team-matrix-select">
           <span>{translateUi('Lĩnh vực')}</span>
-          <OwnerFilterSelect variant="manager" label="Lĩnh vực" value={activeKey ?? ''}
+          <OwnerFilterSelect icon="filter" variant="manager" label="Lĩnh vực" value={activeKey ?? ''}
             onChange={(value) => { setSelected(value); setColumnPage(0); }}
             options={domains.map(([key, group]) => ({ value: key, label: `${translateUi(group.name)} (${group.columns.length})` }))} />
         </div>

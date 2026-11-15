@@ -39,7 +39,7 @@ export function AuditLogPage() {
         searchPlaceholder={translateUi("Tìm theo người, đối tượng hoặc chi tiết")}
         emptyTitle="Chưa có mục nào trong nhật ký"
         filters={
-          <OwnerFilterSelect label={translateUi("Lọc theo hành động")} value={action} onChange={(value) => { setAction(value); setPage(1); }} options={[{ value: '', label: 'Mọi hành động' }, ...Object.entries(AUDIT_ACTION_LABELS).map(([key, label]) => ({ value: key, label }))]} />
+          <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo hành động")} value={action} onChange={(value) => { setAction(value); setPage(1); }} options={[{ value: '', label: 'Mọi hành động' }, ...Object.entries(AUDIT_ACTION_LABELS).map(([key, label]) => ({ value: key, label }))]} />
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}
       />

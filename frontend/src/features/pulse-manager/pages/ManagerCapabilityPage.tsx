@@ -117,10 +117,10 @@ function EmployeeCapabilities({ data, model }: { data: EmployeeCapability; model
             <input type="search" aria-label={translateUi('Tìm năng lực')} placeholder={translateUi('Tìm theo tên hoặc mã năng lực')} value={search}
               onChange={(event) => { setSearch(event.target.value); setExpanded(undefined); setDetail(undefined); }} />
           </label>
-          <OwnerFilterSelect variant="manager" label="Lọc theo lĩnh vực" value={category}
+          <OwnerFilterSelect icon="filter" variant="manager" label="Lọc theo lĩnh vực" value={category}
             onChange={(value) => { setCategory(value); setExpanded(undefined); setDetail(undefined); }}
             options={[{ value: '', label: 'Tất cả lĩnh vực' }, ...domains.map(({ name }) => ({ value: name, label: name }))]} />
-          <OwnerFilterSelect variant="manager" label="Lọc theo trạng thái" value={status}
+          <OwnerFilterSelect icon="filter" variant="manager" label="Lọc theo trạng thái" value={status}
             onChange={(value) => { setStatus(value); setExpanded(undefined); setDetail(undefined); }}
             options={[{ value: '', label: 'Mọi trạng thái' }, ...STATUS_KEYS.map((key) => ({ value: key, label: STATUS[key] }))]} />
           {filtering && <button type="button" className="mc-link" onClick={reset}>{translateUi('Xóa bộ lọc')}</button>}

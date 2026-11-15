@@ -1,7 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, Search, Sparkles, X } from 'lucide-react';
+import { BookOpen, Filter, Search, Sparkles, X } from 'lucide-react';
 import { useCourseCatalog, usePurchaseCourseSeats } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import { courseCategories } from '@/features/courses/course-catalog';
@@ -368,7 +368,7 @@ function ChipGroup({ label, children }: { label: string; children: React.ReactNo
   useUiLanguage();
   return (
     <div role="group" aria-label={translateUi(label)} className="flex flex-wrap items-center gap-1.5">
-      <span className="mr-1 text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}>{translateUi(label)}</span>
+      <span className="mr-1 inline-flex items-center gap-1.5 text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}><Filter size={14} aria-hidden="true" />{translateUi(label)}</span>
       {children}
     </div>
   );
@@ -493,7 +493,7 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
                 {course.status === 'DRAFT' && <span className="rounded px-1.5 py-0.5" style={{ background: '#f0f2f6', color: '#66748d' }}>{translateUi("Nháp")}</span>}
               </span>
               <span className="mt-1.5 line-clamp-2 text-[13px] font-semibold leading-snug" style={{ color: 'var(--po-ink)' }}>{translateUi(course.title)}</span>
-              <span className="mt-auto pt-1.5 text-[11px]" style={{ color: 'var(--po-muted)' }}>
+              <span className="course-card-footer mt-auto pt-1.5 text-[11px]">
                 {[`${course.modules} học phần`, duration, course.assignedCount ? `${course.assignedCount} đang học` : null].filter(Boolean).join(' · ')}
               </span>
             </button>

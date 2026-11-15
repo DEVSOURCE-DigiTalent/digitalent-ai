@@ -139,17 +139,17 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
         }}
         filters={
           <>
-            <OwnerFilterSelect label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...((import.meta.env.VITE_USE_MOCK === 'true' ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED'] : ['ACTIVE', 'CANCELLED']) as AssignmentStatus[]).map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
+            <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...((import.meta.env.VITE_USE_MOCK === 'true' ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED'] : ['ACTIVE', 'CANCELLED']) as AssignmentStatus[]).map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
 
             {!isManager && (
-              <OwnerFilterSelect label={translateUi("Lọc theo phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
+              <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
             )}
 
-            <OwnerFilterSelect label="Lọc theo vị trí" value={jobPositionId} onChange={(value) => { setJobPositionId(value); setPage(1); }} options={[{ value: '', label: 'Mọi vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
+            <OwnerFilterSelect icon="filter" label="Lọc theo vị trí" value={jobPositionId} onChange={(value) => { setJobPositionId(value); setPage(1); }} options={[{ value: '', label: 'Mọi vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
 
-            {import.meta.env.VITE_USE_MOCK === 'true' && <OwnerFilterSelect label={translateUi("Lọc theo cấp bậc")} value={jobGrade} onChange={(value) => { setJobGrade(value as JobGradeCode | ''); setPage(1); }} options={[{ value: '', label: 'Mọi cấp bậc' }, ...JOB_GRADES.map((code) => ({ value: code, label: `Cấp bậc ${code} (${JOB_GRADE_DEFAULT_NAMES[code]})` }))]} />}
+            {import.meta.env.VITE_USE_MOCK === 'true' && <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo cấp bậc")} value={jobGrade} onChange={(value) => { setJobGrade(value as JobGradeCode | ''); setPage(1); }} options={[{ value: '', label: 'Mọi cấp bậc' }, ...JOB_GRADES.map((code) => ({ value: code, label: `Cấp bậc ${code} (${JOB_GRADE_DEFAULT_NAMES[code]})` }))]} />}
 
-            <OwnerFilterSelect label="Lọc theo hạn" value={quick} onChange={(value) => { setQuick(value as Quick); setPage(1); }} options={[{ value: '', label: 'Mọi hạn' }, { value: 'overdue', label: 'Quá hạn' }, { value: 'dueSoon', label: 'Sắp đến hạn (7 ngày)' }]} />
+            <OwnerFilterSelect icon="filter" label="Lọc theo hạn" value={quick} onChange={(value) => { setQuick(value as Quick); setPage(1); }} options={[{ value: '', label: 'Mọi hạn' }, { value: 'overdue', label: 'Quá hạn' }, { value: 'dueSoon', label: 'Sắp đến hạn (7 ngày)' }]} />
           </>
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}

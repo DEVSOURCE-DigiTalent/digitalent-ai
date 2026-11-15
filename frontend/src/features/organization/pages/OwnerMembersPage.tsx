@@ -302,7 +302,7 @@ export function OwnerMembersPage() {
               onChange={(e) => resetPage(setSearch)(e.target.value)}
               placeholder={translateUi("Tìm tên hoặc email")}
             />{search && <button type="button" className="owner-filter-search__clear" aria-label={translateUi("Xóa tìm kiếm")} onClick={() => resetPage(setSearch)('')}><X size={15} /></button>}</label>
-            <OwnerFilterSelect
+            <OwnerFilterSelect icon="filter"
               label={translateUi("Phòng ban")}
               value={departmentId}
               onChange={(value) => {
@@ -313,13 +313,13 @@ export function OwnerMembersPage() {
               loading={departmentResults.isFetching}
               options={departmentOptions}
             />
-            <OwnerFilterSelect
+            <OwnerFilterSelect icon="filter"
               label={translateUi("Vai trò")}
               value={role}
               onChange={resetPage(setRole)}
               options={[{ value: '', label: 'Mọi vai trò' }, ...ENTERPRISE_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }))]}
             />
-            <OwnerFilterSelect
+            <OwnerFilterSelect icon="filter"
               label={translateUi("Trạng thái")}
               value={status}
               onChange={(value) => resetPage(setStatus)(value as MemberStatus | '')}

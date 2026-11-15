@@ -141,7 +141,7 @@ export function RecommendationReviewPage() {
         emptyTitle={status === 'PENDING' ? 'Không còn đề xuất nào chờ duyệt' : 'Không có đề xuất nào'}
         emptyDescription="Đề xuất sẽ xuất hiện khi có kết quả phân tích năng lực mới."
         filters={
-          <OwnerFilterSelect label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as ReviewStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả' }, ...(Object.keys(STATUS_LABELS) as ReviewStatus[]).map((s) => ({ value: s, label: STATUS_LABELS[s] }))]} />
+          <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as ReviewStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả' }, ...(Object.keys(STATUS_LABELS) as ReviewStatus[]).map((s) => ({ value: s, label: STATUS_LABELS[s] }))]} />
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}
       />

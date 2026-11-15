@@ -1,7 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, ChevronDown, Search } from 'lucide-react';
+import { ArrowDownUp, Check, ChevronDown, Filter, Search } from 'lucide-react';
 import './owner-filter-controls.css';
 
 export interface OwnerFilterOption {
@@ -19,9 +19,10 @@ interface OwnerFilterSelectProps {
   onSearchChange?: (query: string) => void;
   loading?: boolean;
   variant?: 'owner' | 'manager';
+  icon?: 'filter' | 'sort';
 }
 
-export function OwnerFilterSelect({ label, value, options, onChange, className = '', disabled = false, onSearchChange, loading = false, variant = 'owner' }: OwnerFilterSelectProps) {
+export function OwnerFilterSelect({ label, value, options, onChange, className = '', disabled = false, onSearchChange, loading = false, variant = 'owner', icon }: OwnerFilterSelectProps) {
   useUiLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -33,6 +34,7 @@ export function OwnerFilterSelect({ label, value, options, onChange, className =
   const menuId = useId();
   const visibleOptions = options.filter((option) => `${option.label} ${translateUi(option.label)}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   const selected = options.find((option) => option.value === value);
+  const LeadingIcon = icon === 'sort' ? ArrowDownUp : Filter;
   const searchable = Boolean(onSearchChange) || options.length > 8;
 
   useEffect(() => {
@@ -107,7 +109,8 @@ export function OwnerFilterSelect({ label, value, options, onChange, className =
 
   return <>
     <button ref={buttonRef} type="button" role="combobox" data-variant={variant} aria-activedescendant={open && visibleOptions[activeIndex] ? `${menuId}-option-${activeIndex}` : undefined} className={`owner-filter-select ${open ? 'is-open' : ''} ${className}`} aria-label={translateUi(label)} aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? menuId : undefined} disabled={disabled} onKeyDown={handleKeyDown} onClick={() => { setQuery(''); onSearchChange?.(''); setActiveIndex(Math.max(0, options.findIndex((option) => option.value === value))); setOpen((current) => !current); }}>
-      <span>{translateUi(selected?.label) ?? translateUi(options[0]?.label) ?? translateUi(label)}</span><ChevronDown size={17} aria-hidden="true" />
+      {icon && <LeadingIcon size={15} className="owner-filter-select__icon" aria-hidden="true" />}
+      <span>{translateUi(selected?.label) ?? translateUi(options[0]?.label) ?? translateUi(label)}</span><ChevronDown size={17} className="owner-filter-select__chevron" aria-hidden="true" />
     </button>
     {open && createPortal(<div ref={menuRef} className="owner-filter-select__menu" data-variant={variant} style={{ top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }} onKeyDown={handleKeyDown}>
       {searchable && <label className="owner-filter-select__search"><Search size={15} aria-hidden="true" /><input ref={searchRef} value={query} onChange={(event) => { setQuery(event.target.value); onSearchChange?.(event.target.value); setActiveIndex(0); }} placeholder={translateUi("Tìm trong danh sách")} aria-label={translateUi(`Tìm ${label.toLocaleLowerCase('vi')}`)} /></label>}
@@ -117,4 +120,13 @@ export function OwnerFilterSelect({ label, value, options, onChange, className =
       </div>
     </div>, document.body)}
   </>;
+}
+
+export function NativeFilterSelect(props: ComponentPropsWithoutRef<'select'>) {
+  return (
+    <span className="native-filter-select">
+      <Filter size={15} aria-hidden="true" />
+      <select {...props} />
+    </span>
+  );
 }

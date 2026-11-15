@@ -1,3 +1,4 @@
+import { NativeFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
@@ -83,7 +84,7 @@ export function WorkforceCompetencyMatrix({
 
         {!hideDepartmentFilter && !fixedDeptId && (
           <div className="w-48">
-            <select
+            <NativeFilterSelect
               aria-label={translateUi("Lọc theo phòng ban")}
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
@@ -95,12 +96,12 @@ export function WorkforceCompetencyMatrix({
                   {d.name}
                 </option>
               ))}
-            </select>
+            </NativeFilterSelect>
           </div>
         )}
 
         <div className="w-48">
-          <select
+          <NativeFilterSelect
             aria-label="Lọc theo vị trí"
             value={selectedPos}
             onChange={(e) => setSelectedPos(e.target.value)}
@@ -112,11 +113,11 @@ export function WorkforceCompetencyMatrix({
                 {p.name}
               </option>
             ))}
-          </select>
+          </NativeFilterSelect>
         </div>
 
         <div className="w-36">
-          <select
+          <NativeFilterSelect
             aria-label="Lọc theo Cấp bậc G1-G3"
             value={selectedGrade}
             onChange={(e) => setSelectedGrade(e.target.value)}
@@ -127,11 +128,11 @@ export function WorkforceCompetencyMatrix({
               <option key={g} value={g}>{translateUi("Cấp bậc ")}{g}
               </option>
             ))}
-          </select>
+          </NativeFilterSelect>
         </div>
 
         <div className="w-52">
-          <select
+          <NativeFilterSelect
             aria-label="Lọc theo miền năng lực"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -143,7 +144,7 @@ export function WorkforceCompetencyMatrix({
                 {c.code}: {c.name}
               </option>
             ))}
-          </select>
+          </NativeFilterSelect>
         </div>
       </div>
 

@@ -233,7 +233,7 @@ export function RolesAccessPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-900">Danh sách tài khoản & vai trò</h3>
-              <OwnerFilterSelect label="Lọc vai trò" value={roleFilter} onChange={(value) => { setRoleFilter(value); setPage(1); }} options={[{ value: '', label: 'Tất cả vai trò' }, { value: ROLES.OWNER, label: 'Chủ doanh nghiệp' }, { value: ROLES.MANAGER, label: 'Quản lý' }, { value: ROLES.EMPLOYEE, label: 'Nhân viên' }]} />
+              <OwnerFilterSelect icon="filter" label="Lọc vai trò" value={roleFilter} onChange={(value) => { setRoleFilter(value); setPage(1); }} options={[{ value: '', label: 'Tất cả vai trò' }, { value: ROLES.OWNER, label: 'Chủ doanh nghiệp' }, { value: ROLES.MANAGER, label: 'Quản lý' }, { value: ROLES.EMPLOYEE, label: 'Nhân viên' }]} />
             </div>
 
             <DataTable
