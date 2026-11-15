@@ -770,10 +770,12 @@ export const pulseReviewService = {
     organizationId?: string,
     refreshAi = false,
     refreshSubmissionId?: string,
+    departmentId?: string,
   ) => {
     const params: Record<string, string | boolean> = {};
     if (includeReviewed) params.includeReviewed = true;
     if (organizationId) params.organizationId = organizationId;
+    if (departmentId) params.departmentId = departmentId;
     if (refreshAi) params.refreshAi = true;
     if (refreshSubmissionId) params.refreshSubmissionId = refreshSubmissionId;
     return apiClient.get<ApiResponse<PulseFinalReviewQueue>>('/pulse/final-reviews', {

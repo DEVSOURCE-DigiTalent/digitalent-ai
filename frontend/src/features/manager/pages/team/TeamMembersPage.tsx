@@ -1,211 +1,189 @@
-import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { ArrowUpRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mail, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Search, ArrowRight, ShieldCheck, Mail, Users } from 'lucide-react';
-import { PageHeader, DataTable, EmptyState } from '@/components/shared';
+import { EmptyState } from '@/components/shared';
+import { PageLoading, SectionLoading } from '@/components/shared/LoadingState';
+import { LoadError } from '@/features/pulse-employee/components/ui';
+import { Initials, ManagerPage, ManagerPageHeader, NoDepartment } from '@/features/pulse-manager/components/ManagerUi';
+import { MANAGER_PATHS } from '@/features/pulse-manager/lib/paths';
 import { useEmployees } from '@/hooks/use-employees';
 import { useJobPositions } from '@/hooks/use-job-positions';
-import { INPUT_CLASS } from '@/features/onboarding/components/styles';
-import type { EmployeeDto } from '@/services/employee.service';
+import { useManagedDepartment } from '@/hooks/use-managed-department';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import type { EmployeeStatus } from '@/services/employee.service';
+import './team-members.css';
 
-/**
- * MG-02: Team Members Page (Manager Scope)
- * Danh sách thành viên trong nhóm thuộc quyền quản lý của Quản lý:
- * - Bộ lọc: tìm kiếm họ tên/mã, vị trí công việc, trạng thái.
- * - Trạng thái trống hướng dẫn liên hệ Owner nếu Manager chưa được phân công phòng ban.
- */
+const PAGE_SIZES = [2, 5, 10, 20, 50];
+const STATUS_LABELS: Record<EmployeeStatus, string> = {
+  ACTIVE: 'Đang làm việc',
+  INACTIVE: 'Ngừng hoạt động',
+  TRANSFERRED: 'Đã chuyển công tác',
+  ARCHIVED: 'Đã lưu trữ',
+};
+
 export function TeamMembersPage() {
+  const { department, isLoading, isError, refetch } = useManagedDepartment();
+
+  return (
+    <ManagerPage>
+      <ManagerPageHeader title="Nhân viên phòng ban" scope={department?.name} />
+      {isLoading ? <PageLoading label="Đang tải danh sách nhân viên..." />
+        : isError ? <LoadError message="Không tải được phòng ban bạn phụ trách." onRetry={refetch} />
+        : department ? <DepartmentDirectory key={department.id} departmentId={department.id} />
+        : <NoDepartment />}
+    </ManagerPage>
+  );
+}
+
+function DepartmentDirectory({ departmentId }: { departmentId: string }) {
   useUiLanguage();
   const [search, setSearch] = useState('');
   const [positionId, setPositionId] = useState('');
-  const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE' | ''>('');
-  const [pageIndex, setPageIndex] = useState(1);
-
-  const { data: empData, isLoading } = useEmployees({
-    search: search || undefined,
-    positionId: positionId || undefined,
-    status: status || undefined,
-    pageIndex,
-    pageSize: 50,
+  const [status, setStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [previousTotal, setPreviousTotal] = useState(0);
+  const employees = useEmployees({
+    departmentId, search: search.trim() || undefined, positionId: positionId || undefined,
+    status: status || undefined, pageIndex: page, pageSize,
   });
+  const positions = useJobPositions({ departmentId, includeAssignedPositions: true, pageIndex: 1, pageSize: 100 });
+  const total = employees.data?.totalItems ?? previousTotal;
+  const lastPage = Math.max(1, Math.ceil(total / pageSize));
+  const outOfRange = employees.data != null && page > lastPage;
+  const hasFilters = Boolean(search.trim() || positionId || status);
+  const searchLabel = translateUi('Tìm theo tên hoặc mã nhân viên');
 
-  const { data: positions } = useJobPositions();
+  useEffect(() => {
+    if (outOfRange) setPage(lastPage);
+  }, [lastPage, outOfRange]);
+  useEffect(() => {
+    if (employees.data) setPreviousTotal(employees.data.totalItems);
+  }, [employees.data]);
 
-  const filteredItems = empData?.items ?? [];
-  const rawItems = filteredItems;
-
-  const hasActiveFilters = Boolean(search || positionId || status);
-
-  if (!isLoading && rawItems.length === 0 && !hasActiveFilters) {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Thành viên nhóm"
-          subtitle="Quản lý thông tin và theo dõi lộ trình phát triển kỹ năng số của từng thành viên trong bộ phận."
-        />
-        <div className="py-12 bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-          <EmptyState
-            icon={<Users className="size-12 text-slate-400 mx-auto" />}
-            title="Bạn chưa được phân công phụ trách phòng ban nào"
-            description="Bạn chưa được phân công quản lý phòng ban. Hãy liên hệ chủ doanh nghiệp."
-          />
-        </div>
-      </div>
-    );
-  }
-
-  const columns = [
-    {
-      key: 'fullName',
-      header: 'Thành viên',
-      cell: (row: EmployeeDto) => (
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-600 shrink-0">
-            {row.fullName.charAt(0)}
-          </div>
-          <div>
-            <Link
-              to={`/enterprise/team/members/${row.id}`}
-              className="font-semibold text-sm text-slate-900 hover:text-blue-600 transition"
-            >
-              {row.fullName}
-            </Link>
-            <p className="text-xs text-slate-500 font-mono">
-              {row.employeeCode}
-            </p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'position',
-      header: 'Vị trí công việc',
-      cell: (row: EmployeeDto) => (
-        <span className="text-sm font-medium text-slate-800">
-          {row.positionName || 'Chưa phân vị trí'}
-        </span>
-      ),
-    },
-    {
-      key: 'email',
-      header: 'Email liên hệ',
-      cell: (row: EmployeeDto) => (
-        <span className="text-xs text-slate-600 flex items-center gap-1.5 font-mono">
-          <Mail className="size-3.5 text-slate-400" />
-          {row.workEmail}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Trạng thái',
-      cell: (row: EmployeeDto) => (
-        <span
-          className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${
-            row.status === 'ACTIVE'
-              ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-              : 'text-slate-600 bg-slate-100 border-slate-200'
-          }`}
-        >
-          <ShieldCheck className="size-3" />
-          {row.status === 'ACTIVE' ? 'Đang làm việc' : 'Đã nghỉ / Tạm dừng'}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      cell: (row: EmployeeDto) => (
-        <Link
-          to={`/enterprise/team/members/${row.id}`}
-          className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
-        >
-          <span>{translateUi("Hồ sơ năng lực")}</span>
-          <ArrowRight className="size-3.5" />
-        </Link>
-      ),
-    },
-  ];
+  const items = employees.data?.items ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <PageHeader
-          title="Thành viên nhóm"
-          subtitle="Quản lý thông tin và theo dõi lộ trình phát triển kỹ năng số của từng thành viên trong bộ phận."
-        />
-        <Link
-          to="/enterprise/team/skill-gap"
-          className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition shrink-0"
-        >
-          <span>{translateUi("Xem khoảng trống năng lực")}</span>
-        </Link>
+    <section className="manager-directory" aria-label={translateUi('Danh sách nhân viên')}>
+      <div className="manager-directory__toolbar">
+        <label className="manager-directory__search">
+          <Search size={17} aria-hidden="true" />
+          <input type="search" aria-label={searchLabel} placeholder={searchLabel} value={search}
+            onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
+        </label>
+        <DirectoryPicker label={translateUi('Lọc theo vị trí công việc')} value={positionId}
+          options={[{ value: '', label: translateUi('Tất cả vị trí') },
+            ...(positions.data?.items ?? []).map(({ id, name }) => ({ value: id, label: name }))]}
+          onChange={(value) => { setPositionId(value); setPage(1); }} />
+        <DirectoryPicker label={translateUi('Lọc theo trạng thái')} value={status}
+          options={[{ value: '', label: translateUi('Mọi trạng thái') },
+            ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label: translateUi(label) }))]}
+          onChange={(value) => { setStatus(value); setPage(1); }} />
       </div>
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPageIndex(1);
-            }}
-            placeholder="Tìm theo tên hoặc mã nhân viên…"
-            className={`${INPUT_CLASS} pl-9`}
+      {positions.isError && (
+        <div className="manager-directory__notice" role="status">
+          {translateUi('Không tải được bộ lọc vị trí.')}
+          <button type="button" onClick={() => void positions.refetch()}>{translateUi('Thử lại')}</button>
+        </div>
+      )}
+      {employees.isLoading || outOfRange ? <SectionLoading label="Đang tải danh sách nhân viên..." />
+        : employees.isError ? <LoadError message="Không tải được danh sách nhân viên trong phòng ban." onRetry={employees.refetch} />
+        : items.length === 0 ? <div className="manager-directory__empty">
+          <EmptyState
+            title={translateUi(hasFilters ? 'Không tìm thấy nhân viên phù hợp' : 'Phòng ban chưa có nhân viên')}
+            action={hasFilters && <button className="manager-directory__reset" type="button" onClick={() => {
+              setSearch(''); setPositionId(''); setStatus(''); setPage(1);
+            }}>{translateUi('Xóa bộ lọc')}</button>}
           />
-        </div>
+        </div> : <ul className="manager-directory__grid" data-paired={items.length === 4} role="list">
+          {items.map((row) => (
+            <li key={row.id}>
+              <Link className="manager-directory__person" to={MANAGER_PATHS.member(row.id)}>
+                <div className="manager-directory__identity">
+                  <Initials name={row.fullName} />
+                  <div><h2>{row.fullName}</h2><small>{row.employeeCode}</small></div>
+                  <span className="manager-directory__open"><ArrowUpRight size={17} aria-hidden="true" /></span>
+                </div>
+                <p className="manager-directory__position">{row.positionName || row.jobPositionName || translateUi('Chưa có vị trí')}</p>
+                {row.workEmail && <p className="manager-directory__email"><Mail size={14} aria-hidden="true" />{row.workEmail}</p>}
+                <span className="manager-directory__status" data-active={row.status === 'ACTIVE'}>
+                  {translateUi(STATUS_LABELS[row.status as EmployeeStatus] ?? 'Chưa xác định')}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>}
 
-        <div className="w-48">
-          <select
-            value={positionId}
-            onChange={(e) => {
-              setPositionId(e.target.value);
-              setPageIndex(1);
-            }}
-            aria-label="Lọc theo vị trí công việc"
-            className={INPUT_CLASS}
-          >
-            <option value="">Tất cả vị trí công việc</option>
-            {positions?.items?.map((p: any) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-
-        <div className="w-36">
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as any);
-              setPageIndex(1);
-            }}
-            aria-label={translateUi("Lọc theo trạng thái")}
-            className={INPUT_CLASS}
-          >
-            <option value="">{translateUi("Mọi trạng thái")}</option>
-            <option value="ACTIVE">Đang làm việc</option>
-            <option value="INACTIVE">Đã nghỉ việc</option>
-          </select>
-        </div>
+      <div className="manager-directory__pagination">
+        <span role="status">
+          {employees.isSuccess && !outOfRange && (
+            total > 0 ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} / ${total}` : '0'
+          )}
+          {employees.isSuccess && !outOfRange && ` ${translateUi('nhân viên')}`}
+        </span>
+        <DirectoryPicker label={translateUi('Số dòng mỗi trang')} value={String(pageSize)} placement="above"
+          options={PAGE_SIZES.map((size) => ({ value: String(size), label: `${size} / ${translateUi('trang')}` }))}
+          onChange={(value) => { setPageSize(Number(value)); setPage(1); }} />
+        <nav className="manager-directory__page-controls" aria-label={translateUi('Phân trang danh sách nhân viên')}>
+          <button type="button" aria-label={translateUi('Trang trước')} disabled={!employees.isSuccess || page <= 1 || outOfRange}
+            onClick={() => setPage(page - 1)}><ChevronLeft size={17} aria-hidden="true" /></button>
+          <span aria-current="page">{translateUi('Trang ')}{page} / {lastPage}</span>
+          <button type="button" aria-label={translateUi('Trang sau')} disabled={!employees.isSuccess || page >= lastPage || outOfRange}
+            onClick={() => setPage(page + 1)}><ChevronRight size={17} aria-hidden="true" /></button>
+        </nav>
       </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <DataTable
-          columns={columns}
-          data={filteredItems}
-          isLoading={isLoading}
-          keyExtractor={(row) => row.id}
-          emptyTitle="Không tìm thấy nhân sự phù hợp"
-          emptyDescription="Không có nhân sự nào trong nhóm phù hợp với điều kiện tìm kiếm hoặc bộ lọc hiện tại."
-        />
-      </div>
-    </div>
+    </section>
   );
+}
+
+function DirectoryPicker({ label, value, options, onChange, placement = 'below' }: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  placement?: 'above' | 'below';
+}) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const id = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    root.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
+    function dismiss(event: PointerEvent) {
+      if (event.target instanceof Node && !root.current?.contains(event.target)) setOpen(false);
+    }
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [open]);
+
+  function close() {
+    setOpen(false);
+    trigger.current?.focus();
+  }
+
+  return <div className="manager-directory__picker" ref={root} data-placement={placement}
+    onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}
+    onKeyDown={(event) => {
+      if (open && event.key === 'Escape') { event.preventDefault(); close(); }
+    }}>
+    <button ref={trigger} type="button" className="manager-directory__trigger" aria-label={label}
+      aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen(!open)}>
+      <span>{options.find((option) => option.value === value)?.label ?? label}</span>
+      <ChevronDown size={16} aria-hidden="true" />
+    </button>
+    {open && <div id={id} role="group" aria-label={label} className="manager-directory__popup">
+      {options.map((option) => (
+        <button key={option.value} type="button" aria-pressed={option.value === value} onClick={() => {
+          close();
+          onChange(option.value);
+        }}>
+          <span>{option.label}</span>
+          {option.value === value && <Check size={16} aria-hidden="true" />}
+        </button>
+      ))}
+    </div>}
+  </div>;
 }

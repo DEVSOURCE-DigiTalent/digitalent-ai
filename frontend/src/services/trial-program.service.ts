@@ -112,7 +112,6 @@ export interface TrialProgram {
   mentorName?: string | null;
   mentorAssignedAt?: string | null;
   reportPublishedAt?: string | null;
-  maxParticipants: number;
   choiceCount: number;
   essayCount: number;
   participants: TrialParticipant[];

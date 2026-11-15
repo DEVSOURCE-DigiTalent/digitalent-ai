@@ -5,6 +5,8 @@ import {
   ArrowLeft, CheckCircle2, AlertTriangle, XCircle, ExternalLink, Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useIsPulseManager } from '@/features/pulse-manager/lib/use-is-pulse-manager';
+import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { usePracticalTask, useSubmissionDetail, useEvaluateSubmission } from '@/hooks/use-tasks';
 import type { RubricCriterion } from '@/services/task.service';
 import { apiErrorMessage, formatDate } from '@/lib/utils';
@@ -27,6 +29,9 @@ export function OwnerReviewDetailPage() {
   const taskId = submission?.taskId;
   const { data: task, isLoading: taskLoading } = usePracticalTask(taskId);
   const evaluateMutation = useEvaluateSubmission();
+  const { can } = usePermission();
+  const isManager = useIsPulseManager();
+  const canEvaluate = can(PERMISSIONS.TASK_EVALUATE) && !isManager;
 
   const [rubricScores, setRubricScores] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState('');
@@ -45,7 +50,7 @@ export function OwnerReviewDetailPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!submissionId || alreadyEvaluated) return;
+    if (!submissionId || alreadyEvaluated || !canEvaluate) return;
     if (!Array.isArray(task?.rubricCriteria) || task.rubricCriteria.length === 0) {
       toast.error('Nhiệm vụ chưa có tiêu chí chấm. Vui lòng bổ sung trước khi đánh giá.');
       return;
@@ -91,7 +96,7 @@ export function OwnerReviewDetailPage() {
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
             style={{ color: 'var(--po-accent)' }}
           >
-            <ArrowLeft className="size-3.5" />{translateUi(" Hàng chờ chấm điểm")}</Link>
+            <ArrowLeft className="size-3.5" />{translateUi(canEvaluate ? ' Hàng chờ chấm điểm' : ' Minh chứng thực tế')}</Link>
         </div>
       </div>
     );
@@ -114,6 +119,7 @@ export function OwnerReviewDetailPage() {
       }}
     >
       <div className="owner-operations__shell">
+        <header className="manager-work-hero">
         <Link
           to={`/enterprise/tasks/${taskId}`}
           className="owner-operations__back"
@@ -121,10 +127,11 @@ export function OwnerReviewDetailPage() {
         >
           <ArrowLeft className="size-4" />{translateUi(" Quay lại nhiệm vụ")}</Link>
 
-        <h1 className="owner-operations__review-title heading-gradient">{translateUi("Đánh giá bài nộp")}</h1>
+        <h1 className="owner-operations__review-title heading-gradient">{translateUi(canEvaluate ? 'Đánh giá bài nộp' : 'Kết quả bài nộp')}</h1>
         <p className="owner-operations__review-subtitle" style={{ color: 'var(--po-muted)' }}>
           {submission.employeeName} · {translateUi(task.title)}{translateUi(" · Nộp ")}{formatDate(submission.submittedAt)}
         </p>
+        </header>
 
         <form onSubmit={handleSubmit} className="owner-operations__review-form">
           {/* Evidence */}
@@ -199,7 +206,7 @@ export function OwnerReviewDetailPage() {
             </div>
           )}
 
-          {!alreadyEvaluated && (
+          {canEvaluate && !alreadyEvaluated && (
             <>
               {/* Rubric scoring */}
               <section
@@ -297,8 +304,8 @@ export function OwnerReviewDetailPage() {
               to={`/enterprise/tasks/${taskId}`}
               className="rounded-[11px] border px-4 py-2.5 text-xs font-bold transition-transform hover:-translate-y-0.5"
               style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
-            >{translateUi("Hủy")}</Link>
-            {!alreadyEvaluated && (
+            >{translateUi(canEvaluate ? 'Hủy' : 'Quay lại nhiệm vụ')}</Link>
+            {canEvaluate && !alreadyEvaluated && (
               <button
                 type="submit"
                 disabled={evaluateMutation.isPending || rubricCriteria.length === 0}

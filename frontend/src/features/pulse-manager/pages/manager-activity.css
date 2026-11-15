@@ -1,0 +1,115 @@
+.manager-activity {
+  min-width: 0;
+  border: 1px solid var(--po-line);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--po-surface);
+  box-shadow: 0 10px 30px rgb(16 54 69 / 6%);
+}
+
+.manager-activity__toolbar,
+.manager-activity footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px clamp(12px, 2vw, 22px);
+}
+
+.manager-activity__toolbar > div,
+.manager-activity nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.manager-activity button {
+  min-height: 38px;
+  padding: 5px 10px;
+  border: 1px solid var(--po-line);
+  border-radius: 9px;
+  font-size: .8rem;
+  font-weight: 650;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.manager-activity button:disabled { opacity: .52; }
+.manager-activity button[aria-pressed="true"],
+.manager-activity button:not(:disabled):hover { background: var(--po-tint); color: var(--po-accent-strong); }
+.manager-activity button[aria-pressed="true"] { border-color: var(--po-accent-strong); }
+
+.manager-activity__toolbar button span {
+  margin-inline-start: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--po-tint);
+  color: var(--po-accent-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.manager-activity__toolbar label {
+  display: flex;
+  align-items: center;
+  flex: 0 1 320px;
+  min-width: 0;
+  gap: 8px;
+  padding-inline: 10px;
+  border: 1px solid var(--po-line);
+  border-radius: 10px;
+  color: var(--po-accent-strong);
+}
+.manager-activity__toolbar svg { flex-shrink: 0; }
+.manager-activity__toolbar input { width: 100%; min-width: 0; min-height: 40px; background: transparent; color: inherit; }
+.manager-activity__toolbar label:focus-within,
+.manager-activity button:focus-visible { outline: 2px solid var(--po-accent-strong); outline-offset: -2px; }
+
+.manager-activity__date {
+  margin: 0;
+  border-block: 1px solid var(--po-line);
+  padding: 7px clamp(12px, 2vw, 22px);
+  background: var(--po-tint);
+  color: var(--po-muted);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.manager-activity ul { margin: 0; padding: 0; list-style: none; }
+.manager-activity li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 11px;
+  padding: 12px clamp(12px, 2vw, 22px);
+  border-inline-start: 3px solid transparent;
+  transition: background-color 160ms ease;
+}
+.manager-activity li + li { border-top: 1px solid var(--po-line); }
+.manager-activity li[data-unread="true"] { border-inline-start-color: var(--po-accent-strong); background: color-mix(in srgb, var(--po-tint) 55%, var(--po-surface)); }
+.manager-activity li:hover { background: var(--po-tint); }
+.manager-activity__icon {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 33px;
+  border-radius: 9px;
+  background: #e5f5f1;
+  color: #156461;
+}
+.manager-activity__icon.amber { background: #fff2da; color: #8b4a13; }
+.manager-activity__icon.blue { background: #e6f2fc; color: #215d91; }
+.manager-activity__icon.violet { background: #ede8fc; color: #58449b; }
+.manager-activity__icon.green { background: #e4f4ea; color: #176144; }
+.manager-activity__body { overflow-wrap: anywhere; }
+.manager-activity__body h3 { margin: 0; font-size: .92rem; font-weight: 650; }
+.manager-activity__body p { margin: 4px 0 0; font-size: .83rem; color: var(--po-muted); white-space: pre-wrap; }
+.manager-activity__meta { display: grid; justify-items: end; gap: 5px; color: var(--po-muted); font-size: .78rem; }
+.manager-activity__meta button { display: inline-flex; align-items: center; gap: 5px; color: var(--po-accent-strong); }
+.manager-activity footer { border-top: 1px solid var(--po-line); font-size: .8rem; color: var(--po-muted); }
+.manager-activity__error, .manager-activity__empty { margin: 0; padding: 14px 22px; border-top: 1px solid var(--po-line); }
+.manager-activity__error { color: var(--po-danger, #9a3f27); }
+.manager-activity__empty p { margin: 0 0 6px; }
+
+@media (max-width: 650px) {
+  .manager-activity__toolbar label { flex: 1 1 100%; }
+  .manager-activity li { grid-template-columns: auto minmax(0, 1fr); }
+  .manager-activity__meta { grid-column: 2; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manager-activity :is(button, li) { transition: none; }
+}

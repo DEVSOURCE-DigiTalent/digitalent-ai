@@ -92,7 +92,7 @@ const SIDEBAR_ITEMS: NavItem[] = [
   },
 ];
 
-export function PulseSidebar() {
+export function PulseSidebar({ trialLearning = false }: { trialLearning?: boolean } = {}) {
   useUiLanguage();
   const { pathname } = useLocation();
   const { data: unread } = useNotifications({ unreadOnly: true });
@@ -160,7 +160,8 @@ export function PulseSidebar() {
       {/* ── Navigation: Danh sách chức năng chuẩn form Personal ────────── */}
       <nav className="pu-side-card-nav" aria-label="Cổng đào tạo nhân viên">
         <ul className="pu-side-card-list">
-          {SIDEBAR_ITEMS.map((item) => {
+          {(trialLearning ? SIDEBAR_ITEMS.filter((item) => item.to !== PULSE_PATHS.today) : SIDEBAR_ITEMS).map((item) => {
+            const label = trialLearning && item.to === PULSE_PATHS.path ? 'Học thử' : item.label;
             const Icon = item.icon;
             const active = isItemActive(item);
             return (
@@ -169,19 +170,19 @@ export function PulseSidebar() {
                   to={item.to}
                   end={item.end}
                   data-tour={`side-${item.screenId}`}
-                  aria-label={translateUi(item.label)}
+                  aria-label={translateUi(label)}
                   aria-current={active ? 'page' : undefined}
                   className={`pu-side-card-item${active ? ' active' : ''}`}
                 >
                   <Icon size={18} className="pu-side-card-icon" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
-                  {!isCollapsed && <span className="pu-side-card-label truncate">{translateUi(item.label)}</span>}
+                  {!isCollapsed && <span className="pu-side-card-label truncate">{translateUi(label)}</span>}
                   {!isCollapsed && item.to === PULSE_PATHS.activity && hasUnread && (
                     <span className="pu-side-card-pill">{unread?.length}</span>
                   )}
                   {isCollapsed && item.to === PULSE_PATHS.activity && hasUnread && (
                     <span className="pu-side-card-dot" />
                   )}
-                  {isCollapsed && <span className="pu-side-tooltip">{translateUi(item.label)}</span>}
+                  {isCollapsed && <span className="pu-side-tooltip">{translateUi(label)}</span>}
                 </NavLink>
               </li>
             );

@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { Check, ClipboardCheck, X, ArrowRight, GraduationCap, Building2, Clock, CheckCircle2, AlertCircle, FileCheck2, Sparkles } from 'lucide-react';
+import { PageLoading } from '@/components/shared/LoadingState';
+import { useEffect, useId, useState } from 'react';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { useManagedDepartment } from '@/hooks/use-managed-department';
+import { Check, ClipboardCheck, X, ArrowRight, GraduationCap, Building2, Clock, CheckCircle2, AlertCircle, FileCheck2, Sparkles, Search, ChevronDown } from 'lucide-react';
 import '@/features/trial-program/mentor-workspace.css';
 import { toast } from 'sonner';
 import { useDecidePulseFinal, useDecidePulsePreAssessment, usePulseFinalReviews, useRecordPulseSupport, useRefreshPulseFinalAi } from '@/hooks/use-pulse';
@@ -11,23 +14,25 @@ import type {
   PulseExamKind,
   PulseFinalAttempt,
   PulseFinalReviewItem,
+  PulseFinalReviewQueue,
   PulseReviewStatus,
   PulseSupportAction,
 } from '@/services/pulse.service';
 import { formatDateTime } from '@/lib/utils';
 import { CourseFinalBrief } from '@/components/shared/CourseFinalBrief';
 import { ChoiceScore } from '@/features/pulse-employee/components/blocks';
-import { Empty, LoadError, Mini, Notice, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
+import { Empty, LoadError, Mini, Notice, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
 import { btn } from '@/features/pulse-employee/lib/button';
 import { SUPPORT_LABELS, levelName, pulseErrorMessage, timeLeft } from '@/features/pulse-employee/lib/labels';
-import { ManagerPage } from '../components/ManagerUi';
+import { Initials, ManagerPage, ManagerPageHeader, NoDepartment } from '../components/ManagerUi';
 import { RecordingPlayer } from '../components/RecordingPlayer';
 import { RiskTag } from '../components/ProctoringRiskPanel';
 import { MANAGER_PATHS } from '../lib/paths';
+import './manager-final-results.css';
 
 const MIN_REASON = 10;
 
-type Filter = 'ALL' | 'PENDING' | 'RETRY' | 'DEADLINE_MISSED' | 'FLAGGED';
+type Filter = 'ALL' | 'REVIEWED' | 'PENDING' | 'RETRY' | 'DEADLINE_MISSED' | 'FLAGGED';
 type KindFilter = 'ALL' | PulseExamKind;
 
 const KIND_FILTERS: { key: KindFilter; label: string }[] = [
@@ -47,6 +52,7 @@ const FILTERS: { key: Filter; label: string; match: (status: PulseReviewStatus) 
   { key: 'RETRY', label: 'Chờ nộp lại', match: (s) => s === 'RETRY_WAIT' || s === 'RETRY_READY' },
   { key: 'DEADLINE_MISSED', label: 'Quá hạn nộp lại', match: (s) => s === 'DEADLINE_MISSED' },
   { key: 'FLAGGED', label: 'Cần hỗ trợ', match: (s) => s === 'FLAGGED' },
+  { key: 'REVIEWED', label: 'Đã có kết quả', match: (s) => s === 'APPROVED' || s === 'NOT_YET' },
 ];
 
 const STATUS_PILL: Record<PulseReviewStatus, { label: string; tone: 'gray' | 'coral' | 'green' }> = {
@@ -63,8 +69,8 @@ const STATUS_HINT: Record<PulseReviewStatus, string> = {
   PENDING: 'Xem kết quả trắc nghiệm, đọc phần tự luận theo ba tiêu chí, rồi ghi quyết định kèm lý do. Đạt cần cả hai phần đạt.',
   RETRY_WAIT: 'Nhân viên đang đọc nhận xét; lần nộp cuối chưa mở.',
   RETRY_READY: 'Lần nộp cuối đang mở, nhân viên cần nộp trước hạn.',
-  DEADLINE_MISSED: 'Đã quá hạn nộp lần cuối. Chọn cách hỗ trợ trước khi lộ trình tiếp tục.',
-  FLAGGED: 'Hai lần nộp chưa đạt. Chọn kèm cặp, một chu kỳ học mới hoặc tạm dừng lộ trình.',
+  DEADLINE_MISSED: 'Đã quá hạn nộp lần cuối.',
+  FLAGGED: 'Hai lần nộp chưa đạt và cần hỗ trợ.',
   APPROVED: 'Bài đã được duyệt đạt chuẩn và công nhận hoàn thành cấp độ khóa học.',
   NOT_YET: 'Bài đánh giá trước khi học chưa đạt. Nhân viên tiếp tục học khóa và nộp bài cuối cấp.',
 };
@@ -77,44 +83,51 @@ const SUPPORT_OPTIONS: { action: PulseSupportAction; label: string }[] = [
   { action: 'PAUSE', label: 'Tạm dừng lộ trình' },
 ];
 
-/**
- * MG-13 · Chấm bài (mock `#/review`, docs/ui-redesign/16 §10): hàng chờ của phòng ban quản lý gồm bài đánh giá trước khi học
- * và bài cuối khóa, cả hai kèm bản ghi màn hình + camera + micro. Gợi ý AI chỉ để tham khảo; quản lý ghi quyết định cuối
- * cùng kèm lý do. Bài cuối: lần 1 chưa đạt mở cửa sổ nộp lại, lần 2 chưa đạt bật cờ hỗ trợ.
- */
-/**
- * `audience="mentor"`: mentor DigiTalent chấm bài của các doanh nghiệp dùng thử được phân công (backend chỉ trả các bài đó);
- * mỗi thẻ ghi tên doanh nghiệp, không có phần nhiệm vụ thực tế của quản lý.
- */
+/** MG-13 hiển thị kết quả bài làm của phòng ban. Chế độ mentor hiển thị thao tác chấm bài. */
 export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'manager' | 'mentor' } = {}) {
   const mentor = audience === 'mentor';
-  const { data, isLoading, error, refetch } = usePulseFinalReviews();
+  const { department, isLoading: departmentLoading, isError: departmentError, refetch: refetchDepartment } = useManagedDepartment();
+  const { data, isLoading, error, refetch } = usePulseFinalReviews({
+    enabled: mentor || Boolean(department),
+    includeReviewed: !mentor,
+    departmentId: mentor ? undefined : department?.id,
+  });
   const [filter, setFilter] = useState<Filter>('ALL');
   const [kind, setKind] = useState<KindFilter>('ALL');
 
-  if (isLoading) {
+  if (isLoading || (!mentor && departmentLoading)) {
     return (
-      <ManagerPage>
-        <PageSkeleton blocks={[140, 110, 420]} />
+      <ManagerPage ownerDesign={!mentor}>
+        {mentor ? <PageSkeleton blocks={[140, 110, 420]} /> : <PageLoading label="Đang tải bài đánh giá" variant="list" />}
       </ManagerPage>
     );
+  }
+  if (!mentor && departmentError) {
+    return <ManagerPage ownerDesign={!mentor}><LoadError message="Không tải được phòng ban bạn phụ trách." onRetry={() => refetchDepartment()} /></ManagerPage>;
+  }
+  if (!mentor && !department) {
+    return <ManagerPage><ManagerPageHeader title="Kết quả bài làm" /><NoDepartment /></ManagerPage>;
   }
   if (error || !data) {
     return (
-      <ManagerPage>
-        <LoadError message={pulseErrorMessage(error, 'Không tải được hàng chờ bài cuối khóa.')} onRetry={() => refetch()} />
+      <ManagerPage ownerDesign={!mentor}>
+        <LoadError message={pulseErrorMessage(error, mentor ? 'Không tải được hàng chờ bài cuối khóa.' : 'Không tải được kết quả bài làm.')} onRetry={() => refetch()} />
       </ManagerPage>
     );
   }
+  if (!mentor) {
+    return <ManagerPage testId="pulse-final-reviews">
+      <ManagerPageHeader scope={department?.name} title="Kết quả bài làm" />
+      <ManagerResults key={department?.id} data={data} />
+    </ManagerPage>;
+  }
 
-  const department = data.items.find((item) => item.departmentName)?.departmentName;
   const active = FILTERS.find((f) => f.key === filter)!;
   const ofKind = data.items.filter((item) => kind === 'ALL' || item.kind === kind);
   const visible = ofKind.filter((item) => active.match(item.status));
 
   return (
-    <ManagerPage testId="pulse-final-reviews">
-{mentor ? (
+    <ManagerPage ownerDesign={!mentor} testId="pulse-final-reviews">
         <div className="mw-header">
           <div className="mw-breadcrumbs">
             <span>Không gian làm việc</span>
@@ -141,29 +154,7 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
             </div>
           </div>
         </div>
-      ) : (
-        <>
-          <PageHead
-            eyebrow={`Quản lý đánh giá${department ? ` · ${department}` : ''}`}
-            title="Ra quyết định dựa trên minh chứng."
-            description="Mỗi khóa có một bài đánh giá trước khi học và một bài cuối khóa, cả hai có bản ghi màn hình, camera và micro. Gợi ý AI chỉ để tham khảo. Quản lý ghi quyết định cuối cùng và lý do."
-            actions={<Pill>{data.pendingCount} bài chờ đánh giá</Pill>}
-          />
-          <section className="pm-banner" aria-label="Nguyên tắc chấm bài cuối khóa">
-            <div>
-              <span className="pu-mini">{department ? `${department} / ` : ''}Đánh giá khóa học</span>
-              <h2>Một người học. Một khóa. Một quyết định rõ ràng.</h2>
-              <p>Xem bản ghi và các lần rời tab hoặc dừng chia sẻ, đọc minh chứng rồi ghi đạt hoặc chưa đạt kèm lý do.</p>
-            </div>
-            <div className="pm-banner-count">
-              <strong>{data.pendingCount}</strong>
-              <span>chờ bạn quyết định</span>
-            </div>
-          </section>
-        </>
-      )}
 
-      {mentor ? (
         <div className="mw-kpi-grid">
           <div className="mw-kpi-card">
             <div className="mw-kpi-icon amber">
@@ -206,31 +197,18 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
             </div>
           </div>
         </div>
-      ) : (
-        <section className="pu-metrics pu-review-kpis" aria-label="Tình trạng hàng chờ" style={{ marginTop: 16 }}>
-          <div><strong>{data.pendingCount}</strong><span>Chờ quyết định</span></div>
-          <div><strong>{data.preAssessmentCount}</strong><span>Đánh giá trước khi học</span></div>
-          <div><strong>{data.retryCount}</strong><span>Chờ nộp lại</span></div>
-          <div className="warn"><strong>{data.deadlineMissedCount}</strong><span>Quá hạn nộp lại</span></div>
-          <div className="warn"><strong>{data.flaggedCount}</strong><span>Cần hỗ trợ</span></div>
-        </section>
-      )}
-
       {data.items.length === 0 ? (
         <div style={{ marginTop: 22 }}>
           <Empty
             icon={<ClipboardCheck size={24} />}
             title="Chưa có bài nào cần quyết định."
-            action={mentor ? undefined : <PuLink to={MANAGER_PATHS.overview} kind="outline">Quay lại đội ngũ</PuLink>}
           >
-            {mentor
-              ? 'Khi nhân viên doanh nghiệp dùng thử nộp bài cuối khóa Cơ bản, bài sẽ xuất hiện ở đây.'
-              : 'Khi nhân viên trong phòng ban nộp bài đánh giá trước khi học hoặc bài cuối khóa, bài sẽ xuất hiện ở đây để bạn chấm.'}
+            Khi nhân viên doanh nghiệp dùng thử nộp bài cuối khóa Cơ bản, bài sẽ xuất hiện ở đây.
           </Empty>
         </div>
       ) : (
         <>
-          {mentor ? (
+
             <div className="mw-toolbar">
               <div className="mw-filter-pills">
                 {FILTERS.map((f) => (
@@ -264,24 +242,6 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
                 ))}
               </div>
             </div>
-          ) : (
-            <>
-              <div className="pu-tabs" role="group" aria-label="Lọc theo loại bài">
-                {KIND_FILTERS.map((k) => (
-                  <button key={k.key} type="button" aria-pressed={kind === k.key} onClick={() => setKind(k.key)}>
-                    {k.label}<span>{data.items.filter((item) => k.key === 'ALL' || item.kind === k.key).length}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="pu-tabs" role="group" aria-label="Lọc theo trạng thái">
-                {FILTERS.map((f) => (
-                  <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
-                    {f.label}<span>{ofKind.filter((item) => f.match(item.status)).length}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
           <div className="pu-stack">
             {visible.length === 0 && <Notice>Không có bài nào ở trạng thái này.</Notice>}
             {visible.map((item) => (
@@ -291,22 +251,109 @@ export function PulseFinalReviewsPage({ audience = 'manager' }: { audience?: 'ma
         </>
       )}
 
-      {!mentor && (
-      <section className="pu-surface pu-pad" style={{ marginTop: 18 }}>
-        <Mini>Luồng minh chứng riêng</Mini>
-        <h2 className="pu-panel-title">Nhiệm vụ thực tế không phải bài cuối khóa.</h2>
-        <p className="pu-panel-desc">
-          Minh chứng công việc được duyệt trong lúc học, ở hàng chờ nhiệm vụ thực tế. Quy tắc hai lần nộp chỉ áp dụng cho bài cuối
-          sau mỗi khóa.
-        </p>
-        <PuLink to={MANAGER_PATHS.evidence} kind="outline" small>Mở minh chứng thực tế →</PuLink>
-      </section>
-      )}
     </ManagerPage>
   );
 }
 
-function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalReviewItem; criteria: PulseCriterion[]; showOrganization?: boolean }) {
+function DeferredRecording({ recording }: { recording: NonNullable<PulseFinalReviewItem['recording']> }) {
+  const [opened, setOpened] = useState(false);
+  return <details className="pu-review-recording" onToggle={(event) => setOpened(event.currentTarget.open)}>
+    <summary>{translateUi('Xem bản ghi lần nộp gần nhất')}</summary>
+    {opened && <RecordingPlayer recording={recording} />}
+  </details>;
+}
+
+const RESULT_PAGE_SIZE = 10;
+const managerStatusLabel = (status: PulseReviewStatus) =>
+  status === 'PENDING' ? 'Chờ Mentor đánh giá' : status === 'APPROVED' ? 'Đạt' : STATUS_PILL[status].label;
+const normalizeSearch = (value: string) => value.toLocaleLowerCase('vi').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd');
+
+function ManagerResults({ data }: { data: PulseFinalReviewQueue }) {
+  useUiLanguage();
+  const [kind, setKind] = useState<KindFilter>('ALL');
+  const [filter, setFilter] = useState<Filter>('ALL');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [expanded, setExpanded] = useState<string>();
+  const panelId = useId();
+  const searched = data.items.filter((item) => normalizeSearch(`${item.employeeName} ${item.courseTitle}`).includes(normalizeSearch(search.trim())));
+  const ofKind = searched.filter((item) => kind === 'ALL' || item.kind === kind);
+  const visible = ofKind.filter((item) => FILTERS.find(({ key }) => key === filter)!.match(item.status));
+  const pages = Math.max(1, Math.ceil(visible.length / RESULT_PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const start = (current - 1) * RESULT_PAGE_SIZE;
+  useEffect(() => { if (page > pages) setPage(pages); }, [page, pages]);
+
+  function navigate(next = 1) {
+    setPage(next);
+    setExpanded(undefined);
+  }
+
+  if (data.items.length === 0) return <section className="mgr-results">
+    <Empty icon={<ClipboardCheck size={24} />} title="Phòng ban chưa có bài nộp."
+      action={<PuLink to={MANAGER_PATHS.overview} kind="outline">Quay lại tổng quan</PuLink>} />
+  </section>;
+
+  return <section className="mgr-results" aria-label={translateUi('Danh sách kết quả bài làm')}>
+    <div className="mgr-results-toolbar">
+      <label className="mgr-results-search"><Search size={17} aria-hidden="true" />
+        <input type="search" value={search} aria-label={translateUi('Tìm nhân viên hoặc khóa học')}
+          placeholder={translateUi('Tìm nhân viên hoặc khóa học')} onChange={(event) => { setSearch(event.target.value); navigate(); }} />
+      </label>
+      <div className="mgr-results-kinds" role="group" aria-label={translateUi('Lọc theo loại bài')}>
+        {KIND_FILTERS.map(({ key, label }) => <button key={key} type="button" aria-pressed={kind === key}
+          onClick={() => { setKind(key); navigate(); }}>{translateUi(label)}</button>)}
+      </div>
+    </div>
+    <div className="mgr-results-statuses" role="group" aria-label={translateUi('Lọc theo trạng thái')}>
+      {FILTERS.map(({ key, label, match }) => <button key={key} type="button" aria-pressed={filter === key}
+        onClick={() => { setFilter(key); navigate(); }}>
+        {translateUi(key === 'PENDING' ? 'Chờ Mentor đánh giá' : label)} <strong>{ofKind.filter(({ status }) => match(status)).length}</strong>
+      </button>)}
+    </div>
+    {visible.length === 0 ? <Empty icon={<Search size={22} />} title="Không có bài phù hợp với bộ lọc."
+      action={<button type="button" className={btn('outline', true)} onClick={() => {
+        setSearch(''); setKind('ALL'); setFilter('ALL'); navigate();
+      }}>{translateUi('Xóa bộ lọc')}</button>} /> : (
+      <ul className="mgr-results-list" role="list">
+        {visible.slice(start, start + RESULT_PAGE_SIZE).map((item, index) => {
+          const key = `${item.kind}-${item.submissionId}`;
+          const open = expanded === key;
+          const detailId = `${panelId}-${index}`;
+          const latest = item.attempts.at(-1);
+          const choice = latest?.choice;
+          return <li key={key} data-open={open}>
+            <button type="button" className="mgr-result-row" aria-expanded={open} aria-controls={detailId}
+              aria-label={`${translateUi('Xem chi tiết')} · ${item.employeeName} · ${item.courseTitle}`}
+              onClick={() => setExpanded(open ? undefined : key)}>
+              <span className="mgr-result-person"><Initials name={item.employeeName} /><span><strong>{item.employeeName}</strong>
+                {item.positionName && <small>{item.positionName}</small>}</span></span>
+              <span className="mgr-result-course"><strong>{item.courseTitle}</strong>
+                <small>{translateUi(KIND_LABELS[item.kind])}{latest && ` · ${formatDateTime(latest.submittedAt)}`}</small></span>
+              <span className="mgr-result-score">
+                <strong>{choice ? `${choice.score}/${choice.total}` : '—'}<span className="sr-only"> · {translateUi('Trắc nghiệm')}</span></strong>
+                {choice && choice.total > 0 && <progress aria-hidden="true" max={choice.total} value={choice.score} data-passed={choice.passed} />}
+              </span>
+              <span className="mgr-result-status" data-status={item.status}>{translateUi(managerStatusLabel(item.status))}</span>
+              <ChevronDown size={17} aria-hidden="true" />
+            </button>
+            <div id={detailId} hidden={!open} className="mgr-result-detail">
+              {open && <ReviewCard item={item} criteria={data.criteria} compact />}
+            </div>
+          </li>;
+        })}
+      </ul>
+    )}
+    {pages > 1 && <nav className="mgr-results-pagination" aria-label={translateUi('Phân trang')}>
+      <span role="status">{start + 1}–{Math.min(start + RESULT_PAGE_SIZE, visible.length)} / {visible.length}</span>
+      <button type="button" disabled={current <= 1} onClick={() => navigate(current - 1)}>{translateUi('Trang trước')}</button>
+      <span>{current} / {pages}</span>
+      <button type="button" disabled={current >= pages} onClick={() => navigate(current + 1)}>{translateUi('Trang sau')}</button>
+    </nav>}
+  </section>;
+}
+
+export function ReviewCard({ item, criteria, showOrganization, compact = false }: { item: PulseFinalReviewItem; criteria: PulseCriterion[]; showOrganization?: boolean; compact?: boolean }) {
   const latest = item.attempts[item.attempts.length - 1];
   const earlier = item.attempts.slice(0, -1);
   const pill = STATUS_PILL[item.status];
@@ -325,7 +372,7 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
 
   return (
     <article className="pu-surface pu-pad pu-review-card" aria-label={`${item.employeeName} · ${item.courseTitle}`}>
-      <header>
+      {!compact && <header>
         <div>
           {showOrganization && item.organizationName ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
@@ -352,15 +399,19 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
         <div className="pu-row">
           <span className={`pu-kind-tag ${isPre ? 'pre' : 'final'}`}>{KIND_LABELS[item.kind]}</span>
           {item.recording?.risk && <RiskTag risk={item.recording.risk} />}
-          <Pill tone={pill.tone}>{pill.label}</Pill>
+          <Pill tone={pill.tone}>{!showOrganization && item.status === 'PENDING' ? 'Chờ mentor chấm' : pill.label}</Pill>
         </div>
-      </header>
-      <p className="pu-panel-desc" style={{ marginTop: 10 }}>{isPre ? PRE_HINT : STATUS_HINT[item.status]}</p>
+      </header>}
+      {compact && <div className="mgr-result-detail-meta">
+        {[item.domainName, item.tier ? levelName(item.tier) : null, !isPre ? `${translateUi('Lần nộp')} ${item.attemptNo}/${item.maxAttempts}` : null].filter(Boolean).join(' · ')}
+        {item.recording?.risk && <RiskTag risk={item.recording.risk} />}
+      </div>}
+      {!compact && <p className="pu-panel-desc" style={{ marginTop: 10 }}>{isPre ? PRE_HINT : !showOrganization && item.status === 'PENDING' ? 'Bài đã nộp và đang chờ mentor chấm.' : STATUS_HINT[item.status]}</p>}
 
       {item.recording ? (
-        item.status === 'PENDING' ? (
+        item.status === 'PENDING' && !compact ? (
           <RecordingPlayer recording={item.recording} />
-        ) : (
+        ) : compact ? <DeferredRecording recording={item.recording} /> : (
           <details className="pu-review-recording">
             <summary>Xem bản ghi lần nộp gần nhất</summary>
             <RecordingPlayer recording={item.recording} />
@@ -370,17 +421,25 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
         <div className="pu-rplayer-missing" style={{ marginTop: 16 }}>Không tải được bản ghi của bài này.</div>
       ) : null}
 
-      {latest?.choice && <ChoiceReview choice={latest.choice} />}
-      {item.assignment && <CourseFinalBrief content={item.assignment} />}
+      {latest?.choice && <ChoiceReview choice={latest.choice} compact={compact} />}
+      {item.assignment && (compact ? <details className="mgr-result-brief">
+        <summary><FileCheck2 size={16} aria-hidden="true" />{translateUi('Đề bài và yêu cầu')}<ChevronDown size={16} aria-hidden="true" /></summary>
+        <CourseFinalBrief content={item.assignment} />
+      </details> : <CourseFinalBrief content={item.assignment} />)}
 
-      {latest && (
+      {latest && (compact ? (
+        <details className="mgr-result-brief mgr-result-answer">
+          <summary><ClipboardCheck size={16} aria-hidden="true" />{translateUi(latest.choice ? 'Bài tự luận' : 'Bài nộp')}<ChevronDown size={16} aria-hidden="true" /></summary>
+          <p>{latest.evidenceText || '—'}</p>
+        </details>
+      ) : (
         <div className="pu-review-evidence">
           <Mini>{latest.choice ? 'Phần tự luận · minh chứng đã nộp' : 'Minh chứng đã nộp'}</Mini>
           <p>{latest.evidenceText}</p>
         </div>
-      )}
+      ))}
 
-      {item.status === 'PENDING' && (
+      {showOrganization && item.status === 'PENDING' && (
         <div className="pu-review-grid">
           <div className="pu-rubric" aria-label="Ba tiêu chí của phần tự luận">
             {criteria.map((criterion, index) => {
@@ -405,7 +464,13 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
         </div>
       )}
 
-      {item.status === 'PENDING' && (isPre ? <PreAssessmentDecisionForm item={item} mentor={showOrganization} /> : <DecisionForm item={item} mentor={showOrganization} />)}
+      {latest?.decisionReason && item.status !== 'RETRY_WAIT' && item.status !== 'RETRY_READY' && (
+        compact ? <div className="mgr-result-feedback">
+          <div><strong>{translateUi('Nhận xét')}</strong>{latest.reviewerName && <small>{latest.reviewerName}</small>}</div>
+          <p>{latest.decisionReason}</p>
+        </div> : <Notice>Nhận xét của {latest.reviewerName ?? 'người chấm'} · {latest.decisionReason}</Notice>
+      )}
+      {showOrganization && item.status === 'PENDING' && (isPre ? <PreAssessmentDecisionForm item={item} /> : <DecisionForm item={item} />)}
       {(item.status === 'RETRY_WAIT' || item.status === 'RETRY_READY') && (
         <div style={{ marginTop: 16 }}>
           {latest?.decisionReason && (
@@ -419,7 +484,7 @@ function ReviewCard({ item, criteria, showOrganization }: { item: PulseFinalRevi
           </div>
         </div>
       )}
-      {(item.status === 'FLAGGED' || item.status === 'DEADLINE_MISSED') && <SupportForm item={item} />}
+      {showOrganization && (item.status === 'FLAGGED' || item.status === 'DEADLINE_MISSED') && <SupportForm item={item} />}
     </article>
   );
 }
@@ -543,15 +608,17 @@ function AiEvaluationPanel({
  * Phần trắc nghiệm của bài (tự chấm lúc nộp): số câu đúng so với ngưỡng, từng câu với phương án đã chọn và đáp án đúng.
  * Nhân viên chưa thấy kết quả này cho tới khi người chấm quyết định.
  */
-function ChoiceReview({ choice }: { choice: PulseChoiceResult }) {
+function ChoiceReview({ choice, compact = false }: { choice: PulseChoiceResult; compact?: boolean }) {
   const items = choice.items ?? [];
   const wrong = items.filter((item) => !item.isCorrect).length;
   return (
     <section className="pu-review-choice" aria-label="Phần trắc nghiệm">
       <div className="pu-review-choice-head">
-        <Mini>Phần trắc nghiệm · tự chấm</Mini>
-        <strong>Đúng {choice.score}/{choice.total} câu</strong>
-        <Pill tone={choice.passed ? 'green' : 'coral'}>{choice.passed ? 'Đạt' : 'Chưa đạt'} · cần từ {choice.passMark} câu</Pill>
+        {compact ? <><strong>{translateUi('Trắc nghiệm')}</strong><span>{translateUi('Ngưỡng đạt')} · {choice.passMark}/{choice.total}</span></> : <>
+          <Mini>Phần trắc nghiệm · tự chấm</Mini>
+          <strong>Đúng {choice.score}/{choice.total} câu</strong>
+          <Pill tone={choice.passed ? 'green' : 'coral'}>{choice.passed ? 'Đạt' : 'Chưa đạt'} · cần từ {choice.passMark} câu</Pill>
+        </>}
       </div>
       {items.length > 0 && (
         <details>
@@ -587,14 +654,14 @@ function AttemptHistory({ attempt, max }: { attempt: PulseFinalAttempt; max: num
       <blockquote>{attempt.evidenceText}</blockquote>
       {attempt.decisionReason && (
         <div className="pu-feedback">
-          <strong>Nhận xét của {attempt.reviewerName ?? 'quản lý'}</strong>: {attempt.decisionReason}
+          <strong>Nhận xét của {attempt.reviewerName ?? 'người chấm'}</strong>: {attempt.decisionReason}
         </div>
       )}
     </div>
   );
 }
 
-function DecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: boolean }) {
+function DecisionForm({ item }: { item: PulseFinalReviewItem }) {
   const decide = useDecidePulseFinal();
   const [decision, setDecision] = useState<PulseDecision | ''>('');
   const [reason, setReason] = useState('');
@@ -628,7 +695,7 @@ function DecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: b
     <form onSubmit={onSubmit} style={{ marginTop: 16 }}>
       <div className="pu-decision">
         <label className="pu-field">
-          {mentor ? 'Quyết định của mentor' : 'Quyết định của quản lý'}
+          Quyết định của mentor
           <select value={decision} onChange={(e) => setDecision(e.target.value as PulseDecision | '')} required>
             <option value="">Chọn quyết định</option>
             <option value="PASSED" disabled={choiceFails}>Duyệt khóa học{choiceFails ? ' · trắc nghiệm chưa đạt' : ''}</option>
@@ -673,7 +740,7 @@ function DecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: b
   );
 }
 
-function PreAssessmentDecisionForm({ item, mentor }: { item: PulseFinalReviewItem; mentor?: boolean }) {
+function PreAssessmentDecisionForm({ item }: { item: PulseFinalReviewItem }) {
   const decide = useDecidePulsePreAssessment();
   const [decision, setDecision] = useState<PulseDecision | ''>('');
   const [reason, setReason] = useState('');
@@ -704,7 +771,7 @@ function PreAssessmentDecisionForm({ item, mentor }: { item: PulseFinalReviewIte
     <form onSubmit={onSubmit} style={{ marginTop: 16 }}>
       <div className="pu-decision">
         <label className="pu-field">
-          {mentor ? 'Quyết định của mentor' : 'Quyết định của quản lý'}
+          Quyết định của mentor
           <select value={decision} onChange={(e) => setDecision(e.target.value as PulseDecision | '')} required>
             <option value="">Chọn quyết định</option>
             <option value="PASSED" disabled={choiceFails}>Đạt · công nhận khóa, không cần học{choiceFails ? ' · trắc nghiệm chưa đạt' : ''}</option>

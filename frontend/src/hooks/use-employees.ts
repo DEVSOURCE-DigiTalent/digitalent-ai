@@ -9,9 +9,10 @@ import {
 /**
  * Fetch paginated employee list.
  */
-export function useEmployees(params?: EmployeeListParams) {
+export function useEmployees(params?: EmployeeListParams, enabled = true) {
   return useQuery({
     queryKey: ['employees', params],
+    enabled,
     queryFn: () => employeeService.getList(params).then((r) => r.data.data!),
   });
 }

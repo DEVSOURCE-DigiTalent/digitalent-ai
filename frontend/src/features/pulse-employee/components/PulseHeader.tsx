@@ -91,9 +91,9 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
   const trial = Boolean(user && isEnterpriseTrial(user));
   const { data: myTrial } = useMyTrialAssessment(trial);
   const { data: overview } = usePulseOverview();
-  const hasRoadmap = Boolean(overview?.hasTargets);
+  const hasRoadmap = Boolean(overview?.hasPosition && overview.hasTargets && !overview.awaitingFramework);
 
-  const activeGate = gate !== undefined ? gate : trialGateOf(myTrial);
+  const activeGate = gate !== undefined ? gate : trialGateOf(myTrial, undefined, roles.includes(ROLES.OWNER));
   const isGated = isGateActive !== undefined ? isGateActive : Boolean(trial && activeGate);
 
   // Tài khoản mới vào làm bài đánh giá và chưa có công bố khung năng lực từ doanh nghiệp:
@@ -102,7 +102,7 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
   // Hiển thị thanh điều hướng chính thức: Hôm nay / Lộ trình / Thực hành.
   const isPreRoadmapTrial = trial && !hasRoadmap;
   const nav = isPreRoadmapTrial
-    ? TRIAL_NAV.map((item) => (item.screenId === 'EM-T1' && myTrial?.reportPublished ? { ...item, label: 'Kết quả test' } : item))
+    ? TRIAL_NAV.map((item) => (item.screenId === 'EM-T1' && myTrial?.status === 'REVIEWED' ? { ...item, label: 'Kết quả khảo sát' } : item))
     : NAV;
   const workspaceHome = roles.includes(ROLES.OWNER)
     ? '/enterprise/dashboard'
@@ -174,7 +174,7 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
         <div className="pu-header-left">
           {/* Brand logo - nếu đang bị gate thì chỉ link tới trang bài test */}
           <Link
-            to={isGated ? PULSE_PATHS.trialTest : PULSE_PATHS.today}
+            to={isGated ? PULSE_PATHS.trialTest : isPreRoadmapTrial ? PULSE_PATHS.path : PULSE_PATHS.today}
             className="pu-brand"
             aria-label="DigiTalent AI — Bàn làm việc"
           >

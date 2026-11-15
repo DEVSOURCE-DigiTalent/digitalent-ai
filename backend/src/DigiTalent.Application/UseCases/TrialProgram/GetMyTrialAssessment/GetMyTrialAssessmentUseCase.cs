@@ -63,11 +63,11 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
             domainDetails = domains.Select(d =>
             {
                 byCategory.TryGetValue(d.CategoryId, out var dResult);
-                var lvl = (int)(dResult?.MentorLevel ?? dResult?.SuggestedLevel ?? 0);
+                var lvl = dResult == null ? 0 : TrialAssessmentResults.EffectiveLevelOf(dResult);
                 var targetLevel = deptCeilings.TryGetValue(d.CategoryId, out var dl) && dl > 0
                     ? dl
                     : orgCeilings.TryGetValue(d.CategoryId, out var ol) && ol > 0 ? ol : 3;
-                var (levelLabel, statusText, gapText, recCourse) = TrialProgramReader.DescribeDomainResult(d.Number, d.Name, lvl, targetLevel, dResult);
+                var (levelLabel, statusText, gapText, recCourse) = TrialProgramReader.DescribeDomainResult(d.Number, d.Name, lvl, targetLevel);
                 return new TrialReportEmployeeDomainDetailDto
                 {
                     CategoryId = d.CategoryId,
@@ -85,7 +85,7 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
                     IntermediateTotal = dResult?.IntermediateTotal ?? 0,
                     AdvancedCorrect = dResult?.AdvancedCorrect ?? 0,
                     AdvancedTotal = dResult?.AdvancedTotal ?? 0,
-                    SuggestedLevel = dResult?.SuggestedLevel ?? 0,
+                    SuggestedLevel = dResult == null ? 0 : TrialAssessmentResults.SuggestedLevelOf(dResult),
                     MentorLevel = dResult?.MentorLevel,
                     RecommendedCourse = recCourse,
                 };

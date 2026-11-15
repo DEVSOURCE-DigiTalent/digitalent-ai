@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using Microsoft.EntityFrameworkCore;
@@ -18,11 +19,14 @@ public class GetCertificatesUseCase : IUseCase<GetCertificatesInput, GetCertific
     public async Task<GetCertificatesOutput> ExecuteAsync(GetCertificatesInput input)
     {
         var organizationId = _currentUser.GetRequiredOrganizationId();
+        var manager = _currentUser.IsDepartmentManager && !_currentUser.IsAdmin;
+        var employees = manager
+            ? new EmployeeScope(_context, _currentUser).VisibleEmployees(includeSelf: true)
+            : _context.Employees.Where(e => e.OrganizationId == organizationId);
 
         var query =
             from cert in _context.Certificates.AsNoTracking()
-            join emp in _context.Employees.AsNoTracking() on cert.EmployeeId equals emp.Id
-            where emp.OrganizationId == organizationId
+            join emp in employees.AsNoTracking() on cert.EmployeeId equals emp.Id
             select new { cert, emp };
 
         if (input.EmployeeId.HasValue)

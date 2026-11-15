@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { cleanup, render, screen, fireEvent, waitForElementToBeRemoved } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -27,6 +27,8 @@ function renderUserAvatarMenu(props = { accountPath: '/enterprise/account', sett
   );
 }
 
+afterEach(cleanup);
+
 describe('UserAvatarMenu', () => {
   beforeEach(() => {
     mockNavigate.mockReset();
@@ -46,7 +48,7 @@ describe('UserAvatarMenu', () => {
     expect(screen.getByText('Chủ doanh nghiệp')).toBeInTheDocument();
   });
 
-  it('toggles dropdown menu on button click', () => {
+  it('toggles dropdown menu on button click', async () => {
     renderUserAvatarMenu();
     const button = screen.getByRole('button', { name: 'Menu tài khoản' });
 
@@ -60,10 +62,10 @@ describe('UserAvatarMenu', () => {
 
     // Click to close
     fireEvent.click(button);
-    expect(screen.queryByText('Hồ sơ của tôi')).not.toBeInTheDocument();
+    await waitForElementToBeRemoved(() => screen.queryByText('Hồ sơ của tôi'));
   });
 
-  it('closes dropdown when clicking outside', () => {
+  it('closes dropdown when clicking outside', async () => {
     renderUserAvatarMenu();
     const button = screen.getByRole('button', { name: 'Menu tài khoản' });
 
@@ -71,10 +73,10 @@ describe('UserAvatarMenu', () => {
     expect(screen.getByText('Hồ sơ của tôi')).toBeInTheDocument();
 
     fireEvent.mouseDown(document.body);
-    expect(screen.queryByText('Hồ sơ của tôi')).not.toBeInTheDocument();
+    await waitForElementToBeRemoved(() => screen.queryByText('Hồ sơ của tôi'));
   });
 
-  it('navigates to account profile on click', () => {
+  it('navigates to account profile on click', async () => {
     renderUserAvatarMenu();
     const button = screen.getByRole('button', { name: 'Menu tài khoản' });
 
@@ -82,6 +84,6 @@ describe('UserAvatarMenu', () => {
     fireEvent.click(screen.getByText('Hồ sơ của tôi'));
 
     expect(mockNavigate).toHaveBeenCalledWith('/enterprise/account');
-    expect(screen.queryByText('Hồ sơ của tôi')).not.toBeInTheDocument();
+    await waitForElementToBeRemoved(() => screen.queryByText('Hồ sơ của tôi'));
   });
 });

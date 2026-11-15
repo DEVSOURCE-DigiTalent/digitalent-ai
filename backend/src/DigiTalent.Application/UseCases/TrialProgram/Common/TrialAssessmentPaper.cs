@@ -16,7 +16,10 @@ public sealed record TrialPaper(IReadOnlyList<TrialDomainInfo> Domains, IReadOnl
 
 /// <summary>
 /// Đề đánh giá tổng hợp dùng thử: với mỗi cấp (Cơ bản → Trung cấp → Nâng cao) và mỗi lĩnh vực, rút
-/// <see cref="TrialProgramRules.ChoicePerCell"/> câu từ ngân hàng ôn tập của khóa chuẩn ở ô đó (<see cref="PulseCatalogReader"/>).
+/// <see cref="TrialProgramRules.ChoicePerCell"/> câu từ ngân hàng câu hỏi các mô đun của khóa chuẩn ở ô đó
+/// (<see cref="PulseCatalogReader"/>), chia đều các mô đun theo <see cref="TrialProgramRules.SpreadOverModules{T}"/>.
+/// Trong mỗi mô đun, câu trắc nghiệm cuối khóa của giáo trình (<c>questions.is_final_quiz</c>: câu tình huống, không dựa
+/// vào nhân vật của bài học) được rút trước, câu ôn tập chỉ bù khi mô đun hết câu cuối khóa; khóa thiếu câu thì dùng câu chuẩn.
 /// Thứ tự câu và phương án cố định cho mỗi nhân viên, nên lúc bắt đầu phiên và lúc nộp thấy đúng một đề.
 /// </summary>
 public class TrialAssessmentPaper
@@ -63,15 +66,17 @@ public class TrialAssessmentPaper
 
                 if (course != null)
                 {
-                    var pool = (modules.GetValueOrDefault(course.CourseId) ?? new List<PulseModuleInfo>())
-                        .Where(m => m.QuizAssessmentId.HasValue)
-                        .SelectMany(m => pools.GetValueOrDefault(m.QuizAssessmentId!.Value) ?? new List<PulseQuizQuestion>())
-                        .OrderBy(q => q.QuestionId)
-                        .ToList();
                     var random = new Random(PulseQuizReader.Seed(employeeId, course.CourseId, SeedSalt));
-                    picked = PulseQuizReader.Shuffle(pool, random)
-                        .Where(q => q.Options.Count > 1 && seen.Add(q.Content.Trim()))
-                        .Take(TrialProgramRules.ChoicePerCell)
+                    var queues = (modules.GetValueOrDefault(course.CourseId) ?? new List<PulseModuleInfo>())
+                        .Where(m => m.QuizAssessmentId.HasValue)
+                        .Select(m => ModuleQueue(pools.GetValueOrDefault(m.QuizAssessmentId!.Value), random))
+                        .Where(q => q.Count > 0)
+                        .ToList();
+                    // Cả lĩnh vực có 3 × 5 = 15 câu: khóa nhiều mô đun hơn thế thì đổi mô đun bắt đầu theo nhân viên,
+                    // để mô đun nào cũng có người được hỏi.
+                    var slots = PulseRules.MaxLevel * TrialProgramRules.ChoicePerCell;
+                    var start = (tier - 1) * TrialProgramRules.ChoicePerCell + (queues.Count > slots ? random.Next(queues.Count) : 0);
+                    picked = TrialProgramRules.SpreadOverModules(queues, start, TrialProgramRules.ChoicePerCell, q => seen.Add(q.Content.Trim()))
                         .Select(q => q with { Options = PulseQuizReader.Shuffle(q.Options.ToList(), random) })
                         .ToList();
                 }
@@ -681,18 +686,32 @@ public class TrialAssessmentPaper
     }
 
     /// <summary>Ngân hàng câu hỏi của nhiều bài ôn tập trong hai truy vấn.</summary>
-    private async Task<Dictionary<Guid, List<PulseQuizQuestion>>> LoadPoolsAsync(IReadOnlyCollection<Guid> quizIds)
+    /// <summary>Câu của một mô đun theo thứ tự rút: câu trắc nghiệm cuối khóa trước, câu ôn tập sau, mỗi nhóm trộn ngẫu nhiên.</summary>
+    private static Queue<PulseQuizQuestion> ModuleQueue(List<PoolQuestion>? pool, Random random)
+    {
+        var usable = (pool ?? new List<PoolQuestion>())
+            .Where(p => p.Question.Options.Count > 1)
+            .OrderBy(p => p.Question.QuestionId)
+            .ToList();
+        var final = PulseQuizReader.Shuffle(usable.Where(p => p.IsFinalQuiz).Select(p => p.Question).ToList(), random);
+        var review = PulseQuizReader.Shuffle(usable.Where(p => !p.IsFinalQuiz).Select(p => p.Question).ToList(), random);
+        return new Queue<PulseQuizQuestion>(final.Concat(review));
+    }
+
+    private sealed record PoolQuestion(PulseQuizQuestion Question, bool IsFinalQuiz);
+
+    private async Task<Dictionary<Guid, List<PoolQuestion>>> LoadPoolsAsync(IReadOnlyCollection<Guid> quizIds)
     {
         if (quizIds.Count == 0)
         {
-            return new Dictionary<Guid, List<PulseQuizQuestion>>();
+            return new Dictionary<Guid, List<PoolQuestion>>();
         }
 
         var questions = await (
                 from link in _context.AssessmentQuestions.AsNoTracking()
                 join question in _context.Questions.AsNoTracking() on link.QuestionId equals question.Id
                 where quizIds.Contains(link.AssessmentId)
-                select new { link.AssessmentId, question.Id, question.Content, question.Explanation, link.SortOrder })
+                select new { link.AssessmentId, question.Id, question.Content, question.Explanation, question.IsFinalQuiz, link.SortOrder })
             .ToListAsync();
         var ids = questions.Select(q => q.Id).Distinct().ToList();
         var options = (await _context.QuestionOptions.AsNoTracking()
@@ -707,8 +726,9 @@ public class TrialAssessmentPaper
             .GroupBy(q => q.AssessmentId)
             .ToDictionary(g => g.Key, g => g
                 .OrderBy(q => q.SortOrder)
-                .Select(q => new PulseQuizQuestion(q.Id, q.Content, q.Explanation, q.SortOrder,
-                    options.GetValueOrDefault(q.Id) ?? new List<PulseQuizOption>()))
+                .Select(q => new PoolQuestion(
+                    new PulseQuizQuestion(q.Id, q.Content, q.Explanation, q.SortOrder, options.GetValueOrDefault(q.Id) ?? new List<PulseQuizOption>()),
+                    q.IsFinalQuiz))
                 .ToList());
     }
 

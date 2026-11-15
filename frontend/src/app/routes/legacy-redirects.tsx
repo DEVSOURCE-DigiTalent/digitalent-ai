@@ -57,6 +57,7 @@ export const legacyRedirectRoutes: RouteObject[] = [
   { path: '/enterprise/workforce/:id', element: <LegacyParamRedirect toPrefix="/enterprise/members" /> },
   { path: '/enterprise/billing', element: <RedirectWithQuery to="/enterprise/subscription" /> },
   { path: '/enterprise/billing/*', element: <RedirectWithQuery to="/enterprise/subscription" /> },
+  { path: '/enterprise/team/framework', element: <Navigate to="/enterprise/team?framework=1" replace /> },
   { path: '/enterprise/team-overview', element: <RedirectWithQuery to="/enterprise/team" /> },
   { path: '/enterprise/team-capability', element: <RedirectWithQuery to="/enterprise/team/competency" /> },
   { path: '/enterprise/team-members', element: <RedirectWithQuery to="/enterprise/team/members" /> },

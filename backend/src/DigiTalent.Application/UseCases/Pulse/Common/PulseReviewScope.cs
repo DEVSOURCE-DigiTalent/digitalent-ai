@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
-/// Phạm vi chấm bài cuối khóa (§10.1): quản lý chỉ thấy nhân viên phòng ban mình, chủ doanh nghiệp thấy toàn tổ chức
+/// Phạm vi bài cuối khóa: quản lý xem kết quả trong phòng ban được giao, chủ doanh nghiệp thấy toàn tổ chức
 /// (EmployeeScope); không ai tự chấm bài của chính mình.
 /// Với mentor DigiTalent: chấm bài dùng thử của doanh nghiệp được phân công (khi doanh nghiệp đang dùng thử) VÀ bài
 /// nộp hoàn thành từng cấp/miền của nhân viên thuộc các doanh nghiệp chính thức / đã chuyển gói.
@@ -30,6 +30,11 @@ public class PulseReviewScope
 
     public Guid ReviewerUserId => _currentUser.UserId ?? throw new ForbiddenException("Không xác định được người chấm.");
 
+    public IQueryable<Employee> ResultEmployees() =>
+        _currentUser.IsDepartmentManager && !_currentUser.IsAdmin && !_currentUser.Roles.Contains(Roles.Mentor)
+            ? _scope.VisibleEmployees()
+            : ReviewableEmployees();
+
     public IQueryable<Employee> ReviewableEmployees()
     {
         var reviewerUserId = ReviewerUserId;
@@ -42,6 +47,11 @@ public class PulseReviewScope
             return _context.Employees.Where(e =>
                 (e.UserId == null || e.UserId != reviewerUserId)
                 && !excludedTrials.Contains(e.OrganizationId));
+        }
+
+        if (_currentUser.IsDepartmentManager && !_currentUser.IsAdmin)
+        {
+            throw new ForbiddenException("Tài khoản không có quyền chấm bài.");
         }
 
         var trialOrganizations = openTrials.Select(t => t.OrganizationId);

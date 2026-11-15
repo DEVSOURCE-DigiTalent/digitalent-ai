@@ -25,7 +25,7 @@ export function TrialLearning({ overview }: { overview: PulseOverview }) {
   useUiLanguage();
   const owner = useIsOwner();
   const { data: mine } = useMyTrialAssessment();
-  const gate = trialGateOf(mine);
+  const gate = trialGateOf(mine, undefined, owner);
   const courses = overview.courses.filter((c) => c.tier === 1).sort((a, b) => a.domainNumber - b.domainNumber);
   const done = courses.filter((c) => c.approved).length;
 
@@ -87,7 +87,7 @@ export function TrialNotice({ state, mine }: { state: TrialGateState; mine: MyTr
         tone="waiting"
         icon={<Hourglass size={20} />}
         title="Đang chờ công bố kết quả"
-        text="Học thử sẽ mở khi hệ thống chốt kết quả khảo sát."
+        text="Học thử sẽ mở khi hệ thống xác nhận kết quả của bạn."
         meta={mine.submittedAt ? `Đã nộp ${formatWhen(mine.submittedAt)}` : undefined}
         action={<PuLink to={PULSE_PATHS.trialTest} kind="outline" small>Xem bài đánh giá</PuLink>}
       />

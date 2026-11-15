@@ -1,4 +1,5 @@
 using DigiTalent.Application.Common.Exceptions;
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
@@ -25,7 +26,7 @@ public class GetCourseAssignmentByIdUseCase : IUseCase<GetCourseAssignmentByIdIn
 
         var result = await (
             from ca in _context.CourseAssignments.AsNoTracking()
-            join emp in _context.Employees.AsNoTracking() on ca.EmployeeId equals emp.Id
+            join emp in new EmployeeScope(_context, _currentUser).VisibleEmployees().AsNoTracking() on ca.EmployeeId equals emp.Id
             join course in _context.Courses.AsNoTracking() on ca.CourseId equals course.Id
             join dept in _context.Departments.AsNoTracking() on emp.DepartmentId equals dept.Id into deptJoin
             from dept in deptJoin.DefaultIfEmpty()

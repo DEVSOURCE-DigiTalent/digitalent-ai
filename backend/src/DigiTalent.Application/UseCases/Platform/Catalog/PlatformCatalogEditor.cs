@@ -215,6 +215,7 @@ public class PlatformCatalogEditor
             var copy = new PlatformModuleQuestion
             {
                 ModuleId = moduleMap[q.ModuleId], SortOrder = q.SortOrder, QuestionText = q.QuestionText, Explanation = q.Explanation,
+                IsFinalQuiz = q.IsFinalQuiz,
                 BlockId = q.BlockId is { } blockId && blockMap.TryGetValue(blockId, out var mapped) ? mapped : null,
             };
             questionMap[q.Id] = copy.Id;

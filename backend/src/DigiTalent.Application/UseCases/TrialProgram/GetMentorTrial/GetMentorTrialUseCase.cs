@@ -87,7 +87,7 @@ public class GetMentorTrialUseCase : IUseCase<GetMentorTrialUseCaseInput, GetMen
                             Name = d.Name,
                             Correct = new List<int> { r.BasicCorrect, r.IntermediateCorrect, r.AdvancedCorrect },
                             Total = new List<int> { r.BasicTotal, r.IntermediateTotal, r.AdvancedTotal },
-                            SuggestedLevel = r.SuggestedLevel,
+                            SuggestedLevel = TrialAssessmentResults.SuggestedLevelOf(r),
                             MentorLevel = r.MentorLevel,
                         };
                     }).ToList(),

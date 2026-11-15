@@ -1,3 +1,4 @@
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { PanelLeftClose } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -12,7 +13,7 @@ interface SidebarManagerCardProps {
 export function SidebarManagerCard({ isRail = false, onToggleCollapsed }: SidebarManagerCardProps) {
   useUiLanguage();
   const user = useCurrentUser((s) => s.user);
-  const { department, isLoading } = useManagedDepartment();
+  const { department, departments, selectDepartment, isLoading } = useManagedDepartment();
 
   const orgName = user?.organization?.name ?? 'Tổ chức';
   const departmentName = department?.name ?? (isLoading ? 'Đang tải…' : 'Chưa được gán phòng ban');
@@ -48,7 +49,11 @@ export function SidebarManagerCard({ isRail = false, onToggleCollapsed }: Sideba
         <dd>{user?.fullName ?? translateUi('Quản lý')}</dd>
         <dt>Phòng ban đang quản lý</dt>
         <dd>
-          {departmentName}
+          {departments.length > 1 ? (
+            <OwnerFilterSelect variant="manager" className="pm-department-select"
+              label="Phòng ban đang quản lý" value={department?.id ?? ''} onChange={selectDepartment}
+              options={departments.map((item) => ({ value: item.id, label: item.name }))} />
+          ) : departmentName}
           {department?.headcount != null && <small>{department.headcount} nhân viên trong phòng ban</small>}
         </dd>
         <dt>{translateUi("Tổ chức")}</dt>

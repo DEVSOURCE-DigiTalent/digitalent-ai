@@ -164,7 +164,7 @@ public class TrialProgramReader
             {
                 choiceScore ??= dList.Sum(d => d.BasicCorrect + d.IntermediateCorrect + d.AdvancedCorrect);
                 choiceTotal ??= dList.Sum(d => d.BasicTotal + d.IntermediateTotal + d.AdvancedTotal);
-                suggestedLevels = dList.Select(d => d.SuggestedLevel).ToList();
+                suggestedLevels = dList.Select(TrialAssessmentResults.SuggestedLevelOf).ToList();
             }
             return new TrialParticipantDto
             {
@@ -282,11 +282,11 @@ public class TrialProgramReader
                 var domainDetails = domains.Select(domain =>
                 {
                     byCategory.TryGetValue(domain.CategoryId, out var dResult);
-                    var lvl = (int)(dResult?.MentorLevel ?? dResult?.SuggestedLevel ?? 0);
+                    var lvl = dResult == null ? 0 : TrialAssessmentResults.EffectiveLevelOf(dResult);
                     var targetLevel = deptCeilings != null && deptCeilings.TryGetValue(domain.CategoryId, out var dl) && dl > 0
                         ? dl
                         : orgCeilings.TryGetValue(domain.CategoryId, out var ol) && ol > 0 ? ol : 3;
-                    var (levelLabel, statusText, gapText, recCourse) = DescribeDomainResult(domain.Number, domain.Name, lvl, targetLevel, dResult);
+                    var (levelLabel, statusText, gapText, recCourse) = DescribeDomainResult(domain.Number, domain.Name, lvl, targetLevel);
 
                     return new TrialReportEmployeeDomainDetailDto
                     {
@@ -305,7 +305,7 @@ public class TrialProgramReader
                         IntermediateTotal = dResult?.IntermediateTotal ?? 0,
                         AdvancedCorrect = dResult?.AdvancedCorrect ?? 0,
                         AdvancedTotal = dResult?.AdvancedTotal ?? 0,
-                        SuggestedLevel = dResult?.SuggestedLevel ?? 0,
+                        SuggestedLevel = dResult == null ? 0 : TrialAssessmentResults.SuggestedLevelOf(dResult),
                         MentorLevel = dResult?.MentorLevel,
                         RecommendedCourse = recCourse,
                     };
@@ -372,21 +372,14 @@ public class TrialProgramReader
     }
 
     public static (string LevelLabel, string StatusText, string GapText, string RecommendedCourse) DescribeDomainResult(
-        int domainNumber, string domainName, int level, TrialAssessmentDomain? dResult)
-        => DescribeDomainResult(domainNumber, domainName, level, 3, dResult);
-
-    public static (string LevelLabel, string StatusText, string GapText, string RecommendedCourse) DescribeDomainResult(
-        int domainNumber, string domainName, int level, int targetLevel, TrialAssessmentDomain? dResult)
+        int domainNumber, string domainName, int level, int targetLevel)
     {
         targetLevel = Math.Clamp(targetLevel, 1, 3);
         var gap = Math.Max(0, targetLevel - level);
-        var basicInfo = dResult != null ? $" (đúng {dResult.BasicCorrect}/{dResult.BasicTotal} câu)" : "";
-        var interInfo = dResult != null ? $" (đúng {dResult.IntermediateCorrect}/{dResult.IntermediateTotal} câu)" : "";
-        var advInfo = dResult != null ? $" (đúng {dResult.AdvancedCorrect}/{dResult.AdvancedTotal} câu)" : "";
 
         var levelLabel = level switch
         {
-            0 => "Chưa đạt",
+            0 => "Chưa đạt Cơ bản",
             1 => "Cơ bản",
             2 => "Trung cấp",
             _ => "Nâng cao"
@@ -417,7 +410,7 @@ public class TrialProgramReader
         };
 
         var gapDesc = level == 0
-            ? $"Chưa đạt trắc nghiệm cấp Cơ bản{basicInfo}. Để đạt trần doanh nghiệp ({targetLabel}), bạn cần bắt đầu từ khóa Cơ bản."
+            ? $"Chưa đạt mức Cơ bản ở lĩnh vực này. Để đạt trần doanh nghiệp ({targetLabel}), bạn cần bắt đầu từ khóa Cơ bản."
             : $"Đã đạt cấp {levelLabel}, nhưng chưa đạt trần doanh nghiệp ({targetLabel}). Khoảng cách năng lực: Thiếu {gap} cấp độ. Cần hoàn thành khóa {nextTier switch { 1 => "Cơ bản", 2 => "Trung cấp", _ => "Nâng cao" }} để nâng cao năng lực theo mục tiêu doanh nghiệp.";
 
         return (levelLabel,

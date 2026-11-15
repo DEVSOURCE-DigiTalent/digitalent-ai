@@ -15,11 +15,12 @@ internal sealed class TrialLearningAccess(IApplicationDbContext context)
         var survey = await context.TrialWorkspaces.AsNoTracking()
             .Where(t => t.OrganizationId == employee.OrganizationId && t.ConvertedAt == null
                 && (t.RequestedAt != null || t.ReportPublishedAt != null))
-            .Select(t => new { t.ReportPublishedAt })
+            .Select(t => new { t.ReportPublishedAt, t.OwnerUserId })
             .FirstOrDefaultAsync();
         if (survey == null) return TrialLearningMode.Regular;
 
-        if (survey.ReportPublishedAt == null)
+        var isOwnerParticipant = employee.UserId == survey.OwnerUserId;
+        if (isOwnerParticipant && survey.ReportPublishedAt == null)
         {
             return TrialLearningMode.AwaitingResult;
         }
@@ -37,7 +38,8 @@ internal sealed class TrialLearningAccess(IApplicationDbContext context)
         var frameworkSaved = await context.CapabilityCeilings.AsNoTracking()
             .AnyAsync(c => c.OrganizationId == employee.OrganizationId
                 && (c.DepartmentId == null || c.DepartmentId == employee.DepartmentId));
-        return frameworkSaved ? TrialLearningMode.Regular : TrialLearningMode.PublicBasics;
+        var roadmapReady = frameworkSaved && (isOwnerParticipant || employee.JobPositionId.HasValue);
+        return roadmapReady ? TrialLearningMode.Regular : TrialLearningMode.PublicBasics;
     }
 
     public async Task<IReadOnlyCollection<string>> LoadPublicBasicCodesAsync()

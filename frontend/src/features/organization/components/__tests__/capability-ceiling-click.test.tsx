@@ -10,7 +10,7 @@ vi.mock('@/hooks/use-capability-ceilings', () => ({
     isConfigured: true, departments: [],
     levels: [{ level: 1, name: 'Cơ bản' }, { level: 2, name: 'Trung cấp' }],
     domains: [1, 2].map((n) => ({ categoryId: `cat-${n}`, name: `Lĩnh vực ${n}`, sortOrder: n, organizationCeiling: 1, maxAllowedCeiling: 2, suggestedCeiling: 1,
-      courses: [1, 2].map((level) => ({ level, courseId: `course-${n}-${level}`, code: `A${n}-${level}`, isUnlocked: true })),
+      courses: [1, 2, 3].map((level) => ({ level, courseId: `course-${n}-${level}`, code: `A${n}-${level}`, isUnlocked: level < 3 })),
     })),
   } }),
   useUpdateOrganizationCeilings: () => ({ isPending: false }),
@@ -65,5 +65,20 @@ describe('ceiling information clicks', () => {
     fireEvent.click(cell);
     expect(cell.getAttribute('aria-pressed')).toBe('true');
     expect(screen.queryByText('Chi tiết A1-2')).toBeNull();
+  });
+
+  it('stacks both action bars inside the enterprise shell and clears them independently', () => {
+    render(<MemoryRouter><div className="enterprise-shell" data-testid="enterprise-shell"><CapabilityCeilingMatrix /></div></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Thiết lập phạm vi Lĩnh vực 1: cấp 2' }));
+    fireEvent.click(screen.getByRole('button', { name: /Lĩnh vực 2, cấp 3: chưa mua suất/ }));
+
+    const dock = screen.getByRole('region', { name: 'Thao tác khung năng lực' });
+    expect(dock.parentElement).toBe(screen.getByTestId('enterprise-shell'));
+    expect(dock).toContainElement(screen.getByRole('button', { name: 'Lưu thay đổi' }));
+    expect(dock).toContainElement(screen.getByRole('button', { name: /Thanh toán & Ký online/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hủy chọn tất cả' }));
+    expect(dock).not.toHaveTextContent('Giỏ suất học');
+    fireEvent.click(screen.getByRole('button', { name: 'Hủy thay đổi' }));
+    expect(dock).not.toBeInTheDocument();
   });
 });

@@ -41,11 +41,6 @@ public class JoinTrialAsParticipantUseCase : IUseCase<JoinTrialAsParticipantUseC
         if (trial.ReportPublishedAt != null || trial.TestDeadline <= _reader.Now)
             throw new BadRequestException("Đợt khảo sát đã kết thúc, không thể đăng ký thêm người làm bài.", "department", "TRIAL_CLOSED");
 
-        if ((await _reader.LoadParticipantsAsync(trial)).Count >= TrialProgramRules.MaxParticipants)
-        {
-            throw new BadRequestException($"Dùng thử tối đa {TrialProgramRules.MaxParticipants} người.", "department", "TRIAL_FULL");
-        }
-
         var departmentName = TrialOrgStructure.Clean(input.Department);
         var positionName = TrialOrgStructure.Clean(input.Position);
         if (TrialOrgStructure.Problem(departmentName, positionName) is { } problem)

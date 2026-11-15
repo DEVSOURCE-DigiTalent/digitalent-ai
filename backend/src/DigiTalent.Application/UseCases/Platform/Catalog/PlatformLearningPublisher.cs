@@ -118,7 +118,7 @@ public sealed class PlatformLearningPublisher(IApplicationDbContext context)
                     context.Assessments.Add(assessment);
                     foreach (var (question, index) in questions.Where(q => q.ModuleId == module.Id).Select((q, i) => (q, i)))
                     {
-                        var mappedQuestion = new Question { BankId = bank.Id, QuestionType = "MULTIPLE_CHOICE", Difficulty = $"L{item.Row.Level}", Content = question.QuestionText, Explanation = question.Explanation, Status = "APPROVED", CreatedByUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now };
+                        var mappedQuestion = new Question { BankId = bank.Id, QuestionType = "MULTIPLE_CHOICE", Difficulty = $"L{item.Row.Level}", Content = question.QuestionText, Explanation = question.Explanation, IsFinalQuiz = question.IsFinalQuiz, Status = "APPROVED", CreatedByUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now };
                         context.Questions.Add(mappedQuestion);
                         // Keep the authored page association. Older unlinked quizzes retain their existing fallback.
                         var sort = question.BlockId is { } blockId && lessonIds.TryGetValue(blockId, out var linked) ? (linked.Order - 1) * 2 + 1 : index + 1;

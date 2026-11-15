@@ -9,7 +9,7 @@ const join=vi.hoisted(()=>vi.fn().mockResolvedValue({refreshed:true}));
 vi.mock('@/hooks/use-trial-program',()=>({useJoinTrialAsParticipant:()=>({isPending:false,mutateAsync:join})}));
 vi.mock('@/hooks/use-current-user',()=>({useCurrentUser:(selector:(state:{user:{roles:string[]}})=>unknown)=>selector({user:{roles:['OWNER']}})}));
 afterEach(()=>{cleanup();join.mockClear();});
-const program:TrialProgram={organizationId:'org',organizationName:'Doanh nghiệp',stage:'REQUESTED',maxParticipants:30,choiceCount:18,essayCount:0,participants:[],departments:['CEO'],positions:['Giám đốc']};
+const program:TrialProgram={organizationId:'org',organizationName:'Doanh nghiệp',stage:'REQUESTED',choiceCount:18,essayCount:0,participants:[],departments:['CEO'],positions:['Giám đốc']};
 function Location(){return <output aria-label="Địa chỉ">{useLocation().pathname}</output>;}
 
 describe('owner joins the employee survey',()=>{

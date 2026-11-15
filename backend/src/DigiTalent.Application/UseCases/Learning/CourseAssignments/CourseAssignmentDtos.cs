@@ -14,6 +14,7 @@ public class GetCourseAssignmentsInput
     public Guid? JobPositionId { get; set; }
     public bool? Overdue { get; set; }
     public bool? DueSoon { get; set; }
+    public bool IncludeIndependentLearning { get; set; }
 }
 
 public class AssignmentRow

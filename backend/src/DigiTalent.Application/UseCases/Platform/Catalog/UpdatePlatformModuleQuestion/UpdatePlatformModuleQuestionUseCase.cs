@@ -35,6 +35,7 @@ public class UpdatePlatformModuleQuestionUseCase : IUseCase<UpdatePlatformModule
         if (input.Text != null) question.QuestionText = input.Text.Trim();
         if (input.Explanation != null) question.Explanation = string.IsNullOrWhiteSpace(input.Explanation) ? null : input.Explanation.Trim();
         if (input.BlockId != null) question.BlockId = input.BlockId;
+        if (input.IsFinalQuiz is { } isFinalQuiz) question.IsFinalQuiz = isFinalQuiz;
         PlatformCatalogEditor.MarkEdited(course);
 
         await _context.ExecuteInTransactionAsync(async () =>

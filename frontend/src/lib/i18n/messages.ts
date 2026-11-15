@@ -5,6 +5,113 @@ export const english: Record<string, string> = { ...ownerEnglish, ...assessmentE
 Tổng quan|Overview
 Tổng quan doanh nghiệp|Business overview
 Tổng quan tổ chức|Organization overview
+Tổng quan phòng ban|Department overview
+Chỉ số phòng ban|Department metrics
+Thông báo của bạn|Your notifications
+Chưa có thông báo.|No notifications yet.
+Nhân viên đã nộp bài cuối khóa|An employee submitted a final assessment
+Nhân viên đã nộp bài đánh giá trước khi học|An employee submitted a pre-assessment
+Chưa cập nhật được trạng thái đã đọc. Vui lòng thử lại.|Couldn't update the read status. Try again.
+Đã đánh dấu thông báo là đã đọc.|Notification marked as read.
+Đã đánh dấu tất cả là đã đọc.|All notifications marked as read.
+chưa đọc, đánh dấu là đã đọc|unread, mark as read
+Không tìm thấy thông báo phù hợp.|No notifications match your search.
+Xóa tìm kiếm|Clear search
+Phân trang thông báo|Notification pagination
+Không rõ ngày|Unknown date
+Lượt nộp bài|Submissions
+Học và chuẩn bị làm bài|Learning and preparing for assessment
+Hạn học|Learning deadline
+Tự học|Independent learning
+Được giao|Assigned
+Chưa gán vị trí|No position assigned
+Tiến độ bài học|Lesson progress
+Tìm học viên hoặc khóa học|Search learners or courses
+Lọc theo trạng thái học|Filter by learning status
+Chưa có dữ liệu đánh giá để lọc.|Assessment status is unavailable.
+Không có lượt học phù hợp với bộ lọc.|No enrollments match your filters.
+Chưa có lượt học trong phòng ban.|No enrollments in this department yet.
+Khóa được giao và khóa tự học sẽ xuất hiện tại đây.|Assigned and independent courses will appear here.
+Đang tải kết quả bài cuối khóa…|Loading final assessment results…
+Các trạng thái dưới đây dựa trên dữ liệu học tập hiện có.|The statuses below reflect the learning data currently available.
+Lượt học đã hoàn thành|Completed enrollments
+Tiến độ lượt học chưa hoàn thành|Progress for incomplete enrollments
+Tìm theo tên hoặc mã khóa học|Search by course name or code
+Chưa có dữ liệu học tập của phòng ban.|There is no learning data for this department yet.
+Không có khóa học phù hợp với bộ lọc.|No courses match your filters.
+Chờ đánh giá / nộp lại|Awaiting review or resubmission
+Tiến độ trung bình|Average progress
+Phân trang khóa học|Course pagination
+Tài khoản chưa có quyền xem tiến độ học tập.|Your account does not have access to learning progress.
+Đang tải kết quả bài làm…|Loading assessment results…
+Chưa ghi nhận mốc học tập hoặc đánh giá.|No learning or assessment milestones yet.
+Minh chứng và năng lực|Evidence and competencies
+Đang tải minh chứng thực tế…|Loading practical evidence…
+Ghi nhận phân công từ|Assignments recorded since
+Tiến độ theo khóa học|Progress by course
+Đang tải tiến độ học tập…|Loading learning progress…
+Mốc học tập và đánh giá|Learning and assessment milestones
+Khi nào mức năng lực được cập nhật?|When are competency levels updated?
+Mức năng lực đã xác nhận cập nhật khi bài cuối khóa hoặc minh chứng được duyệt.|Confirmed competency levels are updated when a final assessment or evidence is approved.
+Danh sách kết quả bài làm|Assessment results list
+Tìm nhân viên hoặc khóa học|Search employees or courses
+Chờ Mentor đánh giá|Awaiting mentor review
+Không có bài phù hợp với bộ lọc.|No submissions match these filters.
+Đề bài và yêu cầu|Instructions and requirements
+Nhân viên có kết quả đối chiếu|Employees with comparison results
+Nhân viên đang xem|Selected employee
+Năng lực yêu cầu đã xác nhận|Required competencies confirmed
+Trong các năng lực đã xác nhận|Among confirmed competencies
+Chưa đủ dữ liệu đối chiếu|Insufficient data to compare
+Đối chiếu theo lĩnh vực|Comparison by domain
+Tìm năng lực|Search competencies
+Tìm theo tên hoặc mã năng lực|Search by competency name or code
+Lọc theo lĩnh vực|Filter by domain
+Mức yêu cầu chung|Common target level
+Mức hiện tại|Current level
+Mức yêu cầu|Required level
+Khoảng cách đã xác nhận|Confirmed gaps
+Chưa xác nhận mức|Level not confirmed
+Ngoài lộ trình|Outside role requirements
+Độ phủ mục tiêu|Target coverage
+Minh chứng xác nhận|Confirming evidence
+Ngày xác nhận|Confirmation date
+Chưa có minh chứng xác nhận.|No confirming evidence yet.
+Đào tạo đề xuất|Recommended training
+Cần mức năng lực đã xác nhận để đề xuất khóa học.|Confirmed competency levels are needed to recommend courses.
+Chưa có khóa học phù hợp.|No matching courses yet.
+Không tìm thấy năng lực phù hợp.|No matching competencies.
+Chưa có số liệu|No data available
+Lọc hoạt động|Filter activity
+Bạn đã đọc tất cả thông báo.|You have read all notifications.
+Chọn nhóm chỉ số|Choose a metric group
+Mở trang|Open page
+Có khoảng trống năng lực|Have competency gaps
+Đang có khóa học|Currently taking courses
+Không có khóa đang học|No courses in progress
+bài cuối khóa|Final submissions
+lượt học|Course enrollments
+Nhân viên đang học|Employees currently learning
+Bài cuối khóa chờ đánh giá|Final submissions awaiting review
+Bài cuối khóa cần hỗ trợ|Final submissions needing support
+Nhân viên phòng ban|Department employees
+Đang làm việc|Active
+Đã chuyển công tác|Transferred
+Đã lưu trữ|Archived
+Chưa xác định|Unknown
+Lọc theo vị trí công việc|Filter by job position
+Không tải được bộ lọc vị trí.|Could not load job position filters.
+Phòng ban chưa có nhân viên|This department has no employees
+Chưa đối chiếu|Not yet benchmarked
+Đạt chuẩn vị trí|Meets role standards
+{count} khoảng trống năng lực|{count} competency gaps
+{count} khóa đang học|{count} courses in progress
+Chưa có khóa đang học|No courses in progress
+Xem kết quả bài làm|View assessment results
+Đang tải số liệu…|Loading metrics…
+Không tải được số liệu.|Could not load metrics.
+Không tải được danh sách nhân viên trong phòng ban.|Could not load department employees.
+Phòng ban chưa có nhân viên đang hoạt động.|There are no active employees in this department.
 Chủ doanh nghiệp|Business owner
 CHỦ DOANH NGHIỆP|BUSINESS OWNER
 CÁC CÔNG CỤ KHÁC|OTHER TOOLS

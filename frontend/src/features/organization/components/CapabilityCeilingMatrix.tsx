@@ -1,5 +1,5 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -54,6 +54,13 @@ export function CapabilityCeilingMatrix() {
   const [isDeptMenuOpen, setIsDeptMenuOpen] = useState(false);
   const [deptSearch, setDeptSearch] = useState('');
   const [selectedToBuy, setSelectedToBuy] = useState<Map<string, { code: string; title: string; level: number; domainName: string; price: number }>>(new Map());
+  const [actionHost, setActionHost] = useState<HTMLElement | null>(null);
+  const [actionDock, setActionDock] = useState<HTMLDivElement | null>(null);
+  const matrixRoot = useRef<HTMLElement | null>(null);
+  const bindMatrix = useCallback((element: HTMLElement | null) => {
+    matrixRoot.current = element;
+    if (element) setActionHost(element.closest<HTMLElement>('.enterprise-shell') ?? document.body);
+  }, []);
   const [selection, setSelection] = useState<MatrixSelection | null>(null);
   const [closingSelection, setClosingSelection] = useState<MatrixSelection | null>(null);
   const [closedInitialPanel, setClosedInitialPanel] = useState(false);
@@ -65,6 +72,22 @@ export function CapabilityCeilingMatrix() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     if (openFrame.current) cancelAnimationFrame(openFrame.current);
   }, []);
+
+  useEffect(() => {
+    const root = matrixRoot.current?.closest<HTMLElement>('.blueprint-page') ?? matrixRoot.current;
+    if (!actionDock || !root) return;
+    const reserveDockSpace = () => {
+      const bottom = Number.parseFloat(getComputedStyle(actionDock).bottom) || 0;
+      root.style.paddingBlockEnd = `${actionDock.offsetHeight + bottom + 8}px`;
+    };
+    reserveDockSpace();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(reserveDockSpace);
+    observer?.observe(actionDock);
+    return () => {
+      observer?.disconnect();
+      root.style.removeProperty('padding-block-end');
+    };
+  }, [actionDock]);
 
   const department = matrix?.departments.find((d) => d.departmentId === scope);
   const activeScope = scope === ALL || department ? scope : ALL;
@@ -240,8 +263,11 @@ export function CapabilityCeilingMatrix() {
     else openSelection({ kind: 'domain', categoryId: domain.categoryId });
   };
 
+  const showSaveBar = canEdit && (dirty || needsInitialSave);
+  const showCart = selectedToBuy.size > 0;
+
   return (
-    <section className="cc-root" aria-labelledby="cc-title">
+    <section ref={bindMatrix} className="cc-root" aria-labelledby="cc-title">
       {/* ── Tiêu đề súc tích & Nút Hướng dẫn nổi ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50 via-white to-sky-50 px-5 py-4">
         <div className="flex items-center gap-3">
@@ -518,95 +544,92 @@ export function CapabilityCeilingMatrix() {
         </div>
       </div>
 
-      {canEdit && (dirty || needsInitialSave) && createPortal(
-        <div className="cc-root cc-save-portal">
-          <div className={`cc-save-bar${selectedToBuy.size > 0 ? ' cc-save-bar-with-cart' : ''}`} role="status" aria-live="polite">
-            <div className="cc-save-indicator" aria-hidden="true" />
-            <div className="cc-save-copy">
-              <strong>{dirty ? 'Thay đổi phạm vi năng lực chưa được lưu' : 'Phạm vi năng lực gợi ý chưa được lưu'}</strong>
-              <span>{activeScope === ALL ? translateUi('Toàn doanh nghiệp') : department?.name ?? translateUi('Phòng ban')}{translateUi(" · Lưu để áp dụng cấp độ đang hiển thị.")}</span>
-            </div>
-            <div className="cc-save-buttons">
-              {dirty && <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={saving}>{translateUi("Hủy thay đổi")}</button>}
-              <button type="button" className="cc-btn primary" onClick={save} disabled={saving || blockedDepartments}>
-                {saving ? translateUi('Đang lưu…') : translateUi('Lưu thay đổi')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
-
-      {/* ── Thanh thao tác mua nhiều khóa học đã chọn nổi bật (Floating Bar) ── */}
-      {selectedToBuy.size > 0 && createPortal(
-        <div className="cc-cart-bar rounded-2xl border-2 border-amber-400 bg-white/95 p-4 shadow-xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white font-bold text-base shadow-sm">
-              {selectedToBuy.size}
-            </span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h4 className="font-bold text-slate-900 text-sm">{translateUi("Giỏ suất học · ")}{selectedToBuy.size}{translateUi(" khóa")}</h4>
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-300">{translateUi("Mua suất học")}</span>
+      {actionHost && (showSaveBar || showCart) && createPortal(
+        <div ref={setActionDock} className="cc-root cc-action-dock" role="region" aria-label={translateUi('Thao tác khung năng lực')}>
+          {showSaveBar && (
+            <div className="cc-save-bar">
+              <div className="cc-save-indicator" aria-hidden="true" />
+              <div className="cc-save-copy" role="status">
+                <strong>{dirty ? 'Thay đổi phạm vi năng lực chưa được lưu' : 'Phạm vi năng lực gợi ý chưa được lưu'}</strong>
+                <span>{activeScope === ALL ? translateUi('Toàn doanh nghiệp') : department?.name ?? translateUi('Phòng ban')}{translateUi(" · Lưu để áp dụng cấp độ đang hiển thị.")}</span>
               </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                {Array.from(selectedToBuy.values()).map((item) => (
-                  <span
-                    key={item.code}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-0.5 text-xs font-semibold text-slate-800 border border-amber-200 shadow-xs"
-                  >
-                    <span className="font-bold text-amber-800">{item.code}</span>
-                    <span className="text-slate-400">·</span>
-                    <span className="text-slate-600 max-w-[140px] truncate">{translateUi(item.domainName)}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedToBuy((prev) => {
-                          const next = new Map(prev);
-                          next.delete(item.code);
-                          return next;
-                        });
-                      }}
-                      className="ml-0.5 grid size-3.5 place-items-center rounded-full text-slate-400 hover:bg-amber-200 hover:text-slate-800"
-                      title={translateUi("Bỏ chọn khóa này")}
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                ))}
+              <div className="cc-save-buttons">
+                {dirty && <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={saving}>{translateUi("Hủy thay đổi")}</button>}
+                <button type="button" className="cc-btn primary" onClick={save} disabled={saving || blockedDepartments}>
+                  {saving ? translateUi('Đang lưu…') : translateUi('Lưu thay đổi')}
+                </button>
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0 justify-end">
-            <button
-              type="button"
-              onClick={() => setSelectedToBuy(new Map())}
-              className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-            >{translateUi("Hủy chọn tất cả")}</button>
-            <button
-              type="button"
-              onClick={() => {
-                const codes = Array.from(selectedToBuy.keys()).join(',');
-                navigate(`/enterprise/courses?selected=${encodeURIComponent(codes)}`);
-              }}
-              className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors"
-            >{translateUi("Xem trên danh mục")}</button>
-            <button
-              type="button"
-              onClick={() => {
-                const codes = Array.from(selectedToBuy.keys()).join(',');
-                navigate(`/enterprise/courses/checkout?courses=${encodeURIComponent(codes)}`);
-              }}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:brightness-105 transition-all"
-            >
-              <span>Thanh toán & Ký online ({selectedToBuy.size})</span>
-              <ArrowRight className="size-4" />
-            </button>
-          </div>
+          {showCart && (
+            <div className="cc-cart-bar">
+              <div className="cc-cart-summary">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white font-bold text-base shadow-sm">
+                  {selectedToBuy.size}
+                </span>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-slate-900 text-sm">{translateUi("Giỏ suất học · ")}{selectedToBuy.size}{translateUi(" khóa")}</h4>
+                  <div className="cc-cart-items">
+                    {Array.from(selectedToBuy.values()).map((item) => (
+                      <span
+                        key={item.code}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-0.5 text-xs font-semibold text-slate-800 border border-amber-200"
+                      >
+                        <span className="font-bold text-amber-800">{item.code}</span>
+                        <span className="text-slate-400">·</span>
+                        <span className="text-slate-600 max-w-[140px] truncate">{translateUi(item.domainName)}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedToBuy((prev) => {
+                              const next = new Map(prev);
+                              next.delete(item.code);
+                              return next;
+                            });
+                          }}
+                          className="ml-0.5 grid size-3.5 place-items-center rounded-full text-slate-400 hover:bg-amber-200 hover:text-slate-800"
+                          title={translateUi("Bỏ chọn khóa này")}
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="cc-cart-buttons">
+                <button
+                  type="button"
+                  onClick={() => setSelectedToBuy(new Map())}
+                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >{translateUi("Hủy chọn tất cả")}</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const codes = Array.from(selectedToBuy.keys()).join(',');
+                    navigate(`/enterprise/courses?selected=${encodeURIComponent(codes)}`);
+                  }}
+                  className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors"
+                >{translateUi("Xem trên danh mục")}</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const codes = Array.from(selectedToBuy.keys()).join(',');
+                    navigate(`/enterprise/courses/checkout?courses=${encodeURIComponent(codes)}`);
+                  }}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:brightness-105 transition-all"
+                >
+                  <span>Thanh toán & Ký online ({selectedToBuy.size})</span>
+                  <ArrowRight className="size-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>,
-        document.body,
+        actionHost,
       )}
 
       {/* ── Modal Popup nổi: Quy tắc & Hướng dẫn ── */}

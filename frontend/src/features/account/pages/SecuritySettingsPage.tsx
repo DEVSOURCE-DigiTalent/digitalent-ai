@@ -1,4 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
+import { EnterpriseSecuritySettings } from './OwnerSecuritySettings';
+import { useIsPulseManager } from '@/features/pulse-manager/lib/use-is-pulse-manager';
 import {
   Lock,
   ShieldCheck,
@@ -24,6 +27,15 @@ import { toast } from 'sonner';
  * khắc phục hoàn toàn lỗi autofill nền đen, bảng lịch sử phiên đăng nhập chuyên nghiệp.
  */
 export function SecuritySettingsPage() {
+  const { pathname } = useLocation();
+  const isOwner = useCurrentUser((s) => s.user?.roles.includes('OWNER'));
+  const isManager = useIsPulseManager();
+  return (isOwner || isManager) && pathname.startsWith('/enterprise/')
+    ? <EnterpriseSecuritySettings compact={isManager} />
+    : <SharedSecuritySettings />;
+}
+
+function SharedSecuritySettings() {
   const workspace = useCurrentUser((s) => s.user?.workspace);
   const isMentor = workspace === WORKSPACES.MENTOR;
   const changePassword = useChangePassword();

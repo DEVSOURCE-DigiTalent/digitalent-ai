@@ -4,7 +4,7 @@ using Xunit;
 
 namespace DigiTalent.Tests.Authorization;
 
-/// <summary>MANAGER (manager@digitalent.ai): leads a department — reads the team (scoped to the department by EmployeeScope), grades course finals and practical tasks, and learns in the employee portal.</summary>
+/// <summary>MANAGER (manager@digitalent.ai): leads a department — reads the team (scoped to the department by EmployeeScope), reads course results and practical evidence, and learns in the employee portal.</summary>
 public class ManagerAccessTests
 {
     private const string Role = Roles.Manager;
@@ -14,11 +14,9 @@ public class ManagerAccessTests
     [InlineData("GET", "api/v1/employees")] // hồ sơ nhân viên trong phạm vi
     [InlineData("GET", "api/v1/intelligence/dashboard")] // Tổng quan nhóm
     [InlineData("POST", "api/v1/intelligence/skill-gaps/calculate")] // tính khoảng trống năng lực
-    [InlineData("GET", "api/v1/pulse/final-reviews")] // MG-13 Chấm bài
-    [InlineData("POST", "api/v1/pulse/final-reviews/{submissionId:guid}/decision")] // MG-13 quyết định bài cuối khóa
+    [InlineData("GET", "api/v1/pulse/final-reviews")] // MG-13 Kết quả bài làm
     [InlineData("POST", "api/v1/tasks")] // MG giao nhiệm vụ thực tế
-    [InlineData("POST", "api/v1/submissions/{id:guid}/evaluate")] // MG chấm nhiệm vụ
-    [InlineData("GET", "api/v1/review-queue")] // hàng đợi chấm
+    [InlineData("GET", "api/v1/submissions/{id:guid}")] // xem minh chứng đã nộp
     [InlineData("POST", "api/v1/notifications/broadcast")] // gửi thông báo cho nhóm
     [InlineData("GET", "api/v1/me/pulse/overview")] // EM-01 học như nhân viên
     [InlineData("POST", "api/v1/me/pulse/courses/{courseId:guid}/final")] // nộp bài cuối khóa của mình
@@ -26,6 +24,12 @@ public class ManagerAccessTests
         EndpointCatalog.RoleCanCall(Role, verb, route).Should().BeTrue();
 
     [Theory]
+    [InlineData("POST", "api/v1/pulse/final-reviews/{submissionId:guid}/decision")]
+    [InlineData("POST", "api/v1/pulse/final-reviews/pre-assessments/{preAssessmentId:guid}/decision")]
+    [InlineData("POST", "api/v1/pulse/final-reviews/{submissionId:guid}/support")]
+    [InlineData("POST", "api/v1/learning/enrollments/{enrollmentId}/evaluate")]
+    [InlineData("POST", "api/v1/submissions/{id:guid}/evaluate")]
+    [InlineData("GET", "api/v1/review-queue")]
     [InlineData("GET", "api/v1/members")] // quản trị thành viên
     [InlineData("POST", "api/v1/members/invitations")] // mời thành viên
     [InlineData("PUT", "api/v1/capability-ceilings/organization")] // đặt trần năng lực

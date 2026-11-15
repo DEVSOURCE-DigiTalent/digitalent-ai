@@ -21,6 +21,8 @@ import { ReviewQueuePage } from '../pages/ReviewQueuePage';
 // Hooks
 import * as taskHooks from '@/hooks/use-tasks';
 import * as empHooks from '@/hooks/use-employees';
+import * as gapHooks from '@/hooks/use-skill-gaps';
+import * as assignmentHooks from '@/hooks/use-assignments';
 import * as competencyHooks from '@/hooks/use-competencies';
 import * as jobHooks from '@/hooks/use-job-positions';
 import * as deptHooks from '@/hooks/use-departments';
@@ -105,6 +107,10 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
   // ==========================================
   describe('MGR-02: TeamMembersPage', () => {
     it('renders team roster with position and search filters', () => {
+      useCurrentUser.setState((state) => ({ user: { ...state.user!, employeeId: 'mgr-01' } }));
+      vi.spyOn(deptHooks, 'useDepartments').mockReturnValue({
+        data: { items: [{ id: 'dept-01', name: 'Khối Công nghệ', managerEmployeeId: 'mgr-01' }] },
+      } as ReturnType<typeof deptHooks.useDepartments>);
       vi.spyOn(empHooks, 'useEmployees').mockReturnValue({
         data: {
           items: [
@@ -114,6 +120,7 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
               employeeCode: 'NV-001',
               positionName: 'Chuyên viên Phân tích Dữ liệu',
               workEmail: 'an.le@acme.com',
+              status: 'ACTIVE',
               departmentName: 'Khối Công nghệ',
             },
           ],
@@ -123,6 +130,7 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
           totalPages: 1,
         },
         isLoading: false,
+        isSuccess: true,
       } as any);
       vi.spyOn(jobHooks, 'useJobPositions').mockReturnValue({
         data: { items: [] },
@@ -130,7 +138,7 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
 
       renderWithClient(<TeamMembersPage />);
 
-      expect(screen.getByText('Thành viên nhóm')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Nhân viên phòng ban' })).toBeInTheDocument();
       expect(screen.getByText('Lê Văn An')).toBeInTheDocument();
       expect(screen.getByText('NV-001')).toBeInTheDocument();
       expect(screen.getByText('Chuyên viên Phân tích Dữ liệu')).toBeInTheDocument();
@@ -142,7 +150,19 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
   // MGR-03: TeamMemberDetailPage
   // ==========================================
   describe('MGR-03: TeamMemberDetailPage', () => {
-    it('renders individual team member details and contact info', () => {
+    it('shows member details and keeps competencies grouped and collapsed by domain', () => {
+      vi.spyOn(gapHooks, 'useSkillGapRuns').mockReturnValue({ data: { items: [{ runId: 'run-1' }] } } as any);
+      vi.spyOn(gapHooks, 'useSkillGapRun').mockReturnValue({
+        data: {
+          runId: 'run-1',
+          summary: { coveragePercent: 50, totalMet: 1, totalRequired: 2, totalGap: 1 },
+          items: [
+            { competencyId: 'c1', frameworkCode: '1.1', competencyName: 'Tìm dữ liệu', currentLevel: 1, requiredLevel: 3, gapSteps: 2 },
+            { competencyId: 'c2', frameworkCode: '1.2', competencyName: 'Đánh giá dữ liệu', currentLevel: 3, requiredLevel: 3, gapSteps: 0 },
+          ],
+        },
+      } as any);
+      vi.spyOn(assignmentHooks, 'useAssignments').mockReturnValue({ data: { items: [] } } as any);
       vi.spyOn(empHooks, 'useEmployee').mockReturnValue({
         data: {
           id: 'emp-01',
@@ -166,8 +186,13 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
 
       expect(screen.getByText('Lê Văn An')).toBeInTheDocument();
       expect(screen.getByText('NV-001')).toBeInTheDocument();
-      expect(screen.getByText(/Email: an.le@acme.com/)).toBeInTheDocument();
-      expect(screen.getByText(/Phòng ban: Khối Công nghệ/)).toBeInTheDocument();
+      expect(screen.getByText('an.le@acme.com')).toBeInTheDocument();
+      expect(screen.getByText('Khối Công nghệ')).toBeInTheDocument();
+      expect(screen.getByText('50%')).toBeInTheDocument();
+      const domain = screen.getByText('Khai thác dữ liệu và thông tin').closest('details');
+      expect(domain).not.toHaveAttribute('open');
+      expect(domain).toHaveTextContent('1 / 2');
+      expect(domain).toHaveTextContent('Thiếu 2 cấp');
     });
   });
 

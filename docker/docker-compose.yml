@@ -81,9 +81,10 @@ services:
       context: ../backend
       dockerfile: ../backend/src/DigiTalent.Api/Dockerfile
     container_name: digitalent-api
-    # Uploaded files (platform slides, proctoring recordings) must survive container rebuilds.
+    # Uploaded files must survive container rebuilds: recordings etc. in backend_uploads, platform slides in their own volume.
     volumes:
       - backend_uploads:/app/uploads
+      - platform_assets_data:/app/uploads/platform-assets
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c"]
     command:
@@ -150,3 +151,5 @@ volumes:
   postgres_data:
   minio_data:
   backend_uploads:
+  platform_assets_data:
+    name: digitalent-platform-assets

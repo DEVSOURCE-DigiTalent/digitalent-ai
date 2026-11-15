@@ -1,51 +1,34 @@
+import { SectionLoading } from '@/components/shared/LoadingState';
+import { Modal } from '@/components/shared/Modal';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { Link } from 'react-router-dom';
 import { Layers } from 'lucide-react';
 import { useCompetencies, useCompetencyCategories } from '@/hooks/use-competencies';
-import { Empty, LoadError, Mini, PageHead, PageSkeleton, Pill, PuLink } from '@/features/pulse-employee/components/ui';
+import { Empty, LoadError } from '@/features/pulse-employee/components/ui';
 import { LEVEL_NAMES, pad2 } from '@/features/pulse-employee/lib/labels';
-import { ManagerPage } from '../components/ManagerUi';
 import { MANAGER_PATHS } from '../lib/paths';
+import './manager-framework-dialog.css';
 
 const LEVELS = [1, 2, 3] as const;
 const HIERARCHY = ['Digital AI', 'Doanh nghiệp', 'Phòng ban', 'Vị trí'];
 
-/**
- * MG-15 · Khung năng lực chung (mock `#/framework`), chỉ đọc cho quản lý: sáu lĩnh vực của chuẩn Digital AI, ba mức,
- * và cách chuẩn chung trở thành mục tiêu vị trí. Chủ doanh nghiệp sửa phạm vi và mục tiêu ở màn của họ (OW-14).
- */
-export function ManagerFrameworkPage() {
+export function ManagerFrameworkDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <Modal open={open} onClose={onClose} size="xl" className="manager-framework-dialog"
+      title="Khung năng lực chung" description={translateUi('Tra cứu các lĩnh vực năng lực và cấp độ áp dụng trong doanh nghiệp.')}
+      footer={<Link to={MANAGER_PATHS.capability} className="manager-framework-link">{translateUi('Xem năng lực đội ngũ')}</Link>}>
+      {open && <FrameworkContent />}
+    </Modal>
+  );
+}
+
+function FrameworkContent() {
   useUiLanguage();
   const categories = useCompetencyCategories();
   const competencies = useCompetencies({ pageIndex: 1, pageSize: 100, status: 'ACTIVE' });
-
-  const header = (
-    <PageHead
-      eyebrow="Chung chuẩn Digital AI"
-      title="Sáu lĩnh vực. Ba mức rõ ràng."
-      description="Đây là phạm vi chung. Chủ doanh nghiệp đặt mục tiêu các cấp trong giới hạn đó; quản lý dùng mục tiêu ấy khi đánh giá nhân sự."
-      actions={
-        <>
-          <Pill>Chỉ đọc</Pill>
-          <PuLink to={MANAGER_PATHS.capability} kind="outline">Xem năng lực đội ngũ</PuLink>
-        </>
-      }
-    />
-  );
-
-  if (categories.isLoading || competencies.isLoading) {
-    return <ManagerPage>{translateUi(header)}<PageSkeleton blocks={[180, 180, 120]} /></ManagerPage>;
-  }
-  if (categories.isError || competencies.isError) {
-    return (
-      <ManagerPage>
-        {translateUi(header)}
-        <LoadError
-          message="Không tải được khung năng lực."
-          onRetry={() => { categories.refetch(); competencies.refetch(); }}
-        />
-      </ManagerPage>
-    );
-  }
+  if (categories.isLoading || competencies.isLoading) return <SectionLoading label="Đang tải khung năng lực" />;
+  if (categories.isError || competencies.isError) return <LoadError message="Không tải được khung năng lực."
+    onRetry={() => { void categories.refetch(); void competencies.refetch(); }} />;
 
   const items = competencies.data?.items ?? [];
   const domains = [...(categories.data ?? [])]
@@ -58,8 +41,7 @@ export function ManagerFrameworkPage() {
     }));
 
   return (
-    <ManagerPage testId="manager-framework">
-      {translateUi(header)}
+    <div className="manager-framework-content">
 
       {domains.length === 0 ? (
         <Empty icon={<Layers size={24} />} title="Khung năng lực chưa được công bố.">
@@ -67,17 +49,25 @@ export function ManagerFrameworkPage() {
         </Empty>
       ) : (
         <div className="pm-domain-grid">
-          {domains.map((domain, index) => (
+          {domains.map((domain) => (
             <article key={domain.id} className="pm-domain-card" aria-label={translateUi(domain.name)}>
-              <Mini>{translateUi("Lĩnh vực ")}{pad2(index + 1)}</Mini>
               <h3>{translateUi(domain.name)}</h3>
-              <p>{domain.competencies.length} năng lực · hành vi số thực tế ở ba mức.</p>
+              <p>{domain.competencies.length} {translateUi('năng lực')}</p>
               {domain.competencies.length > 0 && (
                 <ul>
                   {domain.competencies.slice(0, 4).map((item) => (
-                    <li key={item.id} title={translateUi(item.name)}><b>{item.frameworkCode ?? item.code}</b>{item.name}</li>
+                    <li key={item.id} title={translateUi(item.name)}><b>{item.frameworkCode ?? item.code}</b>{translateUi(item.name)}</li>
                   ))}
-                  {domain.competencies.length > 4 && <li>+ {domain.competencies.length - 4} năng lực khác</li>}
+                  {domain.competencies.length > 4 && (
+                    <li><details className="manager-framework-more">
+                      <summary>{translateUi(`Xem thêm ${domain.competencies.length - 4} năng lực`)}</summary>
+                      <ul>
+                        {domain.competencies.slice(4).map((item) => (
+                          <li key={item.id}><b>{item.frameworkCode ?? item.code}</b>{translateUi(item.name)}</li>
+                        ))}
+                      </ul>
+                    </details></li>
+                  )}
                 </ul>
               )}
               <div className="pm-level-chips" aria-label="Ba mức">
@@ -89,8 +79,7 @@ export function ManagerFrameworkPage() {
       )}
 
       <section className="pm-panel pm-hierarchy" aria-labelledby="pm-hierarchy-title">
-        <Mini>Chuẩn chung trở thành mục tiêu cá nhân như thế nào</Mini>
-        <h2 id="pm-hierarchy-title">Digital AI ≥ doanh nghiệp ≥ phòng ban ≥ vị trí</h2>
+        <h2 id="pm-hierarchy-title">Phạm vi áp dụng chuẩn năng lực</h2>
         <p className="pu-panel-desc">
           Chỉ quản trị nền tảng công bố nội dung chuẩn. Doanh nghiệp tự thiết kế cấp độ và vị trí; mức đã xác nhận của nhân viên
           được so với mục tiêu vị trí.
@@ -99,6 +88,6 @@ export function ManagerFrameworkPage() {
           {HIERARCHY.map((step) => <li key={step}>{step}</li>)}
         </ol>
       </section>
-    </ManagerPage>
+    </div>
   );
 }

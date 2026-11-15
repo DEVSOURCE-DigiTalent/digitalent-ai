@@ -20,12 +20,12 @@ export const LEARNER_STATE: Record<LearnerState, { label: string; tone: 'green' 
 export const reviewKey = (employeeId: string, courseId: string) => `${employeeId}::${courseId}`;
 
 export function learnerState(row: AssignmentRow, review?: Pick<PulseFinalReviewItem, 'status'>): LearnerState {
-  if (review) {
+  if (review?.status === 'APPROVED' || row.status === 'COMPLETED') return 'APPROVED';
+  if (review && review.status !== 'NOT_YET') {
     if (review.status === 'PENDING') return 'REVIEW_DUE';
     if (review.status === 'RETRY_WAIT' || review.status === 'RETRY_READY') return 'RETRY';
     return 'SUPPORT';
   }
-  if (row.status === 'COMPLETED') return 'APPROVED';
   if (row.overdue) return 'OVERDUE';
   if (row.status === 'READY_FOR_ASSESSMENT') return 'READY';
   if (row.status === 'NOT_STARTED') return 'NOT_STARTED';
@@ -41,7 +41,7 @@ export interface CourseCohort {
 
 /** Gom phân công còn hiệu lực theo khóa học (mỗi khóa là một nhóm học của phòng ban). */
 export function groupByCourse(rows: AssignmentRow[], reviews: PulseFinalReviewItem[]): CourseCohort[] {
-  const reviewByKey = new Map(reviews.map((item) => [reviewKey(item.employeeId, item.courseId), item]));
+  const reviewByKey = new Map(reviews.filter((item) => item.kind === 'FINAL').map((item) => [reviewKey(item.employeeId, item.courseId), item]));
   const cohorts = new Map<string, CourseCohort>();
   for (const row of rows) {
     if (row.status === 'CANCELLED') continue;

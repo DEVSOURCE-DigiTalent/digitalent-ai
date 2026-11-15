@@ -44,6 +44,7 @@ public class PlatformLearningSyncTests
         var module = await db.PlatformCourseModules.Where(m => m.CatalogCourseId == catalog.Id).OrderBy(m => m.SortOrder).FirstAsync();
         var sourceQuestion = await db.PlatformModuleQuestions.Where(q => q.ModuleId == module.Id).OrderBy(q => q.SortOrder).FirstAsync();
         sourceQuestion.QuestionText = "Câu hỏi đã sửa trong database?";
+        sourceQuestion.IsFinalQuiz = true;
         var sourceBlock = await db.PlatformModuleBlocks.Where(b => b.ModuleId == module.Id).OrderBy(b => b.SortOrder).FirstAsync();
         sourceBlock.BlockType = "TEXT";
         sourceBlock.BodyHtml = "<h3>Bài mới</h3><p>Nội dung được công bố.</p>";
@@ -78,6 +79,9 @@ public class PlatformLearningSyncTests
         pool.Select(q => q.Content).Should().Contain(sourceQuestion.QuestionText);
         pool.Should().HaveCount(await db.PlatformModuleQuestions.CountAsync(q => q.ModuleId == module.Id));
         pool.Should().OnlyContain(q => q.Options.Count(o => o.IsCorrect) == 1);
+        var poolIds = pool.Select(q => q.QuestionId).ToList();
+        (await db.Questions.Where(q => poolIds.Contains(q.Id) && q.IsFinalQuiz).Select(q => q.Content).ToListAsync())
+            .Should().Equal(new[] { sourceQuestion.QuestionText }, "the final-test mark travels with the question");
         var final = (await new LearningContentReader(db).FinalsAsync(new[] { published.Id }))[published.Id];
         final.Title.Should().Be(catalog.FinalTitle);
         final.PromptHtml.Should().Be(catalog.FinalPrompt);

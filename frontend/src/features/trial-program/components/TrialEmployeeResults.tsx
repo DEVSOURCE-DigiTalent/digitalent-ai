@@ -5,11 +5,12 @@ import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import type { PulseOverview } from '@/services/pulse.service';
 import type { MyTrialAssessment } from '@/services/trial-program.service';
-import { TIER_LABELS } from '../lib/trial-format';
+import { LEVEL_LABELS, domainTotals } from '../lib/trial-format';
+import { TrialScoreScale } from './TrialScoreScale';
 import '../trial-employee-results.css';
 
 function levelName(level: number) {
-  return level > 0 ? TIER_LABELS[level as 1 | 2 | 3] : 'Chưa đạt cấp nào';
+  return LEVEL_LABELS[level] ?? LEVEL_LABELS[0];
 }
 
 export function TrialEmployeeResults({ assessment, overview }: {
@@ -26,13 +27,13 @@ export function TrialEmployeeResults({ assessment, overview }: {
   ]);
   const total = assessment.choiceTotal ?? scores.reduce((sum, [, count]) => sum + (count ?? 0), 0);
   const correct = assessment.choiceScore ?? scores.reduce((sum, [count]) => sum + (count ?? 0), 0);
-  const roadmapReady = Boolean(assessment.reportPublished && overview?.hasPosition && overview.hasTargets);
-  const canTryCourses = Boolean(assessment.reportPublished && overview?.awaitingFramework);
+  const roadmapReady = Boolean(overview?.hasPosition && overview.hasTargets && !overview.awaitingFramework);
+  const canTryCourses = Boolean(overview?.awaitingFramework);
   const attained = assessment.levels?.filter((level) => level > 0).length ?? 0;
   const targets = new Map(overview?.domains?.map((domain) => [domain.categoryId, domain.pathTop]));
 
   return (
-    <div className="tt-container">
+    <>
       <section className="tt-score-hero">
         <div className="tt-score-hero-lead">
           <span className="tt-score-hero-badge"><CheckCircle2 size={13} />{translateUi('Đã có kết quả trắc nghiệm')}</span>
@@ -81,7 +82,8 @@ export function TrialEmployeeResults({ assessment, overview }: {
             <p className="tt-card-desc">{translateUi('Chọn một lĩnh vực để xem số câu đúng ở từng cấp.')}</p>
           </div>
         </div>
-        <div className="tt-accordion-list">
+        <TrialScoreScale />
+        <div className="tt-accordion-list mt-3">
           {assessment.domains.map((domain, index) => {
             const detail = details.find((item) => item.categoryId === domain.categoryId);
             const open = openCategory === domain.categoryId;
@@ -102,7 +104,7 @@ export function TrialEmployeeResults({ assessment, overview }: {
                       <div className="tt-domain-name">{domain.name}</div>
                       <div className="tt-domain-subline">
                         {translateUi('Hiện tại')}{' '}
-                        <strong className="tt-domain-highlight">{translateUi(levelName(level))}</strong>
+                        <strong className="tt-domain-highlight">{detail?.mentorLevel != null && <>{translateUi('Mentor xác nhận')} · </>}{translateUi(levelName(level))}</strong>
                         {target ? <span> · {translateUi('Mục tiêu')}: {translateUi(levelName(target))}</span> : null}
                       </div>
                     </div>
@@ -111,6 +113,15 @@ export function TrialEmployeeResults({ assessment, overview }: {
                 </button>
                 {open && (
                   <div className="tt-domain-body">
+                    {detail && (() => {
+                      const totals = domainTotals(detail);
+                      return totals.total > 0 && (
+                        <p className="tt-card-desc">
+                          {translateUi('Đúng')} <strong>{totals.correct}/{totals.total}</strong> {translateUi('câu')} ({totals.percent}%)
+                        </p>
+                      );
+                    })()}
+                    {level === 0 && <p className="tt-card-desc">{translateUi('Nên bắt đầu từ khóa Cơ bản của lĩnh vực này.')}</p>}
                     <div className="tt-tier-results-grid">
                       {tiers.map(([right, count], tier) => (
                         <div key={tier} className="tt-tier-result-card">
@@ -127,6 +138,6 @@ export function TrialEmployeeResults({ assessment, overview }: {
         </div>
         {assessment.reviewNote && <p className="tt-card-desc">{assessment.reviewNote}</p>}
       </section>
-    </div>
+    </>
   );
 }

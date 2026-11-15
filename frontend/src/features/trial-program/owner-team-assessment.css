@@ -25,11 +25,6 @@
 .owner-team-assessment .trial-journey li[data-state=current] > span:first-child { color: #fff; background: #ffffff26; box-shadow: inset 0 0 0 1px #ffffff50; }
 .owner-team-assessment .trial-journey li[data-state=done] { border-color: transparent; background: #eaf6f2; color: #387e73; }
 .owner-team-assessment .trial-journey li > span:first-child { width: 26px; height: 26px; font-size: 11px; }
-.owner-team-assessment .trial-participation-stats > div { border-radius: 21px; padding: 22px; background: radial-gradient(ellipse at 100% 0,#d6efec 0,transparent 65%),#fff; border-color: #bfdfd9; box-shadow: inset 0 1px 0 #fff,0 10px 24px -20px #23546565; }
-.owner-team-assessment .trial-participation-stats > div:nth-child(2) { background: radial-gradient(ellipse at 100% 0,#fff0d9,transparent 65%),#fff; border-color: #ecdbbf; }
-.owner-team-assessment .trial-participation-stats > div:nth-child(3) { background: radial-gradient(ellipse at 100% 0,#e3e9ff,transparent 65%),#fff; border-color: #d4daf1; }
-.owner-team-assessment .trial-participation-stats > div:hover { transform: translateY(-2px); box-shadow: 0 12px 25px -18px #23546570; }
-.owner-team-assessment .trial-participation-stats > div > div:last-child { color: #607e8c; }
 .trial-disclosure { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; transition: grid-template-rows .42s cubic-bezier(.22,1,.36,1),opacity .24s,visibility .42s; }
 .trial-disclosure[data-open=true] { grid-template-rows: 1fr; opacity: 1; visibility: visible; }
 .trial-disclosure__clip { min-height: 0; overflow: hidden; }
@@ -58,10 +53,14 @@
 .owner-team-assessment .tp-badge.info { color: #377ea9; background: #eaf4fc; }
 .owner-team-assessment .tp-badge.warn { color: #a3752d; background: #fff4df; }
 .owner-team-assessment .tp-badge.bad { color: #b55a50; background: #fff0ed; }
-.owner-team-assessment .trial-competency-report > section:first-child { padding: clamp(20px,2vw,30px); background: radial-gradient(ellipse at 85% 0,#e1efed80,transparent 50%),#fff; }
-.owner-team-assessment .trial-competency-report > section:first-child > .grid > div:first-child > div { box-shadow: none; border-radius: 17px; background: #ffffffa8; }
-.owner-team-assessment .trial-competency-report > section:first-child > .grid > div:first-child > div:nth-child(3) { background: linear-gradient(120deg,#fffaf2,#fff); }
-.owner-team-assessment .trial-competency-report > section:first-child > .grid > div:first-child > div:nth-child(4) { background: linear-gradient(120deg,#f8f4fc,#fff); }
+.owner-team-assessment .trial-report-overview {
+  padding: clamp(20px, 2vw, 30px);
+  border-color: #25646b;
+  background: radial-gradient(ellipse at 100% 0, #176b68, transparent 76%), linear-gradient(125deg, #143b50, #134f58);
+  box-shadow: inset 0 1px 0 #ffffff30, 0 16px 32px -20px #143b50a0;
+  color: #fff;
+}
+.owner-team-assessment .trial-report-overview h2 { color: #fff; font-size: clamp(21px, 2vw, 29px); }
 .owner-team-assessment .trial-competency-report svg { max-width: 100%; }
 .owner-team-assessment .tp-participant-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; color: #638092; font-size: 12px; }
 .owner-team-assessment .tp-participant-pagination > div { display:flex; align-items:center; gap:12px; }
@@ -90,9 +89,6 @@
   .owner-team-assessment .trial-journey ol { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
   .owner-team-assessment .trial-journey li { padding: 10px; justify-content: start; font-size: 11px; }
   .owner-team-assessment .trial-journey li > span:last-child { display: inline; white-space: normal; }
-  .owner-team-assessment .trial-participation-stats { grid-template-columns: 1fr; gap: 10px; }
-  .owner-team-assessment .trial-participation-stats > div { padding: 16px 18px; }
-  .owner-team-assessment .trial-participation-stats > div > div:last-child { display: none; }
   .owner-team-assessment section { border-radius: 19px; }
   .owner-team-assessment .trial-participants-editor > div:first-child { align-items: stretch; }
   .owner-team-assessment .trial-import-dropzone { padding: 22px 14px; }
@@ -110,5 +106,3 @@
 .owner-team-assessment .trial-owner-action h2 { font-size:14px; }
 .owner-team-assessment .trial-owner-action__bar > button { background:#ffffffb3; color:#267b80; box-shadow:inset 0 0 0 1px #c8e0df; min-height:38px; }
 .owner-team-assessment .trial-owner-action__bar > button:hover { background:#e6f6f2; }
-.owner-team-assessment .trial-radar-panel__heading > span:first-child { font-size:14px; color:#244b5c; }
-.owner-team-assessment .trial-radar-panel__heading > span:last-child { font-size:11px; color:#6e899a; }

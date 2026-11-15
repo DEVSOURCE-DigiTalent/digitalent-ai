@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
@@ -25,7 +26,7 @@ public class GetAssignmentSummaryUseCase : IUseCase<GetAssignmentSummaryInput, A
         var assignments = await (
             from ca in _context.CourseAssignments.AsNoTracking()
             join course in _context.Courses.AsNoTracking() on ca.CourseId equals course.Id
-            join emp in _context.Employees.AsNoTracking() on ca.EmployeeId equals emp.Id
+            join emp in new EmployeeScope(_context, _currentUser).VisibleEmployees().AsNoTracking() on ca.EmployeeId equals emp.Id
             join enrollment in _context.Enrollments.AsNoTracking() on ca.Id equals enrollment.CourseAssignmentId into enrollJoin
             from enrollment in enrollJoin.DefaultIfEmpty()
             where course.OrganizationId == organizationId && ca.Status == "ACTIVE"
@@ -47,7 +48,7 @@ public class GetAssignmentSummaryUseCase : IUseCase<GetAssignmentSummaryInput, A
         var overdue = active.Count(a => a.DueDate != null && a.DueDate < today);
         var dueSoon = active.Count(a => a.DueDate != null && a.DueDate >= today && a.DueDate <= dueSoonThreshold);
 
-        var departments = await _context.Departments.AsNoTracking()
+        var departments = await new EmployeeScope(_context, _currentUser).VisibleDepartments().AsNoTracking()
             .Where(d => d.OrganizationId == organizationId)
             .Select(d => new { d.Id, d.Name })
             .ToListAsync();
