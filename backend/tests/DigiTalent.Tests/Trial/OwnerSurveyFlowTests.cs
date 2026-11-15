@@ -87,6 +87,50 @@ public class OwnerSurveyFlowTests
     }
 
     [Fact]
+    public async Task Survey_draws_the_final_test_questions_first_spread_over_the_modules()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var employee = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
+        var context = world.Context;
+        var catalog = new PulseCatalogReader(context);
+        var moduleReader = new PulseModuleReader(context);
+        var paperBuilder = new TrialAssessmentPaper(context, catalog, moduleReader);
+        var firstDomain = (await paperBuilder.LoadDomainsAsync(employee.OrganizationId))[0];
+        var course = (await catalog.LoadAsync(employee.OrganizationId)).First(c => c.CategoryId == firstDomain.CategoryId && c.Tier == 1);
+        var modules = (await moduleReader.LoadModulesAsync(new[] { course.CourseId }, includeContent: false))[course.CourseId]
+            .Where(m => m.QuizAssessmentId.HasValue).ToList();
+        modules.Count.Should().BeGreaterThanOrEqualTo(3, "two final-test questions per module then cover the five questions of the cell");
+
+        var moduleOfFinal = new Dictionary<Guid, int>();
+        for (var index = 0; index < modules.Count; index++)
+        {
+            var quizId = modules[index].QuizAssessmentId!.Value;
+            var ids = await context.AssessmentQuestions.Where(l => l.AssessmentId == quizId)
+                .OrderBy(l => l.SortOrder).Select(l => l.QuestionId).Take(2).ToListAsync();
+            foreach (var question in await context.Questions.Where(q => ids.Contains(q.Id)).ToListAsync())
+            {
+                question.IsFinalQuiz = true;
+                moduleOfFinal[question.Id] = index;
+            }
+        }
+
+        await context.SaveChangesAsync();
+
+        var paper = await paperBuilder.BuildAsync(employee.OrganizationId, employee.Id);
+        var cell = paper.Items.Where(i => i.CategoryId == firstDomain.CategoryId && i.Tier == 1).ToList();
+        cell.Should().HaveCount(TrialProgramRules.ChoicePerCell);
+        cell.Should().OnlyContain(i => moduleOfFinal.ContainsKey(i.Question.QuestionId), "final-test questions come before review questions");
+        var expected = Enumerable.Range(0, modules.Count)
+            .Select(m => Enumerable.Range(0, TrialProgramRules.ChoicePerCell).Count(slot => slot % modules.Count == m));
+        Enumerable.Range(0, modules.Count)
+            .Select(m => cell.Count(i => moduleOfFinal[i.Question.QuestionId] == m))
+            .Should().Equal(expected, "the Basic cell starts the round at the first module");
+
+        var again = await paperBuilder.BuildAsync(employee.OrganizationId, employee.Id);
+        again.Items.Select(i => i.Question.QuestionId).Should().Equal(paper.Items.Select(i => i.Question.QuestionId), "one fixed paper per employee");
+    }
+
+    [Fact]
     public async Task Multiple_choice_submission_is_graded_and_published_without_a_mentor()
     {
         using var world = await PulseTestWorld.CreateAsync();
