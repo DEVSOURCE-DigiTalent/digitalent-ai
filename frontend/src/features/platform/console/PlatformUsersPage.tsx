@@ -133,6 +133,25 @@ export function PlatformUsersPage() {
     }
   }, [data?.items, sortBy]);
 
+  // Dynamic 4th column header reflecting current role context
+  const dynamicColumnHeader = useMemo(() => {
+    switch (tab) {
+      case 'EMPLOYEE':
+        return 'Khóa học & Tiến độ';
+      case 'OWNER':
+        return 'Gói dịch vụ & Quyền hạn';
+      case 'MANAGER':
+        return 'Nhiệm vụ phòng ban';
+      case 'MENTOR':
+        return 'Nhiệm vụ thẩm định & Chấm bài';
+      case 'ADMIN':
+        return 'Phạm vi phân quyền';
+      case 'ALL':
+      default:
+        return 'Tiến độ / Hoạt động';
+    }
+  }, [tab]);
+
   // Drag-to-scroll event handlers
   const updateScrollButtons = () => {
     if (tabsRef.current) {
@@ -541,7 +560,7 @@ export function PlatformUsersPage() {
                     <th style={{ minWidth: 200 }}>{translateUi('Người dùng')}</th>
                     <th style={{ minWidth: 140 }}>{translateUi('Vai trò')}</th>
                     <th style={{ minWidth: 190 }}>Tổ chức / Phòng ban</th>
-                    <th style={{ minWidth: 190 }}>Khóa học & Tiến độ</th>
+                    <th style={{ minWidth: 195 }}>{dynamicColumnHeader}</th>
                     <th style={{ minWidth: 130 }}>{translateUi('Trạng thái')}</th>
                     <th style={{ minWidth: 130 }}>Đăng nhập gần nhất</th>
                     <th style={{ minWidth: 120, textAlign: 'right', paddingRight: 16 }}>{translateUi('Thao tác')}</th>
@@ -650,30 +669,30 @@ export function PlatformUsersPage() {
                           ) : isMentor ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                               <span style={{ fontSize: 12.5, fontWeight: 600, color: '#7c3aed' }}>
-                                Chuyên gia thẩm định
+                                Thẩm định bài thi
                               </span>
-                              <span style={{ fontSize: 11, color: '#64748b' }}>4 bài chờ chấm · 18 đã hoàn tất</span>
+                              <span style={{ fontSize: 11, color: '#64748b' }}>4 bài chờ chấm · Đã duyệt 18</span>
                             </div>
                           ) : isOwner ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1d4ed8' }}>
-                                Quản trị toàn tổ chức
+                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#334155' }}>
+                                Bản quyền doanh nghiệp
                               </span>
-                              <span style={{ fontSize: 11, color: '#64748b' }}>Đại diện pháp lý & gói thuê bao</span>
+                              <span style={{ fontSize: 11, color: '#64748b' }}>Quản trị tổ chức · Đại diện pháp lý</span>
                             </div>
                           ) : isManager ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#15803d' }}>
-                                Quản lý phòng ban
+                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#334155' }}>
+                                Điều phối phòng ban
                               </span>
-                              <span style={{ fontSize: 11, color: '#64748b' }}>Theo dõi & đôn đốc lộ trình team</span>
+                              <span style={{ fontSize: 11, color: '#64748b' }}>Theo dõi lộ trình đào tạo nội bộ</span>
                             </div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#c2410c' }}>
-                                Quản trị nền tảng
+                              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>
+                                Quản trị hệ thống
                               </span>
-                              <span style={{ fontSize: 11, color: '#64748b' }}>Toàn quyền kiểm soát hệ thống</span>
+                              <span style={{ fontSize: 11, color: '#64748b' }}>Toàn quyền cấu hình nền tảng</span>
                             </div>
                           )}
                         </td>
