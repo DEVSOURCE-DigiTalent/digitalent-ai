@@ -19,9 +19,8 @@ public sealed class TrialLifecycleTests
         var options = new TrialOptions();
         options.Validate();
         Assert.Equal(14, options.DurationDays);
-        Assert.Equal(5, options.MaxAccounts);
         Assert.Equal(1, options.MaxDiagnosticAttempts);
-        Assert.Throws<InvalidOperationException>(() => (options with { MaxAccounts = 0 }).Validate());
+        Assert.Throws<InvalidOperationException>(() => (options with { DurationDays = 0 }).Validate());
         Assert.Throws<ForbiddenException>(() => TrialPolicy.EnsureWritable(null, DateTimeOffset.UtcNow));
         var trial = new TrialWorkspace { EndsAt = DateTimeOffset.UtcNow.AddDays(-1) };
         Assert.Throws<ForbiddenException>(() => TrialPolicy.EnsureWritable(trial, DateTimeOffset.UtcNow));
@@ -64,9 +63,9 @@ public sealed class TrialLifecycleTests
     }
 
     [Fact]
-    public async Task Failed_invitation_delivery_releases_its_seat_until_a_successful_resend()
+    public async Task Failed_invitation_delivery_is_counted_as_pending_only_after_successful_resend()
     {
-        using var world = new World(new TrialOptions { MaxAccounts = 2 });
+        using var world = new World();
         await world.CreateOwnerAndPosition();
         world.Mail.FailNext = true;
         var failed = await world.Service.InviteAsync(new("First", "first@example.test", "Employee"));
@@ -76,18 +75,21 @@ public sealed class TrialLifecycleTests
         var active = await world.Service.InviteAsync(new("Second", "second@example.test", "Employee"));
         Assert.Equal("pending", active.State);
         world.Clock.Now = world.Clock.Now.AddMinutes(2);
-        await Assert.ThrowsAsync<ConflictException>(() => world.Service.ResendAsync(failed.Id));
+        Assert.Equal("pending", (await world.Service.ResendAsync(failed.Id)).State);
+        Assert.Equal(2, (await world.Service.ContextAsync()).Usage.PendingInvitations);
     }
 
     [Fact]
-    public async Task Seat_reservations_normalized_email_resend_and_single_use_invitation()
+    public async Task Invites_beyond_old_limit_and_preserves_duplicate_and_single_use_guards()
     {
-        using var world = new World(new TrialOptions { MaxAccounts = 2 });
+        using var world = new World();
         await world.CreateOwnerAndPosition();
         var invite = await world.Service.InviteAsync(new("Person", " Person@Example.test ", "Employee"));
         var original = world.Mail.LatestToken;
         await Assert.ThrowsAsync<ConflictException>(() => world.Service.InviteAsync(new("Duplicate", "person@example.test", "Employee")));
-        await Assert.ThrowsAsync<ConflictException>(() => world.Service.InviteAsync(new("Second", "second@example.test", "Employee")));
+        for (var index = 0; index < 5; index++)
+            await world.Service.InviteAsync(new($"Person {index}", $"person-{index}@example.test", "Employee"));
+        Assert.Equal(6, (await world.Service.ContextAsync()).Usage.PendingInvitations);
         world.Clock.Now = world.Clock.Now.AddMinutes(2);
         await world.Service.ResendAsync(invite.Id);
         await Assert.ThrowsAsync<BadRequestException>(() => world.Service.AcceptAsync(new(original, "Strong-pass-123!")));

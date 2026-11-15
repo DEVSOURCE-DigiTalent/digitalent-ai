@@ -1579,7 +1579,7 @@ function TrialTermsDialog({
         <div className="pulse-auth-dialog-body">
           <div className="pulse-auth-dialog-highlights" aria-label="Điểm chính cần nắm">
             <div className="pulse-auth-dialog-highlight">
-              <strong>Tối đa 30 nhân viên</strong>
+              <strong>Mời đội ngũ tham gia</strong>
               <span>Mỗi nhân viên làm 1 bài đánh giá trắc nghiệm</span>
             </div>
             <div className="pulse-auth-dialog-highlight">
@@ -1604,7 +1604,7 @@ function TrialTermsDialog({
               </div>
               <ul className="pulse-auth-dialog-list">
                 <li>
-                  Doanh nghiệp được mời tối đa <strong>30 nhân viên</strong> tham gia đánh giá theo
+                  Doanh nghiệp có thể mời nhân viên tham gia đánh giá theo
                   hạn làm bài do chủ doanh nghiệp thiết lập (tối đa 60 ngày).
                 </li>
                 <li>

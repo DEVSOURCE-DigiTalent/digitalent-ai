@@ -13,8 +13,7 @@ export const TRIAL_STEP_LABELS: Record<string, string> = {
 export interface TrialDashboardModel {
   writable: boolean;
   remainingLabel: string;
-  usedSeats: number;
-  remainingSeats: number;
+  participantCount: number;
   completedSteps: number;
   totalSteps: number;
   progressPercent: number;
@@ -67,13 +66,12 @@ export function trialDashboardModel(context: TrialContextDto, roles: readonly st
   const totalSteps = context.checklist.length;
   const nextStep = context.checklist.find((item) => !item.complete) ?? context.checklist.at(-1);
   const nextKey = nextStep?.key ?? 'results';
-  const usedSeats = context.usage.accounts + context.usage.pendingInvitations;
+  const participantCount = context.usage.accounts + context.usage.pendingInvitations;
 
   return {
     writable: context.status !== 'trial_read_only' && remainingMs > 0,
     remainingLabel: remainingLabel(remainingMs),
-    usedSeats,
-    remainingSeats: Math.max(0, context.limits.maxAccounts - usedSeats),
+    participantCount,
     completedSteps,
     totalSteps,
     progressPercent: totalSteps === 0 ? 0 : Math.round((completedSteps / totalSteps) * 100),

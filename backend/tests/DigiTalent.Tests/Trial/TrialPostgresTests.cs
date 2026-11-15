@@ -16,7 +16,7 @@ namespace DigiTalent.Tests.Trial;
 public sealed class TrialPostgresTests
 {
     [Fact]
-    public async Task Parallel_last_seat_has_one_success_and_no_orphan_reservation()
+    public async Task Concurrent_workspace_changes_leave_no_orphan_invitation()
     {
         await using var setup = PostgresTestDatabase.CreateContext();
         await PostgresTestDatabase.MigrateAsync(setup);
@@ -24,7 +24,7 @@ public sealed class TrialPostgresTests
         var owner = new User { OrganizationId = organization.Id, Email = Guid.NewGuid().ToString("N") + "@example.test", DisplayName = "Owner", PasswordHash = "test-only" };
         var department = new Department { OrganizationId = organization.Id, Code = "TRIAL", Name = "Team" };
         var position = new JobPosition { OrganizationId = organization.Id, Code = "TRIAL", Name = "Digital skills" };
-        var policy = new TrialOptions { MaxAccounts = 2, DevelopmentEnvironment = true, EnableDevelopmentCapture = true, EnableDevelopmentBundle = true };
+        var policy = new TrialOptions { DevelopmentEnvironment = true, EnableDevelopmentCapture = true, EnableDevelopmentBundle = true };
         var trial = new TrialWorkspace { OrganizationId = organization.Id, OwnerUserId = owner.Id, DepartmentId = department.Id, PositionId = position.Id,
             StartedAt = DateTimeOffset.UtcNow, EndsAt = DateTimeOffset.UtcNow.AddDays(14), PolicyJson = JsonSerializer.Serialize(policy), BundleJson = JsonSerializer.Serialize(DevelopmentTrialCatalog.CreateBundle()) };
         setup.AddRange(organization, owner, department, position, trial); await setup.SaveChangesAsync();

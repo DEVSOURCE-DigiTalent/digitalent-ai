@@ -217,8 +217,6 @@ public sealed partial class TrialService
         var email = NormalizeEmail(request.Email);
         if (await db.Users.AnyAsync(x => x.Email == email) || await db.TrialInvitations.AnyAsync(x => x.OrganizationId == trial.OrganizationId && x.Email == email))
             throw new ConflictException("The email already has an account or an invitation.");
-        var usage = await Usage(trial);
-        TrialPolicy.EnsureSeat(usage.Accounts, usage.PendingInvitations, Policy(trial).MaxAccounts);
         var token = Token();
         var invitation = new TrialInvitation
         {
@@ -227,7 +225,6 @@ public sealed partial class TrialService
             SentAt = Now, ExpiresAt = Now.AddHours(Policy(trial).InvitationHours), SendCount = 1
         };
         db.TrialInvitations.Add(invitation);
-        // Workspace revision is a shared atomic quota guard. Parallel requests cannot both commit the last seat.
         await Save(trial);
         await DeliverInvitation(invitation, token);
         return Invitation(invitation, Policy(trial), token);
@@ -242,11 +239,6 @@ public sealed partial class TrialService
         var policy = Policy(trial);
         if (invitation.SendCount >= policy.MaxInvitationSends || Now < invitation.SentAt.AddSeconds(policy.ResendCooldownSeconds))
             throw new ConflictException("Invitation resend limit or cooldown reached.");
-        if (invitation.SendFailed || Now >= invitation.ExpiresAt)
-        {
-            var usage = await Usage(trial);
-            TrialPolicy.EnsureSeat(usage.Accounts, usage.PendingInvitations, policy.MaxAccounts);
-        }
         var token = Token();
         invitation.TokenHash = Hash(token); invitation.ExpiresAt = Now.AddHours(policy.InvitationHours);
         invitation.SentAt = Now; invitation.SendCount++; invitation.SendFailed = false;

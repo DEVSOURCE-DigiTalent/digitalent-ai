@@ -14,7 +14,6 @@ public class GetTrialProgramUseCaseOutput
     public string? MentorName { get; set; }
     public DateTimeOffset? MentorAssignedAt { get; set; }
     public DateTimeOffset? ReportPublishedAt { get; set; }
-    public int MaxParticipants { get; set; }
     /// <summary>Số câu trắc nghiệm của đề tổng hợp và số bài tự luận.</summary>
     public int ChoiceCount { get; set; }
     public int EssayCount { get; set; }

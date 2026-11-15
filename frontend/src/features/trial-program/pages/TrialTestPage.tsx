@@ -13,6 +13,7 @@ import { LevelBadge } from '../components/TrialUi';
 import { TIER_LABELS, domainTotals, formatWhen } from '../lib/trial-format';
 import { TrialExam } from '../components/TrialExam';
 import { TrialDisclosure } from '../components/TrialDisclosure';
+import { TrialScoreScale } from '../components/TrialScoreScale';
 import { TrialEmployeeSurvey } from '../components/TrialEmployeeSurvey';
 import '../trial-program.css';
 
@@ -151,9 +152,6 @@ function DomainAccordionItem({
                     </div>
                   ))}
                 </div>
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#64748b' }}>
-                  {translateUi('Mức theo tỷ lệ đúng của cả lĩnh vực: từ 40% Cơ bản, từ 60% Trung cấp, từ 80% Nâng cao.')}
-                </p>
               </div>
             );
           })()}
@@ -291,12 +289,13 @@ export function TrialTestPage() {
             <div className="tp-card-head" style={{ marginBottom: 16 }}>
               <div>
                 <h2>{translateUi("Kết quả theo lĩnh vực")}</h2>
-                <p className="tp-muted" style={{ margin: '4px 0 0', fontSize: 13 }}>{translateUi("6 lĩnh vực · Chọn để xem kết quả từng cấp.")}</p>
+                <p className="tp-muted" style={{ margin: '4px 0 0', fontSize: 13 }}>{translateUi('Chọn một lĩnh vực để xem số câu đúng.')}</p>
               </div>
 
             </div>
 
-            <div className="tp-accordion-list">
+            <TrialScoreScale />
+            <div className="tp-accordion-list mt-3">
               {data.domains.map((d, i) => {
                 const detail = data.domainDetails?.find((x) => x.categoryId === d.categoryId) ?? null;
                 const level = data.levels![i] ?? 0;

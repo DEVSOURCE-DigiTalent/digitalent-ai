@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AutoReturnNotice } from '../components/AutoReturnNotice';
 
@@ -20,7 +20,10 @@ const tick = (seconds: number) => {
 
 describe('AutoReturnNotice', () => {
   beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
 
   it('counts down five seconds then opens the overview', () => {
     renderDone();

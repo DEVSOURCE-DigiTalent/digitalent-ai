@@ -1,4 +1,3 @@
-using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Trial;
 using DigiTalent.Infrastructure.Trial;
 using Xunit;
@@ -46,16 +45,6 @@ public sealed class TrialAnalysisTests
         var blocked = TrialAnalysis.BuildPath(gap, bundle with { Content = bundle.Content.Select(c => c with { Prerequisites = ["missing-item"] }).ToArray() });
         Assert.False(blocked.Items.Single().AllowedToStart);
         Assert.Contains("missing-item", blocked.Items.Single().Prerequisites);
-    }
-
-    [Theory]
-    [InlineData(1, 0, 2, false)]
-    [InlineData(1, 1, 2, true)]
-    [InlineData(5, 0, 5, true)]
-    public void Quota_counts_pending_seats_and_owner(int accounts, int pending, int max, bool denied)
-    {
-        if (denied) Assert.Throws<ConflictException>(() => TrialPolicy.EnsureSeat(accounts, pending, max));
-        else TrialPolicy.EnsureSeat(accounts, pending, max);
     }
 
     [Fact]

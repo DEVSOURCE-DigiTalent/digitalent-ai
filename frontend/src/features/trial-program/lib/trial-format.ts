@@ -1,7 +1,7 @@
 import type { TrialStage } from '@/services/trial-program.service';
 import { uiLocale } from '@/lib/i18n';
 
-export const LEVEL_LABELS = ['Chưa đạt', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
+export const LEVEL_LABELS = ['Chưa đạt Cơ bản', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
 export const TIER_LABELS = ['', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
 
 /**
@@ -12,7 +12,12 @@ export const LEVEL_SHARE_PERCENTS = [40, 60, 80] as const;
 
 /** Rounded share of right answers (0–100). */
 export function sharePercent(correct: number, total: number): number {
-  return total > 0 ? Math.round((correct * 100) / total) : 0;
+  if (total <= 0) return 0;
+  const rounded = Math.round((correct * 100) / total);
+  // A displayed percentage must not round up into the next survey level.
+  return LEVEL_SHARE_PERCENTS.some((threshold) => rounded === threshold && correct * 100 < total * threshold)
+    ? Math.floor((correct * 1000) / total) / 10
+    : rounded;
 }
 
 /** Survey level of a domain from its right answers: below 40% → 0, from 40% → 1, from 60% → 2, from 80% → 3. */

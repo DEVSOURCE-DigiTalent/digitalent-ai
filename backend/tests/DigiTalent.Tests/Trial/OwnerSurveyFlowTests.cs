@@ -244,6 +244,7 @@ public class OwnerSurveyFlowTests
         result.Status.Should().Be(TrialProgramRules.ParticipantReviewed);
         result.ChoiceScore.Should().Be(assessment.ChoiceScore);
         result.ChoiceTotal.Should().Be(assessment.ChoiceTotal);
+        result.DomainDetails!.Single(d => d.CategoryId == categories[0].CategoryId).Level.Should().Be(2);
         result.ReportPublished.Should().BeFalse();
         world.Context.CapabilityCeilings.RemoveRange(world.Context.CapabilityCeilings
             .Where(c => c.OrganizationId == employee.OrganizationId));
@@ -259,6 +260,7 @@ public class OwnerSurveyFlowTests
         live.Stage.Should().Be(TrialProgramRules.StageRequested);
         live.Report!.Employees.Should().ContainSingle().Which.AssessmentId.Should().Be(assessment.Id);
         live.Report.Summary.Should().OnlyContain(domain => domain.Counts.Sum() == 1);
+        live.Report.Summary.Single(d => d.CategoryId == categories[0].CategoryId).Counts.Should().Equal(0, 0, 1, 0);
         live.Participants.Single(p => p.EmployeeId == employee.Id).Status.Should().Be(TrialProgramRules.ParticipantReviewed);
 
         world.Clock.Advance(TimeSpan.FromHours(2));

@@ -4,6 +4,16 @@ namespace DigiTalent.Application.UseCases.TrialProgram;
 
 internal static class TrialAssessmentResults
 {
+    public static short SuggestedLevelOf(TrialAssessmentDomain domain)
+    {
+        var total = domain.BasicTotal + domain.IntermediateTotal + domain.AdvancedTotal;
+        return total > 0
+            ? TrialProgramRules.LevelFromShare(domain.BasicCorrect + domain.IntermediateCorrect + domain.AdvancedCorrect, total)
+            : domain.SuggestedLevel;
+    }
+
+    public static short EffectiveLevelOf(TrialAssessmentDomain domain) => domain.MentorLevel ?? SuggestedLevelOf(domain);
+
     public static bool IsReady(TrialAssessment? assessment, IReadOnlyCollection<TrialAssessmentDomain>? domains) =>
         assessment != null && IsReady(assessment.ReviewedAt, assessment.ChoiceScore, assessment.ChoiceTotal, domains);
 
