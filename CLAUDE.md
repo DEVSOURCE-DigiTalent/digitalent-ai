@@ -81,6 +81,8 @@ Development startup auto-runs migrations and seeds: org `DIGITALENT`, 5 persiste
 
 ## Frontend — React SPA
 
+> **MANDATORY FRONTEND & UI DESIGN RULE**: Before designing, coding, animating, or reviewing/critiquing any UI screen or component, **you MUST read `.agents/FRONTEND_DESIGN_ORCHESTRATOR.md` and `AGENTS.md` first**. Enforce the skill routing matrix (`impeccable`, `design-taste-frontend`, `hallmark`, `design-dna`, `motion-design`, `modern-web-guidance`, `anti-ai-writing`), the anti-slop craft floor, the animation decision rules, and the post-design critique/improvement loop combined with **Playwright MCP** (`browser_navigate`, `browser_resize`, `browser_take_screenshot`, `browser_snapshot` with `boxes: true`, `browser_emulate_media`, and interactive state testing).
+
 Three portals (spec: `docs/specs/2026-10-01-frontend-ui-ux-restructure-plan.md`, source doc "Danh sách màn hình và luồng UI/UX v1.0"): **Enterprise** `/enterprise/*`, **Personal** `/personal/*` (individual users, replaces `/learn/*`), **Platform** `/platform/*` (DigiTalent staff). The frontend is being rebuilt ahead of the backend, on mock data.
 
 **Directory map (`frontend/src/`):**

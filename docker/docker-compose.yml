@@ -30,6 +30,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-digitalent_minio}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-changeme}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_CORS_ALLOW_ORIGIN:-*}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -80,6 +81,9 @@ services:
       context: ../backend
       dockerfile: ../backend/src/DigiTalent.Api/Dockerfile
     container_name: digitalent-api
+    # Uploaded files (platform slides, proctoring recordings) must survive container rebuilds.
+    volumes:
+      - backend_uploads:/app/uploads
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c"]
     command:
@@ -112,6 +116,13 @@ services:
       Jwt__Issuer: ${JWT_ISSUER:-DigiTalentAI}
       Jwt__Audience: ${JWT_AUDIENCE:-DigiTalentAI.Web}
       Jwt__SigningKey: ${JWT_SIGNING_KEY:-YourSuperSecretKeyThatIsAtLeast64CharactersLong!}
+      FileStorage__Provider: ${FILE_STORAGE_PROVIDER:-Minio}
+      FileStorage__MinioEndpoint: minio:9000
+      FileStorage__MinioPublicEndpoint: ${MINIO_PUBLIC_ENDPOINT:-https://digitalent-ai.duckdns.org/storage}
+      FileStorage__MinioAccessKey: ${MINIO_ACCESS_KEY:-digitalent_minio}
+      FileStorage__MinioSecretKey: ${MINIO_SECRET_KEY:-changeme}
+      FileStorage__MinioBucketName: ${MINIO_BUCKET:-digitalent-ai}
+      FileStorage__MinioUseSsl: "false"
       MinIO__Endpoint: minio:9000
       MinIO__AccessKey: ${MINIO_ACCESS_KEY:-digitalent_minio}
       MinIO__SecretKey: ${MINIO_SECRET_KEY:-changeme}
@@ -138,3 +149,4 @@ networks:
 volumes:
   postgres_data:
   minio_data:
+  backend_uploads:
