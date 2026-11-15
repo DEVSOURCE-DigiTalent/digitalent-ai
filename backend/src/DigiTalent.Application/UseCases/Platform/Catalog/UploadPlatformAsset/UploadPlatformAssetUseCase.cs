@@ -12,18 +12,6 @@ namespace DigiTalent.Application.UseCases.Platform.Catalog;
 /// </summary>
 public class UploadPlatformAssetUseCase : IUseCase<UploadPlatformAssetUseCaseInput, PlatformAssetDto>
 {
-    private static readonly Dictionary<string, string> Kinds = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["image/jpeg"] = PlatformCatalog.AssetKind.Image,
-        ["image/png"] = PlatformCatalog.AssetKind.Image,
-        ["image/webp"] = PlatformCatalog.AssetKind.Image,
-        ["image/gif"] = PlatformCatalog.AssetKind.Image,
-        ["video/mp4"] = PlatformCatalog.AssetKind.Video,
-        ["video/webm"] = PlatformCatalog.AssetKind.Video,
-        ["video/quicktime"] = PlatformCatalog.AssetKind.Video,
-        ["application/pdf"] = PlatformCatalog.AssetKind.Pdf,
-    };
-
     private readonly IApplicationDbContext _context;
     private readonly IFileStorageService _storage;
     private readonly ICurrentUser _currentUser;
@@ -39,30 +27,13 @@ public class UploadPlatformAssetUseCase : IUseCase<UploadPlatformAssetUseCaseInp
 
     public async Task<PlatformAssetDto> ExecuteAsync(UploadPlatformAssetUseCaseInput input)
     {
-        if (!Kinds.TryGetValue(input.ContentType, out var kind))
-        {
-            throw new BadRequestException("Chỉ nhận ảnh JPG, PNG, WebP, GIF, video MP4, WebM, MOV hoặc PDF.", "file", "UNSUPPORTED_FILE_TYPE");
-        }
-
-        if (input.Length <= 0 || input.Length > PlatformCatalog.AssetKind.MaxBytes(kind))
-        {
-            var sizeMsg = kind switch
-            {
-                PlatformCatalog.AssetKind.Video => "Video tối đa 500 MB.",
-                PlatformCatalog.AssetKind.Pdf => "PDF tối đa 50 MB.",
-                _ => "Ảnh tối đa 10 MB.",
-            };
-            throw new BadRequestException(sizeMsg, "file", "FILE_TOO_LARGE");
-        }
-
-        var fileName = Path.GetFileName(input.FileName).Trim();
-        if (fileName.Length > 255) fileName = fileName[^255..];
-        var key = await _storage.UploadAsync(input.Content, fileName, input.ContentType, "platform-assets");
+        var (kind, fileName, contentType) = PlatformCatalogAssetRules.Validate(input.FileName, input.ContentType, input.Length);
+        var key = await _storage.UploadAsync(input.Content, fileName, contentType, "platform-assets");
         var asset = new PlatformAsset
         {
             Kind = kind,
             FileName = fileName,
-            ContentType = input.ContentType.ToLowerInvariant(),
+            ContentType = contentType,
             SizeBytes = input.Length,
             StorageKey = key,
             UploadedByUserId = _currentUser.UserId,

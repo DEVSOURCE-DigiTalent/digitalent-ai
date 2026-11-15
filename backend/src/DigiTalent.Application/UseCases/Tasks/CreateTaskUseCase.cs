@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -28,7 +29,7 @@ public class CreateTaskUseCase : IUseCase<CreateTaskInput, PracticalTaskDetailDt
         if (!input.AssignedEmployeeIds.Any())
             throw new BadRequestException("Phải chọn ít nhất 1 nhân viên.");
 
-        var employees = await _context.Employees.AsNoTracking()
+        var employees = await new EmployeeScope(_context, _currentUser).VisibleEmployees().AsNoTracking()
             .Where(e => input.AssignedEmployeeIds.Contains(e.Id) && e.Status == "ACTIVE" && e.OrganizationId == organizationId)
             .Select(e => new { e.Id, e.FullName, e.EmployeeCode, e.WorkEmail, e.DepartmentId })
             .ToListAsync();

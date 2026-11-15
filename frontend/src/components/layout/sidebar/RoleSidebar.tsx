@@ -40,7 +40,7 @@ export function RoleSidebar({
   const drawerRef = useRef<HTMLElement>(null);
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  useDialogFocus(Boolean(isMobileOpen && isMobile), drawerRef, onMobileClose ?? (() => {}));
+  useDialogFocus(Boolean(isMobileOpen && isMobile), drawerRef, onMobileClose ?? (() => { }));
 
   useEffect(() => {
     if (isMobileOpen) onMobileClose?.();
@@ -77,9 +77,9 @@ export function RoleSidebar({
       aria-hidden={!isMobileOpen && isMobile ? true : undefined}
     >
       {!isPulse && <SidebarOrgBlock isRail={isRail && !isMobileOpen} />}
-      {isPulseOwner && (
+      {isPulse && (
         <Link
-          to="/enterprise/dashboard"
+          to={isPulseManager ? '/enterprise/team' : '/enterprise/dashboard'}
           className={cn('pm-side-brand', isRail && !isMobileOpen && 'rail')}
           aria-label={translateUi("DigiTalent AI: Tổng quan")}
         >

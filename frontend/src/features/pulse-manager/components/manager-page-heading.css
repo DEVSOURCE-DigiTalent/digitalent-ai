@@ -1,0 +1,73 @@
+:is(.manager-page-heading, .member-insight-profile),
+.manager-shell #main-content :is(.manager-work-hero, .owner-operations__header, .fb-scope > div:first-child, .aw-heading, .pa-page-header) {
+  --manager-hero-ink: #fff;
+  --manager-hero-muted: #efe9ff;
+  --manager-hero-action-bg: #f0eaff;
+  --manager-hero-action-ink: #382664;
+  --manager-hero-action-hover: #fff;
+  min-width: 0;
+  padding: clamp(19px, 2.9vw, 36px);
+  border: 1px solid #6657a2;
+  border-radius: 24px;
+  background:
+    repeating-radial-gradient(ellipse at 92% 152%, transparent 0 33px, #d4c7ff18 34px 35px, transparent 36px 65px),
+    radial-gradient(ellipse at 93% 0%, #8861d485, transparent 68%),
+    linear-gradient(120deg, #211b43, #3a2a70 70%, #352d74);
+  color: var(--manager-hero-ink);
+  box-shadow: 0 14px 32px #24174724, inset 0 1px #ffffff20;
+}
+
+.manager-page-heading[data-featured] { padding: clamp(24px, 4vw, 52px); }
+.manager-page-heading[data-featured] h1 { font-size: clamp(29px, 4.3vw, 56px); }
+.manager-page-heading p { color: var(--manager-hero-muted); }
+.manager-page-heading__scope {
+  width: fit-content;
+  padding: 5px 10px;
+  border: 1px solid #d8caff55;
+  border-radius: 99px;
+  background: #a58cf822;
+  color: var(--manager-hero-ink);
+}
+.manager-page-heading .manager-page-heading__actions { flex-wrap: wrap; min-width: 0; }
+.manager-owner-page .manager-page-heading .manager-page-heading__actions
+  :is(.manager-heading-back, .pu-btn-outline, .pu-btn-ghost),
+.manager-shell #main-content :is(.fb-scope > div:first-child > button, .owner-operations__header .owner-operations__secondary) {
+  border-color: var(--manager-hero-action-bg);
+  background: var(--manager-hero-action-bg);
+  color: var(--manager-hero-action-ink);
+}
+.manager-owner-page .manager-page-heading .manager-page-heading__actions
+  :is(.manager-heading-back, .pu-btn-outline, .pu-btn-ghost):hover:not(:disabled),
+.manager-shell #main-content :is(.fb-scope > div:first-child > button, .owner-operations__header .owner-operations__secondary):hover:not(:disabled) {
+  border-color: var(--manager-hero-action-hover);
+  background: var(--manager-hero-action-hover);
+  color: var(--manager-hero-action-ink);
+}
+.manager-owner-page .manager-page-heading .manager-page-heading__actions :is(a, button):focus-visible,
+.manager-shell #main-content :is(.manager-work-hero, .owner-operations__header, .fb-scope > div:first-child, .aw-heading, .pa-page-header) :is(a, button):focus-visible {
+  outline: 2px solid var(--manager-hero-ink);
+  outline-offset: 3px;
+}
+
+.manager-shell #main-content :is(.manager-work-hero, .owner-operations__header, .fb-scope > div:first-child, .aw-heading, .pa-page-header) h1 {
+  background: none;
+  color: var(--manager-hero-ink) !important;
+  -webkit-text-fill-color: currentColor;
+  font-size: clamp(23px, 2.6vw, 36px);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.manager-shell #main-content :is(.manager-work-hero, .owner-operations__header, .pa-page-header) :is(p, .owner-operations__eyebrow, .pa-header-eyebrow, .pa-header-subtitle) {
+  color: var(--manager-hero-muted) !important;
+}
+.manager-shell #main-content .manager-work-hero > a { color: var(--manager-hero-muted) !important; }
+.manager-shell #main-content .manager-work-hero { margin-bottom: 18px; }
+.manager-shell #main-content .owner-operations--detail .manager-work-hero { width: calc(100% - 32px); margin-block: 16px; }
+.manager-shell #main-content .owner-operations--detail .manager-work-hero > div > div:last-child { color: var(--manager-hero-muted) !important; }
+.manager-shell #main-content .fb-scope > div:first-child { flex-wrap: wrap; gap: 12px; }
+.manager-shell #main-content .fb-scope > div:first-child .shared-page-header { margin: 0; min-width: 0; }
+.manager-shell #main-content .aw-heading__icon { background: #f0eaff; border-color: #d8caff; color: #49368b; }
+.manager-shell #main-content .pa-page-header { margin-bottom: 18px; }
+@media (max-width: 640px) {
+  .manager-shell #main-content :is(.owner-operations__header, .aw-heading) { flex-wrap: wrap; gap: 12px; }
+}

@@ -10,7 +10,6 @@ const PulseFinalReviewsPage = lazyPage(() => import('../../../features/pulse-man
 const ManagerCapabilityPage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerCapabilityPage'), 'ManagerCapabilityPage');
 const ManagerTeamTrainingPage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerTeamTrainingPage'), 'ManagerTeamTrainingPage');
 const ManagerCycleReportPage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerCycleReportPage'), 'ManagerCycleReportPage');
-const ManagerFrameworkPage = lazyPage(() => import('../../../features/pulse-manager/pages/ManagerFrameworkPage'), 'ManagerFrameworkPage');
 
 /** MANAGER page registry mapping screen IDs (MG-*) to components. Pulse pages: features/pulse-manager. */
 export const MANAGER_PAGES: PageRegistry = {
@@ -24,5 +23,4 @@ export const MANAGER_PAGES: PageRegistry = {
   'MG-07': TrainingAssignmentDetailPage,
   'MG-13': PulseFinalReviewsPage,
   'MG-14': ManagerCycleReportPage,
-  'MG-15': ManagerFrameworkPage,
 };

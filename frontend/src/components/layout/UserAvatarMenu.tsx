@@ -81,7 +81,7 @@ export function UserAvatarMenu({
         aria-expanded={isOpen}
       >
         <div className="relative">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#137b84] via-[#0d9488] to-[#0284c7] text-white flex items-center justify-center text-xs font-black shadow-xs">
+          <div className="account-menu__trigger-avatar w-8 h-8 rounded-xl bg-gradient-to-tr from-[#137b84] via-[#0d9488] to-[#0284c7] text-white flex items-center justify-center text-xs font-black shadow-xs">
             {initial}
           </div>
           <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-500 border-2 border-white" />

@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using Microsoft.EntityFrameworkCore;
@@ -35,17 +36,20 @@ public class GetTasksUseCase : IUseCase<GetTasksInput, GetTasksOutput>
 
         var assignments = _context.TaskAssignments.AsNoTracking();
         var submissions = _context.TaskSubmissions.AsNoTracking();
-        var evaluations = _context.TaskEvaluations.AsNoTracking();
-        var employees = _context.Employees.AsNoTracking();
+        var employees = new EmployeeScope(_context, _currentUser).VisibleEmployees().AsNoTracking();
         var departments = _context.Departments.AsNoTracking();
         var targets = _context.PracticalTaskTargets.AsNoTracking();
         var users = _context.Users.AsNoTracking();
 
-        if (input.DepartmentId.HasValue)
+        if (input.DepartmentId is { } departmentId)
         {
-            var empIds = employees.Where(e => e.DepartmentId == input.DepartmentId.Value).Select(e => e.Id);
-            var templateIds = assignments.Where(a => empIds.Contains(a.EmployeeId)).Select(a => a.TaskTemplateId).Distinct();
-            query = query.Where(t => templateIds.Contains(t.Id));
+            employees = employees.Where(e => e.DepartmentId == departmentId);
+        }
+
+        if (input.DepartmentId.HasValue || (_currentUser.IsDepartmentManager && !_currentUser.IsAdmin))
+        {
+            assignments = assignments.Where(a => employees.Any(e => e.Id == a.EmployeeId));
+            query = query.Where(t => assignments.Any(a => a.TaskTemplateId == t.Id));
         }
 
         var totalItems = await query.CountAsync();

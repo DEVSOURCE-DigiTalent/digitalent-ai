@@ -5,6 +5,7 @@ import { useUserProfile, useUpdateUserProfile } from '@/hooks/use-platform';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLE_LABELS, type Role } from '@/lib/roles';
 import { apiErrorMessage } from '@/lib/utils';
+import { useIsPulseManager } from '@/features/pulse-manager/lib/use-is-pulse-manager';
 import { AccountWorkspace } from '../components/AccountWorkspace';
 
 export function AccountProfilePage() {
@@ -12,6 +13,7 @@ export function AccountProfilePage() {
   const {data:profile,isLoading,isError,refetch}=useUserProfile();
   const update=useUpdateUserProfile();
   const user=useCurrentUser(s=>s.user);
+  const isManager = useIsPulseManager();
   const [fullName,setFullName]=useState('');
   const [phone,setPhone]=useState('');
   const [jobTitle,setJobTitle]=useState('');
@@ -26,7 +28,7 @@ export function AccountProfilePage() {
   };
   return <AccountWorkspace title={translateUi("Hồ sơ của tôi")} section="profile">
     {isLoading?<div className="aw-card aw-state" role="status">{translateUi("Đang tải hồ sơ…")}</div>:isError?<div className="aw-alert aw-alert--error" role="alert">{translateUi("Không tải được hồ sơ. ")}<button onClick={()=>void refetch()}>{translateUi("Thử lại")}</button></div>:<div className="aw-profile-grid">
-      <aside className="aw-identity"><span className="aw-avatar">{(profile?.fullName||user?.fullName||'U').charAt(0).toUpperCase()}</span><h2>{profile?.fullName||user?.fullName}</h2><span className="aw-identity__email">{profile?.email||user?.email}</span><div className="aw-roles">{user?.roles.map(role=><span key={role}><ShieldCheck size={12}/>{translateUi(ROLE_LABELS[role as Role])??role}</span>)}</div><dl><div><dt>{translateUi("Chức danh")}</dt><dd>{profile?.jobTitle||translateUi('Chưa cập nhật')}</dd></div><div><dt>{translateUi("Số điện thoại")}</dt><dd>{profile?.phone||translateUi('Chưa cập nhật')}</dd></div></dl></aside>
+      <aside className="aw-identity"><span className="aw-avatar">{(profile?.fullName||user?.fullName||'U').charAt(0).toUpperCase()}</span><h2>{profile?.fullName||user?.fullName}</h2><span className="aw-identity__email">{profile?.email||user?.email}</span><div className="aw-roles">{user?.roles.map(role=><span key={role}><ShieldCheck size={12}/>{translateUi(ROLE_LABELS[role as Role])??role}</span>)}</div>{!isManager && <dl><div><dt>{translateUi("Chức danh")}</dt><dd>{profile?.jobTitle||translateUi('Chưa cập nhật')}</dd></div><div><dt>{translateUi("Số điện thoại")}</dt><dd>{profile?.phone||translateUi('Chưa cập nhật')}</dd></div></dl>}</aside>
       <form className="aw-card aw-profile-form" onSubmit={save}>
         <div className="aw-section-title"><span className="aw-icon"><UserRound size={20}/></span><div><h2>{translateUi("Thông tin cá nhân")}</h2><p>{translateUi("Cập nhật thông tin liên hệ của bạn.")}</p></div></div>
         {saved&&<p className="aw-alert aw-alert--success" role="status"><CheckCircle2 size={17}/>{translateUi("Đã lưu thông tin cá nhân.")}</p>}{error&&<p className="aw-alert aw-alert--error" role="alert">{translateUi(error)}</p>}

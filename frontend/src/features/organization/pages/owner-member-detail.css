@@ -70,7 +70,7 @@
 .member-detail-tabs button { padding:12px 17px;border:1px solid transparent;font-size:12px!important; }
 .member-detail-tabs button.is-active { border-color:#c5e4dc;background:linear-gradient(125deg,#fff,#f3fcf8);box-shadow:0 3px 9px #145f570a; }
 .member-detail-content { --tab-accent:#158c81;animation:member-profile-panel-in .28s ease both; }
-.member-detail-content--competency { --tab-accent:#328fa4; }.member-detail-content--learning { --tab-accent:#3b91b3; }.member-detail-content--assessments { --tab-accent:#8f72ba; }.member-detail-content--tasks { --tab-accent:#bc934b; }.member-detail-content--evidence { --tab-accent:#309c89; }.member-detail-content--achievements { --tab-accent:#b4944e; }
+.member-detail-content--competency { --tab-accent:#328fa4; }.member-detail-content--learning { --tab-accent:#3b91b3; }.member-detail-content--assessments { --tab-accent:#8f72ba; }.member-detail-content--evidence { --tab-accent:#309c89; }.member-detail-content--achievements { --tab-accent:#b4944e; }
 .member-live-capability { display:grid;gap:20px; }
 .member-detail-content .member-tab-heading-icon { color:var(--tab-accent);background:linear-gradient(135deg,#fff,color-mix(in srgb,var(--tab-accent) 11%,white));border:1px solid color-mix(in srgb,var(--tab-accent) 18%,white);box-shadow:inset 0 1px #fff; }
 .member-detail-content .member-tab-card { background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--tab-accent) 5%,transparent),transparent 70%),white;border-color:color-mix(in srgb,var(--tab-accent) 15%,#e5edf0); }

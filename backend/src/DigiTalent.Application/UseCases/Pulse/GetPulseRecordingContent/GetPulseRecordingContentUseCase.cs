@@ -15,12 +15,21 @@ public class GetPulseRecordingContentUseCase : IUseCase<GetPulseRecordingContent
     private readonly IApplicationDbContext _context;
     private readonly IFileStorageService _storage;
     private readonly IProctoringRecordingUrlSigner _signer;
+    private readonly IDirectFileStorageService? _directStorage;
+    private readonly IChunkedFileFinalizer? _finalizer;
 
-    public GetPulseRecordingContentUseCase(IApplicationDbContext context, IFileStorageService storage, IProctoringRecordingUrlSigner signer)
+    public GetPulseRecordingContentUseCase(
+        IApplicationDbContext context,
+        IFileStorageService storage,
+        IProctoringRecordingUrlSigner signer,
+        IDirectFileStorageService? directStorage = null,
+        IChunkedFileFinalizer? finalizer = null)
     {
         _context = context;
         _storage = storage;
         _signer = signer;
+        _directStorage = directStorage;
+        _finalizer = finalizer;
     }
 
     public async Task<GetPulseRecordingContentUseCaseOutput> ExecuteAsync(GetPulseRecordingContentUseCaseInput input)
@@ -39,12 +48,36 @@ public class GetPulseRecordingContentUseCase : IUseCase<GetPulseRecordingContent
             throw new NotFoundException("Không tìm thấy bản ghi.");
         }
 
-        var content = await _storage.DownloadAsync(recording.StoragePath);
         var semicolon = recording.ContentType.IndexOf(';');
+        var contentType = semicolon > 0 ? recording.ContentType[..semicolon] : recording.ContentType;
+
+        if (_finalizer != null)
+        {
+            await _finalizer.FinalizeAsync(recording.StoragePath, contentType);
+        }
+
+        if (_directStorage is { SupportsDirectAccess: true })
+        {
+            var presignedUrl = await _directStorage.GetPresignedDownloadUrlAsync(
+                recording.StoragePath,
+                TimeSpan.FromMinutes(15),
+                fileName: null,
+                inline: true);
+            if (!string.IsNullOrEmpty(presignedUrl))
+            {
+                return new GetPulseRecordingContentUseCaseOutput
+                {
+                    RedirectUrl = presignedUrl,
+                    ContentType = contentType,
+                };
+            }
+        }
+
+        var content = await _storage.DownloadAsync(recording.StoragePath);
         return new GetPulseRecordingContentUseCaseOutput
         {
             Content = content,
-            ContentType = semicolon > 0 ? recording.ContentType[..semicolon] : recording.ContentType,
+            ContentType = contentType,
         };
     }
 }

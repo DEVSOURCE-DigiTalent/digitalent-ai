@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -55,8 +56,8 @@ public class BroadcastNotificationUseCase : IUseCase<BroadcastNotificationInput,
         }
 
         // 1. Phân giải danh sách nhân viên nhận thông báo
-        var query = _context.Employees.AsNoTracking()
-            .Where(e => e.OrganizationId == organizationId && e.Status == Statuses.Employee.Active);
+        var query = new EmployeeScope(_context, _currentUser).VisibleEmployees().AsNoTracking()
+            .Where(e => e.Status == Statuses.Employee.Active);
 
         var hasDeptFilter = input.TargetDepartmentIds != null && input.TargetDepartmentIds.Count > 0;
         var hasEmpFilter = input.TargetEmployeeIds != null && input.TargetEmployeeIds.Count > 0;

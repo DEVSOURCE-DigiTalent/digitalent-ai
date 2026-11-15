@@ -72,7 +72,7 @@
 .aw-security-note h2{margin:25px 0 20px;font-size:24px;font-weight:750;line-height:1.4;letter-spacing:-.025em;color:#365974}
 .aw-security-note ul{display:grid;gap:20px;margin:0;padding-left:17px;color:#6d879a;font-size:13px;line-height:1.65}
 .aw-history .aw-section-title{margin-bottom:20px}
-.aw-icon-button{display:grid;place-items:center;width:36px;height:36px;border:1px solid #d6e5eb;border-radius:11px;background:#fff;color:#508d9a;margin-left:auto}
+.aw-icon-button{flex-shrink:0;display:grid;place-items:center;width:36px;height:36px;border:1px solid #d6e5eb;border-radius:11px;background:#fff;color:#508d9a;margin-left:auto}
 .aw-table-scroll{overflow:auto}
 .aw-history table{width:100%;min-width:650px;border-collapse:collapse;text-align:left;font-size:13px}
 .aw-history th{padding:13px 16px;background:#f0f6f9;color:#6e8799;font-size:11px;font-weight:700}
@@ -112,7 +112,7 @@ to{opacity:1;transform:translateY(0)}
 }
 @media(max-width:1000px){.aw-profile-grid{grid-template-columns:minmax(210px,.8fr) minmax(0,1.6fr)}
 .aw-security-grid{grid-template-columns:1fr}
-.aw-security-note{display:none}
+.aw-security-note{padding:24px}
 .aw-fields{grid-template-columns:1fr}
 }
 @media(max-width:700px){.account-workspace{gap:18px;padding-top:0}

@@ -80,7 +80,7 @@ public class SubmitPulsePreAssessmentUseCase : IUseCase<SubmitPulsePreAssessment
             {
                 RecipientUserId = reviewerUserId,
                 Type = NotificationType,
-                Title = "Có bài đánh giá trước khi học cần chấm",
+                Title = "Nhân viên đã nộp bài đánh giá trước khi học",
                 Message = $"{snapshot.Employee.FullName} đã nộp bài đánh giá trước khi học khóa \"{state.Course.Title}\".",
                 RelatedEntityType = "course_pre_assessments",
                 RelatedEntityId = preAssessment.Id,

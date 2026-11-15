@@ -70,8 +70,6 @@ public class SubmitMyTrialAssessmentUseCase : IUseCase<SubmitMyTrialAssessmentUs
             _context.ExamChoiceAnswers.Add(answer);
         }
 
-        assessment.ReviewedAt = now;
-
         var correct = grade.Answers.ToDictionary(a => a.QuestionId, a => a.IsCorrect);
         foreach (var domain in paper.Domains)
         {

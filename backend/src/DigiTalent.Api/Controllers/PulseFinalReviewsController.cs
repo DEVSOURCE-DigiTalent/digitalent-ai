@@ -18,11 +18,12 @@ public class PulseFinalReviewsController : ControllerBase
 {
     // GET api/v1/pulse/final-reviews?includeReviewed=true&organizationId=... — bài đánh giá và bài cuối cấp chờ chấm, cửa sổ nộp lại, quá hạn, cờ hỗ trợ (và bài đã chấm khi includeReviewed=true)
     [HttpGet]
-    [HasPermission(Permissions.Task.Evaluate, Permissions.Trial.Review)]
+    [HasPermission(Permissions.Dashboard.DepartmentRead, Permissions.Task.Evaluate, Permissions.Trial.Review)]
     public async Task<ActionResult<ApiResponse<GetPulseFinalReviewsUseCaseOutput>>> GetQueue(
         [FromServices] IUseCase<GetPulseFinalReviewsUseCaseInput, GetPulseFinalReviewsUseCaseOutput> useCase,
         [FromQuery] bool includeReviewed = false,
         [FromQuery] Guid? organizationId = null,
+        [FromQuery] Guid? departmentId = null,
         [FromQuery] bool refreshAi = false,
         [FromQuery] Guid? refreshSubmissionId = null)
     {
@@ -30,6 +31,7 @@ public class PulseFinalReviewsController : ControllerBase
         {
             IncludeReviewed = includeReviewed,
             OrganizationId = organizationId,
+            DepartmentId = departmentId,
             RefreshAi = refreshAi,
             RefreshSubmissionId = refreshSubmissionId,
         });

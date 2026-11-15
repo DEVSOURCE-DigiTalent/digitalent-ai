@@ -256,12 +256,12 @@ const Scene3ProcessShowcase = memo(function Scene3ProcessShowcase({
     };
 
     syncSlabMetrics();
-    const ro = new ResizeObserver(syncSlabMetrics);
-    ro.observe(rack);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(syncSlabMetrics) : null;
+    ro?.observe(rack);
     window.addEventListener('resize', syncSlabMetrics);
 
     return () => {
-      ro.disconnect();
+      ro?.disconnect();
       window.removeEventListener('resize', syncSlabMetrics);
     };
   }, []);
@@ -2238,9 +2238,10 @@ export function PulseBusinessLandingPage() {
   // Scene 6: Interactive Circular Carousel (Radial Showcase) State
   const [activeSuiteIdx, setActiveSuiteIdx] = useState<number>(0);
   const [wheelRotationDeg, setWheelRotationDeg] = useState<number>(0);
+  const [suiteSlideDir, setSuiteSlideDir] = useState<'next' | 'prev'>('next');
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
   const [isSuiteAutoPaused, setIsSuiteAutoPaused] = useState<boolean>(false);
-  const [openFaqIndices, setOpenFaqIndices] = useState<number[]>([0]);
+  const [openFaqIndices, setOpenFaqIndices] = useState<number[]>([]);
 
   // Scene 4 State (Matrix)
   const [selectedRoleId, setSelectedRoleId] = useState<'ceo' | 'hr' | 'marketing' | 'sales' | 'accountant'>('ceo');
@@ -2250,16 +2251,19 @@ export function PulseBusinessLandingPage() {
     if (targetIdx === activeSuiteIdx) return;
     const diff = (targetIdx - activeSuiteIdx + 6) % 6;
     const shortestStep = diff > 3 ? diff - 6 : diff;
+    setSuiteSlideDir(shortestStep < 0 ? 'prev' : 'next');
     setWheelRotationDeg((prev) => prev + shortestStep * 60);
     setActiveSuiteIdx(targetIdx);
   }, [activeSuiteIdx]);
 
   const handlePrevSuite = useCallback(() => {
+    setSuiteSlideDir('prev');
     setWheelRotationDeg((prev) => prev - 60);
     setActiveSuiteIdx((prev) => (prev - 1 + 6) % 6);
   }, []);
 
   const handleNextSuite = useCallback(() => {
+    setSuiteSlideDir('next');
     setWheelRotationDeg((prev) => prev + 60);
     setActiveSuiteIdx((prev) => (prev + 1) % 6);
   }, []);
@@ -2268,6 +2272,7 @@ export function PulseBusinessLandingPage() {
   useEffect(() => {
     if (isSuiteAutoPaused || isDetailModalOpen) return;
     const autoTimer = setInterval(() => {
+      setSuiteSlideDir('next');
       setWheelRotationDeg((prev) => prev + 60);
       setActiveSuiteIdx((prev) => (prev + 1) % 6);
     }, 6000);
@@ -2288,10 +2293,10 @@ export function PulseBusinessLandingPage() {
   };
 
   const SECURITY_STATS = [
-    { label: 'Máy chủ tại Việt Nam', icon: Server },
-    { label: 'Sao lưu tự động hằng ngày', icon: Database },
-    { label: 'Sẵn sàng vận hành 99.9%', icon: ShieldCheck },
-    { label: 'Mã hóa dữ liệu AES-256', icon: Lock },
+    { label: 'Cách ly theo OrganizationId', icon: Database },
+    { label: 'Lưu trữ tệp MinIO riêng biệt', icon: Server },
+    { label: 'Kết nối mã hóa HTTPS / TLS', icon: Lock },
+    { label: 'Xác thực JWT theo vai trò', icon: ShieldCheck },
   ];
 
   // 5 Enterprise Position Benchmarks matching backend Tt02Catalog.Positions (TT 02/2025)
@@ -2508,28 +2513,28 @@ export function PulseBusinessLandingPage() {
   // Scene 6: 6 Enterprise Security & Governance FAQs
   const FAQS = [
     {
-      q: 'Dữ liệu bài thi và danh sách nhân sự của doanh nghiệp được bảo vệ như thế nào trước nguy cơ rò rỉ?',
-      a: 'Mỗi tổ chức sở hữu một phân vùng dữ liệu riêng biệt (Dedicated Schema), được mã hóa chuẩn AES-256. Hệ thống ngăn ngừa triệt để tình trạng truy cập chéo giữa các doanh nghiệp khách hàng.',
+      q: 'Dữ liệu bài thi và nhân sự được bảo vệ thế nào trước nguy cơ rò rỉ?',
+      a: 'Mỗi truy vấn dữ liệu đều gắn chặt với định danh tổ chức (OrganizationId) từ phiên đăng nhập JWT, ngăn chặn truy cập chéo giữa các doanh nghiệp.',
     },
     {
-      q: 'Cơ chế phân quyền của hệ thống kiểm soát quyền xem điểm số và báo cáo nhân sự ra sao?',
-      a: 'Hệ thống thiết lập 4 tầng thẩm quyền: Nhân viên chỉ xem điểm và lộ trình cá nhân, Quản lý theo dõi đội ngũ trực thuộc, Ban Giám đốc xem báo cáo tổng hợp toàn công ty và Quản trị viên HR tổ chức kỳ khảo thí mà không can thiệp kết quả.',
+      q: 'Hệ thống phân quyền xem điểm số và báo cáo nhân sự ra sao?',
+      a: 'Thiết lập 3 vai trò cốt lõi: Chủ doanh nghiệp quản trị toàn tổ chức, Quản lý theo dõi nhân sự trong phòng ban phụ trách và Nhân viên xem lộ trình cá nhân.',
     },
     {
-      q: 'Dữ liệu đề thi nội bộ và kết quả đánh giá có bị đưa vào huấn luyện các mô hình AI mở không?',
-      a: 'Không. DigiTalent AI cam kết khoanh vùng xử lý trong môi trường khép kín. Dữ liệu khảo thí chỉ phục vụ chấm điểm và phân tích nội bộ, tuyệt đối không chia sẻ cho các mô hình AI công cộng.',
+      q: 'Trợ lý AI và tính năng chấm tự luận xử lý dữ liệu nội bộ như thế nào?',
+      a: 'Hệ thống chỉ đọc dữ liệu đúng thẩm quyền của người gọi qua kết nối HTTPS và áp dụng bộ lọc đầu vào, kèm cơ chế chấm dự phòng khi mất kết nối.',
     },
     {
-      q: 'Doanh nghiệp có thể tra cứu và đối soát lại lịch sử làm bài thi của nhân sự khi cần không?',
-      a: 'Có. Toàn bộ thời gian làm bài, lượt nộp và điểm đánh giá được lưu vết minh bạch. Mỗi chứng nhận năng lực đều gắn mã hash xác thực, hỗ trợ xuất báo cáo kiểm toán định dạng PDF và Excel bất kỳ lúc nào.',
+      q: 'Doanh nghiệp có thể tra cứu lịch sử thao tác và xác thực chứng nhận không?',
+      a: 'Có. Hệ thống ghi nhận nhật ký hoạt động quản trị theo tổ chức (Audit Log) và cấp mã định danh duy nhất định dạng DT-YYYY cho từng chứng nhận.',
     },
     {
-      q: 'Hệ thống xử lý thế nào khi có kỳ thi quy mô lớn với hàng trăm nhân sự làm bài cùng lúc?',
-      a: 'Hệ thống đặt tại các trung tâm dữ liệu nội địa tiêu chuẩn tại Việt Nam, kết hợp cơ chế cân bằng tải tự động và cụm máy chủ dự phòng. Dữ liệu được sao lưu tự động hàng ngày để đảm bảo kỳ thi diễn ra liên tục, ổn định.',
+      q: 'Hệ thống hỗ trợ triển khai trên hạ tầng máy chủ nào?',
+      a: 'Nền tảng đóng gói đồng bộ bằng Docker với .NET API, PostgreSQL 16 và MinIO, sẵn sàng chạy trên máy chủ nội bộ hoặc hạ tầng đám mây tại Việt Nam.',
     },
     {
-      q: 'Doanh nghiệp có toàn quyền trích xuất hoặc yêu cầu xóa vĩnh viễn dữ liệu nhân sự không?',
-      a: 'Có. Theo đúng cam kết về chủ quyền dữ liệu và Nghị định 13/2023/NĐ-CP, doanh nghiệp toàn quyền tải về trọn bộ hồ sơ khảo thí định dạng Excel/JSON và có thể yêu cầu xóa vĩnh viễn dữ liệu khỏi hệ thống bất kỳ lúc nào.',
+      q: 'Doanh nghiệp kiểm soát quyền truy cập của nhân sự khi có thay đổi tổ chức ra sao?',
+      a: 'Chủ doanh nghiệp có toàn quyền quản lý danh sách thành viên, điều chỉnh vai trò, phòng ban và thu hồi quyền truy cập tài khoản ngay lập tức.',
     },
   ];
 
@@ -2543,85 +2548,97 @@ export function PulseBusinessLandingPage() {
   const SECURITY_SUITES = [
     {
       id: 'isolation',
-      name: 'Cô Lập Vùng Dữ Liệu',
-      title: 'Tách biệt dữ liệu tổ chức',
-      suiteTitle: 'Cô lập dữ liệu riêng biệt cho từng doanh nghiệp',
-      desc: 'Mỗi doanh nghiệp sở hữu không gian lưu trữ độc lập, mã hóa AES-256 và cách ly hoàn toàn rò rỉ chéo.',
-      tag: 'VÙNG CÔ LẬP',
-      topChip: 'DEDICATED SCHEMA',
-      score: 'AES-256',
-      specs: ['Mã hóa AES-256', 'Dedicated Schema'],
-      image: '/images/landing-scenes/scene4_council_boardroom.jpg',
+      name: 'Cô Lập Dữ Liệu Theo Tổ Chức',
+      shortTab: 'Cô lập dữ liệu',
+      title: 'Tách biệt dữ liệu doanh nghiệp',
+      suiteTitle: 'Phân tách dữ liệu chặt chẽ theo định danh tổ chức',
+      desc: 'Mọi bài thi, hồ sơ nhân sự và báo cáo đều gắn định danh OrganizationId, chặn truy cập chéo.',
+      tag: 'PHÂN VÙNG TỔ CHỨC',
+      topChip: 'ORGANIZATION SCOPE',
+      score: 'ORG-ID',
+      specs: ['Khóa định danh OrganizationId', 'Chặn truy vấn chéo'],
+      image: '/images/landing-scenes/security/sec1-isolation.png',
+      bgColor: '#EFF0F2',
       iconComponent: Database,
       faqIdx: 0,
     },
     {
       id: 'rbac',
-      name: 'Phân Cấp Quản Trị Theo Cơ Cấu',
+      name: 'Phân Quyền 3 Vai Trò & Phòng Ban',
+      shortTab: 'Phân quyền',
       title: 'Kiểm soát quyền truy cập',
-      suiteTitle: 'Phân cấp thẩm quyền theo cơ cấu tổ chức',
-      desc: 'Nhân viên chỉ xem điểm cá nhân, quản lý theo dõi đội ngũ và ban giám đốc nắm bức tranh toàn diện.',
+      suiteTitle: 'Phân quyền theo vai trò và phạm vi phòng ban',
+      desc: 'Phân tách rõ quyền hạn giữa Chủ doanh nghiệp, Quản lý theo phòng ban và Nhân viên.',
       tag: 'ĐÚNG THẨM QUYỀN',
-      topChip: '4 CẤP QUẢN TRỊ',
-      score: '4 TẦNG',
-      specs: ['Kiểm soát 4 cấp bậc', 'Bảo mật điểm thi'],
-      image: '/images/landing-scenes/scene4_daylight_room.jpg',
+      topChip: '3 VAI TRÒ CỐT LÕI',
+      score: '3 VAI TRÒ',
+      specs: ['Chủ doanh nghiệp · Quản lý · Nhân viên', 'Giới hạn theo phòng ban'],
+      image: '/images/landing-scenes/security/sec2-rbac.png',
+      bgColor: '#EFECE7',
       iconComponent: ShieldCheck,
       faqIdx: 1,
     },
     {
       id: 'ai-boundary',
-      name: 'Ranh Giới Xử Lý AI Khép Kín',
-      title: 'An toàn mô hình trí tuệ nhân tạo',
-      suiteTitle: 'Khoanh vùng xử lý AI trong môi trường khép kín',
-      desc: 'Đề thi và bài làm chỉ xử lý nội bộ, cam kết tuyệt đối không gửi ra ngoài để huấn luyện AI công cộng.',
-      tag: 'DỮ LIỆU NỘI BỘ',
-      topChip: 'ZERO TRAINING LEAK',
-      score: 'TLS 1.3',
-      specs: ['Xử lý AI khép kín', 'Zero training leak'],
-      image: '/images/landing-scenes/scene5_console_bg.jpg',
+      name: 'Kiểm Soát Dữ Liệu Trợ Lý AI',
+      shortTab: 'Kiểm soát AI',
+      title: 'Giới hạn phạm vi truy cập AI',
+      suiteTitle: 'Trợ lý AI đọc dữ liệu đúng thẩm quyền người dùng',
+      desc: 'Trợ lý AI và chấm tự luận chỉ đọc dữ liệu đúng quyền truy cập, kèm cơ chế dự phòng nội bộ.',
+      tag: 'PHẠM VI DỮ LIỆU AI',
+      topChip: 'QUYỀN TRUY CẬP HẸP',
+      score: 'HTTPS / TLS',
+      specs: ['Đọc dữ liệu theo quyền', 'Truyền tải mã hóa HTTPS'],
+      image: '/images/landing-scenes/security/sec3-ai-control.png',
+      bgColor: '#F4F0ED',
       iconComponent: Lock,
       faqIdx: 2,
     },
     {
       id: 'audit-log',
-      name: 'Nhật Ký Thao Tác & Chứng Nhận Số',
-      title: 'Minh bạch lịch sử đánh giá',
-      suiteTitle: 'Nhật ký đối soát và cấp chứng nhận số',
-      desc: 'Toàn bộ thao tác nộp bài và chấm điểm được lưu vết thời gian thực, cấp mã định danh tra cứu minh bạch.',
-      tag: 'LƯU VẾT 24/7',
-      topChip: 'MÃ HASH ĐỊNH DANH',
-      score: 'VERIFIED',
-      specs: ['Lưu vết 24/7', 'Mã tra cứu xác thực'],
-      image: '/images/landing-scenes/scene3_tech_data.jpg',
+      name: 'Nhật Ký Hoạt Động & Mã Chứng Nhận',
+      shortTab: 'Nhật ký số',
+      title: 'Minh bạch lịch sử quản trị',
+      suiteTitle: 'Nhật ký thao tác quản trị và mã chứng nhận duy nhất',
+      desc: 'Ghi nhận nhật ký thao tác theo tổ chức và cấp mã định danh duy nhất cho từng chứng nhận.',
+      tag: 'LƯU VẾT HỆ THỐNG',
+      topChip: 'AUDIT LOG & MÃ DT',
+      score: 'DT-CODE',
+      specs: ['Nhật ký quản trị AuditLog', 'Mã chứng nhận DT-YYYY'],
+      image: '/images/landing-scenes/security/sec4-audit-log.png',
+      bgColor: '#F4F5F9',
       iconComponent: FileCheck2,
       faqIdx: 3,
     },
     {
       id: 'infrastructure',
-      name: 'Hạ Tầng Điện Toán & Dự Phòng Kép',
-      title: 'Năng lực vận hành máy chủ',
-      suiteTitle: 'Hạ tầng máy chủ nội địa với dự phòng kép',
-      desc: 'Hệ thống đặt tại trung tâm dữ liệu Việt Nam, tự động sao lưu và sẵn sàng chịu tải lớn khi tổ chức kỳ thi.',
-      tag: 'SẴN SÀNG 99.9%',
-      topChip: 'SAO LƯU TỰ ĐỘNG',
-      score: '99.9%',
-      specs: ['Máy chủ tại VN', 'Sẵn sàng 99.9%'],
-      image: '/images/landing-scenes/scene3_operations.jpg',
+      name: 'Hạ Tầng Container Độc Lập',
+      shortTab: 'Hạ tầng',
+      title: 'Kiến trúc triển khai linh hoạt',
+      suiteTitle: 'Đóng gói đồng bộ .NET API, PostgreSQL 16 và MinIO',
+      desc: 'Sẵn sàng triển khai trọn bộ trên máy chủ nội bộ doanh nghiệp hoặc hạ tầng đám mây tại Việt Nam.',
+      tag: 'TRIỂN KHAI LINH HOẠT',
+      topChip: 'DOCKER STACK',
+      score: 'POSTGRES 16',
+      specs: ['PostgreSQL 16 & MinIO', 'Triển khai nội bộ hoặc Cloud'],
+      image: '/images/landing-scenes/security/sec5-infrastructure.png',
+      bgColor: '#F4F3F1',
       iconComponent: Server,
       faqIdx: 4,
     },
     {
       id: 'sovereignty',
-      name: 'Chủ Quyền Dữ Liệu & Quyền Riêng Tư',
-      title: 'Tuân thủ bảo vệ dữ liệu cá nhân',
-      suiteTitle: 'Chủ quyền dữ liệu và quyền trích xuất, xóa hủy',
-      desc: 'Doanh nghiệp toàn quyền sở hữu dữ liệu, hỗ trợ trích xuất toàn bộ báo cáo hoặc yêu cầu xóa vĩnh viễn theo chuẩn Nghị định 13.',
-      tag: 'NGHỊ ĐỊNH 13/2023',
-      topChip: 'CHỦ QUYỀN DỮ LIỆU',
-      score: 'NĐ 13/2023',
-      specs: ['Chủ quyền dữ liệu', 'Xóa hủy theo yêu cầu'],
-      image: '/images/landing-scenes/scene4_council_boardroom.jpg',
+      name: 'Quản Trị Quyền Riêng Tư Dữ Liệu',
+      shortTab: 'Quyền riêng tư',
+      title: 'Kiểm soát hồ sơ nhân sự',
+      suiteTitle: 'Chủ động quản lý thành viên và thu hồi quyền truy cập',
+      desc: 'Doanh nghiệp chủ động quản lý danh sách nhân sự, phân quyền và thu hồi truy cập bất kỳ lúc nào.',
+      tag: 'QUẢN TRỊ HỒ SƠ',
+      topChip: 'QUYỀN RIÊNG TƯ',
+      score: 'KIỂM SOÁT',
+      specs: ['Quản lý & thu hồi truy cập', 'Kiểm soát hồ sơ nhân sự'],
+      image: '/images/landing-scenes/security/sec6-privacy.png',
+      bgColor: '#F0F1F5',
       iconComponent: KeyRound,
       faqIdx: 5,
     },
@@ -3817,16 +3834,8 @@ export function PulseBusinessLandingPage() {
               }}
             >
               <section className="b2b-section b2b-trust-section">
-          {/* Architectural Room Environment Backdrop (Daylight Governance Suite) */}
+          {/* Clean White Backdrop */}
           <div className="scene6-media-layer" aria-hidden="true">
-            <img
-              src="/images/landing-scenes/scene6_suite.png"
-              alt="Phòng Quản Trị Dữ Liệu & Kiểm Soát Doanh Nghiệp"
-              className="scene6-bg-image"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
             <div className="scene6-bg-overlay" />
           </div>
 
@@ -3834,9 +3843,9 @@ export function PulseBusinessLandingPage() {
             {/* Header: Micro-Copy súc tích */}
             <div className="b2b-section-header scene6-header">
               <span className="b2b-section-badge">AN TOÀN THÔNG TIN &amp; VẬN HÀNH DỮ LIỆU</span>
-              <h2 className="b2b-section-title">Kiến Trúc An Toàn &amp; Kiểm Soát Dữ Liệu Doanh Nghiệp</h2>
+              <h2 className="b2b-section-title">Kiến Trúc An Toàn &amp; Kiểm Soát Dữ Liệu</h2>
               <p className="b2b-section-desc">
-                Hệ thống vận hành theo 6 chuẩn mực an toàn thông tin: dữ liệu cô lập riêng biệt, phân quyền minh bạch, xử lý AI khép kín và toàn quyền chủ quyền dữ liệu.
+                Phân tách dữ liệu theo tổ chức, phân quyền 3 vai trò và kiểm soát phạm vi truy cập.
               </p>
             </div>
 
@@ -3879,7 +3888,7 @@ export function PulseBusinessLandingPage() {
                     </div>
                     <div className="scene6-flank-titles">
                       <h4 className="scene6-flank-title">Hạ tầng vận hành</h4>
-                      <p className="scene6-flank-subtitle">Máy chủ nội địa Việt Nam</p>
+                      <p className="scene6-flank-subtitle">Kiến trúc .NET, PostgreSQL &amp; MinIO</p>
                     </div>
                   </div>
 
@@ -3910,21 +3919,29 @@ export function PulseBusinessLandingPage() {
                 {/* Cụm Tiêu Đề Lõm Vào Đáy Vòm (Bottom Center Cap) */}
                 <div className="scene6-dome-cap-card">
                   {/* Nút Pill xanh đậm nằm vắt ngang đỉnh khối trắng */}
-                  <div className="scene6-cap-pill">
+                  <div
+                    key={`pill-${SECURITY_SUITES[activeSuiteIdx].id}`}
+                    className={`scene6-cap-pill is-${suiteSlideDir}`}
+                  >
                     <span>{SECURITY_SUITES[activeSuiteIdx].tag}</span>
                   </div>
 
-                  <h3 className="scene6-dome-title">{SECURITY_SUITES[activeSuiteIdx].name}</h3>
-                  <p className="scene6-dome-desc">{SECURITY_SUITES[activeSuiteIdx].desc}</p>
+                  <div
+                    key={`stage-${SECURITY_SUITES[activeSuiteIdx].id}`}
+                    className={`scene6-cap-sync-stage is-${suiteSlideDir}`}
+                  >
+                    <h3 className="scene6-dome-title">{SECURITY_SUITES[activeSuiteIdx].name}</h3>
+                    <p className="scene6-dome-desc">{SECURITY_SUITES[activeSuiteIdx].desc}</p>
 
-                  {/* 2 Tech Spec Chips */}
-                  <div className="scene6-dome-specs">
-                    {SECURITY_SUITES[activeSuiteIdx].specs.map((spec) => (
-                      <span key={spec} className="scene6-spec-chip">
-                        <span className="scene6-spec-dot" aria-hidden="true" />
-                        <span>{spec}</span>
-                      </span>
-                    ))}
+                    {/* 2 Tech Spec Chips */}
+                    <div className="scene6-dome-specs">
+                      {SECURITY_SUITES[activeSuiteIdx].specs.map((spec) => (
+                        <span key={spec} className="scene6-spec-chip">
+                          <span className="scene6-spec-dot" aria-hidden="true" />
+                          <span>{spec}</span>
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Navigation Controls: Arrows, Dots, and CTA */}
@@ -4034,56 +4051,17 @@ export function PulseBusinessLandingPage() {
                       className="scene6-flank-btn is-primary"
                       onClick={() => setIsDetailModalOpen(true)}
                     >
-                      Xem tất cả 6 câu hỏi
+                      Xem 6 câu hỏi
                     </button>
                     <button
                       type="button"
                       className="scene6-flank-btn is-outline"
                       onClick={() => playScene6ToScene7()}
                     >
-                      Đăng ký tư vấn trực tiếp
+                      Tư vấn trực tiếp
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Bottom Architecture Stepper Strip */}
-            <div className="scene6-bottom-strip">
-              <div className="scene6-strip-header">
-                <span className="scene6-strip-title">6 Chuẩn Mực An Toàn Thông Tin &amp; Quản Trị Dữ Liệu</span>
-                <span className="scene6-strip-counter">0{activeSuiteIdx + 1} / 06</span>
-              </div>
-
-              <div className="scene6-stepper-grid" role="tablist" aria-label="Danh sách phân vùng dữ liệu">
-                {SECURITY_SUITES.map((suite, idx) => {
-                  const isActive = idx === activeSuiteIdx;
-                  const IconComp = suite.iconComponent;
-                  return (
-                    <button
-                      key={suite.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={isActive}
-                      className={`scene6-stepper-card ${isActive ? 'is-active' : ''}`}
-                      onClick={() => handleSelectSuite(idx)}
-                      aria-label={`Chọn phân vùng: ${suite.name}`}
-                    >
-                      <div className="scene6-stepper-top">
-                        <span className="scene6-stepper-num">0{idx + 1}</span>
-                        <span className="scene6-stepper-icon" aria-hidden="true">
-                          <IconComp size={14} />
-                        </span>
-                        <span className="scene6-stepper-tag">{suite.tag}</span>
-                      </div>
-                      <div className="scene6-stepper-body">
-                        <span className="scene6-stepper-name">{suite.name}</span>
-                        <span className="scene6-stepper-sub">{suite.topChip}</span>
-                      </div>
-                      <div className="scene6-stepper-bar" aria-hidden="true" />
-                    </button>
-                  );
-                })}
               </div>
             </div>
           </div>

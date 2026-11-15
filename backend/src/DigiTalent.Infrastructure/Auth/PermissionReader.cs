@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Infrastructure.Persistence;
+using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -35,6 +36,8 @@ public class PermissionReader : IPermissionReader
 
                 return await _context.RolePermissions
                     .Where(rp => rp.Role.Code == roleCode)
+                    // Existing databases may still contain the former manager grant.
+                    .Where(rp => roleCode != Roles.Manager || rp.Permission.Code != Permissions.Task.Evaluate)
                     .Select(rp => rp.Permission.Code)
                     .ToListAsync();
             });

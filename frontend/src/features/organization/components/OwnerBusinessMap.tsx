@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Award, BookOpen, Building2, ClipboardCheck, FlaskConical, GraduationCap, Layers3, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, Award, BookOpen, Building2, FlaskConical, GraduationCap, Layers3, TrendingUp, Users } from 'lucide-react';
 import { useReportsOverview } from '@/hooks/use-analytics';
 import { useCertificates } from '@/hooks/use-learning';
 import { useOrganizationOverview } from '@/hooks/use-organization';
@@ -13,11 +13,10 @@ const branches = [
   { id: 'people', label: 'Cơ cấu đội ngũ', icon: Users, path: '/enterprise/members', tone: 'blue' },
   { id: 'assessment', label: 'Đánh giá đội ngũ', icon: FlaskConical, path: '/enterprise/trial', tone: 'blue' },
   { id: 'standards', label: 'Khung năng lực số', icon: Layers3, path: '/enterprise/setup', tone: 'violet' },
-  { id: 'gaps', label: 'Khoảng trống năng lực', icon: TrendingUp, path: '/enterprise/skill-gap', tone: 'violet' },
   { id: 'courses', label: 'Khóa học', icon: BookOpen, path: '/enterprise/courses', tone: 'teal' },
   { id: 'training', label: 'Đợt đào tạo', icon: GraduationCap, path: '/enterprise/training-batches', tone: 'teal' },
-  { id: 'evidence', label: 'Nhiệm vụ thực tế', icon: ClipboardCheck, path: '/enterprise/tasks', tone: 'amber' },
   { id: 'certificates', label: 'Chứng nhận', icon: Award, path: '/enterprise/certificates', tone: 'amber' },
+  { id: 'gaps', label: 'Khoảng trống năng lực', icon: TrendingUp, path: '/enterprise/skill-gap', tone: 'violet' },
 ] as const;
 
 type BranchId = typeof branches[number]['id'];
@@ -33,7 +32,6 @@ export function OwnerBusinessMap() {
   const report = reportQuery.data;
   const certificates = useCertificates({ pageSize: 1 }).data;
   const training = report?.training;
-  const evidence = report?.evidence;
   const submitted = trial?.participants.filter(({ status }) => status === 'SUBMITTED' || status === 'REVIEWED').length;
   const courses = training?.courses.filter((course) => course.learnerCount > 0);
   const met = needs?.domains.reduce((sum, domain) => sum + domain.met, 0);
@@ -51,7 +49,6 @@ export function OwnerBusinessMap() {
     gaps: [['Lượt đối chiếu đạt chuẩn', coverage], ['Lĩnh vực cần bổ sung', needs?.domains.filter((domain) => domain.needsLearning > 0).length], ['Chờ đánh giá', needs?.waitingEmployees]],
     courses: [['Khóa đã có lượt học', courses?.length], ['Lượt giao đang hiệu lực', training?.totalAssignments], ['Lượt đang học', training?.inProgressAssignments]],
     training: [['Đợt đang chạy', organization?.runningBatches], ['Tỷ lệ hoàn thành', completion], ['Lượt đã hoàn thành', training?.completedAssignments], ['Lượt giao đang hiệu lực', training?.totalAssignments]],
-    evidence: [['Mẫu nhiệm vụ', evidence?.totalTasks], ['Minh chứng đã nộp', evidence?.totalSubmissions], ['Minh chứng đạt', evidence?.approvedCount]],
     certificates: [['Chứng nhận', certificates?.totalItems]],
   };
   const active = branches.find((branch) => branch.id === selected)!;
@@ -66,17 +63,18 @@ export function OwnerBusinessMap() {
         <h2 id="business-map-title">{translateUi('Bản đồ doanh nghiệp')}</h2>
       </header>
       <div className="business-map__canvas">
-        <div className="business-map__hub" data-tone={active.tone}>
+        <div className="business-map__hub" data-tone={active.tone} data-bottom-active={selected === 'gaps'}>
           <span><Building2 size={25} aria-hidden="true" /></span>
           <strong>{organization?.name || translateUi('Doanh nghiệp')}</strong>
         </div>
         {branches.map(({ id, label, icon: Icon, tone }, index) => {
           const [metric, value] = metrics[id][0];
-          const row = (index % 4) + 1;
+          const side = id === 'gaps' ? 'bottom' : index < 3 ? 'left' : 'right';
+          const row = (index % 3) + 1;
           return (
-            <div className="business-map__branch" key={id} data-side={index < 4 ? 'left' : 'right'}
-              style={{ '--branch-row': row, '--hub-distance': Math.abs(row - 2.5) } as CSSProperties}
-              data-tone={tone} data-active={selected === id} data-above-hub={row < 3}>
+            <div className="business-map__branch" key={id} data-side={side}
+              style={{ '--branch-row': row, '--hub-distance': Math.abs(row - 2) } as CSSProperties}
+              data-tone={tone} data-active={selected === id} data-above-hub={row < 2}>
               <button type="button" onClick={() => setSelected(id)} aria-pressed={selected === id} aria-controls="business-map-details">
                 <span className="business-map__icon"><Icon size={20} aria-hidden="true" /></span>
                 <span className="business-map__label"><strong>{translateUi(label)}</strong><small>{translateUi(metric)}</small></span>

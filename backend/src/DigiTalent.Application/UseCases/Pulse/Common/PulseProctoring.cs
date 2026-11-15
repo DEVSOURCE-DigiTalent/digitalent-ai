@@ -21,12 +21,14 @@ public class PulseProctoring
     private readonly IApplicationDbContext _context;
     private readonly MyEmployeeContext _me;
     private readonly TimeProvider _clock;
+    private readonly IChunkedFileFinalizer? _finalizer;
 
-    public PulseProctoring(IApplicationDbContext context, MyEmployeeContext me, TimeProvider clock)
+    public PulseProctoring(IApplicationDbContext context, MyEmployeeContext me, TimeProvider clock, IChunkedFileFinalizer? finalizer = null)
     {
         _context = context;
         _me = me;
         _clock = clock;
+        _finalizer = finalizer;
     }
 
     public DateTimeOffset Now => _clock.GetUtcNow();
@@ -84,6 +86,13 @@ public class PulseProctoring
         foreach (var recording in recordings.Where(r => r.EndOffsetMs == null))
         {
             recording.EndOffsetMs = Math.Max(recording.StartOffsetMs, duration);
+        }
+        if (_finalizer != null)
+        {
+            foreach (var recording in recordings.Where(r => !string.IsNullOrWhiteSpace(r.StoragePath) && r.SizeBytes > 0))
+            {
+                await _finalizer.FinalizeAsync(recording.StoragePath!, recording.ContentType);
+            }
         }
 
         _context.ProctoringEvents.Add(new ProctoringEvent

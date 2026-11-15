@@ -1,0 +1,115 @@
+.manager-shell {
+  --account-accent: #513b9c;
+  --account-ink: #282143;
+  --account-muted: #625976;
+  --account-line: #ddd5ef;
+  --account-surface: #fff;
+  --account-raised: #f7f4fc;
+  --account-tint: #eee7fc;
+  --account-ring: #8561da44;
+}
+html[data-theme='dark'] .manager-shell {
+  --account-accent: #dacbff;
+  --account-ink: #f2ebfc;
+  --account-muted: #c6bad8;
+  --account-line: #55476d;
+  --account-surface: #262039;
+  --account-raised: #302745;
+  --account-tint: #3b2c57;
+  --account-ring: #b99af877;
+}
+.manager-shell .account-menu__trigger-avatar { background: linear-gradient(135deg, #392b78, #7153c7); }
+.manager-shell .account-menu__trigger:hover,
+.manager-shell .account-menu__trigger[aria-expanded='true'] {
+  border-color: #c8b7ef; background: #f0eaff;
+}
+.manager-shell .account-menu__panel {
+  width: min(288px, calc(100vw - 2rem));
+  border-color: var(--account-line);
+  background: linear-gradient(145deg, var(--account-surface), var(--account-raised));
+  box-shadow: 0 16px 40px #25134633;
+}
+.manager-shell .account-menu__identity {
+  border-color: var(--account-line);
+  background: radial-gradient(ellipse at top right, var(--account-tint), transparent 80%);
+}
+.manager-shell .account-menu__identity > p { color: var(--account-ink); }
+.manager-shell .account-menu__identity > p + p { color: var(--account-muted); }
+.manager-shell .account-menu__identity > span:last-child { background: var(--account-tint); color: var(--account-accent); }
+.manager-shell .account-menu__panel > div:not(:last-child) button { color: var(--account-ink); }
+.manager-shell .account-menu__panel > div:not(:last-child) button > svg { background: var(--account-tint); color: var(--account-accent); }
+.manager-shell .account-menu__panel > div:not(:last-child) button:hover { background: var(--account-tint); color: var(--account-accent); }
+.manager-shell .account-menu__panel button:focus-visible { outline-color: var(--account-accent); }
+.manager-shell .account-menu__panel > div:last-child { border-color: var(--account-line); }
+
+.manager-shell .account-workspace {
+  --aw-line: var(--account-line);
+  color: var(--account-ink);
+  gap: clamp(14px, 1.7vw, 22px);
+  padding-bottom: 36px;
+}
+.manager-shell .aw-nav { background: var(--account-raised); box-shadow: none; }
+.manager-shell .aw-nav a { color: var(--account-muted); }
+.manager-shell .aw-nav a:hover,
+.manager-shell .aw-nav a.active {
+  background: var(--account-tint); border-color: var(--account-line); color: var(--account-accent); box-shadow: none;
+}
+.manager-shell .aw-card {
+  padding: clamp(16px, 2.2vw, 28px); border-radius: 20px; background: var(--account-surface); box-shadow: 0 10px 30px #291b4e0d;
+}
+.manager-shell .aw-section-title { margin-bottom: 18px; }
+.manager-shell .aw-icon,
+.manager-shell .aw-icon-button,
+.manager-shell .aw-security-note__shield {
+  border-color: var(--account-line); background: var(--account-tint); color: var(--account-accent); box-shadow: none;
+}
+.manager-shell .aw-identity {
+  padding: clamp(19px, 2.6vw, 30px); border-radius: 20px; border-color: #7660a9;
+  background: radial-gradient(ellipse at 90% 0, #9d7cf075, transparent 68%), linear-gradient(135deg, #271c4b, #473383);
+  box-shadow: 0 12px 28px #271c4b25;
+}
+.manager-shell .aw-avatar { width: 54px; height: 54px; border-radius: 16px; font-size: 23px; color: #fff; box-shadow: none; }
+.manager-shell .aw-identity h2 { margin-top: 14px; }
+.manager-shell :is(.aw-identity__email, .aw-roles > span) { color: #f0eaff; }
+.manager-shell :is(.aw-section-title p, .aw-field, .aw-field small, .aw-actions > span, .aw-state, .aw-device small) {
+  color: var(--account-muted); font-size: 13px;
+}
+.manager-shell .aw-input-icon > svg, .manager-shell .aw-password > button { color: var(--account-muted); }
+.manager-shell .aw-password > button:hover { color: var(--account-accent); background: var(--account-tint); }
+.manager-shell .aw-field input {
+  background: var(--account-raised); border-color: var(--account-line); color: var(--account-ink);
+}
+.manager-shell .aw-field input:focus {
+  background: var(--account-surface); border-color: var(--account-accent); box-shadow: 0 0 0 3px var(--account-ring);
+}
+.manager-shell .aw-field input[readonly] { background: var(--account-tint); color: var(--account-muted); }
+.manager-shell .aw-field input::placeholder { color: var(--account-muted); opacity: .9; }
+.manager-shell .aw-actions { margin-top: 18px; padding-top: 14px; border-color: var(--account-line); }
+.manager-shell .aw-security-grid .aw-actions { justify-content: flex-end; }
+.manager-shell .aw-primary {
+  border-color: #5540a6; background: linear-gradient(120deg, #4f3ba1, #6248b7); box-shadow: none;
+}
+.manager-shell .aw-primary:hover:not(:disabled) { box-shadow: 0 7px 16px #40248642; }
+.manager-shell .aw-primary:disabled { background: var(--account-tint); border-color: var(--account-line); color: var(--account-muted); opacity: 1; }
+.manager-shell .aw-secondary { background: var(--account-raised); border-color: var(--account-line); color: var(--account-accent); }
+.manager-shell .aw-secondary:hover { background: var(--account-tint); }
+.manager-shell .account-workspace :is(a, button):focus-visible { outline-color: var(--account-accent); }
+.manager-shell :is(.aw-security-note, .aw-strength) { background: var(--account-raised); border-color: var(--account-line); }
+.manager-shell .aw-security-note { padding: 20px; border-radius: 20px; }
+.manager-shell .aw-security-note__shield { width: 42px; height: 42px; border-radius: 12px; }
+.manager-shell .aw-security-note__shield svg { width: 23px; height: 23px; }
+.manager-shell .aw-security-note h2 { margin: 11px 0; font-size: 17px; color: var(--account-ink); }
+.manager-shell .aw-security-note ul { gap: 8px; color: var(--account-muted); }
+.manager-shell .aw-strength :is(div:first-child, strong, li[data-met='false']) { color: var(--account-muted); }
+.manager-shell .aw-history th { background: var(--account-tint); color: var(--account-accent); }
+.manager-shell .aw-history td { padding: 10px 14px; color: var(--account-ink); border-color: var(--account-line); }
+.manager-shell .aw-history tr:hover td { background: var(--account-raised); }
+.manager-shell .aw-device > svg { color: var(--account-accent); }
+.manager-shell .aw-history-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border-top: 1px solid var(--account-line); padding-top: 10px; color: var(--account-muted); font-size: 13px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .manager-shell .aw-history tr { animation: manager-history-enter .2s ease-out; }
+}
+@keyframes manager-history-enter { from { opacity: 0; transform: translateY(3px); } }

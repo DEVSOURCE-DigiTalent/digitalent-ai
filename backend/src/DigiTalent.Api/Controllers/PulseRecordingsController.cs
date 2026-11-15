@@ -22,6 +22,12 @@ public class PulseRecordingsController : ControllerBase
         [FromServices] IUseCase<GetPulseRecordingContentUseCaseInput, GetPulseRecordingContentUseCaseOutput> useCase)
     {
         var result = await useCase.ExecuteAsync(new GetPulseRecordingContentUseCaseInput { RecordingId = recordingId, ExpiresAt = exp, Signature = sig });
+        if (!string.IsNullOrEmpty(result.RedirectUrl))
+        {
+            Response.Headers.CacheControl = "private, max-age=300";
+            return Redirect(result.RedirectUrl);
+        }
+
         Response.Headers.CacheControl = "private, max-age=3600";
         return File(result.Content, result.ContentType, enableRangeProcessing: true);
     }

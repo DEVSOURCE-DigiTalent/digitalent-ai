@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -35,9 +36,20 @@ public class GetTaskByIdUseCase : IUseCase<GetTaskByIdInput, PracticalTaskDetail
             .Select(tg => tg.TargetLevel)
             .FirstOrDefaultAsync();
 
-        var taskAssignments = await _context.TaskAssignments.AsNoTracking()
-            .Where(a => a.TaskTemplateId == template.Id)
-            .ToListAsync();
+        var assignments = _context.TaskAssignments.AsNoTracking()
+            .Where(a => a.TaskTemplateId == template.Id);
+        var managerView = _currentUser.IsDepartmentManager && !_currentUser.IsAdmin;
+        if (managerView)
+        {
+            var employees = new EmployeeScope(_context, _currentUser).VisibleEmployees();
+            assignments = assignments.Where(a => employees.Any(e => e.Id == a.EmployeeId));
+        }
+
+        var taskAssignments = await assignments.ToListAsync();
+        if (managerView && taskAssignments.Count == 0)
+        {
+            throw new NotFoundException($"Task '{input.Id}' not found.");
+        }
 
         var employeeIds = taskAssignments.Select(a => a.EmployeeId).Distinct().ToList();
 

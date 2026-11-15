@@ -43,7 +43,7 @@ export function PageHeader({
   const rightSlot = actions ?? children;
 
   return (
-    <div className={cn('mb-6', className)}>
+    <div className={cn('shared-page-header mb-6', className)}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient leading-tight">{translateUi(title)}</h1>

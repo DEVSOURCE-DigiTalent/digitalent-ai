@@ -21,8 +21,8 @@ export const PULSE_KEYS = {
   practice: ['pulse', 'practice'] as const,
   outcomes: ['pulse', 'outcomes'] as const,
   outcome: (outcomeId?: string) => ['pulse', 'outcomes', outcomeId] as const,
-  finalReviews: (includeReviewed = false, organizationId?: string) =>
-    ['pulse', 'final-reviews', { includeReviewed, organizationId: organizationId ?? null }] as const,
+  finalReviews: (includeReviewed = false, organizationId?: string, departmentId?: string) =>
+    ['pulse', 'final-reviews', { includeReviewed, organizationId: organizationId ?? null, departmentId: departmentId ?? null }] as const,
   mentorEnterprises: ['pulse', 'mentor-enterprises'] as const,
 };
 
@@ -128,16 +128,18 @@ export interface UsePulseFinalReviewsOptions {
   enabled?: boolean;
   includeReviewed?: boolean;
   organizationId?: string;
+  departmentId?: string;
 }
 
 export function usePulseFinalReviews(enabledOrOptions: boolean | UsePulseFinalReviewsOptions = true) {
   const enabled = typeof enabledOrOptions === 'boolean' ? enabledOrOptions : (enabledOrOptions.enabled ?? true);
   const includeReviewed = typeof enabledOrOptions === 'boolean' ? false : (enabledOrOptions.includeReviewed ?? false);
   const organizationId = typeof enabledOrOptions === 'boolean' ? undefined : enabledOrOptions.organizationId;
+  const departmentId = typeof enabledOrOptions === 'boolean' ? undefined : enabledOrOptions.departmentId;
   return useQuery({
     ...learningContentQueryOptions,
-    queryKey: PULSE_KEYS.finalReviews(includeReviewed, organizationId),
-    queryFn: () => pulseReviewService.getQueue(includeReviewed, organizationId).then((r) => r.data.data!),
+    queryKey: PULSE_KEYS.finalReviews(includeReviewed, organizationId, departmentId),
+    queryFn: () => pulseReviewService.getQueue(includeReviewed, organizationId, false, undefined, departmentId).then((r) => r.data.data!),
     enabled,
   });
 }

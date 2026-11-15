@@ -171,7 +171,6 @@ public static class RolePermissions
             Permissions.Task.Assign,
             Permissions.Task.Read,
             Permissions.Task.UpdateProgress,
-            Permissions.Task.Evaluate,
             Permissions.Task.Reopen,
             Permissions.Task.Cancel,
             Permissions.Task.AttachmentDownload,

@@ -1,6 +1,7 @@
 import {
   useState,
   useEffect,
+  useLayoutEffect,
   useRef,
   type FormEvent,
   type KeyboardEvent,
@@ -12,12 +13,14 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  ChevronDown,
   Clock3,
   Eye,
   EyeOff,
   Loader2,
   Mail,
   MailCheck,
+  X,
 } from 'lucide-react';
 import { PulseAuthLayout } from '@/features/public/pulse-landing/PulseAuthLayout';
 import { COMMON_PASSWORDS } from '@/features/auth/validation';
@@ -53,16 +56,26 @@ function usePreloadPulseMark() {
 
 const industries = [
   { value: 'Công nghệ thông tin', label: 'Công nghệ thông tin' },
-  { value: 'Tài chính – Ngân hàng', label: 'Tài chính, Ngân hàng' },
+  { value: 'Tài chính, Ngân hàng', label: 'Tài chính, Ngân hàng' },
   { value: 'Sản xuất', label: 'Sản xuất' },
-  { value: 'Thương mại – Bán lẻ', label: 'Thương mại, Bán lẻ' },
+  { value: 'Thương mại, Bán lẻ', label: 'Thương mại, Bán lẻ' },
   { value: 'Giáo dục', label: 'Giáo dục' },
   { value: 'Y tế', label: 'Y tế' },
+  { value: 'Logistics, Vận tải', label: 'Logistics, Vận tải' },
+  { value: 'Xây dựng, Bất động sản', label: 'Xây dựng, Bất động sản' },
   { value: 'Dịch vụ', label: 'Dịch vụ' },
+  { value: 'Hành chính công', label: 'Hành chính công' },
   { value: 'Khác', label: 'Khác' },
 ];
 
-const sizes = ['1-20', '21-100', '101-500', '500+'];
+const sizes = [
+  { value: '1-20', label: '1-20 nhân sự' },
+  { value: '21-100', label: '21-100 nhân sự' },
+  { value: '101-500', label: '101-500 nhân sự' },
+  { value: '500+', label: '500+ nhân sự' },
+];
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 72;
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -74,6 +87,7 @@ interface StepFieldErrors {
   ownerName?: string;
   email?: string;
   industry?: string;
+  customIndustry?: string;
   size?: string;
   password?: string;
   confirmPassword?: string;
@@ -104,8 +118,9 @@ interface PasswordStrengthResult {
 
 function evaluatePasswordStrength(password: string, email?: string): PasswordStrengthResult {
   const trimmed = password.trim();
-  const hasMinLength = password.length >= 12 && password.length <= 72;
-  const tooLong = password.length > 72;
+  const hasMinLength =
+    password.length >= MIN_PASSWORD_LENGTH && password.length <= MAX_PASSWORD_LENGTH;
+  const tooLong = password.length > MAX_PASSWORD_LENGTH;
   const hasMixedCase = /[a-z]/.test(password) && /[A-Z]/.test(password);
   const hasDigit = /\d/.test(password);
   const hasSymbol = /[^A-Za-z0-9\s]/.test(password);
@@ -126,7 +141,7 @@ function evaluatePasswordStrength(password: string, email?: string): PasswordStr
       score: 0,
       tone: 'idle',
       label: 'Chưa nhập',
-      hint: 'Từ 12 đến 72 ký tự',
+      hint: `Từ ${MIN_PASSWORD_LENGTH} đến ${MAX_PASSWORD_LENGTH} ký tự`,
       isCommon: false,
       checks,
     };
@@ -181,7 +196,7 @@ function evaluatePasswordStrength(password: string, email?: string): PasswordStr
       score: 1,
       tone: 'weak',
       label: 'Yếu',
-      hint: `Còn thiếu ${12 - password.length} ký tự`,
+      hint: `Còn thiếu ${MIN_PASSWORD_LENGTH - password.length} ký tự`,
       isCommon: false,
       checks,
     };
@@ -241,9 +256,9 @@ function TrialPasswordStrengthMeter({
     {
       key: 'length',
       label:
-        password.length > 0 && password.length < 12
-          ? `12 đến 72 ký tự (${password.length}/12)`
-          : '12 đến 72 ký tự',
+        password.length > 0 && password.length < MIN_PASSWORD_LENGTH
+          ? `${MIN_PASSWORD_LENGTH} đến ${MAX_PASSWORD_LENGTH} ký tự (${password.length}/${MIN_PASSWORD_LENGTH})`
+          : `${MIN_PASSWORD_LENGTH} đến ${MAX_PASSWORD_LENGTH} ký tự`,
       met: strength.checks.hasMinLength,
     },
     {
@@ -464,6 +479,233 @@ function OtpDigitGrid({
   );
 }
 
+interface CustomSelectOption {
+  value: string;
+  label: string;
+  dividerBefore?: boolean;
+}
+
+interface PulseAuthSelectProps {
+  id: string;
+  label: string;
+  placeholder: string;
+  value: string;
+  options: CustomSelectOption[];
+  invalid?: boolean;
+  onChange: (value: string) => void;
+}
+
+interface MenuPosition {
+  left: number;
+  width: number;
+  top?: number;
+  bottom?: number;
+  maxHeight: number;
+  openUpward: boolean;
+}
+
+function PulseAuthSelect({
+  id,
+  label,
+  placeholder,
+  value,
+  options,
+  invalid = false,
+  onChange,
+}: PulseAuthSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [menuPos, setMenuPos] = useState<MenuPosition | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  const updateMenuPosition = () => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const gap = 6;
+    const viewportPadding = 12;
+    const spaceBelow = window.innerHeight - rect.bottom - gap - viewportPadding;
+    const spaceAbove = rect.top - gap - viewportPadding;
+    const estimatedHeight = Math.min(options.length * 40 + 16, 280);
+    const openUpward = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(140, Math.min(280, openUpward ? spaceAbove : spaceBelow));
+
+    setMenuPos({
+      left: rect.left,
+      width: rect.width,
+      top: openUpward ? undefined : rect.bottom + gap,
+      bottom: openUpward ? window.innerHeight - rect.top + gap : undefined,
+      maxHeight,
+      openUpward,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setMenuPos(null);
+      setActiveIndex(-1);
+      return;
+    }
+    const idx = options.findIndex((opt) => opt.value === value);
+    setActiveIndex(idx >= 0 ? idx : 0);
+    updateMenuPosition();
+    requestAnimationFrame(() => menuRef.current?.focus());
+
+    const handleReposition = () => updateMenuPosition();
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
+    return () => {
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [open, options.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
+  const handleTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setOpen((prev) => !prev);
+    }
+  };
+
+  const handleListKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (options.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev + 1) % options.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev <= 0 ? options.length - 1 : prev - 1));
+    } else if (e.key === 'Enter' && activeIndex >= 0 && options[activeIndex]) {
+      e.preventDefault();
+      onChange(options[activeIndex].value);
+      setOpen(false);
+      triggerRef.current?.focus();
+    } else if (e.key === 'Tab') {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={rootRef} className="pulse-auth-select">
+      <button
+        ref={triggerRef}
+        id={id}
+        type="button"
+        className={`pulse-auth-select-trigger${open ? ' pulse-auth-select-trigger--open' : ''}${
+          !selectedOption ? ' pulse-auth-select-trigger--placeholder' : ''
+        }`}
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={`${id}-listbox`}
+        aria-invalid={invalid ? true : undefined}
+        onClick={() => setOpen((prev) => !prev)}
+        onKeyDown={handleTriggerKeyDown}
+      >
+        <span className="pulse-auth-select-value">
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown
+          size={16}
+          className={`pulse-auth-select-chevron${open ? ' pulse-auth-select-chevron--open' : ''}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {open && (
+        <div
+          ref={menuRef}
+          id={`${id}-listbox`}
+          role="listbox"
+          tabIndex={-1}
+          aria-label={label}
+          className={`pulse-auth-select-menu${
+            menuPos?.openUpward ? ' pulse-auth-select-menu--up' : ''
+          }`}
+          style={
+            menuPos
+              ? {
+                  position: 'fixed',
+                  left: `${menuPos.left}px`,
+                  width: `${menuPos.width}px`,
+                  top: menuPos.top !== undefined ? `${menuPos.top}px` : undefined,
+                  bottom: menuPos.bottom !== undefined ? `${menuPos.bottom}px` : undefined,
+                }
+              : undefined
+          }
+          onKeyDown={handleListKeyDown}
+        >
+          <div
+            className="pulse-auth-select-options"
+            style={menuPos ? { maxHeight: `${menuPos.maxHeight}px` } : undefined}
+          >
+            {options.map((option, index) => {
+              const isSelected = option.value === value;
+              const isActive = index === activeIndex;
+              return (
+                <div key={option.value}>
+                  {option.dividerBefore && (
+                    <div className="pulse-auth-select-divider" role="separator" />
+                  )}
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    className={`pulse-auth-select-option${
+                      isSelected ? ' pulse-auth-select-option--selected' : ''
+                    }${isActive ? ' pulse-auth-select-option--active' : ''}`}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => {
+                      onChange(option.value);
+                      setOpen(false);
+                      triggerRef.current?.focus();
+                    }}
+                  >
+                    <span className="pulse-auth-select-option-label">{option.label}</span>
+                    {isSelected && (
+                      <Check
+                        size={15}
+                        strokeWidth={2.5}
+                        className="pulse-auth-select-check"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TrialRegisterPage() {
   const navigate = useNavigate();
   const cache = useQueryClient();
@@ -486,6 +728,8 @@ export function TrialRegisterPage() {
     acceptedTerms: false,
   });
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [customIndustry, setCustomIndustry] = useState('');
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<StepFieldErrors>({});
@@ -572,6 +816,7 @@ export function TrialRegisterPage() {
           organizationName: form.organizationName.trim(),
           ownerName: form.ownerName.trim(),
           email: trimmedEmail,
+          industry: form.industry === 'Khác' ? customIndustry.trim() : form.industry,
         }),
       ),
     onSuccess: (value) => {
@@ -661,6 +906,9 @@ export function TrialRegisterPage() {
     else if (!EMAIL_PATTERN.test(trimmedEmail))
       errors.email = 'Email công việc chưa đúng định dạng.';
     if (!form.industry) errors.industry = 'Chọn ngành hoạt động.';
+    if (form.industry === 'Khác' && !customIndustry.trim()) {
+      errors.customIndustry = 'Nhập tên ngành hoạt động của doanh nghiệp.';
+    }
     if (!form.size) errors.size = 'Chọn quy mô nhân sự.';
 
     setFieldErrors(errors);
@@ -673,7 +921,9 @@ export function TrialRegisterPage() {
             ? 'email'
             : errors.industry
               ? 'industry'
-              : 'size';
+              : errors.customIndustry
+                ? 'customIndustry'
+                : 'size';
       document.getElementById(firstId)?.focus();
       return;
     }
@@ -690,8 +940,11 @@ export function TrialRegisterPage() {
 
     if (!form.password) errors.password = 'Nhập mật khẩu cho tài khoản.';
     else if (!form.password.trim()) errors.password = 'Mật khẩu không được chỉ chứa khoảng trắng.';
-    else if (form.password.length < 12 || form.password.length > 72)
-      errors.password = 'Mật khẩu cần từ 12 đến 72 ký tự.';
+    else if (
+      form.password.length < MIN_PASSWORD_LENGTH ||
+      form.password.length > MAX_PASSWORD_LENGTH
+    )
+      errors.password = `Mật khẩu cần từ ${MIN_PASSWORD_LENGTH} đến ${MAX_PASSWORD_LENGTH} ký tự.`;
     else if (passwordEval.isCommon)
       errors.password = 'Mật khẩu quá phổ biến, vui lòng chọn mật khẩu an toàn hơn.';
 
@@ -746,7 +999,7 @@ export function TrialRegisterPage() {
   const stepHeadings: Record<RegisterStep, { title: string; subtitle: string }> = {
     1: {
       title: 'Thông tin doanh nghiệp',
-      subtitle: 'Điền thông tin cơ bản để mở không gian dùng thử 14 ngày.',
+      subtitle: 'Điền thông tin cơ bản để mở không gian dùng thử doanh nghiệp.',
     },
     2: {
       title: 'Thiết lập mật khẩu',
@@ -814,9 +1067,9 @@ export function TrialRegisterPage() {
       mode="register"
       asideVariant="visual-light"
       asideImage="/images/trial/trial-sidebar-light.jpg"
-      eyebrow="Dùng thử miễn phí 14 ngày"
+      eyebrow="Dùng thử doanh nghiệp"
       asideTitle={'Khởi tạo không gian dùng\u00A0thử cho doanh nghiệp'}
-      asideText="Tối đa 5 tài khoản thành viên để thiết lập vị trí và theo dõi năng lực đội ngũ."
+      asideText="Thiết lập không gian đánh giá năng lực số và theo dõi lộ trình đào tạo cho đội ngũ."
       headerSlot={stepperHeader}
       title={stepHeadings[step].title}
       subtitle={stepHeadings[step].subtitle}
@@ -916,22 +1169,24 @@ export function TrialRegisterPage() {
             <div className="pulse-auth-fields-two">
               <div className="pulse-auth-field">
                 <label htmlFor="industry">Ngành</label>
-                <select
+                <PulseAuthSelect
                   id="industry"
-                  required
-                  aria-invalid={fieldErrors.industry ? true : undefined}
+                  label="Ngành"
+                  placeholder="Chọn ngành"
                   value={form.industry}
-                  onChange={(e) => update('industry', e.target.value)}
-                >
-                  <option value="" disabled>
-                    Chọn ngành
-                  </option>
-                  {industries.map((industry) => (
-                    <option key={industry.value} value={industry.value}>
-                      {industry.label}
-                    </option>
-                  ))}
-                </select>
+                  invalid={Boolean(fieldErrors.industry)}
+                  options={industries.map((item) => ({
+                    ...item,
+                    dividerBefore: item.value === 'Khác',
+                  }))}
+                  onChange={(nextIndustry) => {
+                    update('industry', nextIndustry);
+                    if (nextIndustry !== 'Khác') {
+                      setCustomIndustry('');
+                      clearFieldError('customIndustry');
+                    }
+                  }}
+                />
                 {fieldErrors.industry && (
                   <p role="alert" className="pulse-auth-inline-error">
                     {fieldErrors.industry}
@@ -941,22 +1196,15 @@ export function TrialRegisterPage() {
 
               <div className="pulse-auth-field">
                 <label htmlFor="size">Quy mô</label>
-                <select
+                <PulseAuthSelect
                   id="size"
-                  required
-                  aria-invalid={fieldErrors.size ? true : undefined}
+                  label="Quy mô"
+                  placeholder="Chọn quy mô"
                   value={form.size}
-                  onChange={(e) => update('size', e.target.value)}
-                >
-                  <option value="" disabled>
-                    Chọn quy mô
-                  </option>
-                  {sizes.map((size) => (
-                    <option key={size} value={size}>
-                      {size} nhân sự
-                    </option>
-                  ))}
-                </select>
+                  invalid={Boolean(fieldErrors.size)}
+                  options={sizes}
+                  onChange={(nextSize) => update('size', nextSize)}
+                />
                 {fieldErrors.size && (
                   <p role="alert" className="pulse-auth-inline-error">
                     {fieldErrors.size}
@@ -964,6 +1212,29 @@ export function TrialRegisterPage() {
                 )}
               </div>
             </div>
+
+            {form.industry === 'Khác' && (
+              <div className="pulse-auth-field">
+                <label htmlFor="customIndustry">Ngành nghề cụ thể</label>
+                <input
+                  id="customIndustry"
+                  required
+                  maxLength={60}
+                  placeholder="Nhập tên ngành nghề hoạt động"
+                  aria-invalid={fieldErrors.customIndustry ? true : undefined}
+                  value={customIndustry}
+                  onChange={(e) => {
+                    setCustomIndustry(e.target.value);
+                    clearFieldError('customIndustry');
+                  }}
+                />
+                {fieldErrors.customIndustry && (
+                  <p role="alert" className="pulse-auth-inline-error">
+                    {fieldErrors.customIndustry}
+                  </p>
+                )}
+              </div>
+            )}
 
             <button type="submit" className="pulse-auth-primary" disabled={!canRegister}>
               Tiếp tục <ArrowRight size={17} aria-hidden="true" />
@@ -998,10 +1269,10 @@ export function TrialRegisterPage() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  minLength={12}
-                  maxLength={72}
+                  minLength={MIN_PASSWORD_LENGTH}
+                  maxLength={MAX_PASSWORD_LENGTH}
                   autoComplete="new-password"
-                  placeholder="Từ 12 đến 72 ký tự"
+                  placeholder={`Từ ${MIN_PASSWORD_LENGTH} đến ${MAX_PASSWORD_LENGTH} ký tự`}
                   aria-invalid={fieldErrors.password ? true : undefined}
                   value={form.password}
                   onChange={(e) => update('password', e.target.value)}
@@ -1034,8 +1305,8 @@ export function TrialRegisterPage() {
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
-                  minLength={12}
-                  maxLength={72}
+                  minLength={MIN_PASSWORD_LENGTH}
+                  maxLength={MAX_PASSWORD_LENGTH}
                   autoComplete="new-password"
                   placeholder="Nhập lại mật khẩu"
                   aria-invalid={fieldErrors.confirmPassword ? true : undefined}
@@ -1072,15 +1343,25 @@ export function TrialRegisterPage() {
             </div>
 
             <div>
-              <label className="pulse-auth-consent">
+              <div className="pulse-auth-consent">
                 <input
                   id="acceptedTerms"
                   type="checkbox"
                   checked={form.acceptedTerms}
                   onChange={(e) => update('acceptedTerms', e.target.checked)}
                 />
-                <span>Tôi đồng ý điều khoản dùng thử và xử lý dữ liệu đánh giá.</span>
-              </label>
+                <span>
+                  <label htmlFor="acceptedTerms">Tôi đồng ý </label>
+                  <button
+                    type="button"
+                    className="pulse-auth-terms-link"
+                    onClick={() => setShowTermsModal(true)}
+                  >
+                    điều khoản dùng thử và xử lý dữ liệu đánh giá
+                  </button>
+                  .
+                </span>
+              </div>
               {fieldErrors.acceptedTerms && (
                 <p role="alert" className="pulse-auth-inline-error" style={{ marginTop: '6px' }}>
                   {fieldErrors.acceptedTerms}
@@ -1226,7 +1507,177 @@ export function TrialRegisterPage() {
           </div>
         )}
       </div>
+
+      <TrialTermsDialog
+        open={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAccept={() => {
+          update('acceptedTerms', true);
+          setShowTermsModal(false);
+        }}
+      />
     </PulseAuthLayout>
+  );
+}
+
+function TrialTermsDialog({
+  open,
+  onClose,
+  onAccept,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onAccept: () => void;
+}) {
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (open) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [open]);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="pulse-auth-dialog"
+      aria-labelledby="trial-terms-title"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) {
+          onClose();
+        }
+      }}
+    >
+      <div className="pulse-auth-dialog-card">
+        <div className="pulse-auth-dialog-head">
+          <div>
+            <h2 id="trial-terms-title">Điều khoản dùng thử và xử lý dữ liệu đánh giá</h2>
+            <p className="pulse-auth-dialog-sub">
+              Thông tin áp dụng cho không gian dùng thử doanh nghiệp trên DigiTalent AI.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="pulse-auth-dialog-close"
+            aria-label="Đóng cửa sổ điều khoản"
+            onClick={onClose}
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="pulse-auth-dialog-body">
+          <div className="pulse-auth-dialog-highlights" aria-label="Điểm chính cần nắm">
+            <div className="pulse-auth-dialog-highlight">
+              <strong>Tối đa 30 nhân viên</strong>
+              <span>Mỗi nhân viên làm 1 bài đánh giá trắc nghiệm</span>
+            </div>
+            <div className="pulse-auth-dialog-highlight">
+              <strong>Phòng thi có giám sát</strong>
+              <span>Ghi nhận màn hình, camera, micro và nhật ký thi</span>
+            </div>
+            <div className="pulse-auth-dialog-highlight">
+              <strong>Tổng hợp kết quả tự động</strong>
+              <span>Chủ doanh nghiệp xem bảng mức năng lực theo nhân sự</span>
+            </div>
+            <div className="pulse-auth-dialog-highlight">
+              <strong>Học thử 6 khóa Cơ bản</strong>
+              <span>Mua suất từng khóa khi mở rộng cấp Trung cấp, Nâng cao</span>
+            </div>
+          </div>
+
+          <div className="pulse-auth-dialog-sections">
+            <section className="pulse-auth-dialog-section">
+              <div className="pulse-auth-dialog-sec-head">
+                <span className="pulse-auth-dialog-num" aria-hidden="true">1</span>
+                <h3>Phạm vi không gian dùng thử</h3>
+              </div>
+              <ul className="pulse-auth-dialog-list">
+                <li>
+                  Doanh nghiệp được mời tối đa <strong>30 nhân viên</strong> tham gia đánh giá theo
+                  hạn làm bài do chủ doanh nghiệp thiết lập (tối đa 60 ngày).
+                </li>
+                <li>
+                  Sau khi hoàn thành bài đánh giá, nhân sự tham gia được mở quyền học thử{' '}
+                  <strong>6 khóa cấp Cơ bản</strong>.
+                </li>
+              </ul>
+            </section>
+
+            <section className="pulse-auth-dialog-section">
+              <div className="pulse-auth-dialog-sec-head">
+                <span className="pulse-auth-dialog-num" aria-hidden="true">2</span>
+                <h3>Dữ liệu bài thi và giám sát</h3>
+              </div>
+              <ul className="pulse-auth-dialog-list">
+                <li>
+                  Hệ thống lưu bài làm <strong>trắc nghiệm</strong> cùng dữ liệu giám sát phòng thi
+                  (<strong>toàn bộ màn hình, camera, micro</strong> và nhật ký thao tác) để xác
+                  thực kết quả làm bài.
+                </li>
+                <li>
+                  Điểm số và mức năng lực theo từng lĩnh vực được hệ thống tổng hợp tự động dựa
+                  trên kết quả bài trắc nghiệm.
+                </li>
+              </ul>
+            </section>
+
+            <section className="pulse-auth-dialog-section">
+              <div className="pulse-auth-dialog-sec-head">
+                <span className="pulse-auth-dialog-num" aria-hidden="true">3</span>
+                <h3>Phân quyền xem kết quả và lưu trữ</h3>
+              </div>
+              <ul className="pulse-auth-dialog-list">
+                <li>
+                  <strong>Chủ doanh nghiệp</strong> xem được bảng phân bố mức năng lực và mức đạt
+                  được của từng nhân viên trong không gian dùng thử.
+                </li>
+                <li>
+                  Nhân viên chỉ xem kết quả đánh giá và lộ trình học thử của cá nhân mình.
+                </li>
+              </ul>
+            </section>
+
+            <section className="pulse-auth-dialog-section">
+              <div className="pulse-auth-dialog-sec-head">
+                <span className="pulse-auth-dialog-num" aria-hidden="true">4</span>
+                <h3>Chuyển đổi sang gói trả phí</h3>
+              </div>
+              <ul className="pulse-auth-dialog-list">
+                <li>
+                  Việc đăng ký dùng thử không yêu cầu thanh toán trước và không tự động chuyển sang
+                  gói trả phí.
+                </li>
+                <li>
+                  Để đào tạo ở cấp <strong>Trung cấp</strong>, <strong>Nâng cao</strong> hoặc mở
+                  rộng số lượng nhân sự, chủ doanh nghiệp chủ động mua suất theo từng khóa học trong
+                  hệ thống.
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+
+        <div className="pulse-auth-dialog-foot">
+          <button type="button" className="pulse-auth-secondary" onClick={onClose}>
+            Đóng
+          </button>
+          <button type="button" className="pulse-auth-primary" onClick={onAccept}>
+            Tôi đã đọc và đồng ý
+          </button>
+        </div>
+      </div>
+    </dialog>
   );
 }
 
@@ -1359,14 +1810,16 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
     !token && (kind === 'accept' || !email)
       ? new Error('Thiếu thông tin xác minh. Hãy mở lại email hoặc đăng ký lại.')
       : verify.error || login.error;
-  const canSubmit = isVerify ? token || code.length === 6 : token && password.length >= 12;
+  const canSubmit = isVerify
+    ? token || code.length === 6
+    : token && password.length >= MIN_PASSWORD_LENGTH;
 
   return (
     <PulseAuthLayout
       mode="register"
       asideVariant="visual-light"
       asideImage="/images/trial/trial-sidebar-light.jpg"
-      eyebrow="Dùng thử miễn phí 14 ngày"
+      eyebrow="Dùng thử doanh nghiệp"
       asideTitle={
         isVerify
           ? 'Xác nhận email để mở không gian dùng thử'
@@ -1473,12 +1926,12 @@ function TrialAccountPage({ kind }: { kind: 'verify' | 'accept' }) {
                   id="trial-password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  minLength={12}
-                  maxLength={72}
+                  minLength={MIN_PASSWORD_LENGTH}
+                  maxLength={MAX_PASSWORD_LENGTH}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="new-password"
-                  placeholder="Từ 12 đến 72 ký tự"
+                  placeholder={`Từ ${MIN_PASSWORD_LENGTH} đến ${MAX_PASSWORD_LENGTH} ký tự`}
                 />
                 <button
                   type="button"

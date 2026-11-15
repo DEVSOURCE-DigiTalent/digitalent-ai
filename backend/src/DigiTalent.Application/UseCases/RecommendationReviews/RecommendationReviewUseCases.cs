@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -21,10 +22,13 @@ public class GetRecommendationReviewsUseCase : IUseCase<GetRecommendationReviews
     public async Task<GetRecommendationReviewsOutput> ExecuteAsync(GetRecommendationReviewsInput input)
     {
         var orgId = _currentUser.GetRequiredOrganizationId();
+        var employees = _currentUser.IsDepartmentManager && !_currentUser.IsAdmin
+            ? new EmployeeScope(_context, _currentUser).VisibleEmployees()
+            : _context.Employees;
 
         var query =
             from rr in _context.RecommendationReviews.AsNoTracking()
-            join emp in _context.Employees.AsNoTracking() on rr.EmployeeId equals emp.Id
+            join emp in employees.AsNoTracking() on rr.EmployeeId equals emp.Id
             join course in _context.Courses.AsNoTracking() on rr.CourseId equals course.Id
             join dept in _context.Departments.AsNoTracking() on emp.DepartmentId equals dept.Id into deptJoin
             from dept in deptJoin.DefaultIfEmpty()
@@ -170,6 +174,9 @@ public class DismissReviewUseCase : IUseCase<DismissReviewInput, ReviewActionOut
 
     public async Task<ReviewActionOutput> ExecuteAsync(DismissReviewInput input)
     {
+        if (_currentUser.IsDepartmentManager && !_currentUser.IsAdmin)
+            await new EmployeeScope(_context, _currentUser).GetVisibleEmployeeAsync(input.EmployeeId);
+
         var orgId = _currentUser.GetRequiredOrganizationId();
         var userId = _currentUser.UserId ?? throw new ForbiddenException("User not authenticated.");
 
@@ -207,6 +214,9 @@ public class ReopenReviewUseCase : IUseCase<ReopenReviewInput, ReviewActionOutpu
 
     public async Task<ReviewActionOutput> ExecuteAsync(ReopenReviewInput input)
     {
+        if (_currentUser.IsDepartmentManager && !_currentUser.IsAdmin)
+            await new EmployeeScope(_context, _currentUser).GetVisibleEmployeeAsync(input.EmployeeId);
+
         var orgId = _currentUser.GetRequiredOrganizationId();
 
         var review = await _context.RecommendationReviews

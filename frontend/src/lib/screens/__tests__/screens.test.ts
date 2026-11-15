@@ -85,6 +85,12 @@ describe('expired subscription', () => {
 });
 
 describe('role separation', () => {
+  it('reserves standalone practical task and evidence review screens for managers', () => {
+    const screens = ENTERPRISE_SCREENS.filter(({ path }) => /^\/enterprise\/(tasks|reviews)(\/|$)/.test(path));
+    expect(screens.map(({ id }) => id)).toEqual(['MG-08', 'MG-09', 'MG-10', 'MG-11', 'MG-12']);
+    for (const screen of screens) expect(screen.roles).toEqual([ROLES.MANAGER]);
+  });
+
   it('keeps commercial screens to the owner', () => {
     const billing = ENTERPRISE_SCREENS.find((s) => s.id === 'OW-41');
     expect(billing?.roles).toEqual([ROLES.OWNER]);

@@ -305,8 +305,8 @@ public sealed partial class TrialService
     }
     private static void Password(string password)
     {
-        if (string.IsNullOrWhiteSpace(password) || password.Length < 12 || password.Length > 72)
-            throw new BadRequestException("Password must contain 12 to 72 characters.");
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 8 || password.Length > 72)
+            throw new BadRequestException("Password must contain 8 to 72 characters.");
     }
     private static string Text(string value, int max, string name)
     {
