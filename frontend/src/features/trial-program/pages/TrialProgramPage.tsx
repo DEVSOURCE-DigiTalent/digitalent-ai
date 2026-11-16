@@ -185,7 +185,6 @@ function SetupView({ program, step, onStepChange, onInvited }: {
           rows={rows}
           onChange={setRows}
           departments={program.departments}
-          positions={program.positions}
         />
         <InviteResult result={result} />
       </section>}
@@ -539,7 +538,6 @@ function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: (
         rows={rows}
         onChange={setRows}
         departments={program.departments}
-        positions={program.positions}
       />
       <InviteResult result={result} />
       <div className="flex justify-end pt-2">

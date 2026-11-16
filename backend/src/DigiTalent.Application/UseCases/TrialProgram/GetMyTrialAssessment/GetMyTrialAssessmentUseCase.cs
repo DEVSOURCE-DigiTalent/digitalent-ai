@@ -1,5 +1,7 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Competency.Common;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Application.UseCases.Me;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -49,24 +51,18 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
         {
             var byCategory = (results ?? new()).ToDictionary(r => r.CategoryId);
 
-            var categoryIds = domains.Select(d => d.CategoryId).ToList();
-            var ceilingRows = await _context.CapabilityCeilings.AsNoTracking()
-                .Where(c => c.OrganizationId == trial.OrganizationId && categoryIds.Contains(c.CompetencyCategoryId))
-                .ToListAsync();
-            var orgCeilings = ceilingRows.Where(c => c.DepartmentId == null)
-                .ToDictionary(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel);
-            var deptCeilings = employee.DepartmentId != Guid.Empty
-                ? ceilingRows.Where(c => c.DepartmentId == employee.DepartmentId)
-                    .ToDictionary(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel)
-                : new Dictionary<Guid, int>();
+            var positionId = await EffectiveJobPositions.Resolve(_context,
+                    _context.Employees.AsNoTracking().Where(e => e.Id == employee.Id))
+                .Select(row => row.PositionId).SingleOrDefaultAsync();
+            var standard = positionId is Guid id
+                ? (await new PositionTargetsReader(_context).LoadAsync(trial.OrganizationId, [id])).GetValueOrDefault(id)
+                : null;
 
             domainDetails = domains.Select(d =>
             {
                 byCategory.TryGetValue(d.CategoryId, out var dResult);
                 var lvl = dResult == null ? 0 : TrialAssessmentResults.EffectiveLevelOf(dResult);
-                var targetLevel = deptCeilings.TryGetValue(d.CategoryId, out var dl) && dl > 0
-                    ? dl
-                    : orgCeilings.TryGetValue(d.CategoryId, out var ol) && ol > 0 ? ol : 3;
+                var targetLevel = standard?.Levels.GetValueOrDefault(d.CategoryId) ?? 0;
                 var (levelLabel, statusText, gapText, recCourse) = TrialProgramReader.DescribeDomainResult(d.Number, d.Name, lvl, targetLevel);
                 return new TrialReportEmployeeDomainDetailDto
                 {
@@ -75,6 +71,7 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
                     Name = d.Name,
                     Level = lvl,
                     TargetLevel = targetLevel,
+                    UsesSystemReference = standard?.UsesSystemReference == true,
                     SkillGap = Math.Max(0, targetLevel - lvl),
                     LevelLabel = levelLabel,
                     StatusText = statusText,

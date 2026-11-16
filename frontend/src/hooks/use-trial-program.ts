@@ -37,7 +37,9 @@ export function useInviteTrialParticipants() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (input: TrialParticipantRow[] | { rows: TrialParticipantRow[]; testDeadline: string }) => trialProgramService.invite(Array.isArray(input) ? input : input.rows, Array.isArray(input) ? undefined : input.testDeadline).then((r) => r.data.data!),
-    onSettled: () => client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.owner }),
+    onSettled: () => Promise.all([
+      TRIAL_PROGRAM_KEYS.owner, ['members'], ['departments'], ['job-positions'],
+    ].map((queryKey) => client.invalidateQueries({ queryKey }))),
   });
 }
 

@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter } from 'react-router-dom';
 import { CompetencyReport, Steps } from '../components/OwnerTrialUi';
 import { TrialDisclosure } from '../components/TrialDisclosure';
-import type { TrialReport } from '@/services/trial-program.service';
+import type { TrialEmployeeDomainDetail, TrialReport } from '@/services/trial-program.service';
 
 afterEach(cleanup);
 
@@ -15,16 +15,28 @@ const report: TrialReport = {
   employees: Array.from({ length: 12 }, (_, index) => ({ employeeId: String(index), fullName: `Nhân viên ${String(index + 1).padStart(2, '0')}`, levels: [1, 1, 1, 1, 1, 1], choiceScore: 60, choiceTotal: 90 })),
 };
 
+function comparedDomain(categoryId: string, level: number, targetLevel: number): TrialEmployeeDomainDetail {
+  return {
+    categoryId, number: 2, name: 'Giao tiếp', level, targetLevel, skillGap: Math.max(0, targetLevel - level),
+    levelLabel: '', statusText: '', gapText: '', recommendedCourse: '',
+    basicCorrect: 0, basicTotal: 0, intermediateCorrect: 0, intermediateTotal: 0, advancedCorrect: 0, advancedTotal: 0,
+    suggestedLevel: level,
+  };
+}
+
 describe('owner assessment interactions', () => {
-  it('prioritizes the domain with the most staff below basic and opens the matching course', () => {
-    const priorityReport = { ...report, summary: [...report.summary,
+  it('prioritizes the domain with the most staff below their position standard', () => {
+    const priorityReport = { ...report, employees: report.employees.map((employee, index) => ({
+      ...employee,
+      domainDetails: [comparedDomain('data', 1, 1), comparedDomain('communication', index < 8 ? 0 : 1, 1), comparedDomain('safety', 3, 3)],
+    })), summary: [...report.summary,
       { categoryId: 'communication', number: 2, name: 'Giao tiếp', counts: [8, 4, 0, 0], average: 0.3, level: 0 },
       { categoryId: 'safety', number: 4, name: 'An toàn', counts: [0, 0, 0, 12], average: 3, level: 3 },
     ] };
     render(<MemoryRouter><CompetencyReport report={priorityReport} /></MemoryRouter>);
     expect(screen.getByRole('heading', { name: 'Năng lực theo lĩnh vực' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /Xem khóa/ })[0]).toHaveAttribute('href', '/enterprise/courses?focus=M2-F&level=1');
-    expect(screen.getByText('8 người chưa đạt Cơ bản')).toBeInTheDocument();
+    expect(screen.getByText('8 người cần bổ sung theo chuẩn vị trí')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /M4-/ })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Chi tiết từng nhân viên', exact: true })).toBeInTheDocument();
     expect(screen.getByText('Mức năng lực trung bình')).toBeInTheDocument();
@@ -32,6 +44,23 @@ describe('owner assessment interactions', () => {
     expect(screen.getByText('67% câu đúng trên tổng số bài đã chấm')).toBeInTheDocument();
     expect(screen.queryByText('Đạt Cơ bản ở mọi lĩnh vực')).not.toBeInTheDocument();
   });
+  it('suggests M2-A only when the position requires advanced level', () => {
+    const summary = { categoryId: 'communication', number: 2, name: 'Giao tiếp', counts: [0, 0, 1, 0], average: 2, level: 2 };
+    const result = (target: number): TrialReport => ({
+      ...report, assessed: 1, summary: [summary],
+      employees: [{ ...report.employees[0], domainDetails: [comparedDomain('communication', 2, target)] }],
+    });
+    const view = render(<MemoryRouter><CompetencyReport report={result(2)} /></MemoryRouter>);
+    expect(screen.getByRole('columnheader', { name: 'Chuẩn vị trí' })).toBeInTheDocument();
+    expect(screen.getByText('1/1 đạt chuẩn')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /M2-A/ })).not.toBeInTheDocument();
+
+    view.rerender(<MemoryRouter><CompetencyReport report={result(3)} /></MemoryRouter>);
+    expect(screen.getByText('0/1 đạt chuẩn')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByRole('link', { name: /M2-A/ }))
+      .toHaveAttribute('href', '/enterprise/courses?focus=M2-A&level=3');
+  });
+
   it('keeps draft content mounted but inert when the disclosure closes', () => {
     const { rerender, container } = render(<TrialDisclosure open><input aria-label="Bản nháp" defaultValue="Giữ nội dung" /></TrialDisclosure>);
     rerender(<TrialDisclosure open={false}><input aria-label="Bản nháp" defaultValue="Giữ nội dung" /></TrialDisclosure>);

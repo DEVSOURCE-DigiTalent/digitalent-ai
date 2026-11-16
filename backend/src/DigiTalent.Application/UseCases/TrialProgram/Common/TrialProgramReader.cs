@@ -1,6 +1,8 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.Competency.Common;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
@@ -255,37 +257,27 @@ public class TrialProgramReader
             .ToListAsync();
         var results = await LoadDomainResultsAsync(reviewed.Select(r => r.Id).ToList());
         var departmentIds = reviewed.Select(r => r.DepartmentId).Distinct().ToList();
-        var positionIds = reviewed.Where(r => r.JobPositionId.HasValue).Select(r => r.JobPositionId!.Value).Distinct().ToList();
+        var employeeIds = reviewed.Select(r => r.EmployeeId).ToList();
+        var positionByEmployee = await EffectiveJobPositions.Resolve(_context,
+                _context.Employees.AsNoTracking().Where(e => employeeIds.Contains(e.Id)))
+            .ToDictionaryAsync(row => row.Employee.Id, row => row.PositionId);
+        var positionIds = positionByEmployee.Values.Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+        var standards = await new PositionTargetsReader(_context).LoadAsync(trial.OrganizationId, positionIds);
         var departments = await _context.Departments.AsNoTracking().Where(d => departmentIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id, d => d.Name);
         var positions = await _context.JobPositions.AsNoTracking().Where(p => positionIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name);
-
-        var categoryIds = domains.Select(d => d.CategoryId).ToList();
-        var ceilingRows = await _context.CapabilityCeilings.AsNoTracking()
-            .Where(c => c.OrganizationId == trial.OrganizationId && categoryIds.Contains(c.CompetencyCategoryId))
-            .ToListAsync();
-        var orgCeilings = ceilingRows.Where(c => c.DepartmentId == null)
-            .ToDictionary(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel);
-        var deptCeilingsMap = ceilingRows.Where(c => c.DepartmentId != null)
-            .GroupBy(c => c.DepartmentId!.Value)
-            .ToDictionary(g => g.Key, g => g.ToDictionary(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel));
 
         var employees = reviewed
             .Where(r => TrialAssessmentResults.IsReady(r.ReviewedAt, r.ChoiceScore, r.ChoiceTotal, results.GetValueOrDefault(r.Id)))
             .Select(r =>
             {
                 var byCategory = (results.GetValueOrDefault(r.Id) ?? new List<TrialAssessmentDomain>()).ToDictionary(d => d.CategoryId);
-                Dictionary<Guid, int>? deptCeilings = null;
-                if (r.DepartmentId != Guid.Empty)
-                {
-                    deptCeilingsMap.TryGetValue(r.DepartmentId, out deptCeilings);
-                }
+                var positionId = positionByEmployee.GetValueOrDefault(r.EmployeeId);
+                var standard = positionId is Guid id ? standards.GetValueOrDefault(id) : null;
                 var domainDetails = domains.Select(domain =>
                 {
                     byCategory.TryGetValue(domain.CategoryId, out var dResult);
                     var lvl = dResult == null ? 0 : TrialAssessmentResults.EffectiveLevelOf(dResult);
-                    var targetLevel = deptCeilings != null && deptCeilings.TryGetValue(domain.CategoryId, out var dl) && dl > 0
-                        ? dl
-                        : orgCeilings.TryGetValue(domain.CategoryId, out var ol) && ol > 0 ? ol : 3;
+                    var targetLevel = standard?.Levels.GetValueOrDefault(domain.CategoryId) ?? 0;
                     var (levelLabel, statusText, gapText, recCourse) = DescribeDomainResult(domain.Number, domain.Name, lvl, targetLevel);
 
                     return new TrialReportEmployeeDomainDetailDto
@@ -295,6 +287,7 @@ public class TrialProgramReader
                         Name = domain.Name,
                         Level = lvl,
                         TargetLevel = targetLevel,
+                        UsesSystemReference = standard?.UsesSystemReference == true,
                         SkillGap = Math.Max(0, targetLevel - lvl),
                         LevelLabel = levelLabel,
                         StatusText = statusText,
@@ -318,7 +311,7 @@ public class TrialProgramReader
                     FullName = r.FullName,
                     Email = r.Email,
                     DepartmentName = departments.GetValueOrDefault(r.DepartmentId),
-                    PositionName = r.JobPositionId is { } p ? positions.GetValueOrDefault(p) : null,
+                    PositionName = positionId is Guid key ? positions.GetValueOrDefault(key) : null,
                     Levels = domainDetails.Select(d => d.Level).ToList(),
                     ChoiceScore = r.ChoiceScore,
                     ChoiceTotal = r.ChoiceTotal,
@@ -337,12 +330,13 @@ public class TrialProgramReader
         var summary = domains.Select((domain, index) =>
         {
             var levels = employees.Select(e => e.Levels[index]).ToList();
-            var targetLevel = orgCeilings.TryGetValue(domain.CategoryId, out var ol) && ol > 0 ? ol : 3;
+            var comparisons = employees.Select(e => e.DomainDetails[index]).Where(d => d.TargetLevel > 0).ToList();
+            var targetLevel = comparisons.Count == 0 ? 0 : (int)Math.Round(comparisons.Average(d => d.TargetLevel), MidpointRounding.AwayFromZero);
             var average = levels.Count == 0 ? 0m : Math.Round((decimal)levels.Average(), 1, MidpointRounding.AwayFromZero);
             var generalLevel = (int)Math.Round(average, MidpointRounding.AwayFromZero);
-            var metCount = employees.Count(e => e.Levels[index] >= targetLevel);
-            var targetMetRate = employees.Count == 0 ? 0m : Math.Round((decimal)metCount / employees.Count * 100m, 1);
-            var avgGap = employees.Count == 0 ? 0m : Math.Round((decimal)employees.Select(e => Math.Max(0, targetLevel - e.Levels[index])).Average(), 1);
+            var metCount = comparisons.Count(d => d.SkillGap == 0);
+            var targetMetRate = comparisons.Count == 0 ? 0m : Math.Round((decimal)metCount / comparisons.Count * 100m, 1);
+            var avgGap = comparisons.Count == 0 ? 0m : Math.Round((decimal)comparisons.Average(d => d.SkillGap), 1);
             var (statusText, gapSummary) = DescribeEnterpriseDomainSummary(domain.Number, domain.Name, generalLevel, targetLevel, targetMetRate);
 
             return new TrialReportDomainDto
@@ -374,7 +368,7 @@ public class TrialProgramReader
     public static (string LevelLabel, string StatusText, string GapText, string RecommendedCourse) DescribeDomainResult(
         int domainNumber, string domainName, int level, int targetLevel)
     {
-        targetLevel = Math.Clamp(targetLevel, 1, 3);
+        targetLevel = Math.Clamp(targetLevel, 0, 3);
         var gap = Math.Max(0, targetLevel - level);
 
         var levelLabel = level switch
@@ -385,6 +379,9 @@ public class TrialProgramReader
             _ => "Nâng cao"
         };
 
+        if (targetLevel == 0)
+            return (levelLabel, "Chưa có chuẩn để đối chiếu", string.Empty, string.Empty);
+
         var targetLabel = targetLevel switch
         {
             1 => "Cơ bản",
@@ -394,10 +391,10 @@ public class TrialProgramReader
 
         if (gap == 0)
         {
-            var status = level > targetLevel ? "Vượt trần mục tiêu" : "Đạt trần mục tiêu";
+            var status = level > targetLevel ? "Vượt chuẩn vị trí" : "Đạt chuẩn vị trí";
             return (levelLabel,
                 status,
-                $"Đã đạt năng lực theo trần doanh nghiệp (Mức {levelLabel} / Trần {targetLabel}). Không có khoảng cách năng lực (Skill Gap: 0). Toàn bộ nội dung tương ứng đã được công nhận.",
+                $"Đã đạt năng lực theo chuẩn vị trí (Mức {levelLabel} / Trần {targetLabel}). Không có khoảng cách năng lực (Skill Gap: 0). Toàn bộ nội dung tương ứng đã được công nhận.",
                 string.Empty);
         }
 
@@ -410,11 +407,11 @@ public class TrialProgramReader
         };
 
         var gapDesc = level == 0
-            ? $"Chưa đạt mức Cơ bản ở lĩnh vực này. Để đạt trần doanh nghiệp ({targetLabel}), bạn cần bắt đầu từ khóa Cơ bản."
-            : $"Đã đạt cấp {levelLabel}, nhưng chưa đạt trần doanh nghiệp ({targetLabel}). Khoảng cách năng lực: Thiếu {gap} cấp độ. Cần hoàn thành khóa {nextTier switch { 1 => "Cơ bản", 2 => "Trung cấp", _ => "Nâng cao" }} để nâng cao năng lực theo mục tiêu doanh nghiệp.";
+            ? $"Chưa đạt mức Cơ bản ở lĩnh vực này. Để đạt chuẩn vị trí ({targetLabel}), bạn cần bắt đầu từ khóa Cơ bản."
+            : $"Đã đạt cấp {levelLabel}, nhưng chưa đạt chuẩn vị trí ({targetLabel}). Khoảng cách năng lực: Thiếu {gap} cấp độ. Cần hoàn thành khóa {nextTier switch { 1 => "Cơ bản", 2 => "Trung cấp", _ => "Nâng cao" }} để nâng cao năng lực theo mục tiêu doanh nghiệp.";
 
         return (levelLabel,
-            $"Thiếu hụt {gap} cấp độ (Hiện tại: {levelLabel} · Trần DN: {targetLabel})",
+            $"Thiếu hụt {gap} cấp độ (Hiện tại: {levelLabel} · Chuẩn vị trí: {targetLabel})",
             gapDesc,
             nextCourse);
     }
@@ -422,14 +419,17 @@ public class TrialProgramReader
     private static (string StatusText, string GapSummary) DescribeEnterpriseDomainSummary(
         int domainNumber, string domainName, int generalLevel, int targetLevel, decimal targetMetRate)
     {
-        targetLevel = Math.Clamp(targetLevel, 1, 3);
+        targetLevel = Math.Clamp(targetLevel, 0, 3);
+        if (targetLevel == 0)
+            return ("Chưa có chuẩn để đối chiếu", string.Empty);
+
         var targetLabel = targetLevel switch { 1 => "Cơ bản", 2 => "Trung cấp", _ => "Nâng cao" };
         var generalLabel = generalLevel switch { 0 => "Chưa đạt Cơ bản", 1 => "Cơ bản", 2 => "Trung cấp", _ => "Nâng cao" };
 
         if (generalLevel >= targetLevel)
         {
-            return ($"Đạt trần mục tiêu ({targetLabel})",
-                $"Đội ngũ đã đạt hoặc vượt trần năng lực của doanh nghiệp (Hiện tại: {generalLabel} / Trần: {targetLabel}). Tỷ lệ nhân sự đạt chuẩn mục tiêu: {targetMetRate}%. Không có khoảng cách năng lực diện rộng cần bù đắp.");
+            return ($"Đạt chuẩn vị trí ({targetLabel})",
+                $"Đội ngũ đã đạt hoặc vượt trần năng lực của doanh nghiệp (Hiện tại: {generalLabel} / Chuẩn: {targetLabel}). Tỷ lệ nhân sự đạt chuẩn mục tiêu: {targetMetRate}%. Không có khoảng cách năng lực diện rộng cần bù đắp.");
         }
 
         var gap = targetLevel - generalLevel;
@@ -441,8 +441,8 @@ public class TrialProgramReader
             _ => $"M{domainNumber}-A (Nâng cao)"
         };
 
-        return ($"Thiếu {gap} cấp độ (Hiện tại: {generalLabel} · Trần: {targetLabel})",
-            $"Đội ngũ hiện đạt mức {generalLabel}, thiếu hụt {gap} cấp so với trần doanh nghiệp ({targetLabel}). Tỷ lệ nhân sự đạt trần: {targetMetRate}%. Doanh nghiệp nên ưu tiên tổ chức đào tạo khóa {recCourse} về {domainName} để thu hẹp khoảng cách năng lực.");
+        return ($"Thiếu {gap} cấp độ (Hiện tại: {generalLabel} · Chuẩn: {targetLabel})",
+            $"Đội ngũ hiện đạt mức {generalLabel}, thiếu hụt {gap} cấp so với chuẩn vị trí ({targetLabel}). Tỷ lệ nhân sự đạt chuẩn: {targetMetRate}%. Doanh nghiệp nên ưu tiên tổ chức đào tạo khóa {recCourse} về {domainName} để thu hẹp khoảng cách năng lực.");
     }
 
     /// <summary>Người nhận thông báo của nền tảng (quản trị nền tảng đang hoạt động).</summary>
@@ -560,6 +560,7 @@ public class TrialReportEmployeeDomainDetailDto
     public string Name { get; set; } = string.Empty;
     public int Level { get; set; }
     public int TargetLevel { get; set; } = 3;
+    public bool UsesSystemReference { get; set; }
     public int SkillGap { get; set; }
     public string LevelLabel { get; set; } = string.Empty;
     public string StatusText { get; set; } = string.Empty;
