@@ -150,12 +150,12 @@ export function PlacementModal({ member, open, onClose }: MemberDialogProps) {
         <div className="member-placement-field">
           <span className="member-placement-field__icon"><Building2 size={19} /></span>
           <div><p className="member-placement-field__label">{translateUi("Phòng ban ")}<span>*</span></p><p className="member-placement-field__hint">Đơn vị quản lý trực tiếp</p></div>
-          <OwnerFilterSelect label={translateUi("Phòng ban")} value={departmentId} onChange={setDepartmentId} options={[{ value: '', label: 'Chọn phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
+          <OwnerFilterSelect label={translateUi("Phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); const options = positions.filter((p) => p.departmentId === value); setJobPositionId(options.length === 1 ? options[0].id : ''); }} options={[{ value: '', label: 'Chọn phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
         </div>
         <div className="member-placement-field">
           <span className="member-placement-field__icon member-placement-field__icon--sky"><BriefcaseBusiness size={19} /></span>
           <div><p className="member-placement-field__label">{translateUi("Vị trí công việc")}</p><p className="member-placement-field__hint">Áp dụng chuẩn năng lực tương ứng</p></div>
-          <OwnerFilterSelect label={translateUi("Vị trí công việc")} value={jobPositionId} onChange={setJobPositionId} options={[{ value: '', label: 'Chưa xếp vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
+          <OwnerFilterSelect label={translateUi("Vị trí công việc")} value={jobPositionId} onChange={setJobPositionId} options={[{ value: '', label: 'Chưa xếp vị trí' }, ...positions.filter((p) => p.departmentId === departmentId || (p.id === member.jobPositionId && departmentId === member.departmentId)).map((p) => ({ value: p.id, label: p.name }))]} />
         </div>
       </div>
     </Modal>

@@ -184,7 +184,13 @@ public class AppDbContext : DbContext, IApplicationDbContext
 
     public void AddDomainEvent(IDomainEvent domainEvent) => _pendingEvents.Add(domainEvent);
 
-    public async Task ExecuteInTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default)
+    public Task ExecuteInTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default)
+        => ExecuteTransactionAsync(work, serializable: false, cancellationToken);
+
+    public Task ExecuteInSerializableTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default)
+        => ExecuteTransactionAsync(work, serializable: true, cancellationToken);
+
+    private async Task ExecuteTransactionAsync(Func<Task> work, bool serializable, CancellationToken cancellationToken)
     {
         if (!Database.IsRelational())
         {
@@ -197,7 +203,9 @@ public class AppDbContext : DbContext, IApplicationDbContext
             throw new InvalidOperationException("ExecuteInTransactionAsync cannot be nested inside another transaction.");
         }
 
-        await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = serializable
+            ? await Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken)
+            : await Database.BeginTransactionAsync(cancellationToken);
         _inManagedTransaction = true;
         try
         {

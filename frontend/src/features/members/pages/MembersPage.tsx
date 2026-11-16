@@ -11,6 +11,7 @@ import { useMembers } from '@/hooks/use-members';
 import { PERMISSIONS } from '@/hooks/use-permission';
 import { ROLES } from '@/lib/roles';
 import { assignableRoles } from '@/lib/role-policy';
+import { isEnterpriseTrial } from '@/lib/navigation';
 import { formatDate } from '@/lib/utils';
 import type { MemberListItem, MemberStatus } from '@/services/member.service';
 import { InviteMembersModal } from '../components/InviteMembersModal';
@@ -55,7 +56,7 @@ export function MembersPage() {
     jobPositionId: jobPositionId || undefined,
   });
 
-  const seats = user.subscription?.seatLimit;
+  const seats = isEnterpriseTrial(user) ? undefined : user.subscription?.seatLimit;
 
   const columns: Column<MemberListItem>[] = [
     {

@@ -42,6 +42,7 @@ public class OrganizationStructureTests
             FullName = "New Person",
             Role = MemberRoles.Manager,
             DepartmentId = f.World.DepartmentB.Id,
+            JobPositionName = "Kế toán",
         });
         invite.Created.Should().ContainSingle();
         invite.Created[0].Email.Should().Be("new.person@test.local");
@@ -194,16 +195,25 @@ public class OrganizationStructureTests
         var f = await Fixture.CreateAsync();
         var member = await f.CreateAccountAsync("member@test.local", Roles.Employee, f.World.Analyst);
 
-        var promoted = await f.Update(new UpdateMemberUseCaseInput
+        var promotedWithoutAssignment = () => f.Update(new UpdateMemberUseCaseInput
         {
             Id = member.Id,
             Roles = new List<string> { MemberRoles.Manager },
+        });
+        await promotedWithoutAssignment.Should().ThrowAsync<BadRequestException>();
+        var destination = await f.Context.Departments.FindAsync(f.World.DepartmentB.Id);
+        destination!.ManagerEmployeeId = f.World.AnalystInDepartmentB.Id;
+        await f.Context.SaveChangesAsync();
+
+        var moved = await f.Update(new UpdateMemberUseCaseInput
+        {
+            Id = member.Id,
             DepartmentId = f.World.DepartmentB.Id,
             JobPositionId = string.Empty, // clear the position
         });
-        promoted.Roles.Should().Equal(MemberRoles.Manager);
-        promoted.DepartmentId.Should().Be(f.World.DepartmentB.Id);
-        promoted.JobPositionId.Should().BeNull();
+        moved.Roles.Should().Equal(MemberRoles.Employee);
+        moved.DepartmentId.Should().Be(f.World.DepartmentB.Id);
+        moved.JobPositionId.Should().BeNull();
 
         var demoteLastOwner = () => f.Update(new UpdateMemberUseCaseInput
         {
@@ -321,6 +331,7 @@ public class OrganizationStructureTests
         await f.Context.JobPositions.Where(p => p.Id == f.World.DataAnalyst.Id)
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.JobGrade, JobGrades.G2));
 
+        await f.CreateAccountAsync("analytics-lead@test.local", Roles.Employee, f.World.Analyst);
         await new UpdateDepartmentUseCase(f.Context, f.CurrentUser, f.Audit.Object).ExecuteAsync(new UpdateDepartmentUseCaseInput
         {
             Id = f.World.DepartmentA.Id,
@@ -358,8 +369,8 @@ public class OrganizationStructureTests
         var f = await Fixture.CreateAsync();
         var created = await new CreateJobPositionUseCase(f.Context, f.CurrentUser, f.Audit.Object).ExecuteAsync(new CreateJobPositionUseCaseInput
         {
-            Code = $"BA_{Guid.NewGuid():N}"[..12],
-            Name = "Business Analyst",
+            Code = "ACCOUNTANT",
+            Name = "Kế toán",
             DepartmentId = f.World.DepartmentB.Id,
             JobGrade = "g3",
         });
@@ -444,9 +455,17 @@ public class OrganizationStructureTests
             return fixture;
         }
 
-        public Task<InviteMembersUseCaseOutput> Invite(params InviteMemberRow[] rows) =>
-            new InviteMembersUseCase(Context, CurrentUser, Permissions.Object, Sender.Object, Audit.Object, Directory)
+        public async Task<InviteMembersUseCaseOutput> Invite(params InviteMemberRow[] rows)
+        {
+            if (rows.Any(r => r.DepartmentId == World.DepartmentA.Id && r.Role != MemberRoles.Manager))
+            {
+                var department = await Context.Departments.FindAsync(World.DepartmentA.Id);
+                department!.ManagerEmployeeId ??= World.Unassigned.Id;
+                await Context.SaveChangesAsync();
+            }
+            return await new InviteMembersUseCase(Context, CurrentUser, Permissions.Object, Sender.Object, Audit.Object, Directory)
                 .ExecuteAsync(new InviteMembersUseCaseInput { Rows = rows.ToList() });
+        }
 
         public Task<ActivateInvitationUseCaseOutput> Activate(string token, string? fullName) =>
             new ActivateInvitationUseCase(Context, Hasher.Object)

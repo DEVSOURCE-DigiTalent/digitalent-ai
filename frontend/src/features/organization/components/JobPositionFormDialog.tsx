@@ -5,24 +5,27 @@ import { BriefcaseBusiness, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCreateJobPosition, useUpdateJobPosition } from '@/hooks/use-job-positions';
+import { useCreateJobPosition, useJobPositions, useUpdateJobPosition } from '@/hooks/use-job-positions';
 import { useDepartments } from '@/hooks/use-departments';
-import { useJobGradeLabel } from '@/hooks/use-job-grades';
 import type { JobPositionListItem } from '@/services/job-position.service';
 import { toast } from 'sonner';
 import { organizationErrorMessage } from '@/lib/organization-errors';
-import { JOB_GRADES } from '@/lib/terms';
 import { INPUT_CLASS } from '@/features/onboarding/components/styles';
 import { useDialogFocus } from '@/hooks/use-dialog-focus';
 import './job-position-form.css';
 
+const standardPositions = {
+  CEO: 'CEO / Giám đốc',
+  HR: 'Nhân sự (HR)',
+  MARKETING: 'Marketing',
+  SALES_CRM: 'Sales / CRM',
+  ACCOUNTANT: 'Kế toán',
+} as const;
+
 const formSchema = z.object({
   code: z.string().min(1, 'Vui lòng nhập mã'),
-  name: z.string().min(1, 'Vui lòng nhập tên'),
   description: z.string().optional(),
-  departmentId: z.string().optional(),
-  /** '' = not graded yet. */
-  jobGrade: z.enum(['', ...JOB_GRADES]).optional(),
+  departmentId: z.string().min(1, 'Vui lòng chọn phòng ban'),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
@@ -43,8 +46,10 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
   const updateMutation = useUpdateJobPosition();
 
   const { data: deptData } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
-  const departments = deptData?.items || [];
-  const gradeLabel = useJobGradeLabel();
+  const { data: positionData } = useJobPositions({ pageSize: 100 });
+  const occupied = new Set(positionData?.items.filter((item) => item.id !== position?.id && item.status !== 'ARCHIVED')
+    .map((item) => item.departmentId));
+  const departments = (deptData?.items ?? []).filter((item) => item.id === position?.departmentId || !occupied.has(item.id));
 
   const {
     register,
@@ -55,10 +60,8 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
     resolver: zodResolver(formSchema),
     defaultValues: {
       code: '',
-      name: '',
       description: '',
       departmentId: '',
-      jobGrade: '',
       status: 'ACTIVE',
     },
   });
@@ -68,19 +71,15 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
       if (position) {
         reset({
           code: position.code,
-          name: position.name,
           description: position.description ?? '',
           departmentId: position.departmentId || '',
-          jobGrade: position.jobGrade ?? '',
           status: position.status === 'ARCHIVED' ? 'ACTIVE' : position.status,
         });
       } else {
         reset({
           code: '',
-          name: '',
           description: '',
           departmentId: '',
-          jobGrade: '',
           status: 'ACTIVE',
         });
       }
@@ -92,17 +91,16 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
   const onSubmit = async (data: FormData) => {
     const fields = {
       code: data.code.trim().toUpperCase(),
-      name: data.name.trim(),
+      name: standardPositions[data.code as keyof typeof standardPositions] ?? position?.name ?? data.code,
       description: data.description?.trim(),
-      departmentId: data.departmentId || undefined,
-      jobGrade: data.jobGrade || undefined,
+      departmentId: data.departmentId,
     };
     try {
       if (isEditing && position) {
         await updateMutation.mutateAsync({
           id: position.id,
           // PUT replaces every field: the job family is not on this form, so it is sent back as it was.
-          data: { ...fields, jobFamilyId: position.jobFamilyId, status: data.status as 'ACTIVE' | 'INACTIVE' },
+          data: { ...fields, jobFamilyId: position.jobFamilyId, jobGrade: position.jobGrade, status: data.status as 'ACTIVE' | 'INACTIVE' },
         });
         toast.success('Đã cập nhật vị trí công việc');
       } else {
@@ -140,61 +138,37 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
           <div className="position-form-grid">
           <div>
             <label htmlFor="position-code" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Mã vị trí ")}<span className="text-rose-600">*</span></label>
-            <input
-              id="position-code"
-              {...register('code')}
-              className={INPUT_CLASS}
-              placeholder={translateUi("Ví dụ: KT-01")}
-              disabled={isSubmitting}
-            />
+            {position ? <input id="position-code" {...register('code')} className={INPUT_CLASS} readOnly /> : (
+              <select id="position-code" {...register('code')} className={INPUT_CLASS} disabled={isSubmitting}>
+                <option value="">{translateUi('Chọn vị trí chuẩn')}</option>
+                {Object.entries(standardPositions)
+                  .filter(([code]) => !positionData?.items.some((item) => item.code === code && item.departmentId))
+                  .map(([code, name]) => <option key={code} value={code}>{name} ({code})</option>)}
+              </select>
+            )}
             {errors.code && <p className="mt-1 text-sm text-red-500">{translateUi(errors.code.message)}</p>}
           </div>
 
-          <div>
-            <label htmlFor="position-name" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Tên vị trí ")}<span className="text-rose-600">*</span></label>
-            <input
-              id="position-name"
-              {...register('name')}
-              className={INPUT_CLASS}
-              placeholder={translateUi("Ví dụ: Kế toán viên")}
-              disabled={isSubmitting}
-            />
-            {errors.name && <p className="mt-1 text-sm text-red-500">{translateUi(errors.name.message)}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="position-department" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Phòng ban")}</label>
+          <div className="position-form-full">
+            <label htmlFor="position-department" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Phòng ban")} <span className="text-rose-600">*</span></label>
             <select
               id="position-department"
               {...register('departmentId')}
               className={INPUT_CLASS}
               disabled={isSubmitting}
             >
-              <option value="">{translateUi("Chưa gắn phòng ban")}</option>
+              <option value="">{translateUi("Chọn phòng ban")}</option>
+              {position?.departmentId && !departments.some((d) => d.id === position.departmentId) && (
+                <option value={position.departmentId}>{position.departmentName ?? translateUi('Phòng ban hiện tại')}</option>
+              )}
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label htmlFor="position-grade" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Cấp bậc")}</label>
-            <select
-              id="position-grade"
-              {...register('jobGrade')}
-              className={INPUT_CLASS}
-              disabled={isSubmitting}
-            >
-              <option value="">{translateUi("Chưa xếp cấp bậc")}</option>
-              {JOB_GRADES.map((code) => (
-                <option key={code} value={code}>
-                  {gradeLabel(code)}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1.5 text-xs text-slate-500">{translateUi("Nhân sự giữ vị trí này được tính theo cấp bậc đã chọn.")}</p>
+            <p className="mt-1.5 text-xs text-slate-600">{translateUi('Mỗi phòng ban có một vị trí công việc.')}</p>
+            {errors.departmentId && <p className="mt-1 text-sm text-red-600">{translateUi(errors.departmentId.message)}</p>}
           </div>
 
           <div className="position-form-full">

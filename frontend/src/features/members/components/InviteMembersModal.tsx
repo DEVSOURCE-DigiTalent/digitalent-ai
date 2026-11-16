@@ -24,9 +24,11 @@ import { useJobPositions } from '@/hooks/use-job-positions';
 import { useInviteMembers } from '@/hooks/use-members';
 import { organizationErrorMessage } from '@/lib/organization-errors';
 import { assignableRoles } from '@/lib/role-policy';
+import { isEnterpriseTrial } from '@/lib/navigation';
 import type { InviteResult, MemberRole } from '@/types/commerce';
 import { roleLabel } from '../member-labels';
 import {
+  departmentRoleError,
   downloadEmployeeTemplate,
   parseSmartEmployeeCsv,
   type ParsedEmployeeRow,
@@ -68,7 +70,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
   useUiLanguage();
   const user = useCurrentUser((s) => s.user)!;
   const invite = useInviteMembers();
-  const roles = assignableRoles(user.roles) as MemberRole[];
+  const roles = assignableRoles(user.roles).filter((role) => role === 'EMPLOYEE' || role === 'MANAGER');
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
 
@@ -95,7 +97,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
   const [result, setResult] = useState<InviteResult>();
 
   const visiblePositions = positions.filter(
-    (position) => !position.departmentId || position.departmentId === draft.departmentId,
+    (position) => position.departmentId === draft.departmentId,
   );
 
   const setDraftField = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -107,10 +109,16 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
     if (!draft.fullName.trim()) return setDraftError('Vui lòng nhập họ và tên.');
     if (!EMAIL_PATTERN.test(email)) return setDraftError('Địa chỉ email không hợp lệ.');
     if (draft.role !== 'OWNER' && !draft.departmentId) return setDraftError('Vui lòng chọn phòng ban.');
-    if (draft.role === 'EMPLOYEE' && !draft.jobPositionId) return setDraftError('Vui lòng chọn vị trí công việc.');
+    if (!draft.jobPositionId) return setDraftError('Vui lòng chọn vị trí công việc.');
     if (draft.jobPositionId && !visiblePositions.some((p) => p.id === draft.jobPositionId))
       return setDraftError('Vị trí công việc không thuộc phòng ban đã chọn.');
     if (queue.some((q) => q.email === email)) return setDraftError('Email này đã có trong danh sách chờ gửi.');
+
+    const department = departments.find((item) => item.id === draft.departmentId);
+    const hasManager = Boolean(department?.managerEmployeeId || department?.hasPendingManagerInvitation)
+      || queue.some((person) => person.departmentId === draft.departmentId && person.role === 'MANAGER');
+    const roleError = departmentRoleError(draft.role, hasManager);
+    if (roleError) return setDraftError(roleError);
 
     setDraftError(undefined);
     setQueue((curr) => [...curr, { ...draft, email, key: email }]);
@@ -125,13 +133,16 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
   const handleFileUpload = async (file: File | undefined) => {
     if (!file) return;
     try {
-      const text = await file.text();
+      const text = /\.xlsx$/i.test(file.name)
+        ? (await (await import('read-excel-file/browser')).readSheet(file))
+            .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
+        : await file.text();
       const parsed = parseSmartEmployeeCsv(text, departments, positions);
       setPreviewRows(parsed.rows);
       setParseIssues(parsed.issues);
       setPastedText('');
     } catch {
-      setParseIssues(['Không thể đọc file. Vui lòng kiểm tra định dạng file .csv hoặc .txt.']);
+      setParseIssues(['Không thể đọc file. Vui lòng kiểm tra định dạng file .xlsx hoặc .csv.']);
     }
   };
 
@@ -158,7 +169,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
           }
           // Nếu vị trí hiện tại không thuộc phòng ban mới, reset vị trí
           const validPos = positions.some(
-            (p) => p.id === updated.jobPositionId && (!p.departmentId || p.departmentId === updates.departmentId),
+            (p) => p.id === updated.jobPositionId && (p.departmentId === updates.departmentId),
           );
           if (!validPos && !updated.jobPositionId?.startsWith('new:')) {
             updated.jobPositionId = '';
@@ -180,7 +191,9 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
         const errors: string[] = [];
         if (!updated.fullName.trim()) errors.push('Thiếu họ tên');
         if (!EMAIL_PATTERN.test(updated.email.trim().toLowerCase())) errors.push('Email không hợp lệ');
-        if (!updated.departmentId && updated.role !== 'OWNER') errors.push('Chưa chọn phòng ban');
+        if (!updated.departmentId) errors.push('Chưa chọn phòng ban');
+        if (!updated.jobPositionId) errors.push('Chưa chọn vị trí');
+        if (!updates.role && row.errors.some((error) => error.startsWith('Vai trò'))) errors.push('Vai trò phải là Nhân viên hoặc Trưởng phòng.');
         updated.isValid = errors.length === 0;
         updated.errors = errors;
 
@@ -205,7 +218,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
           ...row,
           departmentId: matchedDept.id,
           departmentName: matchedDept.name,
-          isValid: Boolean(row.fullName.trim() && EMAIL_PATTERN.test(row.email.trim().toLowerCase())),
+          isValid: row.errors.every((error) => error.includes('phòng ban')),
           errors: row.errors.filter((e) => !e.includes('phòng ban')),
         };
       }),
@@ -251,7 +264,8 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
         })),
       );
       setResult(outcome);
-      setQueue([]);
+      const rejected = new Set(outcome.rejected.map((row) => row.email.toLowerCase()));
+      setQueue((current) => current.filter((person) => rejected.has(person.email)));
     } catch (error) {
       setSubmitError(organizationErrorMessage(error, 'Không thể hoàn thành thêm nhân viên. Vui lòng thử lại.'));
     }
@@ -271,7 +285,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
 
   const validPreviewCount = previewRows.filter((r) => r.isValid).length;
   const seatsLeft =
-    user.subscription?.seatLimit === undefined
+    isEnterpriseTrial(user) || user.subscription?.seatLimit === undefined
       ? undefined
       : user.subscription.seatLimit - (user.subscription.seatsUsed ?? 0) - queue.length;
 
@@ -372,12 +386,12 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                     Biểu mẫu Excel chuẩn hóa thông tin nhân sự
                   </div>
                   <p className="text-xs text-emerald-800 leading-relaxed max-w-xl">
-                    Tải về biểu mẫu chuẩn hoặc xem cấu trúc các cột bên dưới để nhập đúng thông tin: <strong>Họ tên, Email, Mã NV, Phòng ban, Vị trí, Vai trò</strong>. Hệ thống sẽ tự động ghép nhân viên vào đúng phòng ban khi tải lên.
+                    Tải về biểu mẫu chuẩn hoặc xem cấu trúc các cột bên dưới để nhập đúng thông tin: <strong>Họ tên, Email, Phòng ban, Vị trí, Vai trò</strong>. Mỗi phòng ban cần có một trưởng phòng. Dùng vai trò Nhân viên hoặc Trưởng phòng.
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => downloadEmployeeTemplate(departments, positions)}
+                  onClick={() => downloadEmployeeTemplate()}
                   className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-emerald-700/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Download className="size-4" />
@@ -402,7 +416,6 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                       <tr className="border-b border-emerald-100 bg-emerald-50/50 text-[11px] font-bold text-slate-800">
                         <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Họ và tên ")}<span className="text-red-500 font-bold">*</span></th>
                         <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Email ")}<span className="text-red-500 font-bold">*</span></th>
-                        <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Mã nhân viên")}</th>
                         <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Phòng ban ")}<span className="text-red-500 font-bold">*</span></th>
                         <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Vị trí công việc")}</th>
                         <th className="px-3.5 py-2 whitespace-nowrap">{translateUi("Vai trò")}</th>
@@ -412,29 +425,27 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                       <tr>
                         <td className="px-3.5 py-2 font-medium text-slate-900">Nguyễn Văn An</td>
                         <td className="px-3.5 py-2 font-mono text-slate-600">an.nguyen@congty.vn</td>
-                        <td className="px-3.5 py-2 font-mono text-slate-500">NV001</td>
                         <td className="px-3.5 py-2 font-semibold text-blue-700">
-                          {departments[0]?.name || 'Kinh doanh'}
+                          Phòng mẫu Kinh doanh
                         </td>
                         <td className="px-3.5 py-2 text-slate-600">
-                          {positions[0]?.name || 'Chuyên viên kinh doanh'}
+                          Sales / CRM
                         </td>
                         <td className="px-3.5 py-2">
-                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">{translateUi("Nhân viên")}</span>
+                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">{translateUi("Trưởng phòng")}</span>
                         </td>
                       </tr>
                       <tr className="bg-slate-50/30">
                         <td className="px-3.5 py-2 font-medium text-slate-900">Trần Thị Bình</td>
                         <td className="px-3.5 py-2 font-mono text-slate-600">binh.tran@congty.vn</td>
-                        <td className="px-3.5 py-2 font-mono text-slate-500">NV002</td>
                         <td className="px-3.5 py-2 font-semibold text-blue-700">
-                          {departments[1]?.name || departments[0]?.name || 'Kỹ thuật'}
+                          Phòng mẫu Kế toán
                         </td>
                         <td className="px-3.5 py-2 text-slate-600">
-                          {positions[1]?.name || positions[0]?.name || translateUi('Trưởng nhóm')}
+                          Kế toán
                         </td>
                         <td className="px-3.5 py-2">
-                          <span className="rounded-md bg-blue-100 text-blue-800 px-2 py-0.5 text-[10px] font-bold">{translateUi("Quản lý")}</span>
+                          <span className="rounded-md bg-blue-100 text-blue-800 px-2 py-0.5 text-[10px] font-bold">{translateUi('Trưởng phòng')}</span>
                         </td>
                       </tr>
                     </tbody>
@@ -475,14 +486,14 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                       <Upload className="size-6" />
                     </div>
                     <span className="text-sm font-bold text-slate-800">
-                      Bấm để chọn file Excel (.csv) hoặc kéo thả vào đây
+                      Chọn hoặc kéo thả file Excel (.xlsx) hoặc CSV
                     </span>
                     <span className="mt-1 text-xs text-slate-500">
-                      Hỗ trợ file .csv xuất từ Microsoft Excel, Google Sheets chuẩn UTF-8
+                      Hỗ trợ CSV UTF-8 xuất từ Excel hoặc Google Sheets
                     </span>
                     <input
                       type="file"
-                      accept=".csv,text/csv,text/plain"
+                      accept=".xlsx,.csv,.txt,text/csv,text/plain"
                       className="sr-only"
                       onChange={(e) => handleFileUpload(e.target.files?.[0])}
                     />
@@ -493,7 +504,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                       rows={5}
                       value={pastedText}
                       onChange={(e) => setPastedText(e.target.value)}
-                      placeholder="Dán các dòng sao chép từ Excel hoặc file CSV vào đây...&#10;Ví dụ:&#10;Nguyễn Văn An, an.nguyen@congty.vn, NV001, Kinh doanh, Chuyên viên, Nhân viên"
+                      placeholder="Dán các dòng sao chép từ Excel hoặc file CSV vào đây...&#10;Ví dụ:&#10;Nguyễn Văn An, an.nguyen@congty.vn, Kinh doanh, Chuyên viên, Trưởng phòng"
                       className="w-full rounded-xl border border-slate-200 p-3 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#304bdf] focus:ring-2 focus:ring-[#304bdf]/20"
                     />
                     <div className="flex justify-end">
@@ -575,7 +586,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {previewRows.map((row, idx) => {
                         const deptPositions = positions.filter(
-                          (p) => !p.departmentId || p.departmentId === row.departmentId,
+                          (p) => p.departmentId === row.departmentId,
                         );
 
                         return (
@@ -649,7 +660,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                                 className="rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-800 outline-none"
                               >
                                 <option value="EMPLOYEE">{translateUi("Nhân viên")}</option>
-                                <option value="MANAGER">{translateUi("Quản lý")}</option>
+                                <option value="MANAGER">{translateUi('Trưởng phòng')}</option>
                                 <option value="OWNER">{translateUi("Chủ sở hữu")}</option>
                               </select>
                             </td>
@@ -756,7 +767,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                 >
                   {roles.map((r) => (
                     <option key={r} value={r}>
-                      {roleLabel(r)}
+                      {r === 'MANAGER' ? translateUi('Trưởng phòng') : roleLabel(r)}
                     </option>
                   ))}
                 </select>
@@ -787,7 +798,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
               </div>
 
               <div className="space-y-1">
-                <label htmlFor={`${base}-position`} className="text-xs font-semibold text-slate-700">{translateUi("Vị trí công việc ")}{draft.role === 'EMPLOYEE' ? '*' : ''}
+                <label htmlFor={`${base}-position`} className="text-xs font-semibold text-slate-700">{translateUi("Vị trí công việc ")}{'*'}
                 </label>
                 <select
                   id={`${base}-position`}

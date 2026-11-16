@@ -188,17 +188,22 @@ public static class DbSeeder
             user.OrganizationId = organization;
             user.EmailVerifiedAt ??= now;
 
-            var desiredRoleId = roleCode == null ? (Guid?)null : roleIds[roleCode];
+            var desiredRoleIds = roleCode switch
+            {
+                Roles.Manager => new[] { roleIds[Roles.Manager], roleIds[Roles.Employee] },
+                null => Array.Empty<Guid>(),
+                _ => new[] { roleIds[roleCode] },
+            };
             var managedRoleIds = roleIds.Values.ToHashSet();
             foreach (var assignedRole in user.UserRoles
-                         .Where(role => managedRoleIds.Contains(role.RoleId) && role.RoleId != desiredRoleId)
+                         .Where(role => managedRoleIds.Contains(role.RoleId) && !desiredRoleIds.Contains(role.RoleId))
                          .ToList())
             {
                 user.UserRoles.Remove(assignedRole);
             }
-            if (desiredRoleId.HasValue && user.UserRoles.All(role => role.RoleId != desiredRoleId.Value))
+            foreach (var roleId in desiredRoleIds.Except(user.UserRoles.Select(role => role.RoleId)))
             {
-                user.UserRoles.Add(new UserRole { RoleId = desiredRoleId.Value, AssignedAt = now });
+                user.UserRoles.Add(new UserRole { RoleId = roleId, AssignedAt = now });
             }
 
             return user;

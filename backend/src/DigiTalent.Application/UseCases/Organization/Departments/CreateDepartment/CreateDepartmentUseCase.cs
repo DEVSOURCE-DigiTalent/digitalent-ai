@@ -25,6 +25,16 @@ public class CreateDepartmentUseCase : IUseCase<CreateDepartmentUseCaseInput, Cr
 
     public async Task<CreateDepartmentUseCaseOutput> ExecuteAsync(CreateDepartmentUseCaseInput input)
     {
+        CreateDepartmentUseCaseOutput? result = null;
+        await _context.ExecuteInSerializableTransactionAsync(async () =>
+        {
+            result = await ExecuteCoreAsync(input);
+        });
+        return result!;
+    }
+
+    private async Task<CreateDepartmentUseCaseOutput> ExecuteCoreAsync(CreateDepartmentUseCaseInput input)
+    {
         // 1. Phòng ban luôn thuộc tổ chức của người tạo
         var organizationId = _currentUser.GetRequiredOrganizationId();
 
@@ -39,31 +49,13 @@ public class CreateDepartmentUseCase : IUseCase<CreateDepartmentUseCaseInput, Cr
             throw new ConflictException($"Department code '{code}' already exists.");
         }
 
-        // 4. Phòng ban cha (nếu có) phải cùng tổ chức và chưa bị archive
-        if (input.ParentDepartmentId.HasValue)
-        {
-            var parentExists = await _context.Departments.AnyAsync(d =>
-                d.Id == input.ParentDepartmentId.Value
-                && d.OrganizationId == organizationId
-                && d.Status != Statuses.MasterData.Archived);
-            if (!parentExists)
-            {
-                throw new BadRequestException("Parent department does not exist or is archived.");
-            }
-        }
-
-        // 5. Trưởng phòng (nếu có) phải là nhân viên ACTIVE cùng tổ chức
-        if (input.ManagerEmployeeId.HasValue)
-        {
-            await DepartmentRules.EnsureValidManagerAsync(_context, organizationId, input.ManagerEmployeeId.Value);
-        }
+        if (!input.ManagerEmployeeId.HasValue)
+            throw new BadRequestException("Cần chọn trưởng phòng trước khi tạo phòng ban.", "managerEmployeeId", "INVALID_MANAGER");
 
         // 6. Tạo entity và lưu xuống database
         var department = new Department
         {
             OrganizationId = organizationId,
-            ParentDepartmentId = input.ParentDepartmentId,
-            ManagerEmployeeId = input.ManagerEmployeeId,
             Code = code,
             Name = input.Name.Trim(),
             Description = input.Description,
@@ -71,6 +63,7 @@ public class CreateDepartmentUseCase : IUseCase<CreateDepartmentUseCaseInput, Cr
         };
 
         _context.Departments.Add(department);
+        await DepartmentRules.AssignManagerAsync(_context, department, input.ManagerEmployeeId.Value, _currentUser.UserId, requireDepartmentMembership: false);
         await _context.SaveChangesAsync();
 
         // 7. Ghi nhật ký (sau khi lưu xong — AuditService tự SaveChanges)
