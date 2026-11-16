@@ -68,6 +68,14 @@ export const EMPLOYEE_SCREENS: ScreenDef[] = [
     permission: P.ASSESSMENT_READ,
     priority: 'P0',
   },
+  {
+    id: 'EM-15',
+    title: 'Kiểm tra đầu vào',
+    path: '/enterprise/me/courses/:courseId/skip-test',
+    roles: EMPLOYEE_ROLES,
+    permission: P.ASSESSMENT_READ,
+    priority: 'P0',
+  },
   // Dùng thử doanh nghiệp: bài đánh giá tổng hợp ba cấp (trang giới thiệu + phòng thi có giám sát)
   {
     id: 'EM-T1',
