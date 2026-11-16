@@ -94,12 +94,14 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
         var employeeIds = employees.Select(row => row.Employee.Id).ToList();
         var positionIds = employees.Where(row => row.Position != null).Select(row => row.Position!.Id).Distinct().ToList();
         var targetsByPosition = await new PositionTargetsReader(_db).LoadAsync(orgId, positionIds);
-        var systemCompetencies = await (
+        var systemCompetencyRows = await (
             from competency in _db.Competencies.AsNoTracking()
             join category in _db.CompetencyCategories.AsNoTracking() on competency.CategoryId equals category.Id
             where category.OrganizationId == orgId && category.Code.StartsWith("TT02_D") && competency.Status == Statuses.Competency.Active
-            select new { RequirementSetId = Guid.Empty, CompetencyId = competency.Id, RequiredLevel = 1, competency.Name,
+            select new { CompetencyId = competency.Id, competency.Name,
                 CategoryId = category.Id, CategoryName = category.Name, category.SortOrder }).ToListAsync();
+        var systemCompetencies = systemCompetencyRows.Select(row => new { RequirementSetId = Guid.Empty,
+            row.CompetencyId, RequiredLevel = 1, row.Name, row.CategoryId, row.CategoryName, row.SortOrder }).ToList();
         var sets = await _db.PositionRequirementSets.AsNoTracking().Where(s => positionIds.Contains(s.JobPositionId) && s.Status == "ACTIVE").OrderByDescending(s => s.VersionNo).ToListAsync();
         var setIds = sets.Select(s => s.Id).ToList();
         var requirements = await (from item in _db.PositionRequirementItems.AsNoTracking()
