@@ -5,6 +5,7 @@ import { platformCatalogService, type CatalogCourseDetail } from '@/services/pla
 import { errorMessage } from '../components/pulse-format';
 import type { CourseEdit } from './builder-types';
 import { RichTextEditor } from './RichTextEditor';
+import { GraduationCap, FileText, CheckSquare, Plus, CheckCircle2 } from 'lucide-react';
 
 const MAX_CRITERIA = 10;
 
@@ -35,77 +36,184 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
   };
 
   return (
-    <section className="surface pad" aria-labelledby="final-title">
-      <div className="pa-card-head">
-        <h2 id="final-title" className="panel-title">
-          Bài cuối khóa
-        </h2>
-        <span className="pill pa-pill-gold">Quản lý phòng ban chấm · tối đa 2 lần nộp</span>
-      </div>
-      <label className="field">
-        Tên bài
-        <input value={form.title} readOnly={!editable} maxLength={250} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-      </label>
-      <div className="field">
-        <span>Đề bài</span>
-        {editable ? (
-          <RichTextEditor label="Đề bài cuối khóa" value={form.promptHtml} onChange={(html) => setForm((f) => ({ ...f, promptHtml: html }))} />
-        ) : form.promptHtml ? (
-          <div className="pa-rich pa-rich-box" dangerouslySetInnerHTML={{ __html: form.promptHtml }} />
-        ) : (
-          <p className="pa-empty">Chưa có đề bài.</p>
-        )}
-      </div>
-      <span className="mini-label">Tiêu chí chấm (quản lý đánh giá từng tiêu chí)</span>
-      <div className="pa-criteria">
-        {form.criteria.map((criterion, index) => (
-          <div className="pa-criterion" key={index}>
-            <b>{String(index + 1).padStart(2, '0')}</b>
+    <div className="stack" aria-labelledby="final-title">
+      {/* ✦ BẢNG KHUNG 1: Cấu hình bài đánh giá */}
+      <div className="pa-cb-panel">
+        <div className="pa-cb-panel-head">
+          <div>
+            <div className="pa-cb-panel-title">
+              <GraduationCap size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
+              <h2 id="final-title" style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+                {translateUi('Cấu hình bài đánh giá cuối khóa')}
+              </h2>
+            </div>
+            <div className="pa-cb-panel-desc">
+              {translateUi('Hình thức đánh giá năng lực thực hành và quy trình phê duyệt kết quả.')}
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: 12.5,
+              padding: '4px 10px',
+              borderRadius: 6,
+              fontWeight: 600,
+              background: 'var(--pa-accent-soft, #fef3e7)',
+              color: 'var(--pa-accent-solid, #7c2d12)',
+              border: '1px solid var(--pa-accent-border, #efc69b)',
+            }}
+          >
+            {translateUi('Quản lý phòng ban chấm · Tối đa 2 lần nộp')}
+          </span>
+        </div>
+
+        <div className="pa-cb-panel-body">
+          <div>
+            <label className="pa-cb-field-label" htmlFor="field-final-title">
+              <span>{translateUi('Tên bài đánh giá')} {editable && <span style={{ color: '#ef4444' }}>*</span>}</span>
+            </label>
             <input
-              className="pa-input"
-              value={criterion}
+              id="field-final-title"
+              className="pa-cb-input"
+              value={form.title}
               readOnly={!editable}
               maxLength={250}
-              onChange={(e) => setCriterion(index, e.target.value)}
-              aria-label={translateUi(`Tiêu chí ${index + 1}`)}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              style={{ fontWeight: 600, fontSize: 14.5 }}
+              placeholder={translateUi('Nhập tên bài đánh giá cuối khóa...')}
             />
-            {editable && (
+          </div>
+        </div>
+      </div>
+
+      {/* ✦ BẢNG KHUNG 2: Đề bài & Hướng dẫn thực hành */}
+      <div className="pa-cb-panel">
+        <div className="pa-cb-panel-head">
+          <div>
+            <div className="pa-cb-panel-title">
+              <FileText size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+                {translateUi('Đề bài & Hướng dẫn thực hành')}
+              </h2>
+            </div>
+            <div className="pa-cb-panel-desc">
+              {translateUi('Nội dung yêu cầu chi tiết, ngữ cảnh bài tập thực tế để học viên thực hiện và nộp bài.')}
+            </div>
+          </div>
+        </div>
+
+        <div className="pa-cb-panel-body">
+          {editable ? (
+            <RichTextEditor
+              label={translateUi('Đề bài cuối khóa')}
+              value={form.promptHtml}
+              onChange={(html) => setForm((f) => ({ ...f, promptHtml: html }))}
+            />
+          ) : form.promptHtml ? (
+            <div className="pa-rich pa-rich-box" dangerouslySetInnerHTML={{ __html: form.promptHtml }} />
+          ) : (
+            <p style={{ margin: 0, padding: '16px 0', fontSize: 13, color: '#64748b' }}>
+              {translateUi('Chưa cập nhật đề bài.')}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ✦ BẢNG KHUNG 3: Tiêu chí chấm điểm (Rubric) */}
+      <div className="pa-cb-panel">
+        <div className="pa-cb-panel-head">
+          <div>
+            <div className="pa-cb-panel-title">
+              <CheckSquare size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+                {translateUi('Tiêu chí chấm điểm (Rubric)')}
+              </h2>
+            </div>
+            <div className="pa-cb-panel-desc">
+              {translateUi('Quản lý phòng ban đánh giá từng tiêu chí đạt hoặc chưa đạt khi chấm bài của nhân viên.')}
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: 12.5,
+              color: '#475569',
+              background: '#f1f5f9',
+              padding: '4px 10px',
+              borderRadius: 6,
+              fontWeight: 600,
+            }}
+          >
+            {translateUi(`${form.criteria.length} / ${MAX_CRITERIA} tiêu chí`)}
+          </span>
+        </div>
+
+        <div className="pa-cb-panel-body">
+          <div className="pa-criteria">
+            {form.criteria.map((criterion, index) => (
+              <div className="pa-cb-criterion-row" key={index}>
+                <span className="pa-cb-criterion-badge">{String(index + 1).padStart(2, '0')}</span>
+                <input
+                  className="pa-cb-criterion-input"
+                  value={criterion}
+                  readOnly={!editable}
+                  maxLength={250}
+                  onChange={(e) => setCriterion(index, e.target.value)}
+                  placeholder={translateUi(`Nhập tiêu chí chấm điểm ${index + 1}...`)}
+                  aria-label={translateUi(`Tiêu chí ${index + 1}`)}
+                />
+                {editable && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-small pa-danger-text"
+                    aria-label={translateUi(`Xóa tiêu chí ${index + 1}`)}
+                    disabled={form.criteria.length <= 1}
+                    onClick={() => setForm((f) => ({ ...f, criteria: f.criteria.filter((_, i) => i !== index) }))}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {editable && (
+            <div style={{ marginTop: 10 }}>
               <button
                 type="button"
-                className="btn btn-ghost btn-small pa-danger-text"
-                aria-label={translateUi(`Xóa tiêu chí ${index + 1}`)}
-                disabled={form.criteria.length <= 1}
-                onClick={() => setForm((f) => ({ ...f, criteria: f.criteria.filter((_, i) => i !== index) }))}
+                className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+                disabled={form.criteria.length >= MAX_CRITERIA}
+                onClick={() => setForm((f) => ({ ...f, criteria: [...f.criteria, ''] }))}
               >
-                ✕
+                <Plus size={14} />
+                <span>{translateUi('Thêm tiêu chí')}</span>
               </button>
+            </div>
+          )}
+
+          <div className="pa-cb-notice-box">
+            {translateUi(
+              'Học viên nộp bài sau khi hoàn thành mọi mô đun của khóa học. Lần 1 chưa đạt thì chỉnh sửa và nộp lại; lần 2 chưa đạt sẽ chuyển trạng thái yêu cầu giảng viên hoặc quản lý hỗ trợ.',
             )}
           </div>
-        ))}
+        </div>
       </div>
+
+      {/* ✦ THANH TÁC VỤ CHÂN TRANG */}
       {editable && (
-        <div className="button-row pa-gap-top">
+        <div className="pa-cb-action-footer">
+          <span style={{ fontSize: 13, color: dirty ? '#d97706' : '#64748b', fontWeight: dirty ? 600 : 400 }}>
+            {dirty ? translateUi('Có thay đổi chưa lưu.') : translateUi('Đã lưu mọi thay đổi.')}
+          </span>
           <button
             type="button"
-            className="btn btn-outline btn-small"
-            disabled={form.criteria.length >= MAX_CRITERIA}
-            onClick={() => setForm((f) => ({ ...f, criteria: [...f.criteria, ''] }))}
+            className="btn btn-primary btn-small inline-flex items-center gap-1.5"
+            onClick={save}
+            disabled={!dirty || !valid || saving}
           >
-            + Tiêu chí
+            <CheckCircle2 size={14} />
+            <span>{saving ? translateUi('Đang lưu…') : translateUi('Lưu bài cuối khóa')}</span>
           </button>
         </div>
       )}
-      <div className="notice pa-gap-top">
-        Nhân viên nộp bài sau khi đạt câu hỏi ôn tập của mọi mô đun. Lần 1 chưa đạt thì sửa rồi nộp lại; lần 2 chưa đạt thì bật cờ hỗ trợ.
-      </div>
-      {editable && (
-        <div className="button-row pa-gap-top">
-          <button type="button" className="btn btn-primary" onClick={save} disabled={!dirty || !valid || saving}>
-            {saving ? translateUi('Đang lưu…') : 'Lưu bài cuối khóa'}
-          </button>
-          {dirty && <small className="pa-hint">Có thay đổi chưa lưu.</small>}
-        </div>
-      )}
-    </section>
+    </div>
   );
 }

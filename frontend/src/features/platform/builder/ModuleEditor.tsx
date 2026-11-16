@@ -1,11 +1,13 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { platformCatalogService, type BlockType, type CatalogCourseDetail, type CatalogModule } from '@/services/platform-catalog.service';
 import { errorMessage } from '../components/pulse-format';
 import { BlockCard } from './BlockCard';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
 import { QuizEditor } from './QuizEditor';
+import { Layers, BookOpen, Trash2, ArrowRight, ArrowLeft, Plus, X, AlertTriangle } from 'lucide-react';
 
 const two = (n: number) => String(n).padStart(2, '0');
 
@@ -32,6 +34,7 @@ export function ModuleEditor({
   const [addAt, setAddAt] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const total = course.modules.length;
   const last = module.index === total - 1;
 
@@ -58,25 +61,33 @@ export function ModuleEditor({
       .catch((err) => toast.error(errorMessage(err)));
   };
 
-  const move = (delta: number) =>
-    edit((v, c) => platformCatalogService.moveModule(v, c, module.moduleId, module.index + delta))
-      .then(() => onNavigate(module.index + delta))
-      .catch((err) => toast.error(errorMessage(err)));
-
-  const remove = () =>
+  const remove = () => {
+    setIsDeleting(true);
     edit((v, c) => platformCatalogService.removeModule(v, c, module.moduleId))
       .then(() => {
         toast.success(`Đã xóa mô đun ${module.index + 1}.`);
+        setConfirmDelete(false);
         onNavigate(module.index > 0 ? module.index - 1 : total > 1 ? 0 : 'info');
       })
-      .catch((err) => toast.error(errorMessage(err)));
+      .catch((err) => {
+        toast.error(errorMessage(err));
+      })
+      .finally(() => {
+        setIsDeleting(false);
+      });
+  };
 
   const addBar = (position: number) => {
     if (!editable) return null;
     if (addAt === position) return <TypeMenu onPick={(type) => insert(type, position)} onClose={() => setAddAt(null)} />;
     return (
       <div className="pa-add-bar">
-        <button type="button" onClick={() => setAddAt(position)} aria-label={translateUi(`Thêm khối ở vị trí ${position + 1}`)}>
+        <button
+          type="button"
+          onClick={() => setAddAt(position)}
+          aria-label={translateUi(`Thêm khối ở vị trí ${position + 1}`)}
+          title={translateUi('Thêm khối học liệu vào đây')}
+        >
           +
         </button>
       </div>
@@ -84,101 +95,390 @@ export function ModuleEditor({
   };
 
   return (
-    <div className="stack">
-      <div className="surface pa-module-head">
-        <span className="mini-label">
-          Mô đun {two(module.index + 1)} / {two(total)}
-        </span>
-        <input
-          className="pa-module-title"
-          value={title}
-          readOnly={!editable}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={saveTitle}
-          onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-          maxLength={220}
-          placeholder="Tên mô đun"
-          aria-label="Tên mô đun"
-        />
-        {editable && (
-          <div className="button-row pa-end">
-            <button type="button" className="btn btn-ghost btn-small" disabled={module.index === 0} onClick={() => move(-1)}>
-              ↑ Lên
-            </button>
-            <button type="button" className="btn btn-ghost btn-small" disabled={last} onClick={() => move(1)}>
-              ↓ Xuống
-            </button>
-            {confirmDelete ? (
-              <>
-                <button type="button" className="btn btn-small pa-danger" onClick={remove}>
-                  Xóa mô đun và {module.blocks.length} khối, {module.questions.length} câu hỏi
-                </button>
-                <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>{translateUi("Giữ lại")}</button>
-              </>
-            ) : (
-              <button type="button" className="btn btn-ghost btn-small pa-danger-text" onClick={() => setConfirmDelete(true)}>
-                Xóa mô đun
+    <div className="stack" aria-labelledby="module-editor-title">
+      {/* ✦ BẢNG KHUNG 1: Thông tin mô đun */}
+      <div className="pa-cb-panel">
+        <div className="pa-cb-panel-head">
+          <div>
+            <div className="pa-cb-panel-title">
+              <Layers size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
+              <h2 id="module-editor-title" style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+                {translateUi('Thông tin mô đun')}
+              </h2>
+            </div>
+            <div className="pa-cb-panel-desc">
+              {translateUi('Tên gọi hiển thị trong cấu trúc khóa học và danh mục bài giảng.')}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 12.5,
+                color: 'var(--pa-accent-solid, #7c2d12)',
+                background: 'var(--pa-accent-soft, #fef3e7)',
+                border: '1px solid var(--pa-accent-border, #efc69b)',
+                padding: '4px 10px',
+                borderRadius: 6,
+                fontWeight: 700,
+              }}
+            >
+              {translateUi(`Mô đun ${two(module.index + 1)} / ${two(total)}`)}
+            </span>
+            {editable && (
+              <button
+                type="button"
+                className="btn btn-ghost btn-small pa-danger-text inline-flex items-center gap-1.5"
+                onClick={() => setConfirmDelete(true)}
+                title={translateUi('Xóa mô đun này khỏi khóa học')}
+              >
+                <Trash2 size={14} />
+                <span>{translateUi('Xóa mô đun')}</span>
               </button>
             )}
           </div>
-        )}
-      </div>
-
-      <div className="pa-section-title">
-        <h3>{translateUi("Nội dung")}</h3>
-        <small>Nhân viên xem lần lượt từ trên xuống.{editable ? ' Bấm vào một khối để sửa.' : ''}</small>
-      </div>
-
-      {module.blocks.length === 0 ? (
-        addAt === 0 ? (
-          <TypeMenu onPick={(type) => insert(type, 0)} onClose={() => setAddAt(null)} />
-        ) : (
-          <div className="pa-blank">
-            {editable ? (
-              <>
-                <button type="button" className="pa-plus" onClick={() => setAddAt(0)} aria-label="Thêm nội dung đầu tiên">
-                  +
-                </button>
-                <strong>Thêm nội dung cho mô đun</strong>
-                <small>Chọn chữ, slide, ảnh hoặc video. Thêm bao nhiêu khối tùy ý.</small>
-              </>
-            ) : (
-              <small>Mô đun chưa có nội dung.</small>
-            )}
-          </div>
-        )
-      ) : (
-        <div className="pa-blocks">
-          {module.blocks.map((block) => (
-            <div key={block.blockId} className="pa-block-slot">
-              {addBar(block.index)}
-              <BlockCard
-                courseCode={course.code}
-                moduleIndex={module.index}
-                block={block}
-                count={module.blocks.length}
-                linkedQuestions={module.questions.filter((q) => q.blockId === block.blockId).length}
-                editable={editable}
-                editing={editingId === block.blockId}
-                onToggle={() => setEditingId(editingId === block.blockId ? null : block.blockId)}
-                edit={edit}
-              />
-            </div>
-          ))}
-          {addBar(module.blocks.length)}
         </div>
-      )}
 
+        <div className="pa-cb-panel-body">
+          <div>
+            <label className="pa-cb-field-label" htmlFor="field-module-title">
+              <span>{translateUi('Tên mô đun')} {editable && <span style={{ color: '#ef4444' }}>*</span>}</span>
+            </label>
+            <input
+              id="field-module-title"
+              className="pa-cb-input"
+              value={title}
+              readOnly={!editable}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={saveTitle}
+              onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+              maxLength={220}
+              placeholder={translateUi('Nhập tên mô đun...')}
+              style={{ fontWeight: 600, fontSize: 14.5 }}
+              autoFocus={title.startsWith('Mô đun ')}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ✦ BẢNG KHUNG 2: Khối học liệu mô đun */}
+      <div className="pa-cb-panel">
+        <div className="pa-cb-panel-head">
+          <div>
+            <div className="pa-cb-panel-title">
+              <BookOpen size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+                {translateUi('Khối học liệu mô đun')}
+              </h2>
+            </div>
+            <div className="pa-cb-panel-desc">
+              {translateUi('Học viên học tuần tự từng khối từ trên xuống. Bấm vào khối để mở chỉnh sửa.')}
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: 12.5,
+              color: '#475569',
+              background: '#f1f5f9',
+              padding: '4px 10px',
+              borderRadius: 6,
+              fontWeight: 600,
+            }}
+          >
+            {translateUi(`${module.blocks.length} khối học liệu`)}
+          </span>
+        </div>
+
+        <div className="pa-cb-panel-body">
+          {module.blocks.length === 0 ? (
+            addAt === 0 ? (
+              <TypeMenu onPick={(type) => insert(type, 0)} onClose={() => setAddAt(null)} />
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '36px 16px',
+                  border: '2px dashed #e2e8f0',
+                  borderRadius: 12,
+                  textAlign: 'center',
+                  background: '#fafafa',
+                }}
+              >
+                {editable ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-small inline-flex items-center gap-1.5"
+                      onClick={() => setAddAt(0)}
+                    >
+                      <Plus size={15} />
+                      <span>{translateUi('Thêm khối học liệu đầu tiên')}</span>
+                    </button>
+                    <span style={{ fontSize: 13, color: '#475569', marginTop: 10 }}>
+                      {translateUi('Hỗ trợ văn bản, slide trình chiếu, hình ảnh minh họa hoặc video bài giảng.')}
+                    </span>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 13, color: '#64748b' }}>
+                    {translateUi('Mô đun chưa có khối học liệu.')}
+                  </span>
+                )}
+              </div>
+            )
+          ) : (
+            <div className="pa-blocks">
+              {module.blocks.map((block) => (
+                <div key={block.blockId} className="pa-block-slot">
+                  {addBar(block.index)}
+                  <BlockCard
+                    courseCode={course.code}
+                    moduleIndex={module.index}
+                    block={block}
+                    count={module.blocks.length}
+                    linkedQuestions={module.questions.filter((q) => q.blockId === block.blockId).length}
+                    editable={editable}
+                    editing={editingId === block.blockId}
+                    onToggle={() => setEditingId(editingId === block.blockId ? null : block.blockId)}
+                    edit={edit}
+                  />
+                </div>
+              ))}
+              {addBar(module.blocks.length)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ✦ BẢNG KHUNG 3: Ngân hàng câu hỏi trắc nghiệm ôn tập */}
       <QuizEditor key={module.moduleId} module={module} editable={editable} edit={edit} />
 
-      <div className="pa-row-between">
-        <button type="button" className="btn btn-outline" onClick={() => onNavigate(module.index === 0 ? 'info' : module.index - 1)}>
-          ← {module.index === 0 ? translateUi('Thông tin khóa học') : 'Mô đun trước'}
+      {/* ✦ THANH ĐIỀU HƯỚNG CHÂN TRANG */}
+      <div className="pa-cb-action-footer">
+        <button
+          type="button"
+          className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+          onClick={() => onNavigate(module.index === 0 ? 'info' : module.index - 1)}
+        >
+          <ArrowLeft size={14} />
+          <span>{module.index === 0 ? translateUi('Thông tin tổng quan') : translateUi('Mô đun trước')}</span>
         </button>
-        <button type="button" className="btn btn-light" onClick={() => onNavigate(last ? 'final' : module.index + 1)}>
-          {last ? 'Tới bài cuối khóa →' : 'Mô đun tiếp theo →'}
+        <button
+          type="button"
+          className="btn btn-primary btn-small inline-flex items-center gap-1.5"
+          onClick={() => onNavigate(last ? 'final' : module.index + 1)}
+        >
+          <span>{last ? translateUi('Tới bài cuối khóa') : translateUi('Mô đun tiếp theo')}</span>
+          <ArrowRight size={14} />
         </button>
       </div>
+
+      {/* ✦ POPUP XÁC NHẬN XÓA MÔ ĐUN (LINEAR / STRIPE MODERN STYLE) */}
+      {confirmDelete && typeof document !== 'undefined' && createPortal(
+        <div
+          className="pa-global-modal-overlay"
+          onClick={() => !isDeleting && setConfirmDelete(false)}
+        >
+          <div
+            className="pa-global-modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-delete-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 500 }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                padding: '20px 24px 16px',
+                borderBottom: '1px solid #f1f5f9',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    background: '#fef2f2',
+                    border: '1px solid #fee2e2',
+                    color: '#dc2626',
+                    display: 'grid',
+                    placeItems: 'center',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 6px rgba(220, 38, 38, 0.08)',
+                  }}
+                >
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 id="confirm-delete-title" style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f172a' }}>
+                    {translateUi('Xác nhận xóa mô đun')}
+                  </h3>
+                  <p style={{ margin: '3px 0 0', fontSize: 13, color: '#64748b' }}>
+                    {translateUi('Mô đun sẽ bị xóa hoàn toàn khỏi chương trình học.')}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-small"
+                onClick={() => setConfirmDelete(false)}
+                disabled={isDeleting}
+                style={{ padding: 6, borderRadius: 8, color: '#64748b' }}
+                aria-label={translateUi('Đóng')}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '20px 24px', display: 'grid', gap: 16 }}>
+              {/* Thẻ tóm tắt thông tin mô đun bị xóa (Target Inset Card) */}
+              <div
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: 12,
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  display: 'grid',
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 26,
+                      height: 26,
+                      borderRadius: 6,
+                      background: 'var(--pa-accent-soft, #fef3e7)',
+                      color: 'var(--pa-accent-solid, #7c2d12)',
+                      border: '1px solid var(--pa-accent-border, #efc69b)',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {two(module.index + 1)}
+                  </span>
+                  <span style={{ fontSize: 14.5, fontWeight: 700, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {title || translateUi(`Mô đun ${two(module.index + 1)}`)}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: '#475569',
+                      background: '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: 6,
+                      padding: '2px 8px',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {module.blocks.length} {translateUi('khối học liệu')}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: '#475569',
+                      background: '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: 6,
+                      padding: '2px 8px',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {module.questions.length} {translateUi('câu hỏi ôn tập')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Hộp cảnh báo tác động */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 10,
+                  padding: '12px 14px',
+                  borderRadius: 10,
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                }}
+              >
+                <AlertTriangle size={17} style={{ color: '#dc2626', flexShrink: 0, marginTop: 2 }} />
+                <span style={{ fontSize: 13, color: '#991b1b', lineHeight: 1.5 }}>
+                  {translateUi(
+                    'Toàn bộ tài liệu, slide, video và câu hỏi ôn tập của mô đun này sẽ bị xóa vĩnh viễn và không thể phục hồi.',
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: 10,
+                padding: '16px 24px',
+                background: '#f8fafc',
+                borderTop: '1px solid #f1f5f9',
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setConfirmDelete(false)}
+                disabled={isDeleting}
+                style={{
+                  minHeight: 38,
+                  padding: '0 16px',
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  borderRadius: 8,
+                }}
+              >
+                {translateUi('Hủy bỏ')}
+              </button>
+              <button
+                type="button"
+                className="btn inline-flex items-center gap-1.5"
+                onClick={remove}
+                disabled={isDeleting}
+                style={{
+                  minHeight: 38,
+                  padding: '0 18px',
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  background: '#dc2626',
+                  borderColor: '#dc2626',
+                  color: '#ffffff',
+                  boxShadow: '0 2px 8px rgba(220, 38, 38, 0.25)',
+                }}
+              >
+                <Trash2 size={15} />
+                <span>{isDeleting ? translateUi('Đang xóa…') : translateUi('Xác nhận xóa')}</span>
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
@@ -187,7 +487,7 @@ function TypeMenu({ onPick, onClose }: { onPick: (type: BlockType) => void; onCl
   useUiLanguage();
   return (
     <div className="pa-type-menu-wrap">
-      <div className="pa-type-menu" role="group" aria-label="Chọn loại khối">
+      <div className="pa-type-menu" role="group" aria-label={translateUi('Chọn loại khối học liệu')}>
         {(Object.keys(BLOCK_TYPES) as BlockType[]).map((type, i) => (
           <button key={type} type="button" onClick={() => onPick(type)} autoFocus={i === 0}>
             <span className={`pa-type pa-type-${type.toLowerCase()}`} aria-hidden="true">
@@ -198,8 +498,10 @@ function TypeMenu({ onPick, onClose }: { onPick: (type: BlockType) => void; onCl
           </button>
         ))}
       </div>
-      <div className="pa-center">
-        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>{translateUi("Đóng")}</button>
+      <div className="pa-center" style={{ marginTop: 8 }}>
+        <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>
+          {translateUi('Đóng')}
+        </button>
       </div>
     </div>
   );
