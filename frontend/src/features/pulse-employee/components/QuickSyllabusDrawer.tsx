@@ -141,10 +141,10 @@ export function QuickSyllabusDrawer({
                   Cơ chế Vượt cấp (Miễn toàn bộ lý thuyết)
                 </strong>
                 <p className="pu-drawer-status-desc fast-track">
-                  Nếu bạn đã có kinh nghiệm thực tế, hãy làm bài đánh giá đầu vào có AI giám sát. Đạt ≥ 80% sẽ được <strong>miễn học toàn bộ lý thuyết</strong>, tiết kiệm 70% thời gian học tập.
+                  Làm bài kiểm tra đầu vào trắc nghiệm (tự chấm, không cần camera, chỉ một lần). Đạt ≥ 80% sẽ được <strong>bỏ qua phần học</strong> và mở ngay bài đánh giá cuối khóa; chưa đạt thì học tuần tự từng mô-đun.
                 </p>
                 <Link
-                  to={PULSE_PATHS.preAssessment(course.courseId)}
+                  to={PULSE_PATHS.skipTest(course.courseId)}
                   className="pu-drawer-fast-track-btn"
                   onClick={onClose}
                 >
@@ -307,7 +307,7 @@ export function QuickSyllabusDrawer({
 
           {isPreAssessment && !isCompleted ? (
             <Link
-              to={PULSE_PATHS.preAssessment(course.courseId)}
+              to={PULSE_PATHS.skipTest(course.courseId)}
               className="pu-drawer-primary-btn amber"
               onClick={onClose}
             >

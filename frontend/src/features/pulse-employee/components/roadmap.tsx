@@ -297,7 +297,7 @@ function PlanCell({
             <Check size={11} strokeWidth={3} />{translateUi(" Đã đạt")}</span>
         ) : isPreTest ? (
           <Link
-            to={PULSE_PATHS.preAssessment(course.courseId)}
+            to={PULSE_PATHS.skipTest(course.courseId)}
             className="pu-mcard-cta-btn primary"
           >
             <Zap size={11} />
@@ -358,7 +358,7 @@ export function CourseAction({ course, tone = 'page' }: { course: PulseCourseSum
   const arrow = <ArrowRight size={15} aria-hidden />;
   switch (course.slotStatus) {
     case 'PRE_ASSESSMENT':
-      return <PuLink to={PULSE_PATHS.preAssessment(course.courseId)} kind={primary} small={tone === 'dark'}>Đánh giá trước khi học {arrow}</PuLink>;
+      return <PuLink to={PULSE_PATHS.skipTest(course.courseId)} kind={primary} small={tone === 'dark'}>Kiểm tra đầu vào {arrow}</PuLink>;
     case 'PRE_REVIEW':
       return <PuLink to={PULSE_PATHS.preAssessment(course.courseId)} kind={secondary} small>Xem bài đã nộp</PuLink>;
     case 'TO_LEARN':

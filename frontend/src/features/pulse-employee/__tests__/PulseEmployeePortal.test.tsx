@@ -195,7 +195,7 @@ afterEach(() => {
 
 describe('Pulse employee routes', () => {
   it('serves every employee screen under /enterprise/me for employees and managers, without the old baseline', () => {
-    expect(EMPLOYEE_SCREENS.map((s) => s.id)).toEqual(['EM-01', 'EM-02', 'EM-03', 'EM-05', 'EM-06', 'EM-07', 'EM-12', 'EM-T1', 'EM-T2', 'EM-08', 'EM-09', 'EM-10', 'EM-11']);
+    expect(EMPLOYEE_SCREENS.map((s) => s.id)).toEqual(['EM-01', 'EM-02', 'EM-03', 'EM-05', 'EM-06', 'EM-07', 'EM-12', 'EM-15', 'EM-T1', 'EM-T2', 'EM-08', 'EM-09', 'EM-10', 'EM-11', 'EM-13', 'EM-14']);
     for (const screenDef of EMPLOYEE_SCREENS) {
       expect(screenDef.path.startsWith(PULSE_PATHS.today)).toBe(true);
       expect(screenDef.roles).toEqual(expect.arrayContaining([ROLES.EMPLOYEE, ROLES.MANAGER]));
@@ -386,17 +386,18 @@ describe('PulseTodayPage', () => {
 });
 
 describe('PulsePreAssessmentPage', () => {
-  it('opens the proctored check: screen, camera and microphone before the test starts', async () => {
+  it('sends a required entry test to the auto-graded multiple-choice test instead of the proctored essay', async () => {
     vi.spyOn(pulseService, 'getPreAssessment').mockResolvedValue(ok(preAssessment()));
 
-    renderAt(PULSE_PATHS.preAssessment('course-1'), <PulsePreAssessmentPage />);
+    renderAt(
+      PULSE_PATHS.preAssessment('course-1'),
+      <PulsePreAssessmentPage />,
+      <Route path="/enterprise/me/courses/:courseId/skip-test" element={<p>Trang kiểm tra đầu vào</p>} />,
+    );
 
-    expect(await screen.findByText('Bật đủ ba thiết bị để bắt đầu.')).toBeTruthy();
-    expect(screen.getByText('Chia sẻ toàn bộ màn hình')).toBeTruthy();
-    // jsdom không có getDisplayMedia / MediaRecorder: trang báo trình duyệt không hỗ trợ và không cho bắt đầu.
-    expect(screen.getByRole('alert').textContent).toMatch(/không hỗ trợ ghi màn hình/);
-    expect((screen.getByRole('button', { name: /Bắt đầu làm bài/ }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText('10 câu trắc nghiệm + tự luận')).toBeTruthy();
+    expect(await screen.findByText('Trang kiểm tra đầu vào')).toBeTruthy();
+    expect(screen.queryByText('Bật đủ ba thiết bị để bắt đầu.')).toBeNull();
+    expect(screen.queryByText('10 câu trắc nghiệm + tự luận')).toBeNull();
   });
 
   it('shows the waiting state once submitted', async () => {
@@ -448,13 +449,13 @@ describe('PulseFinalPage', () => {
     expect((screen.getByRole('button', { name: /Bắt đầu làm bài/ }) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('points to the pre-assessment while the course still needs it', async () => {
+  it('points to the entry test while the course still needs it', async () => {
     vi.spyOn(pulseService, 'getFinal').mockResolvedValue(ok(final({ canSubmit: false, status: 'NOT_STARTED', blockReason: 'PRE_ASSESSMENT_REQUIRED' })));
 
     renderAt(PULSE_PATHS.final('course-1'), <PulseFinalPage />);
 
-    const link = await screen.findByRole('link', { name: 'Làm bài đánh giá trước khi học →' });
-    expect(link.getAttribute('href')).toBe(PULSE_PATHS.preAssessment('course-1'));
+    const link = await screen.findByRole('link', { name: 'Làm bài kiểm tra đầu vào →' });
+    expect(link.getAttribute('href')).toBe(PULSE_PATHS.skipTest('course-1'));
   });
 
   it('shows the retry window after a first NOT_YET decision', async () => {

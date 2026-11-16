@@ -18,6 +18,7 @@ export const PULSE_KEYS = {
   module: (courseId?: string, moduleId?: string) => ['pulse', 'courses', courseId, 'modules', moduleId] as const,
   preAssessment: (courseId?: string) => ['pulse', 'courses', courseId, 'pre-assessment'] as const,
   final: (courseId?: string) => ['pulse', 'courses', courseId, 'final'] as const,
+  skipTest: (courseId?: string) => ['pulse', 'courses', courseId, 'skip-test'] as const,
   practice: ['pulse', 'practice'] as const,
   outcomes: ['pulse', 'outcomes'] as const,
   outcome: (outcomeId?: string) => ['pulse', 'outcomes', outcomeId] as const,
@@ -75,6 +76,42 @@ export function useSubmitPulseModuleQuiz() {
     // Đạt: tiến độ khóa đổi. Chưa đạt hoặc bộ câu đã đổi (QUIZ_CHANGED): tải lại mô đun để thấy trang cần xem lại / câu mới.
     onSettled: (result, _error, { courseId, moduleId }) =>
       qc.invalidateQueries({ queryKey: result?.passed ? PULSE_KEYS.all : PULSE_KEYS.module(courseId, moduleId) }),
+  });
+}
+
+/** Bài kiểm tra vượt học của một khóa. */
+export function usePulseSkipTest(courseId?: string) {
+  return useQuery({
+    queryKey: PULSE_KEYS.skipTest(courseId),
+    ...learningContentQueryOptions,
+    queryFn: () => pulseService.getSkipTest(courseId!).then((r) => r.data.data!),
+    enabled: Boolean(courseId),
+  });
+}
+
+/** Bắt đầu (hoặc mở lại) lần làm bài kiểm tra vượt học: trả đề và hạn nộp. */
+export function useStartPulseSkipTest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (courseId: string) => pulseService.startSkipTest(courseId).then((r) => r.data.data!),
+    onSuccess: (data, courseId) => {
+      qc.setQueryData(PULSE_KEYS.skipTest(courseId), data);
+      // exact: khóa của bài kiểm tra nằm dưới khóa của khóa học, không tải lại đề vừa nhận.
+      void qc.invalidateQueries({ queryKey: PULSE_KEYS.course(courseId), exact: true });
+    },
+  });
+}
+
+/** Nộp bài kiểm tra vượt học; đạt thì tiến độ khóa đổi nên làm mới mọi dữ liệu Pulse. */
+export function useSubmitPulseSkipTest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, attemptNo, answers }: { courseId: string; attemptNo: number; answers: PulseAnswer[] }) =>
+      pulseService.submitSkipTest(courseId, attemptNo, answers).then((r) => r.data.data!),
+    onSuccess: (data, { courseId }) => {
+      qc.setQueryData(PULSE_KEYS.skipTest(courseId), data);
+      void qc.invalidateQueries({ queryKey: PULSE_KEYS.all, predicate: (q) => q.queryKey[3] !== 'skip-test' });
+    },
   });
 }
 

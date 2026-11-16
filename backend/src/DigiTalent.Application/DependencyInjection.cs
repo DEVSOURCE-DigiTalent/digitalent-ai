@@ -84,6 +84,7 @@ public static class DependencyInjection
         services.AddScoped<PulseCourseWorkspace>();
         services.AddScoped<PulseQuizReader>();
         services.AddScoped<PulseExamPaper>();
+        services.AddScoped<PulseSkipTest>();
         services.AddScoped<PulseFinalReader>();
         services.AddScoped<PulseOutcomeReader>();
         services.AddScoped<PulseReviewScope>();

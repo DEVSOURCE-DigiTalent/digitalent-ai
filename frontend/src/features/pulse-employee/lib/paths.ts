@@ -12,6 +12,8 @@ export const PULSE_PATHS = {
   module: (courseId: string, moduleId: string) => `/enterprise/me/courses/${courseId}/modules/${moduleId}`,
   /** Bài đánh giá trước khi học (trang làm bài có giám sát). */
   preAssessment: (courseId: string) => `/enterprise/me/courses/${courseId}/pre-assessment`,
+  /** Bài kiểm tra vượt học: 20 câu trắc nghiệm, đạt 80% thì mở bài cuối khóa. */
+  skipTest: (courseId: string) => `/enterprise/me/courses/${courseId}/skip-test`,
   /** Bài cuối khóa (trang làm bài có giám sát). */
   final: (courseId: string) => `/enterprise/me/courses/${courseId}/final`,
   outcome: (outcomeId: string) => `/enterprise/me/outcomes/${encodeURIComponent(outcomeId)}`,
@@ -23,6 +25,6 @@ export const PULSE_PATHS = {
 /** Trang học một mô-đun (có cột đề cương riêng): menu nhân viên thu gọn mặc định để nhường chỗ cho bài học. */
 export const isModulePath = (pathname: string) => /^\/enterprise\/me\/courses\/[^/]+\/modules\/[^/]+\/?$/.test(pathname);
 
-/** Trang làm bài có giám sát: dùng khung riêng, không có thanh điều hướng chính. */
+/** Trang làm bài (có giám sát, hoặc kiểm tra vượt học tính giờ): dùng khung riêng, không có thanh điều hướng chính. */
 export const isExamPath = (pathname: string) =>
-  /^\/enterprise\/me\/courses\/[^/]+\/(pre-assessment|final)\/?$/.test(pathname) || /^\/enterprise\/me\/trial-test\/exam\/?$/.test(pathname);
+  /^\/enterprise\/me\/courses\/[^/]+\/(pre-assessment|final|skip-test)\/?$/.test(pathname) || /^\/enterprise\/me\/trial-test\/exam\/?$/.test(pathname);

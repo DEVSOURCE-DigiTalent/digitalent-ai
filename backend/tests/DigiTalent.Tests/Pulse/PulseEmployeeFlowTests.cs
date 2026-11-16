@@ -44,8 +44,8 @@ public class PulseEmployeeFlowTests
         var basic = overview.Courses.Single(c => c.Code == "M1-F");
         basic.SlotStatus.Should().Be(PulseSlotStatus.PreAssessment);
         basic.PreStatus.Should().Be(PulsePreStatus.Required);
-        basic.CanStartPreAssessment.Should().BeTrue();
-        basic.BlockReason.Should().Be(PulseBlockReason.PreAssessmentRequired, "phải làm bài đánh giá trước khi học");
+        basic.CanStartPreAssessment.Should().BeFalse("bài đầu vào nay là bài kiểm tra trắc nghiệm tự chấm, không còn bài có tự luận");
+        basic.BlockReason.Should().Be(PulseBlockReason.PreAssessmentRequired, "phải làm bài kiểm tra đầu vào trước khi học");
         overview.Courses.Single(c => c.Code == "M2-F").ApprovedVia.Should().Be(PulseApprovedVia.Legacy);
         overview.Courses.Single(c => c.Code == "M2-I").SlotStatus.Should().Be(PulseSlotStatus.PreAssessment, "cấp Cơ bản đã xong ở luồng cũ");
         overview.Courses.Single(c => c.Code == "M1-I").SlotStatus.Should().Be(PulseSlotStatus.AfterPriorLevel, "có suất nhưng chưa đạt M1-F");
@@ -95,123 +95,18 @@ public class PulseEmployeeFlowTests
     }
 
     [Fact]
-    public async Task PreAssessment_Passed_RecognisesTheCourseWithoutASeat_AndOpensTheNextLevel()
-    {
-        using var world = await PulseTestWorld.CreateAsync();
-        var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
-        var course = await world.CourseAsync(employee, "M1-F");
-
-        var info = await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId });
-        info.Status.Should().Be(PulsePreStatus.Required);
-        info.CanStart.Should().BeTrue();
-        info.Criteria.Should().HaveCount(3);
-        info.Submission.Should().BeNull();
-
-        var submitted = await world.SubmitPreAssessmentAsync(employee, "M1-F");
-        submitted.DurationMs.Should().Be((long)TimeSpan.FromMinutes(20).TotalMilliseconds);
-        var managerUser = await world.UserAsync(PulseTestWorld.ManagerEmail);
-        (await world.Context.Notifications.AnyAsync(n => n.RecipientUserId == managerUser.Id && n.Type == SubmitPulsePreAssessmentUseCase.NotificationType))
-            .Should().BeTrue("quản lý phòng ban nhận thông báo bài cần chấm");
-
-        var pending = await world.CourseAsync(employee, "M1-F");
-        pending.SlotStatus.Should().Be(PulseSlotStatus.PreReview);
-        pending.BlockReason.Should().Be(PulseBlockReason.PreAssessmentPending);
-        var again = () => employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = course.CourseId, Kind = Statuses.ProctoringKind.PreAssessment });
-        (await again.Should().ThrowAsync<BadRequestException>("mỗi khóa một bài đánh giá trước khi học"))
-            .Which.Errors.Single().Code.Should().Be(StartPulseProctoringUseCase.NotOpen);
-        world.Context.ChangeTracker.Clear();
-
-        var queue = await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
-        queue.PreAssessmentCount.Should().Be(1);
-        var item = queue.Items.Single(i => i.Kind == Statuses.ProctoringKind.PreAssessment);
-        item.Status.Should().Be(PulseFinalStatus.Pending);
-        item.MaxAttempts.Should().Be(1);
-        item.Attempts.Single().EvidenceText.Should().Be(Evidence);
-        item.Recording!.Segments.Should().HaveCount(2).And.OnlyContain(s => s.ContentPath != null);
-        item.Recording.DurationMs.Should().Be(submitted.DurationMs);
-        item.Recording.Events.Select(e => e.Kind).Should().Equal(Statuses.ProctoringEvent.Started, Statuses.ProctoringEvent.Submitted);
-
-        var screen = item.Recording.Segments.Single(s => s.Track == Statuses.ProctoringTrack.Screen);
-        var query = screen.ContentPath!.Split('?')[1].Split('&').Select(p => p.Split('=')).ToDictionary(p => p[0], p => p[1]);
-        var content = await manager.RecordingContent.ExecuteAsync(new GetPulseRecordingContentUseCaseInput
-        {
-            RecordingId = screen.RecordingId,
-            ExpiresAt = long.Parse(query["exp"]),
-            Signature = query["sig"],
-        });
-        content.ContentType.Should().Be("video/webm");
-        using (var copy = new MemoryStream())
-        {
-            await content.Content.CopyToAsync(copy);
-            copy.Length.Should().Be(5);
-        }
-
-        var forged = () => manager.RecordingContent.ExecuteAsync(new GetPulseRecordingContentUseCaseInput
-        {
-            RecordingId = screen.RecordingId,
-            ExpiresAt = long.Parse(query["exp"]),
-            Signature = "00",
-        });
-        await forged.Should().ThrowAsync<ForbiddenException>();
-
-        var decision = await manager.DecidePreAssessment.ExecuteAsync(new DecidePulsePreAssessmentUseCaseInput
-        {
-            PreAssessmentId = item.SubmissionId,
-            Decision = Statuses.FinalSubmissionDecision.Passed,
-            Reason = "Đạt đủ ba tiêu chí, nguồn rõ ràng.",
-        });
-        world.Context.ChangeTracker.Clear();
-        decision.Status.Should().Be(PulsePreStatus.Passed);
-        decision.EnrollmentId.Should().NotBeNull();
-        var completed = await world.Context.Enrollments.AsNoTracking().SingleAsync(e => e.Id == decision.EnrollmentId);
-        completed.Status.Should().Be(Statuses.Enrollment.Completed);
-        completed.ProgressPercent.Should().Be(100);
-
-        var twice = () => manager.DecidePreAssessment.ExecuteAsync(new DecidePulsePreAssessmentUseCaseInput
-        {
-            PreAssessmentId = item.SubmissionId,
-            Decision = Statuses.FinalSubmissionDecision.NotYet,
-            Reason = "Đổi ý sau khi đã chấm.",
-        });
-        await twice.Should().ThrowAsync<ConflictException>();
-        world.Context.ChangeTracker.Clear();
-
-        var after = await employee.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
-        var recognised = after.Courses.Single(c => c.Code == "M1-F");
-        recognised.SlotStatus.Should().Be(PulseSlotStatus.Completed);
-        recognised.ApprovedVia.Should().Be(PulseApprovedVia.PreAssessment);
-        recognised.PreStatus.Should().Be(PulsePreStatus.Passed);
-        recognised.ApprovedAt.Should().Be(world.Clock.Now);
-        after.Domains[0].Verified.Should().Be(1);
-        after.Domains[0].Source.Should().Be(PulseLevelSource.Course);
-        after.Domains[0].Status.Should().Be(PulseDomainStatus.Gap);
-        after.Courses.Single(c => c.Code == "M1-I").SlotStatus.Should().Be(PulseSlotStatus.PreAssessment, "cấp kế tiếp mở, cũng bắt đầu bằng bài đánh giá");
-        after.LatestOutcome!.Via.Should().Be(PulseApprovedVia.PreAssessment);
-
-        var outcomes = await employee.Outcomes.ExecuteAsync(new GetPulseOutcomesUseCaseInput());
-        var outcome = outcomes.Items.Single(o => o.Kind == PulseOutcomeKind.PreAssessment);
-        outcome.Subtitle.Should().Be("Khai thác dữ liệu và thông tin · Cơ bản");
-        (await employee.Outcome.ExecuteAsync(new GetPulseOutcomeUseCaseInput { OutcomeId = outcome.Id })).ReviewNote.Should().Contain("ba tiêu chí");
-
-        var employeeUser = await world.UserAsync(PulseTestWorld.EmployeeEmail);
-        (await world.Context.Notifications.AnyAsync(n => n.RecipientUserId == employeeUser.Id && n.Type == DecidePulsePreAssessmentUseCase.NotificationType))
-            .Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task PreAssessment_NotYet_OpensTheCourseForLearning_ThenTheProctoredFinal()
+    public async Task EntryTestBelowTheMark_OpensTheCourseForLearning_ThenTheProctoredFinal()
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
 
         var course = await world.OpenForLearningAsync(employee, "M4-F");
-        course.PreStatus.Should().Be(PulsePreStatus.NotYet);
-        course.SlotStatus.Should().Be(PulseSlotStatus.ToLearn);
+        course.PreStatus.Should().Be(PulsePreStatus.NotNeeded, "đã làm bài kiểm tra đầu vào");
+        course.SlotStatus.Should().Be(PulseSlotStatus.InProgress);
         course.CanWork.Should().BeTrue();
-        (await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId }))
-            .Submission!.DecisionReason.Should().NotBeNullOrEmpty();
+        (await employee.GetSkipTest.ExecuteAsync(new GetPulseSkipTestUseCaseInput { CourseId = course.CourseId }))
+            .Status.Should().Be(PulseSkipTestStatus.Exhausted, "chỉ một lần làm, chưa đạt thì học tuần tự");
 
         await world.PassAllModulesAsync(employee, course.CourseId);
         var ready = await world.CourseAsync(employee, "M4-F");
@@ -252,17 +147,22 @@ public class PulseEmployeeFlowTests
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
-        var course = await world.CourseAsync(employee, "M3-F");
+        var fresh = await world.CourseAsync(employee, "M3-F");
 
-        var abandoned = await employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = course.CourseId, Kind = Statuses.ProctoringKind.PreAssessment });
+        var oldEntry = () => employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = fresh.CourseId, Kind = Statuses.ProctoringKind.PreAssessment });
+        (await oldEntry.Should().ThrowAsync<BadRequestException>("bài đầu vào có tự luận và giám sát không còn dùng"))
+            .Which.Errors.Single().Code.Should().Be(StartPulseProctoringUseCase.NotOpen);
+        var final = () => employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = fresh.CourseId, Kind = Statuses.ProctoringKind.Final });
+        await final.Should().ThrowAsync<ForbiddenException>("chưa làm bài đầu vào thì chưa có bài cuối khóa");
         world.Context.ChangeTracker.Clear();
-        var session = await employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = course.CourseId, Kind = Statuses.ProctoringKind.PreAssessment });
+
+        var course = await world.PassEntryTestAsync(employee, "M3-F");
+        var abandoned = await employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = course.CourseId, Kind = Statuses.ProctoringKind.Final });
+        world.Context.ChangeTracker.Clear();
+        var session = await employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = course.CourseId, Kind = Statuses.ProctoringKind.Final });
         world.Context.ChangeTracker.Clear();
         (await world.Context.ProctoringSessions.AsNoTracking().SingleAsync(s => s.Id == abandoned.SessionId)).Status
             .Should().Be(Statuses.ProctoringSession.Abandoned, "mở bài làm lần nữa bỏ phiên cũ");
-        var final = () => employee.StartProctoring.ExecuteAsync(new StartPulseProctoringUseCaseInput { CourseId = course.CourseId, Kind = Statuses.ProctoringKind.Final });
-        await final.Should().ThrowAsync<ForbiddenException>("chưa học thì chưa có bài cuối khóa");
-        world.Context.ChangeTracker.Clear();
 
         var window = () => employee.StartRecording.ExecuteAsync(new StartPulseRecordingUseCaseInput
         {
@@ -293,7 +193,7 @@ public class PulseEmployeeFlowTests
         var storedScreen = await world.Context.ProctoringRecordings.AsNoTracking().SingleAsync(r => r.Id == screen.RecordingId);
         world.Storage.Files[storedScreen.StoragePath!].Length.Should().Be(10);
 
-        var withoutCamera = () => employee.SubmitPreAssessment.ExecuteAsync(new SubmitPulsePreAssessmentUseCaseInput
+        var withoutCamera = () => employee.SubmitFinal.ExecuteAsync(new SubmitPulseFinalUseCaseInput
         {
             CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = session.SessionId,
         });
@@ -330,7 +230,7 @@ public class PulseEmployeeFlowTests
         world.Context.ChangeTracker.Clear();
 
         world.Clock.Advance(TimeSpan.FromMinutes(3));
-        await employee.SubmitPreAssessment.ExecuteAsync(new SubmitPulsePreAssessmentUseCaseInput
+        await employee.SubmitFinal.ExecuteAsync(new SubmitPulseFinalUseCaseInput
         {
             CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = session.SessionId, Answers = await world.AnswersAsync(session.Questions),
         });
@@ -341,7 +241,9 @@ public class PulseEmployeeFlowTests
             .Which.Errors.Single().Code.Should().Be(PulseProctoring.SessionClosed);
         world.Context.ChangeTracker.Clear();
 
-        var recording = (await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items.Single().Recording!;
+        var item = (await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items.Single();
+        item.Kind.Should().Be(Statuses.ProctoringKind.Final);
+        var recording = item.Recording!;
         recording.FlaggedCount.Should().Be(3);
         recording.Events.Where(e => e.Flagged).Select(e => e.Kind).Should().Equal(
             Statuses.ProctoringEvent.ShareStopped, Statuses.ProctoringEvent.TabHidden, Statuses.ProctoringEvent.MultipleFaces);
@@ -354,6 +256,23 @@ public class PulseEmployeeFlowTests
         screens[0].EndOffsetMs.Should().Be(75_000, "đoạn cũ khép tại lúc chia sẻ lại");
         screens[1].EndOffsetMs.Should().Be(recording.DurationMs, "đoạn còn mở khép khi nộp bài");
         screens[0].DisplaySurface.Should().Be("monitor");
+
+        // Bản ghi phát qua link ký HMAC: đúng chữ ký thì đọc được, giả chữ ký thì bị chặn.
+        var query = screens[0].ContentPath!.Split('?')[1].Split('&').Select(p => p.Split('=')).ToDictionary(p => p[0], p => p[1]);
+        var content = await manager.RecordingContent.ExecuteAsync(new GetPulseRecordingContentUseCaseInput
+        {
+            RecordingId = screens[0].RecordingId,
+            ExpiresAt = long.Parse(query["exp"]),
+            Signature = query["sig"],
+        });
+        content.ContentType.Should().Be("video/webm");
+        var forged = () => manager.RecordingContent.ExecuteAsync(new GetPulseRecordingContentUseCaseInput
+        {
+            RecordingId = screens[0].RecordingId,
+            ExpiresAt = long.Parse(query["exp"]),
+            Signature = "00",
+        });
+        await forged.Should().ThrowAsync<ForbiddenException>();
     }
 
     [Fact]
@@ -410,7 +329,10 @@ public class PulseEmployeeFlowTests
         var enrollment = await world.Context.Enrollments.SingleAsync(e => e.CourseId == course.CourseId);
         enrollment.Status.Should().Be(Statuses.Enrollment.InProgress, "khóa Cơ bản tự mở lượt học khi bắt đầu");
         enrollment.ProgressPercent.Should().BeGreaterThan(0);
-        (await world.Context.AssessmentAttempts.CountAsync(a => a.EnrollmentId == enrollment.Id)).Should().Be(2, "mỗi lần làm đều được lưu");
+        // Lượt kiểm tra đầu vào (OpenForLearningAsync) cũng gắn vào lượt học này: chỉ đếm các lần làm bài ôn tập mô-đun.
+        (await world.Context.AssessmentAttempts.CountAsync(a => a.EnrollmentId == enrollment.Id
+                && world.Context.Assessments.Any(t => t.Id == a.AssessmentId && t.Code != PulseRules.SkipTestCode)))
+            .Should().Be(2, "mỗi lần làm đều được lưu");
         (await world.CourseAsync(uc, "M1-F")).ProgressPercent.Should().BeGreaterThan(0).And.BeLessThan(100);
     }
 
@@ -536,14 +458,14 @@ public class PulseEmployeeFlowTests
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var manager = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
-        var course = await world.CourseAsync(employee, "M1-F");
+        var course = await world.OpenForLearningAsync(employee, "M1-F");
+        await world.PassAllModulesAsync(employee, course.CourseId);
 
-        var info = await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId });
+        var info = await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId });
         info.ChoiceCount.Should().Be(10);
-        info.ChoicePassMark.Should().Be(7);
 
         // Đề phát lúc bắt đầu phiên: 10 câu rút từ câu ôn tập của các mô đun, rải đều mọi mô đun.
-        var sessionId = await world.ProctorAsync(employee, course.CourseId, Statuses.ProctoringKind.PreAssessment);
+        var sessionId = await world.ProctorAsync(employee, course.CourseId, Statuses.ProctoringKind.Final);
         var paper = world.LastPaper;
         paper.Select(q => q.Number).Should().Equal(Enumerable.Range(1, 10));
         paper.Select(q => q.QuestionId).Should().OnlyHaveUniqueItems();
@@ -559,22 +481,22 @@ public class PulseEmployeeFlowTests
         drawn.Select(b => b.ModuleId).Distinct().Should().HaveCount(bank.Select(b => b.ModuleId).Distinct().Count());
 
         var nine = (await world.AnswersAsync(paper)).Take(9).ToList();
-        var incomplete = () => employee.SubmitPreAssessment.ExecuteAsync(new SubmitPulsePreAssessmentUseCaseInput
+        var incomplete = () => employee.SubmitFinal.ExecuteAsync(new SubmitPulseFinalUseCaseInput
         {
             CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = sessionId, Answers = nine,
         });
         (await incomplete.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be(PulseExamPaper.AnswersInvalid);
         world.Context.ChangeTracker.Clear();
 
-        var submitted = await employee.SubmitPreAssessment.ExecuteAsync(new SubmitPulsePreAssessmentUseCaseInput
+        var submitted = await employee.SubmitFinal.ExecuteAsync(new SubmitPulseFinalUseCaseInput
         {
             CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = sessionId, Answers = await world.AnswersAsync(paper, correct: 6),
         });
         world.Context.ChangeTracker.Clear();
-        (await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId }))
-            .Submission!.Choice.Should().BeNull("nhân viên chỉ biết kết quả khi người chấm chấm xong");
+        (await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId }))
+            .Attempts.Single().Choice.Should().BeNull("nhân viên chỉ biết kết quả khi người chấm chấm xong");
 
-        var item = (await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items.Single(i => i.Kind == Statuses.ProctoringKind.PreAssessment);
+        var item = (await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items.Single(i => i.Kind == Statuses.ProctoringKind.Final);
         var choice = item.Attempts.Single().Choice!;
         (choice.Score, choice.Total, choice.PassMark, choice.Passed).Should().Be((6, 10, 7, false));
         choice.Items!.Select(i => i.Number).Should().Equal(Enumerable.Range(1, 10));
@@ -583,39 +505,21 @@ public class PulseEmployeeFlowTests
         choice.Items![9].Selected.Should().NotBe(choice.Items[9].Correct);
         choice.Items![0].Question.Should().NotBeNullOrWhiteSpace();
 
-        var pass = () => manager.DecidePreAssessment.ExecuteAsync(new DecidePulsePreAssessmentUseCaseInput
+        var pass = () => manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
         {
-            PreAssessmentId = submitted.PreAssessmentId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Đạt đủ ba tiêu chí, nguồn rõ ràng.",
+            SubmissionId = submitted.SubmissionId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Đạt đủ ba tiêu chí, nguồn rõ ràng.",
         });
         (await pass.Should().ThrowAsync<BadRequestException>("6/10 câu trắc nghiệm chưa đủ 7 câu"))
             .Which.Errors.Single().Code.Should().Be(PulseExamPaper.BelowPass);
         world.Context.ChangeTracker.Clear();
-        await manager.DecidePreAssessment.ExecuteAsync(new DecidePulsePreAssessmentUseCaseInput
-        {
-            PreAssessmentId = submitted.PreAssessmentId, Decision = Statuses.FinalSubmissionDecision.NotYet, Reason = "Trắc nghiệm 6/10, hãy học khóa.",
-        });
-        world.Context.ChangeTracker.Clear();
-        var decided = (await employee.GetPreAssessment.ExecuteAsync(new GetPulsePreAssessmentUseCaseInput { CourseId = course.CourseId })).Submission!.Choice!;
-        (decided.Score, decided.Total, decided.Passed).Should().Be((6, 10, false));
-        decided.Items.Should().BeNull("nhân viên không thấy đáp án");
-
-        // Bài cuối khóa: đề khác bài đánh giá; đủ 7 câu đúng thì người chấm cho đạt được.
-        await world.PassAllModulesAsync(employee, course.CourseId);
-        (await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId })).ChoiceCount.Should().Be(10);
-        var final = await world.SubmitFinalAsync(employee, course.CourseId, correct: 7);
-        world.LastPaper.Select(q => q.QuestionId).Intersect(paper.Select(q => q.QuestionId)).Should().HaveCountLessThanOrEqualTo(2, "ngân hàng 18 câu: lần làm sau rút nhóm câu kế tiếp");
-        (await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId })).Attempts.Single().Choice.Should().BeNull();
-        var finalChoice = (await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items
-            .Single(i => i.Kind == Statuses.ProctoringKind.Final).Attempts.Single().Choice!;
-        (finalChoice.Score, finalChoice.Passed).Should().Be((7, true));
         await manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
         {
-            SubmissionId = final.SubmissionId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Trắc nghiệm 7/10, tự luận đủ ba tiêu chí.",
+            SubmissionId = submitted.SubmissionId, Decision = Statuses.FinalSubmissionDecision.NotYet, Reason = "Trắc nghiệm 6/10, hãy ôn lại khóa.",
         });
         world.Context.ChangeTracker.Clear();
-        var approved = await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId });
-        approved.Status.Should().Be(PulseFinalStatus.Approved);
-        approved.Attempts.Single().Choice!.Score.Should().Be(7);
+        var decided = (await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId })).Attempts.Single().Choice!;
+        (decided.Score, decided.Total, decided.Passed).Should().Be((6, 10, false));
+        decided.Items.Should().BeNull("nhân viên không thấy đáp án");
     }
 
     [Fact]
@@ -770,7 +674,6 @@ public class PulseEmployeeFlowTests
         var course = await world.OpenForLearningAsync(employee, "M1-F");
         await world.PassAllModulesAsync(employee, course.CourseId);
         var submitted = await world.SubmitFinalAsync(employee, course.CourseId);
-        var pre = await world.SubmitPreAssessmentAsync(employee, "M3-F");
 
         var organizationId = (await world.EmployeeAsync(PulseTestWorld.EmployeeEmail)).OrganizationId;
         var otherDepartment = new Department { OrganizationId = organizationId, Code = "SALES-X", Name = "Kinh doanh" };
@@ -780,7 +683,7 @@ public class PulseEmployeeFlowTests
 
         var outsider = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager, otherDepartment.Id);
         (await outsider.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { DepartmentId = otherDepartment.Id })).Items.Should().BeEmpty();
-        (await outsider.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).PendingCount.Should().Be(2);
+        (await outsider.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).PendingCount.Should().Be(1);
 
         var managerProfile = await world.EmployeeAsync(PulseTestWorld.ManagerEmail);
         var managerUser = new Mock<ICurrentUser>();
@@ -801,36 +704,33 @@ public class PulseEmployeeFlowTests
 
         var mentor = await world.AsAsync("mentor@digitalent.ai", Roles.Mentor);
         (await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items
-            .Should().Contain(item => item.SubmissionId == pre.PreAssessmentId);
+            .Should().Contain(item => item.SubmissionId == submitted.SubmissionId);
         var decide = () => outsider.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput { SubmissionId = submitted.SubmissionId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Không thuộc phòng ban." });
         await decide.Should().ThrowAsync<ForbiddenException>();
-        var decidePre = () => outsider.DecidePreAssessment.ExecuteAsync(new DecidePulsePreAssessmentUseCaseInput { PreAssessmentId = pre.PreAssessmentId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Không thuộc phòng ban." });
-        await decidePre.Should().ThrowAsync<ForbiddenException>();
 
         var owner = await world.AsAsync(PulseTestWorld.OwnerEmail, Roles.Owner);
-        (await owner.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).PendingCount.Should().Be(2, "chủ doanh nghiệp thấy toàn tổ chức");
+        (await owner.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).PendingCount.Should().Be(1, "chủ doanh nghiệp thấy toàn tổ chức");
 
         var self = () => employee.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput { SubmissionId = submitted.SubmissionId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Tự duyệt bài của mình." });
         await self.Should().ThrowAsync<NotFoundException>("không ai tự chấm bài của chính mình");
-        var selfPre = () => employee.DecidePreAssessment.ExecuteAsync(new DecidePulsePreAssessmentUseCaseInput { PreAssessmentId = pre.PreAssessmentId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Tự duyệt bài của mình." });
-        await selfPre.Should().ThrowAsync<NotFoundException>();
     }
 
     [Fact]
-    public async Task Practice_ListsWorkableFinals_AndSubmittedPreAssessments()
+    public async Task Practice_ListsWorkableFinals_AndDecidedOldPreAssessments()
     {
         using var world = await PulseTestWorld.CreateAsync();
         var uc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var course = await world.OpenForLearningAsync(uc, "M1-F");
         await world.PassAllModulesAsync(uc, course.CourseId);
-        await world.SubmitPreAssessmentAsync(uc, "M3-F");
+        await world.SeedLegacyPreAssessmentAsync(PulseTestWorld.EmployeeEmail, "M3-F", Statuses.FinalSubmissionDecision.NotYet);
+        await world.SeedLegacyPreAssessmentAsync(PulseTestWorld.EmployeeEmail, "M4-F", decision: null);
 
         var practice = await uc.Practice.ExecuteAsync(new GetPulsePracticeUseCaseInput());
         practice.Finals.Select(f => f.Course.Code).Should().Contain("M1-F").And.Contain("M2-F")
             .And.NotContain("M1-I", "suất đang giữ nằm ở lộ trình, chưa phải việc cần làm");
         practice.Finals.First().Course.FinalStatus.Should().Be(PulseFinalStatus.Ready, "việc nộp được xếp lên đầu");
-        practice.PreAssessments.Select(p => p.Course.Code).Should().Equal("M3-F", "M1-F");
-        practice.PreAssessments.First().LastDecision.Should().BeNull("bài chờ chấm xếp trước");
+        practice.PreAssessments.Select(p => p.Course.Code).Should().Equal(new[] { "M3-F" }, "bài cũ còn chờ chấm đã bị thay bằng bài kiểm tra đầu vào");
+        practice.PreAssessments.Single().LastDecision.Should().Be(Statuses.FinalSubmissionDecision.NotYet);
         practice.Criteria.Should().HaveCount(3);
     }
 }

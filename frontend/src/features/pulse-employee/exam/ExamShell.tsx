@@ -8,7 +8,14 @@ import pulseMark from '@/assets/pulse/pulse-mark.svg';
  * Khung của trang làm bài khi chưa / không làm bài được (đang tải, chờ chấm, đã có kết quả…): thanh tối như lúc làm bài
  * với nút Thoát về trang khóa học. Trang làm bài không có thanh điều hướng chính (PulseEmployeeLayout).
  */
-export function ExamShell({ label, title, backTo, children }: { label: string; title?: string; backTo: string; children: ReactNode }) {
+export function ExamShell({ label, title, backTo, size = 'narrow', children }: {
+  label: string;
+  title?: string;
+  backTo: string;
+  /** narrow = 900px (mặc định), wide = 1120px (bài làm có cột bên). */
+  size?: 'narrow' | 'wide';
+  children: ReactNode;
+}) {
   useUiLanguage();
   return (
     <div className="pu-exam">
@@ -31,7 +38,7 @@ export function ExamShell({ label, title, backTo, children }: { label: string; t
           </Link>
         </div>
       </header>
-      <main className="pu-exam-body pu-exam-narrow">{children}</main>
+      <main className={`pu-exam-body ${size === 'wide' ? 'pu-exam-wide' : 'pu-exam-narrow'}`}>{children}</main>
     </div>
   );
 }
