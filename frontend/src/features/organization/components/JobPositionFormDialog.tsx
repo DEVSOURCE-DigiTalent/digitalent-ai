@@ -45,11 +45,14 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
   const createMutation = useCreateJobPosition();
   const updateMutation = useUpdateJobPosition();
 
-  const { data: deptData } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
-  const { data: positionData } = useJobPositions({ pageSize: 100 });
-  const occupied = new Set(positionData?.items.filter((item) => item.id !== position?.id && item.status !== 'ARCHIVED')
-    .map((item) => item.departmentId));
+  const { data: deptData, isError: departmentError } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
+  const { data: positionData, isError: positionError } = useJobPositions({ pageSize: 100 });
+  const occupied = new Map(positionData?.items
+    .filter((item) => item.id !== position?.id && item.status !== 'ARCHIVED' && item.departmentId)
+    .map((item) => [item.departmentId, item]));
   const departments = (deptData?.items ?? []).filter((item) => item.id === position?.departmentId || !occupied.has(item.id));
+  const placementUnavailable = !position?.departmentId && departments.length === 0;
+  const placementLoading = !deptData || !positionData;
 
   const {
     register,
@@ -155,7 +158,8 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
               id="position-department"
               {...register('departmentId')}
               className={INPUT_CLASS}
-              disabled={isSubmitting}
+              disabled={isSubmitting || placementUnavailable}
+              aria-describedby="position-department-help"
             >
               <option value="">{translateUi("Chọn phòng ban")}</option>
               {position?.departmentId && !departments.some((d) => d.id === position.departmentId) && (
@@ -167,7 +171,22 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
                 </option>
               ))}
             </select>
-            <p className="mt-1.5 text-xs text-slate-600">{translateUi('Mỗi phòng ban có một vị trí công việc.')}</p>
+            <div id="position-department-help" className="mt-1.5 text-xs text-slate-600">
+              {placementUnavailable ? (
+                departmentError || positionError ? <p>{translateUi('Không tải được danh sách phòng ban hoặc vị trí.')}</p>
+                  : placementLoading ? <p>{translateUi('Đang tải phòng ban…')}</p>
+                  : deptData.items.length === 0 ? <p>{translateUi('Chưa có phòng ban đang hoạt động. Tạo phòng ban trước khi gắn vị trí.')}</p>
+                  : <>
+                    <p>{translateUi('Các phòng ban đang hoạt động đều đã có vị trí. Hãy mở dòng vị trí đang dùng của phòng để sửa.')}</p>
+                    <ul className="mt-2 space-y-1">
+                      {deptData.items.map((department) => {
+                        const assigned = occupied.get(department.id);
+                        return assigned && <li key={department.id}>{department.name} · {assigned.name} ({assigned.code})</li>;
+                      })}
+                    </ul>
+                  </>
+              ) : <p>{translateUi('Mỗi phòng ban có một vị trí công việc.')}</p>}
+            </div>
             {errors.departmentId && <p className="mt-1 text-sm text-red-600">{translateUi(errors.departmentId.message)}</p>}
           </div>
 
@@ -208,7 +227,7 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
             <button
               type="submit"
               className="position-form-save rounded-xl px-6 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-              disabled={isSubmitting}
+              disabled={isSubmitting || placementUnavailable}
             >
               {isSubmitting ? translateUi('Đang lưu…') : translateUi('Lưu')}
             </button>

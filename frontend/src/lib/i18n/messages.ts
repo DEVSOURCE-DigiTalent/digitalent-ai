@@ -378,6 +378,10 @@ Chưa đánh giá|Not assessed
 Chưa xác nhận|Unverified
 Đã xác nhận|Verified
 Chuẩn vị trí|Position standard
+Không tải được danh sách phòng ban hoặc vị trí.|Could not load departments or positions.
+Đang tải phòng ban…|Loading departments…
+Chưa có phòng ban đang hoạt động. Tạo phòng ban trước khi gắn vị trí.|Create an active department before assigning a position.
+Các phòng ban đang hoạt động đều đã có vị trí. Hãy mở dòng vị trí đang dùng của phòng để sửa.|All active departments already have a position. Open the department's current position to edit it.
 Đánh giá đầu vào|Initial assessment
 Lộ trình học tập|Learning path
 Khóa học đề xuất|Recommended courses
