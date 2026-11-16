@@ -261,6 +261,65 @@ export interface PulseCourseDetail {
   finalCriteria: PulseCriterion[];
   nextAction: PulseCourseNextAction;
   nextModuleId?: string | null;
+  /** Bài kiểm tra vượt học (không kèm đề). */
+  skipTest?: PulseSkipTest | null;
+}
+
+/** Trạng thái bài kiểm tra vượt học của một khóa (khớp PulseSkipTestStatus ở backend). */
+export type PulseSkipTestStatus = 'AVAILABLE' | 'IN_PROGRESS' | 'PASSED' | 'EXHAUSTED' | 'NOT_NEEDED' | 'LOCKED' | 'UNAVAILABLE';
+
+export interface PulseSkipTestAttempt {
+  attemptNo: number;
+  startedAt: string;
+  deadlineAt: string;
+  questions: PulseExamQuestion[];
+}
+
+export interface PulseSkipTestModuleScore {
+  index: number;
+  title: string;
+  correct: number;
+  total: number;
+}
+
+export interface PulseSkipTestResult {
+  attemptNo: number;
+  score: number;
+  total: number;
+  percent: number;
+  passMark: number;
+  passed: boolean;
+  /** Quá giờ: tính là chưa đạt. */
+  expired: boolean;
+  startedAt: string;
+  submittedAt: string;
+  modules: PulseSkipTestModuleScore[];
+}
+
+/**
+ * Bài kiểm tra vượt học: câu trắc nghiệm rút từ ngân hàng ôn tập các mô-đun của khóa; đúng từ passPercent% thì mọi mô-đun
+ * được tính là đã qua và bài đánh giá cuối khóa mở.
+ */
+export interface PulseSkipTest {
+  course: PulseCourseSummary;
+  status: PulseSkipTestStatus;
+  message?: string | null;
+  questionCount: number;
+  passPercent: number;
+  passMark: number;
+  timeLimitMinutes: number;
+  maxAttempts: number;
+  attemptsUsed: number;
+  attemptsLeft: number;
+  moduleCount: number;
+  /** Lần đang làm (chỉ khi IN_PROGRESS). */
+  attempt?: PulseSkipTestAttempt | null;
+  results: PulseSkipTestResult[];
+}
+
+export interface PulseSkipTestSubmitResult extends PulseSkipTest {
+  result: PulseSkipTestResult;
+  finalUnlocked: boolean;
 }
 
 export interface PulseSlide {
@@ -521,6 +580,10 @@ export const pulseService = {
     ),
   submitModuleQuiz: (courseId: string, moduleId: string, answers: PulseAnswer[], attemptNo?: number) =>
     apiClient.post<ApiResponse<PulseQuizResult>>(`/me/pulse/courses/${courseId}/modules/${moduleId}/quiz`, { attemptNo, answers }),
+  getSkipTest: (courseId: string) => apiClient.get<ApiResponse<PulseSkipTest>>(`/me/pulse/courses/${courseId}/skip-test`),
+  startSkipTest: (courseId: string) => apiClient.post<ApiResponse<PulseSkipTest>>(`/me/pulse/courses/${courseId}/skip-test/start`),
+  submitSkipTest: (courseId: string, attemptNo: number, answers: PulseAnswer[]) =>
+    apiClient.post<ApiResponse<PulseSkipTestSubmitResult>>(`/me/pulse/courses/${courseId}/skip-test`, { attemptNo, answers }),
   getPreAssessment: (courseId: string) => apiClient.get<ApiResponse<PulsePreAssessment>>(`/me/pulse/courses/${courseId}/pre-assessment`),
   submitPreAssessment: (courseId: string, evidenceText: string, proctoringSessionId: string, answers: PulseAnswer[]) =>
     apiClient.post<ApiResponse<PulseSubmitPreAssessmentResult>>(`/me/pulse/courses/${courseId}/pre-assessment`, { evidenceText, proctoringSessionId, answers }),
