@@ -89,7 +89,7 @@ public class PulseCourseWorkspace
         PulseBlockReason.OutsidePath => "Vị trí của bạn không yêu cầu lĩnh vực này nên khóa học không nằm trong lộ trình.",
         PulseBlockReason.AboveCeiling => "Doanh nghiệp chưa mở cấp độ này của lĩnh vực cho phòng ban của bạn.",
         PulseBlockReason.PriorLevelRequired => "Cần đạt khóa ở cấp trước của cùng lĩnh vực trước.",
-        PulseBlockReason.PreAssessmentRequired => "Hãy làm bài đánh giá trước khi học của khóa này trước. Đạt thì khóa được công nhận, chưa đạt thì bạn học khóa.",
+        PulseBlockReason.PreAssessmentRequired => "Hãy làm bài kiểm tra đầu vào (trắc nghiệm, tự chấm) của khóa này trước. Đạt 80% thì bỏ qua phần học và mở bài đánh giá cuối khóa; chưa đạt thì học tuần tự từng mô-đun.",
         PulseBlockReason.PreAssessmentPending => "Bài đánh giá trước khi học đang chờ chấm. Khóa mở để học nếu bài chưa đạt.",
         PulseBlockReason.SeatRequired => "Khóa học có phí cần suất học do chủ doanh nghiệp phân bổ trước khi mở toàn bộ nội dung.",
         PulseBlockReason.PreviousModuleRequired => "Hãy đạt câu hỏi ôn tập của mô đun trước.",

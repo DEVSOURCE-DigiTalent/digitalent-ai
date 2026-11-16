@@ -325,6 +325,23 @@ public class PulseLearnerReader
             .GroupBy(r => r.Code, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.Pre.SubmittedAt).First().Pre, StringComparer.OrdinalIgnoreCase);
 
+        // Bài kiểm tra đầu vào trắc nghiệm (PulseSkipTest): đã nộp, hoặc bỏ dở quá giờ = đã làm bài đầu vào, khóa mở để học.
+        var readAt = Now;
+        var skipAttempts = enrollmentIds.Count == 0
+            ? new List<(Guid EnrollmentId, PulseSkipAttemptRow Row)>()
+            : (await (
+                    from attempt in _context.AssessmentAttempts.AsNoTracking()
+                    join test in _context.Assessments.AsNoTracking() on attempt.AssessmentId equals test.Id
+                    where enrollmentIds.Contains(attempt.EnrollmentId) && test.Code == PulseRules.SkipTestCode && test.ModuleId == null
+                    select new { attempt.EnrollmentId, attempt.Id, attempt.AttemptNo, attempt.Status, attempt.StartedAt, attempt.SubmittedAt, attempt.Score, attempt.Passed })
+                .ToListAsync())
+                .Select(a => (EnrollmentId: a.EnrollmentId, Row: new PulseSkipAttemptRow(a.Id, a.AttemptNo, a.Status, a.StartedAt, a.SubmittedAt, a.Score, a.Passed)))
+                .ToList();
+        var skipDoneEnrollments = skipAttempts
+            .Where(a => a.Row.Status != Statuses.AssessmentAttempt.Started || PulseSkipTest.Expired(a.Row, readAt))
+            .Select(a => a.EnrollmentId)
+            .ToHashSet();
+
         var modulesByCourse = await _modules.LoadModulesAsync(courses.Select(c => c.CourseId).Concat(enrollmentByCode.Values.Select(e => e.CourseId)).Distinct().ToList(), includeContent);
         var progress = await _modules.LoadProgressAsync(
             enrollmentByCode.Values.Select(e => (e.Id, e.Status, e.CourseId)).ToList(),
@@ -406,11 +423,18 @@ public class PulseLearnerReader
                     : Array.Empty<CourseFinalSubmission>();
                 // Đã bắt đầu học trước khi có bài đánh giá (luồng cũ), hoặc sau khi bài đánh giá chưa đạt.
                 var started = enrollment != null && (enrollment.Status != Statuses.Enrollment.NotStarted || courseSubmissions.Count > 0);
+                // Bài đầu vào nay là bài kiểm tra trắc nghiệm tự chấm (PulseSkipTest): đã làm thì khóa mở để học; khóa có
+                // ngân hàng ôn tập quá nhỏ để ra đề thì không chặn việc học.
+                var entryModules = enrollment != null
+                    ? modulesByCourse.GetValueOrDefault(enrollment.CourseId)
+                    : modulesByCourse.GetValueOrDefault(course.CourseId);
+                var entryDone = enrollment != null && skipDoneEnrollments.Contains(enrollment.Id);
+                var entryOffered = PulseSkipTest.Offered(entryModules ?? new List<PulseModuleInfo>());
                 var preStatus = pre != null
                     ? pre.Decision == null ? PulsePreStatus.Pending
                     : pre.Decision == Statuses.FinalSubmissionDecision.Passed ? PulsePreStatus.Passed
                     : PulsePreStatus.NotYet
-                    : approved || started || awaitingFramework ? PulsePreStatus.NotNeeded
+                    : approved || started || entryDone || !entryOffered || awaitingFramework ? PulsePreStatus.NotNeeded
                     : !hasPosition || zone is PulseCourseZone.OutsidePath or PulseCourseZone.AboveCeiling || !prereqApproved ? PulsePreStatus.Locked
                     : PulsePreStatus.Required;
                 var hasPurchasedSeat = purchasedSeatsByCode.GetValueOrDefault(course.Code) > usedSeatsByCode.GetValueOrDefault(course.Code)
