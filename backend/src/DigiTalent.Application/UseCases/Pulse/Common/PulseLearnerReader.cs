@@ -317,11 +317,12 @@ public class PulseLearnerReader
             .ToListAsync();
         var submissionsByEnrollment = submissions.GroupBy(s => s.EnrollmentId).ToDictionary(g => g.Key, g => (IReadOnlyList<CourseFinalSubmission>)g.ToList());
 
-        // Bài đánh giá trước khi học theo mã khóa (một bài cho mỗi mã; bài mới nhất nếu có nhiều phiên bản).
+        // Bài đánh giá trước khi học cũ (có tự luận, người chấm) theo mã khóa — chỉ bài đã có kết luận, giữ làm lịch sử.
+        // Bài cũ còn chờ chấm đã bị thay bằng bài kiểm tra đầu vào trắc nghiệm (PulseSkipTest): không tính, nhân viên làm bài mới.
         var preRows = await (
                 from pre in _context.CoursePreAssessments.AsNoTracking()
                 join course in _context.Courses.AsNoTracking() on pre.CourseId equals course.Id
-                where pre.EmployeeId == employee.Id && course.OrganizationId == organizationId
+                where pre.EmployeeId == employee.Id && course.OrganizationId == organizationId && pre.Decision != null
                 select new { Pre = pre, course.Code })
             .ToListAsync();
         var preByCode = preRows
