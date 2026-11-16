@@ -162,7 +162,7 @@ function FinalState({ final }: { final: PulseFinal }) {
         <Notice tone="warning">{BLOCK_MESSAGES[final.blockReason]}</Notice>
         <div className="pu-row">
           {final.blockReason === 'PRE_ASSESSMENT_REQUIRED'
-            ? <PuLink to={PULSE_PATHS.preAssessment(course.courseId)}>Làm bài đánh giá trước khi học →</PuLink>
+            ? <PuLink to={PULSE_PATHS.skipTest(course.courseId)}>Làm bài kiểm tra đầu vào →</PuLink>
             : <PuLink to={PULSE_PATHS.course(course.courseId)} kind="outline">Xem khóa học →</PuLink>}
         </div>
       </div>

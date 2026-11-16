@@ -98,7 +98,7 @@ export const BLOCK_MESSAGES: Record<PulseBlockReason, string> = {
   OUTSIDE_PATH: 'Vị trí của bạn không yêu cầu lĩnh vực này. Bạn vẫn đọc được nội dung miễn phí nhưng không ghi tiến độ lộ trình.',
   ABOVE_CEILING: 'Doanh nghiệp chưa mở cấp độ này của lĩnh vực cho phòng ban của bạn.',
   PRIOR_LEVEL_REQUIRED: 'Khóa mở khi bạn đạt khóa ở cấp trước của cùng lĩnh vực.',
-  PRE_ASSESSMENT_REQUIRED: 'Bạn cần làm bài đánh giá năng lực trước khi học khóa này. Đạt thì khóa được công nhận, chưa đạt thì bạn học khóa. Bạn vẫn đọc được nội dung, nhưng tiến độ chỉ được ghi sau bài đánh giá.',
+  PRE_ASSESSMENT_REQUIRED: 'Bạn cần làm bài kiểm tra đầu vào (trắc nghiệm, tự chấm, một lần) trước khi học khóa này. Đạt 80% thì bỏ qua phần học và mở bài đánh giá cuối khóa; chưa đạt thì học tuần tự từng mô-đun. Bạn vẫn đọc được nội dung, nhưng tiến độ chỉ được ghi sau bài kiểm tra.',
   PRE_ASSESSMENT_PENDING: 'Bài đánh giá đầu vào đang chờ chuyên gia đánh giá. Nếu chưa đạt, khóa sẽ mở để bạn tiếp tục đào tạo.',
   SEAT_REQUIRED: 'Cấp độ này cần suất học do chủ doanh nghiệp phân bổ. Bạn xem được đề cương và trang mẫu đầu tiên trước.',
   PREVIOUS_MODULE_REQUIRED: 'Hãy đạt câu hỏi ôn tập của mô đun trước để mở câu hỏi của mô đun này.',

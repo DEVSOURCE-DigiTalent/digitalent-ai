@@ -630,9 +630,14 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPart, opening, onBackToLes
             ? BLOCK_MESSAGES.SEAT_REQUIRED
             : 'Mô đun này chưa có câu hỏi ôn tập.'}
         </p>
-        {(reason === 'PRE_ASSESSMENT_REQUIRED' || reason === 'PRE_ASSESSMENT_PENDING') && (
+        {reason === 'PRE_ASSESSMENT_REQUIRED' && (
+          <PuLink to={PULSE_PATHS.skipTest(course.courseId)} kind="outline" small>
+            Làm bài kiểm tra đầu vào →
+          </PuLink>
+        )}
+        {reason === 'PRE_ASSESSMENT_PENDING' && (
           <PuLink to={PULSE_PATHS.preAssessment(course.courseId)} kind="outline" small>
-            Đánh giá trước khi học →
+            Xem bài đánh giá đã nộp →
           </PuLink>
         )}
       </div>

@@ -212,10 +212,10 @@ export function JobPathfinderSection({
                     </span>
                   ) : isPreTest && activeCourse ? (
                     <Link
-                      to={PULSE_PATHS.preAssessment(activeCourse.courseId)}
+                      to={PULSE_PATHS.skipTest(activeCourse.courseId)}
                       className="pu-domain-action-link pretest"
                     >
-                      <Zap size={12} /> Làm test vượt cấp →
+                      <Zap size={12} /> Kiểm tra đầu vào →
                     </Link>
                   ) : isInProgress && activeCourse ? (
                     <Link
