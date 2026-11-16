@@ -1,3 +1,4 @@
+import { canonicalCourseCode } from '@/features/courses/course-code';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -138,7 +139,7 @@ export function OwnerCourseDetailPage() {
           </h1>
           {(course.purpose || course.description) && <p className="course-detail-hero-description">{course.purpose || translateUi(course.description)}</p>}
           <div className="course-detail-hero-meta">
-            <span>{course.code}</span><span><Layers size={15} /> {modules.length}{translateUi(" chương")}</span><span><BookOpen size={15} /> {lessonCount}{translateUi(" bài")}</span>{duration && <span><Clock3 size={15} /> {duration}</span>}
+            <span>{canonicalCourseCode(course.code)}</span><span><Layers size={15} /> {modules.length}{translateUi(" chương")}</span><span><BookOpen size={15} /> {lessonCount}{translateUi(" bài")}</span>{duration && <span><Clock3 size={15} /> {duration}</span>}
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 mt-6">
@@ -223,7 +224,7 @@ export function OwnerCourseDetailPage() {
             <div>
               <b>{translateUi("Đã có bản quyền.")}</b> {totalSeats}{translateUi(" suất · Còn ")}{course.seatsAvailable ?? totalSeats}{translateUi(" suất để phân công.")}</div>
             <Link
-              to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
+              to={`/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`}
               className="text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
             >{translateUi("+ Mua thêm suất & Ký online")}</Link>
           </div>
@@ -239,7 +240,7 @@ export function OwnerCourseDetailPage() {
             <div>
               <b>{translateUi("Chưa có suất học.")}</b>{translateUi(" Trang bị suất để giao khóa học cho nhân viên.")}</div>
             <Link
-              to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}
+              to={`/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`}
               className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-all inline-flex items-center gap-1.5"
             >
               <span>Trang bị suất học & Ký online ({pricing.formatted}) →</span>
@@ -304,7 +305,7 @@ export function OwnerCourseDetailPage() {
               >
                 <span className="font-bold block">{translateUi("Miền: ")}{displayCategory}
                 </span>
-                <span>{translateUi("Trình độ đầu ra: ")}{tierLabel}{translateUi(" · Mã: ")}{course.code}
+                <span>{translateUi("Trình độ đầu ra: ")}{tierLabel}{translateUi(" · Mã: ")}{canonicalCourseCode(course.code)}
                 </span>
               </div>
             </div>
@@ -324,7 +325,7 @@ export function OwnerCourseDetailPage() {
         </div>
 
         {/* Course modules */}
-        <CourseModules modules={modules} courseCode={course.code} />
+        <CourseModules modules={modules} courseCode={canonicalCourseCode(course.code)} />
         {course.final && <OwnerCourseFinalBrief content={course.final} />}
 
       </div>
@@ -399,7 +400,7 @@ function CourseDetailPurchaseModal({
               🔒 Bản quyền khóa học thương mại
             </span>
             <h2 className="mt-2 text-lg font-bold text-slate-900">{translateUi(course.title)}</h2>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">{course.code}{translateUi(" · Bậc ")}{level} ({tierLabel})</p>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">{canonicalCourseCode(course.code)}{translateUi(" · Bậc ")}{level} ({tierLabel})</p>
           </div>
           <button
             type="button"
@@ -416,7 +417,7 @@ function CourseDetailPurchaseModal({
               ✓
             </div>
             <h3 className="text-base font-bold text-slate-900">{translateUi("Kích hoạt suất học thành công!")}</h3>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">{translateUi("Bạn đã trang bị thành công ")}<b>{result.seats}{translateUi(" suất")}</b>{translateUi(" cho khóa học ")}<b>{course.code}</b>.
+            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">{translateUi("Bạn đã trang bị thành công ")}<b>{result.seats}{translateUi(" suất")}</b>{translateUi(" cho khóa học ")}<b>{canonicalCourseCode(course.code)}</b>.
               Khóa học đã được mở bản quyền ngay lập tức và đồng bộ vào hệ thống quản lý Platform Admin.
             </p>
             <div className="mx-auto max-w-sm rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-left text-xs space-y-1">

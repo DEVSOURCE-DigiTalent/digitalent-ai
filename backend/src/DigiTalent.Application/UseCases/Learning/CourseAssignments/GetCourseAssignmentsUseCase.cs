@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,13 +25,15 @@ public class GetCourseAssignmentsUseCase : IUseCase<GetCourseAssignmentsInput, G
         var dueSoonThreshold = today.AddDays(7);
 
         var employees = new EmployeeScope(_context, _currentUser).VisibleEmployees().AsNoTracking();
+        var placements = EffectiveJobPositions.Resolve(_context, employees);
         var query =
             from ca in _context.CourseAssignments.AsNoTracking()
-            join emp in employees on ca.EmployeeId equals emp.Id
+            join placement in placements on ca.EmployeeId equals placement.Employee.Id
+            let emp = placement.Employee
             join course in _context.Courses.AsNoTracking() on ca.CourseId equals course.Id
             join dept in _context.Departments.AsNoTracking() on emp.DepartmentId equals dept.Id into deptJoin
             from dept in deptJoin.DefaultIfEmpty()
-            join pos in _context.JobPositions.AsNoTracking() on emp.JobPositionId equals pos.Id into posJoin
+            join pos in _context.JobPositions.AsNoTracking() on placement.PositionId equals pos.Id into posJoin
             from pos in posJoin.DefaultIfEmpty()
             join assignedBy in _context.Users.AsNoTracking() on ca.AssignedByUserId equals assignedBy.Id into userJoin
             from assignedBy in userJoin.DefaultIfEmpty()
@@ -49,7 +52,7 @@ public class GetCourseAssignmentsUseCase : IUseCase<GetCourseAssignmentsInput, G
             query = query.Where(x => x.emp.DepartmentId == input.DepartmentId.Value);
 
         if (input.JobPositionId.HasValue)
-            query = query.Where(x => x.emp.JobPositionId == input.JobPositionId.Value);
+            query = query.Where(x => x.pos != null && x.pos.Id == input.JobPositionId.Value);
 
         if (!string.IsNullOrWhiteSpace(input.Status))
         {
@@ -98,16 +101,17 @@ public class GetCourseAssignmentsUseCase : IUseCase<GetCourseAssignmentsInput, G
         {
             var independent =
                 from enrollment in _context.Enrollments.AsNoTracking()
-                join emp in employees on enrollment.EmployeeId equals emp.Id
+                join placement in placements on enrollment.EmployeeId equals placement.Employee.Id
+                let emp = placement.Employee
                 join course in _context.Courses.AsNoTracking() on enrollment.CourseId equals course.Id
                 join dept in _context.Departments.AsNoTracking() on emp.DepartmentId equals dept.Id
-                join pos in _context.JobPositions.AsNoTracking() on emp.JobPositionId equals pos.Id into positions
+                join pos in _context.JobPositions.AsNoTracking() on placement.PositionId equals pos.Id into positions
                 from pos in positions.DefaultIfEmpty()
                 where enrollment.CourseAssignmentId == null && enrollment.Status != Statuses.Enrollment.Cancelled
                       && (input.CourseId == null || enrollment.CourseId == input.CourseId)
                       && (input.EmployeeId == null || emp.Id == input.EmployeeId)
                       && (input.DepartmentId == null || emp.DepartmentId == input.DepartmentId)
-                      && (input.JobPositionId == null || emp.JobPositionId == input.JobPositionId)
+                      && (input.JobPositionId == null || placement.PositionId == input.JobPositionId)
                       && !_context.CourseAssignments.Any(a => a.EmployeeId == emp.Id
                           && a.CourseId == course.Id && a.Status != Statuses.Enrollment.Cancelled)
                 select new { enrollment, emp, course, dept, pos };
