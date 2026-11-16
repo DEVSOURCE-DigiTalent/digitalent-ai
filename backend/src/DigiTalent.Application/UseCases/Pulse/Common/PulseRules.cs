@@ -38,6 +38,32 @@ public static class PulseRules
     public static bool ChoicePassed(int? score, int? total) =>
         score is not { } s || total is not { } t || s >= ChoicePassMark(t);
 
+    /// <summary>
+    /// Bài kiểm tra vượt học (<see cref="PulseSkipTest"/>): mã ổn định của bài (assessments PRACTICE, không gắn mô đun) mà
+    /// mỗi khóa tạo khi nhân viên đầu tiên bắt đầu làm.
+    /// </summary>
+    public const string SkipTestCode = "PULSE-SKIP-TEST";
+
+    /// <summary>Số câu trắc nghiệm của bài kiểm tra vượt học, rút từ ngân hàng ôn tập các mô đun của khóa.</summary>
+    public const int SkipTestQuestionCount = 20;
+
+    /// <summary>Ngân hàng của khóa phải có ít nhất chừng này câu (khác nội dung) thì mới mở bài kiểm tra vượt học.</summary>
+    public const int SkipTestMinQuestions = 10;
+
+    /// <summary>Tỉ lệ câu đúng tối thiểu (%) để vượt quá trình học: 20 câu → 16 câu.</summary>
+    public const int SkipTestPassPercent = 80;
+
+    /// <summary>Bài kiểm tra vượt học chỉ được làm một lần cho mỗi lượt học; chưa đạt (hoặc bỏ dở quá giờ) thì học tuần tự.</summary>
+    public const int SkipTestMaxAttempts = 1;
+
+    public const int SkipTestTimeLimitMinutes = 30;
+
+    /// <summary>Độ trễ mạng được chấp nhận khi nộp sau giờ (trình duyệt tự nộp lúc hết giờ).</summary>
+    public const int SkipTestGraceSeconds = 120;
+
+    /// <summary>Số câu đúng tối thiểu của đề <paramref name="total"/> câu (làm tròn lên).</summary>
+    public static int SkipTestPassMark(int total) => (total * SkipTestPassPercent + 99) / 100;
+
     /// <summary>Dung lượng tối đa của một mẩu ghi hình tải lên (trình duyệt gửi mỗi vài giây một mẩu).</summary>
     public const int MaxRecordingChunkBytes = 16 * 1024 * 1024;
 
