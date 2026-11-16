@@ -257,7 +257,7 @@
 }
 
 .pa-brand-role-pill {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--pa-accent-solid);
@@ -368,7 +368,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--font-sans);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-ink-2);
   background: var(--pa-surface);
@@ -450,7 +450,7 @@
   border-radius: 999px;
   background: #c43b4e;
   color: #ffffff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 19px;
@@ -1039,7 +1039,7 @@
 .pa-notif-count-pill {
   padding: 1px 7px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   background: var(--pa-accent-soft);
@@ -1142,7 +1142,7 @@
 }
 
 .pa-notif-row-time {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pa-ink-3);
   font-variant-numeric: tabular-nums;
 }
@@ -1267,7 +1267,7 @@ dialog.pa-cmd-dialog::backdrop {
   color: var(--pa-ink-2);
   border-radius: 6px;
   padding: 3px 8px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -1289,7 +1289,7 @@ dialog.pa-cmd-dialog::backdrop {
 
 .pa-cmd-group-title {
   padding: 4px 10px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-ink-3);
 }
@@ -1355,7 +1355,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pa-cmd-row-cat {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-ink-3);
   background: var(--pa-surface-sub);
@@ -1387,7 +1387,7 @@ dialog.pa-cmd-dialog::backdrop {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pa-ink-3);
 }
 
@@ -2069,7 +2069,7 @@ dialog.pa-cmd-dialog::backdrop {
 
 .pulse-ui.pa-console .pa-ov-kpi-card.is-tone-sky .pa-kpi-icon-box {
   background: #f0f9ff;
-  color: #0284c7;
+  color: #0369a1;
   border: 1px solid #e0f2fe;
 }
 
@@ -2241,7 +2241,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-kpi-compact .pa-ov-kpi-label {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.03em;
 }
@@ -3371,7 +3371,7 @@ dialog.pa-cmd-dialog::backdrop {
   border-radius: 999px;
   background: var(--pa-surface-tint);
   color: var(--pa-ink);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -3587,7 +3587,7 @@ dialog.pa-cmd-dialog::backdrop {
   border-radius: 999px;
   background: var(--pa-surface-tint);
   color: var(--pa-ink);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -3605,7 +3605,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-tr-chip-count {
-  font-size: 11.5px;
+  font-size: 12px;
   padding: 1px 6px;
   border-radius: 999px;
   font-variant-numeric: tabular-nums;
@@ -4233,7 +4233,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-tr-menu-item-email {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pa-ink-3);
   white-space: nowrap;
   overflow: hidden;
@@ -4241,7 +4241,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-tr-menu-header {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--pa-ink-3);
   letter-spacing: 0.04em;
@@ -4333,14 +4333,14 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-tr-mentor-org-pct {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pa-ink-3);
   flex-shrink: 0;
 }
 
 .pulse-ui.pa-console .pa-tr-more-badge {
   display: inline-block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-accent-solid);
   background: var(--pa-accent-soft);
@@ -4360,7 +4360,7 @@ dialog.pa-cmd-dialog::backdrop {
 .pulse-ui.pa-console .pa-tr-mentor-view-all-link {
   background: transparent;
   border: none;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-accent-solid);
   cursor: pointer;
@@ -4387,7 +4387,7 @@ dialog.pa-cmd-dialog::backdrop {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-accent-solid);
   background: var(--pa-accent-soft);
@@ -4406,7 +4406,7 @@ dialog.pa-cmd-dialog::backdrop {
 .pulse-ui.pa-console .pa-tr-expand-toggle-btn {
   background: transparent;
   border: none;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-ink-2);
   cursor: pointer;
@@ -4497,7 +4497,7 @@ dialog.pa-cmd-dialog::backdrop {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pa-ink-2);
   text-decoration: none;
 }
@@ -4751,7 +4751,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-fw-domain-tag {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -4917,7 +4917,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-fw-level-pill {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   padding: 2px 9px;
   border-radius: 6px;
@@ -4943,7 +4943,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-fw-new-tag {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 6px;
@@ -5026,7 +5026,7 @@ dialog.pa-cmd-dialog::backdrop {
   background: var(--pa-ink);
   color: #ffffff;
   font-weight: 700;
-  font-size: 11.5px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -5111,7 +5111,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-rp-stat-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -5206,7 +5206,7 @@ dialog.pa-cmd-dialog::backdrop {
   width: 320px;
   padding: 16px 24px;
   text-align: left;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -5232,7 +5232,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-rp-role-sub {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--pa-ink-3);
   margin-top: 2px;
   font-weight: 500;
@@ -5256,7 +5256,7 @@ dialog.pa-cmd-dialog::backdrop {
   padding: 2px 7px;
   border-radius: 5px;
   background: var(--pa-surface-tint);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--pa-ink-2);
@@ -5364,7 +5364,7 @@ dialog.pa-cmd-dialog::backdrop {
 
 /* Text label below the segment */
 .pulse-ui.pa-console .pa-rp-seg-text {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -5407,7 +5407,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-rp-avg-num small {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--pa-ink-3);
   font-weight: 500;
 }
@@ -5598,7 +5598,7 @@ dialog.pa-cmd-dialog::backdrop {
 
 .pulse-ui.pa-console .pa-kpi-icon-wrap.sky {
   background: #f0f9ff;
-  color: #0284c7;
+  color: #0369a1;
   border: 1px solid #e0f2fe;
 }
 
@@ -5628,7 +5628,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-org-kpi-label {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-ink-2);
   text-transform: uppercase;
@@ -5716,7 +5716,7 @@ dialog.pa-cmd-dialog::backdrop {
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   background: var(--pa-surface-tint);
@@ -5729,7 +5729,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-org-table th {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--pa-ink-2);
   letter-spacing: 0.04em;
@@ -5775,7 +5775,7 @@ dialog.pa-cmd-dialog::backdrop {
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 6px;
@@ -5889,7 +5889,7 @@ dialog.pa-cmd-dialog::backdrop {
 
 .pulse-ui.pa-console .pa-btn-detail-icon {
   transition: transform 140ms ease-out, color 140ms ease-out;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .pulse-ui.pa-console .pa-btn-detail:active {
@@ -6048,7 +6048,7 @@ dialog.pa-cmd-dialog::backdrop {
   height: 19px;
   padding: 0 6px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   background: var(--pa-surface-tint);
@@ -6191,7 +6191,7 @@ dialog.pa-cmd-dialog::backdrop {
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   background: rgba(0, 0, 0, 0.08);
   color: inherit;
@@ -6301,7 +6301,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-org-detail-chip-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--pa-ink-3);
@@ -6316,7 +6316,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-org-detail-chip-sub {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--pa-ink-3);
 }
 
@@ -6456,7 +6456,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-contract-meta-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--pa-ink-3);
   display: block;
   margin-bottom: 2px;
@@ -6523,7 +6523,7 @@ dialog.pa-cmd-dialog::backdrop {
   border: 1px dashed var(--pa-accent-border);
   background: var(--pa-accent-soft);
   color: var(--pa-accent-solid);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -6584,7 +6584,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-ver-section-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -6658,7 +6658,7 @@ dialog.pa-cmd-dialog::backdrop {
   gap: 4px;
   padding: 2px 7px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.3;
 }
@@ -6706,7 +6706,7 @@ dialog.pa-cmd-dialog::backdrop {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #b45309;
   background: #fef3c7;
@@ -6717,7 +6717,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-ver-card-note {
-  font-size: 11.5px;
+  font-size: 12px;
   color: #64748b;
   font-style: italic;
   margin-top: 2px;
@@ -6801,7 +6801,7 @@ dialog.pa-cmd-dialog::backdrop {
   position: absolute;
   left: 11px;
   top: 11px;
-  color: #94a3b8;
+  color: #64748b;
   pointer-events: none;
 }
 
@@ -6811,7 +6811,7 @@ dialog.pa-cmd-dialog::backdrop {
   top: 9px;
   border: none;
   background: transparent;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
   padding: 2px;
   border-radius: 4px;
@@ -6910,7 +6910,7 @@ dialog.pa-cmd-dialog::backdrop {
 
 .pulse-ui.pa-console .pa-ver-table th {
   padding: 11px 14px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -6958,7 +6958,7 @@ dialog.pa-cmd-dialog::backdrop {
   background: #ffffff;
   border: 1px solid #cbd5e1;
   color: #475569;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -6974,7 +6974,7 @@ dialog.pa-cmd-dialog::backdrop {
 
 .pulse-ui.pa-console .pa-ver-code-badge {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #0f172a;
   background: #f1f5f9;
@@ -6987,7 +6987,7 @@ dialog.pa-cmd-dialog::backdrop {
   display: inline-block;
   padding: 3px 8px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-align: center;
 }
@@ -7084,7 +7084,7 @@ dialog.pa-cmd-dialog::backdrop {
   border-radius: 6px;
   background: #dcfce7;
   color: #15803d;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -7101,7 +7101,7 @@ dialog.pa-cmd-dialog::backdrop {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -7109,9 +7109,9 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-ol-header-count {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .pulse-ui.pa-console .pa-ol-item {
@@ -7244,7 +7244,7 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pulse-ui.pa-console .pa-cb-sec-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;

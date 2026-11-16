@@ -203,7 +203,7 @@ export function CourseInfoForm({
                 {course.outcome ? (
                   <span>{course.outcome}</span>
                 ) : (
-                  <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                  <span style={{ color: '#64748b', fontStyle: 'italic' }}>
                     {translateUi('Chưa có mô tả kết quả.')}
                   </span>
                 )}
@@ -355,7 +355,7 @@ export function CourseInfoForm({
 
             <div>
               <label className="pa-cb-field-label" htmlFor="field-domain">
-                <span>{translateUi('Lĩnh vực')} <span style={{ color: '#ef4444' }}>*</span></span>
+                <span>{translateUi('Lĩnh vực')} <span style={{ color: '#dc2626' }}>*</span></span>
               </label>
               <select
                 id="field-domain"
@@ -418,7 +418,7 @@ export function CourseInfoForm({
           {course.codeEditable && (
             <div>
               <label className="pa-cb-field-label" htmlFor="field-code">
-                <span>{translateUi('Mã khóa')} <span style={{ color: '#ef4444' }}>*</span></span>
+                <span>{translateUi('Mã khóa')} <span style={{ color: '#dc2626' }}>*</span></span>
                 <span style={{ fontSize: 12.5, color: '#475569' }}>{translateUi('Không đổi được sau lần công bố đầu')}</span>
               </label>
               <input
@@ -457,7 +457,7 @@ export function CourseInfoForm({
         <div className="pa-cb-panel-body">
           <div>
             <label className="pa-cb-field-label" htmlFor="field-title">
-              <span>{translateUi('Tên khóa học')} <span style={{ color: '#ef4444' }}>*</span></span>
+              <span>{translateUi('Tên khóa học')} <span style={{ color: '#dc2626' }}>*</span></span>
               <span style={{ fontSize: 12.5, color: '#475569' }}>{form.title.length}/250</span>
             </label>
             <input

@@ -275,7 +275,7 @@ export function PlatformCommercePage() {
                 </div>
               </div>
               <div className="pa-org-kpi-val-row">
-                <span className="pa-org-kpi-val" style={{ color: '#0284c7' }}>
+                <span className="pa-org-kpi-val" style={{ color: '#0369a1' }}>
                   {formatNumber(seatsPurchased)}
                 </span>
                 <span className="pa-org-kpi-sub">suất có phí, mọi tổ chức</span>
@@ -307,7 +307,7 @@ export function PlatformCommercePage() {
                 </div>
               </div>
               <div className="pa-org-kpi-val-row">
-                <span className="pa-org-kpi-val" style={{ color: '#d97706' }}>
+                <span className="pa-org-kpi-val" style={{ color: '#b45309' }}>
                   {currentCourses.length} khóa
                 </span>
                 <span className="pa-org-kpi-sub">
@@ -433,7 +433,7 @@ export function PlatformCommercePage() {
 
               {filteredOrders.length === 0 ? (
                 <div className="pa-org-empty-box">
-                  <ReceiptText size={36} style={{ color: '#94a3b8', margin: '0 auto 8px' }} />
+                  <ReceiptText size={36} style={{ color: '#64748b', margin: '0 auto 8px' }} />
                   <div className="pa-org-empty-title">Không tìm thấy đơn hàng hoặc lượt cấp phát nào</div>
                   <p className="pa-org-empty-sub">Thử đổi từ khóa tìm kiếm hoặc chọn loại đơn khác.</p>
                 </div>
@@ -470,7 +470,7 @@ export function PlatformCommercePage() {
                                     to={`/platform/organizations/${o.organizationId}`}
                                     style={{
                                       fontSize: 12,
-                                      color: '#0284c7',
+                                      color: '#0369a1',
                                       display: 'inline-flex',
                                       alignItems: 'center',
                                       gap: 4,
@@ -502,7 +502,7 @@ export function PlatformCommercePage() {
                                 <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
                                   {o.seats}
                                 </span>
-                                <span style={{ fontSize: 11.5, color: '#64748b', marginLeft: 4 }}>suất</span>
+                                <span style={{ fontSize: 12, color: '#64748b', marginLeft: 4 }}>suất</span>
                               </td>
                               <td style={{ textAlign: 'right' }}>
                                 <strong
@@ -521,7 +521,7 @@ export function PlatformCommercePage() {
                                   {o.reason && (
                                     <div
                                       style={{
-                                        fontSize: 11.5,
+                                        fontSize: 12,
                                         color: '#64748b',
                                         marginTop: 2,
                                         lineHeight: 1.35,
@@ -807,7 +807,7 @@ function PriceTable({
               <button
                 type="button"
                 className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-                style={{ color: '#ef4444', borderColor: '#fca5a5' }}
+                style={{ color: '#dc2626', borderColor: '#fca5a5' }}
                 onClick={onDiscardDraft}
                 title={`Hủy bản nháp v${draftNo}`}
               >
@@ -915,7 +915,7 @@ function PriceTable({
 
       {filteredCourses.length === 0 ? (
         <div className="pa-org-empty-box">
-          <Layers size={36} style={{ color: '#94a3b8', margin: '0 auto 8px' }} />
+          <Layers size={36} style={{ color: '#64748b', margin: '0 auto 8px' }} />
           <div className="pa-org-empty-title">Không tìm thấy khóa học nào phù hợp với bộ lọc</div>
           <p className="pa-org-empty-sub">Thử đổi từ khóa tìm kiếm hoặc đặt lại bộ lọc để xem toàn bộ danh mục.</p>
           <button type="button" className="btn btn-outline btn-small" onClick={resetFilters} style={{ marginTop: 8 }}>
@@ -994,7 +994,7 @@ function PriceTable({
                               <strong style={{ fontSize: 13, color: '#0f172a', display: 'block', lineHeight: 1.35 }}>
                                 {translateUi(c.title)}
                               </strong>
-                              <span style={{ fontSize: 11.5, color: '#64748b' }}>{translateUi(c.domainName)}</span>
+                              <span style={{ fontSize: 12, color: '#64748b' }}>{translateUi(c.domainName)}</span>
                             </div>
                           </div>
                         </td>
@@ -1052,7 +1052,7 @@ function PriceTable({
                               <span style={{ fontSize: 13, fontWeight: 600 }}>{formatMoney(c.draftPricePerSeat ?? c.pricePerSeat)}</span>
                             )}
                             {draftDiffers && !isChanged && (
-                              <small style={{ display: 'block', fontSize: 11, color: '#c2410c', marginTop: 2 }}>
+                              <small style={{ display: 'block', fontSize: 12, color: '#c2410c', marginTop: 2 }}>
                                 Khác giá đang áp dụng
                               </small>
                             )}
@@ -1083,7 +1083,7 @@ function PriceTable({
 
                         <td style={{ textAlign: 'right', fontSize: 12, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
                           {c.isFree ? (
-                            <span style={{ color: '#94a3b8' }}>Miễn phí</span>
+                            <span style={{ color: '#64748b' }}>Miễn phí</span>
                           ) : (
                             <span>{c.seatsPurchased} mua · {c.seatsGranted} cấp</span>
                           )}
@@ -1099,7 +1099,7 @@ function PriceTable({
                                   style={{
                                     height: 26,
                                     padding: '0 8px',
-                                    fontSize: 11.5,
+                                    fontSize: 12,
                                     background: '#ef4444',
                                     color: '#ffffff',
                                     border: 'none',
@@ -1115,7 +1115,7 @@ function PriceTable({
                                 <button
                                   type="button"
                                   className="btn btn-ghost btn-small"
-                                  style={{ height: 26, padding: '0 6px', fontSize: 11.5 }}
+                                  style={{ height: 26, padding: '0 6px', fontSize: 12 }}
                                   onClick={() => setConfirmDeleteId(null)}
                                   title="Giữ lại"
                                 >
@@ -1232,7 +1232,7 @@ function PriceTable({
                       height: 32,
                       borderRadius: 8,
                       background: '#fef3c7',
-                      color: '#d97706',
+                      color: '#b45309',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1588,7 +1588,7 @@ function PriceGroup({
             </div>
             <span
               style={{
-                fontSize: 11.5,
+                fontSize: 12,
                 padding: '2px 8px',
                 borderRadius: 999,
                 background: '#e2e8f0',

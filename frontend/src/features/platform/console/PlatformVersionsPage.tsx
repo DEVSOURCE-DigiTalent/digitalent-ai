@@ -509,7 +509,7 @@ function CourseRowItem({
         {c.questionCount}
       </td>
       <td style={{ textAlign: 'right', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-        {c.level === 1 ? <span style={{ color: '#16a34a' }}>{translateUi("Miễn phí")}</span> : formatMoney(c.pricePerSeat)}
+        {c.level === 1 ? <span style={{ color: '#15803d' }}>{translateUi("Miễn phí")}</span> : formatMoney(c.pricePerSeat)}
       </td>
       <td style={{ textAlign: 'center' }}>
         <Pill tone={kind?.tone}>{translateUi(kind?.label) ?? c.changeKind}</Pill>
@@ -546,7 +546,7 @@ function CourseRowItem({
                 className="btn btn-ghost btn-small"
                 onClick={() => setConfirm(c.courseId)}
                 aria-label={translateUi(`Bỏ ${c.code} khỏi bản nháp`)}
-                style={{ color: '#ef4444', height: 30, padding: '0 6px' }}
+                style={{ color: '#dc2626', height: 30, padding: '0 6px' }}
               >
                 <Trash2 size={13} />
               </button>
@@ -684,7 +684,7 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #f1f5f9' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fef3c7', color: '#d97706', display: 'grid', placeItems: 'center' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fef3c7', color: '#b45309', display: 'grid', placeItems: 'center' }}>
               <Anchor size={18} />
             </div>
             <div>
@@ -705,7 +705,7 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
           </div>
 
           <div>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', display: 'block', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', display: 'block', marginBottom: 8 }}>
               Các khóa có thay đổi ({changed.length})
             </span>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
@@ -725,7 +725,7 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
           </div>
 
           <div>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', display: 'block', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', display: 'block', marginBottom: 8 }}>
               Kiểm tra điều kiện xuất bản
             </span>
             {check.isLoading && <p style={{ fontSize: 13, color: '#64748b' }}>Đang tự động rà soát nội dung…</p>}

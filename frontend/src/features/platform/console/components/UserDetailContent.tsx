@@ -232,7 +232,7 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                 <span
                   style={{
                     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                    fontSize: 11.5,
+                    fontSize: 12,
                     color: '#475569',
                     background: '#f1f5f9',
                     padding: '2px 8px',
@@ -363,7 +363,7 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                 <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                   <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Suất học và hợp đồng</span>
                   <strong style={{ color: '#0f172a', display: 'block' }}>Xem ở hồ sơ tổ chức</strong>
-                  <span style={{ fontSize: 12, color: '#0284c7' }}>Mở trang Tổ chức</span>
+                  <span style={{ fontSize: 12, color: '#0369a1' }}>Mở trang Tổ chức</span>
                 </div>
               </div>
 

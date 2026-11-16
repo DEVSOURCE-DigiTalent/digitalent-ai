@@ -403,7 +403,7 @@ export function LearnerPreview({
                                   borderRadius: 6,
                                   background: 'var(--pa-accent-soft, #fef3e7)',
                                   color: 'var(--pa-accent-solid, #7c2d12)',
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   fontWeight: 700,
                                   flexShrink: 0,
                                 }}
@@ -445,7 +445,7 @@ export function LearnerPreview({
                                   </span>
                                   <span>{opt.text}</span>
                                   {opt.isCorrect && (
-                                    <span style={{ fontSize: 11, color: '#16a34a', marginLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    <span style={{ fontSize: 12, color: '#16a34a', marginLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                                       <CheckCircle2 size={12} />
                                       <span>({translateUi('Đáp án chuẩn')})</span>
                                     </span>
@@ -588,7 +588,7 @@ export function LearnerPreview({
                                 borderRadius: 6,
                                 background: 'var(--pa-accent-soft, #fef3e7)',
                                 color: 'var(--pa-accent-solid, #7c2d12)',
-                                fontSize: 11.5,
+                                fontSize: 12,
                                 fontWeight: 700,
                               }}
                             >

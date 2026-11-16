@@ -214,7 +214,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
     <div className="pa-question-body">
       <div>
         <label className="pa-cb-field-label" htmlFor={`question-text-${question.questionId}`}>
-          <span>{translateUi('Nội dung câu hỏi')} <span style={{ color: '#ef4444' }}>*</span></span>
+          <span>{translateUi('Nội dung câu hỏi')} <span style={{ color: '#dc2626' }}>*</span></span>
         </label>
         <textarea
           id={`question-text-${question.questionId}`}
@@ -317,7 +317,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
       </div>
 
       {!complete && (
-        <p style={{ margin: '6px 0 0', fontSize: 12.5, color: '#d97706' }}>
+        <p style={{ margin: '6px 0 0', fontSize: 12.5, color: '#b45309' }}>
           {translateUi('Có thể lưu nháp; khi công bố chính thức, câu hỏi và mọi phương án đều cần nội dung.')}
         </p>
       )}

@@ -41,7 +41,7 @@ import {
 const DESCRIPTION_MIN = 10;
 
 const DOMAIN_THEMES = [
-  { icon: Database, color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', name: 'Dữ liệu và Thông tin' },
+  { icon: Database, color: '#0369a1', bg: '#f0f9ff', border: '#bae6fd', name: 'Dữ liệu và Thông tin' },
   { icon: MessageSquare, color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe', name: 'Giao tiếp và Hợp tác' },
   { icon: Palette, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', name: 'Sáng tạo nội dung số' },
   { icon: ShieldCheck, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', name: 'An toàn số' },
@@ -606,7 +606,6 @@ function DomainRow({
             <div>
               <div
                 className="pa-fw-domain-tag"
-                style={{ color: theme.color }}
               >
                 {translateUi(label)}
               </div>
@@ -703,7 +702,7 @@ function DomainRow({
       <div className="pa-fw-domain-right">
         <div className="pa-fw-courses-header">
           <span>
-            {d.courses.length} Khóa trong v{currentNo ?? ''}
+            {d.courses.length} khóa trong v{currentNo ?? ''}
             {d.draftNewCourses.length ? translateUi(` · +${d.draftNewCourses.length} khóa mới (nháp)`) : ''}
           </span>
         </div>
@@ -743,7 +742,7 @@ function DomainRow({
                         {c.levelName}
                       </span>
                     )}
-                    <ArrowRight size={14} style={{ color: '#94a3b8' }} aria-hidden="true" />
+                    <ArrowRight size={14} style={{ color: '#64748b' }} aria-hidden="true" />
                   </div>
                 </Link>
               );

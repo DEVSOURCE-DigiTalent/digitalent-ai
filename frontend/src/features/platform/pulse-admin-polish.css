@@ -376,3 +376,74 @@
   letter-spacing: 0;
   font-size: 12px;
 }
+
+/* ---------- Khung năng lực: nhãn lĩnh vực chữ thường, đủ tương phản ---------- */
+
+.pulse-ui.pa-console .pa-fw-domain-tag,
+.pulse-ui.pa-console .pa-fw-courses-header {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--pa-ink-3);
+}
+
+/* ---------- Vị trí tham chiếu: nút chọn mức đủ lớn để bấm ---------- */
+
+.pulse-ui.pa-console .pa-rp-seg-btn {
+  width: 36px;
+  height: 32px;
+}
+
+/* ---------- Phiên bản khóa học: thẻ lọc cấp độ đủ tương phản, bảng không tràn ---------- */
+
+.pulse-ui.pa-console .pa-ver-level-tab {
+  color: var(--pa-ink-2);
+}
+
+.pulse-ui.pa-console .pa-ver-table th,
+.pulse-ui.pa-console .pa-ver-table td {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* ---------- Thông báo (dùng chung cổng doanh nghiệp): bỏ dòng nhỏ in hoa, chữ phụ đủ lớn ---------- */
+
+.pulse-ui.pa-console .owner-operations__eyebrow {
+  display: none;
+}
+
+.pulse-ui.pa-console .owner-operations__tabs span,
+.pulse-ui.pa-console .owner-operations__activity-new {
+  font-size: 12px;
+}
+
+.pulse-ui.pa-console .owner-operations__activity-new {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.pulse-ui.pa-console .owner-operations__tabs span {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+/* ---------- Bảo mật: nút và liên kết nhỏ đủ vùng bấm ---------- */
+
+.pulse-ui.pa-console .btn-small {
+  min-height: 32px;
+}
+
+/* Liên kết tên tổ chức trong danh sách: vùng bấm tối thiểu 32px */
+.pulse-ui.pa-console .pa-attention-name,
+.pulse-ui.pa-console .pa-recent-org-link {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pulse-ui.pa-console .pa-ver-context-title {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+}

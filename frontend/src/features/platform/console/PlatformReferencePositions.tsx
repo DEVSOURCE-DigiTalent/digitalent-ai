@@ -58,7 +58,7 @@ const POSITION_PROFILES: Record<string, { title: string; subtitle: string; code:
 };
 
 const DOMAIN_ICONS = [
-  { icon: Database, color: '#0284c7', bg: '#f0f9ff' },
+  { icon: Database, color: '#0369a1', bg: '#f0f9ff' },
   { icon: MessageSquare, color: '#4f46e5', bg: '#eef2ff' },
   { icon: Palette, color: '#7c3aed', bg: '#f5f3ff' },
   { icon: ShieldCheck, color: '#16a34a', bg: '#f0fdf4' },

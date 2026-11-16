@@ -166,7 +166,7 @@ export function PlatformOrganizationsPage() {
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
-            <span className="pa-org-kpi-val" style={{ color: '#0284c7' }}>{overviewQuery.isLoading ? '…' : formatNumber(seatsPurchased)}</span>
+            <span className="pa-org-kpi-val" style={{ color: '#0369a1' }}>{overviewQuery.isLoading ? '…' : formatNumber(seatsPurchased)}</span>
             <span className="pa-org-kpi-sub">suất có phí, mọi tổ chức</span>
           </div>
         </div>
@@ -179,7 +179,7 @@ export function PlatformOrganizationsPage() {
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
-            <span className="pa-org-kpi-val" style={{ color: '#d97706' }}>{overviewQuery.isLoading ? '…' : `${conversionRate}%`}</span>
+            <span className="pa-org-kpi-val" style={{ color: '#b45309' }}>{overviewQuery.isLoading ? '…' : `${conversionRate}%`}</span>
             <span className="pa-org-kpi-sub">Trên tổng số tổ chức</span>
           </div>
         </div>
@@ -256,7 +256,7 @@ export function PlatformOrganizationsPage() {
 
         {!isLoading && data && data.items.length === 0 && (
           <div className="pa-org-empty-box">
-            <Building2 size={36} style={{ color: '#94a3b8', margin: '0 auto 8px' }} />
+            <Building2 size={36} style={{ color: '#64748b', margin: '0 auto 8px' }} />
             <div className="pa-org-empty-title">Không tìm thấy tổ chức nào</div>
             <p className="pa-org-empty-sub">
               Không có doanh nghiệp khớp với bộ lọc hiện tại. Thử đổi từ khóa tìm kiếm hoặc chọn thẻ danh mục khác.

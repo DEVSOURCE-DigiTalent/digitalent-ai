@@ -71,7 +71,7 @@
   gap: 6px;
   background: #fef3c7;
   color: #b45309;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -92,7 +92,7 @@
 .pulse-ui .pa-header-search-icon {
   position: absolute;
   left: 12px;
-  color: #94a3b8;
+  color: #64748b;
   pointer-events: none;
 }
 
@@ -200,7 +200,7 @@
 
 .pulse-ui .pa-profile-role {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: #b45309;
   font-weight: 600;
 }
@@ -239,7 +239,7 @@
 }
 
 .pulse-ui .pa-dropdown-heading {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -352,7 +352,7 @@
 
 .pulse-ui .pa-side-nav-group-title {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -462,7 +462,7 @@
 
 .pulse-ui .pa-sidebar-footer-sub {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: #64748b;
   margin-top: 4px;
 }
@@ -516,8 +516,8 @@
 }
 
 .pulse-ui .pa-breadcrumb-sep {
-  color: #94a3b8;
-  font-size: 11px;
+  color: #64748b;
+  font-size: 12px;
 }
 
 .pulse-ui .pa-breadcrumb-root {
@@ -828,7 +828,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--pa-ink-2, #3e524c);
 }
@@ -940,7 +940,7 @@
   align-items: center;
   justify-content: center;
   padding: 2px 9px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   border-radius: 999px;
@@ -1303,7 +1303,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-danger, #e11d48);
   flex-shrink: 0;
@@ -1546,7 +1546,7 @@
 .pulse-ui .data-table th,
 .pulse-admin-layout .data-table th {
   padding: 12px 14px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #475569;
   text-transform: uppercase;
@@ -1582,7 +1582,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   flex-shrink: 0;
   border-width: 1px;
@@ -1731,7 +1731,7 @@
   padding: 1px 6px;
   border-radius: 4px;
   background-color: #ecfdf5;
-  color: #059669;
+  color: #047857;
   border: 1px solid #a7f3d0;
   letter-spacing: 0.02em;
 }

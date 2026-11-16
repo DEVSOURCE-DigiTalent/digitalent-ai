@@ -38,7 +38,7 @@ export function CompanyAvatar({
   className?: string;
 }) {
   const initialsText = getCompanyInitials(name);
-  const fontSize = Math.max(11, Math.round(size * 0.35));
+  const fontSize = Math.max(12, Math.round(size * 0.35));
   const borderRadius = Math.max(7, Math.round(size * 0.24));
 
   return (

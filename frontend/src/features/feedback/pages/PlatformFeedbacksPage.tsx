@@ -278,7 +278,7 @@ function FeedbackSenderCell({
         <div
           className="pa-org-email"
           style={{
-            fontSize: 11.5,
+            fontSize: 12,
             color: '#64748b',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -294,9 +294,9 @@ function FeedbackSenderCell({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
-              fontSize: 11.5,
+              fontSize: 12,
               fontWeight: 500,
-              color: '#0284c7',
+              color: '#0369a1',
               marginTop: 1,
             }}
             title={organizationName}
@@ -307,7 +307,7 @@ function FeedbackSenderCell({
             </span>
           </div>
         ) : (
-          <span style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>
+          <span style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>
             {translateUi('Tài khoản cá nhân')}
           </span>
         )}
@@ -664,7 +664,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
           {/* Ô tìm kiếm */}
           <div style={{ position: 'relative', flex: '1 1 280px', minWidth: 260 }}>
-            <Search size={15} style={{ position: 'absolute', left: 12, top: 11, color: '#94a3b8', pointerEvents: 'none' }} />
+            <Search size={15} style={{ position: 'absolute', left: 12, top: 11, color: '#64748b', pointerEvents: 'none' }} />
             <input
               type="search"
               placeholder={translateUi(isBug ? 'Tìm theo mã #BUG, tiêu đề, người gửi, email hoặc URL...' : 'Tìm theo tiêu đề, người gửi, email...')}
@@ -698,7 +698,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                   top: 9,
                   border: 'none',
                   background: 'transparent',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   cursor: 'pointer',
                   padding: 2,
                 }}
@@ -858,7 +858,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
 
         {displayedItems.length === 0 && !isLoading && (
           <div style={{ padding: '48px 16px', textAlign: 'center', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
-            {isBug ? <Bug size={36} style={{ color: '#94a3b8', margin: '0 auto 8px' }} /> : <MessageSquare size={36} style={{ color: '#94a3b8', margin: '0 auto 8px' }} />}
+            {isBug ? <Bug size={36} style={{ color: '#64748b', margin: '0 auto 8px' }} /> : <MessageSquare size={36} style={{ color: '#64748b', margin: '0 auto 8px' }} />}
             <div style={{ fontWeight: 600, fontSize: 14.5, color: '#0f172a' }}>
               {translateUi('Không có mục nào khớp với bộ lọc')}
             </div>
@@ -919,7 +919,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                           {isBug ? (
                             <span
                               style={{
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontWeight: 600,
                                 color: mod.color,
                                 background: mod.bg,
@@ -948,7 +948,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                             {hasScreenshots && (
                               <span
                                 style={{
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   fontWeight: 600,
                                   color: '#0369a1',
                                   background: '#f0f9ff',
@@ -983,8 +983,8 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                           {item.pageUrl && (
                             <span
                               style={{
-                                fontSize: 11,
-                                color: '#94a3b8',
+                                fontSize: 12,
+                                color: '#64748b',
                                 fontFamily: 'monospace',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
@@ -1012,7 +1012,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                           <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>
                             {formatRelativeTime(item.createdAt)}
                           </span>
-                          <span style={{ fontSize: 11.5, color: '#64748b', fontFamily: 'monospace' }}>
+                          <span style={{ fontSize: 12, color: '#64748b', fontFamily: 'monospace' }}>
                             {formatDate(item.createdAt)}
                           </span>
                         </div>
@@ -1022,6 +1022,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                       <td>
                         <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
                           <select
+                            aria-label={`Trạng thái của ${item.title ?? 'mục này'}`}
                             value={item.status}
                             disabled={isRowUpdating}
                             onClick={(e) => e.stopPropagation()}
@@ -1156,7 +1157,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
           currentSt ? (
             <span
               style={{
-                fontSize: 11.5,
+                fontSize: 12,
                 padding: '2px 8px',
                 borderRadius: 6,
                 background: currentSt.bg,
@@ -1220,7 +1221,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
 
               {viewingItem.rating != null && viewingItem.rating > 0 && (
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>
+                  <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>
                     {translateUi('Đánh giá')}:
                   </span>
                   <Stars count={viewingItem.rating} showScore />
@@ -1244,7 +1245,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                  <ExternalLink size={14} style={{ color: '#0284c7', flexShrink: 0 }} />
+                  <ExternalLink size={14} style={{ color: '#0369a1', flexShrink: 0 }} />
                   <span style={{ color: '#64748b', flexShrink: 0 }}>{translateUi('Trang gặp lỗi')}:</span>
                   <code style={{ color: '#0f172a', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {viewingItem.pageUrl}
@@ -1256,7 +1257,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                     type="button"
                     className="btn btn-ghost btn-small"
                     onClick={() => handleCopyUrl(viewingItem.pageUrl!)}
-                    style={{ padding: '3px 8px', fontSize: 11.5 }}
+                    style={{ padding: '3px 8px', fontSize: 12 }}
                     title={translateUi('Sao chép đường dẫn')}
                   >
                     {copiedUrl ? <CheckCheck size={13} style={{ color: '#16a34a' }} /> : <Copy size={13} />}
@@ -1268,7 +1269,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                     target="_blank"
                     rel="noreferrer"
                     className="btn btn-ghost btn-small"
-                    style={{ padding: '3px 8px', fontSize: 11.5, color: '#0284c7' }}
+                    style={{ padding: '3px 8px', fontSize: 12, color: '#0369a1' }}
                     title={translateUi('Mở trang này trong tab mới')}
                   >
                     <ArrowUpRight size={13} />
@@ -1361,6 +1362,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                   {translateUi('Trạng thái')}
                 </label>
                 <select
+                  aria-label="Trạng thái xử lý"
                   value={drawerStatus}
                   onChange={(e) => setDrawerStatus(e.target.value as FeedbackItem['status'])}
                   style={{
@@ -1387,14 +1389,14 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                   <label style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
                     {translateUi('Trả lời người gửi')}
                   </label>
-                  <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>
                     {drawerNote.length}/2000 {translateUi('ký tự')}
                   </span>
                 </div>
 
                 {/* Các mẫu phản hồi nhanh 1 chạm */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                  <span style={{ fontSize: 11.5, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Sparkles size={12} style={{ color: 'var(--pa-accent, #b85c24)' }} />
                     {translateUi('Mẫu nhanh')}:
                   </span>
@@ -1404,7 +1406,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                       type="button"
                       onClick={() => setDrawerNote(tmpl)}
                       style={{
-                        fontSize: 11.5,
+                        fontSize: 12,
                         padding: '3px 8px',
                         borderRadius: 6,
                         background: '#f8fafc',

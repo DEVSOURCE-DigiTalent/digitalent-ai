@@ -637,13 +637,13 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
               </div>
 
               {kind === 'suspend' && (
-                <p style={{ fontSize: 11.5, color: '#dc2626', margin: '4px 0 10px', fontWeight: 500 }}>
+                <p style={{ fontSize: 12, color: '#dc2626', margin: '4px 0 10px', fontWeight: 500 }}>
                   Khi tạm ngưng, mọi nhân viên của tổ chức không đăng nhập được và phiên đang mở bị ngắt ngay.
                 </p>
               )}
 
               {!actionAllowed && kind !== 'grant' && (
-                <p style={{ fontSize: 11.5, color: '#dc2626', margin: '4px 0 10px', fontWeight: 500 }}>
+                <p style={{ fontSize: 12, color: '#dc2626', margin: '4px 0 10px', fontWeight: 500 }}>
                   {suspended ? 'Tổ chức đang tạm ngưng.' : 'Tổ chức đang hoạt động, không cần mở lại.'}
                 </p>
               )}

@@ -144,7 +144,7 @@ export function ModuleEditor({
         <div className="pa-cb-panel-body">
           <div>
             <label className="pa-cb-field-label" htmlFor="field-module-title">
-              <span>{translateUi('Tên mô đun')} {editable && <span style={{ color: '#ef4444' }}>*</span>}</span>
+              <span>{translateUi('Tên mô đun')} {editable && <span style={{ color: '#dc2626' }}>*</span>}</span>
             </label>
             <input
               id="field-module-title"

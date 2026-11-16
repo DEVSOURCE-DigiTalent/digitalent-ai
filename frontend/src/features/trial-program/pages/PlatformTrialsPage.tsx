@@ -393,7 +393,7 @@ export function PlatformTrialsPage() {
               <div className="pa-tr-kpi-val-row">
                 <span className="pa-ov-kpi-val">{requestedCount}</span>
                 {urgentRequestedCount > 0 ? (
-                  <span className="pa-tr-pill is-bad" style={{ fontSize: 11.5, padding: '2px 8px' }}>
+                  <span className="pa-tr-pill is-bad" style={{ fontSize: 12, padding: '2px 8px' }}>
                     {urgentRequestedCount} gấp &lt;48h
                   </span>
                 ) : (
@@ -416,7 +416,7 @@ export function PlatformTrialsPage() {
               </div>
               <div className="pa-tr-kpi-val-row">
                 <span className="pa-ov-kpi-val">{assignedCount}</span>
-                <span className="pa-tr-pill is-info" style={{ fontSize: 11.5, padding: '2px 8px' }}>
+                <span className="pa-tr-pill is-info" style={{ fontSize: 12, padding: '2px 8px' }}>
                   {totalEvaluatingSubs} bài
                 </span>
               </div>
@@ -436,7 +436,7 @@ export function PlatformTrialsPage() {
               </div>
               <div className="pa-tr-kpi-val-row">
                 <span className="pa-ov-kpi-val">{reportedCount}</span>
-                <span className="pa-tr-pill is-ok" style={{ fontSize: 11.5, padding: '2px 8px' }}>
+                <span className="pa-tr-pill is-ok" style={{ fontSize: 12, padding: '2px 8px' }}>
                   {totalParticipants} nhân sự
                 </span>
               </div>
@@ -463,7 +463,7 @@ export function PlatformTrialsPage() {
                     {' '}/ {mentorsList.length}
                   </span>
                 </span>
-                <span className="pa-tr-pill is-ok" style={{ fontSize: 11.5, padding: '2px 8px' }}>
+                <span className="pa-tr-pill is-ok" style={{ fontSize: 12, padding: '2px 8px' }}>
                   {freeMentors.length} đang rảnh
                 </span>
               </div>
@@ -621,7 +621,7 @@ export function PlatformTrialsPage() {
                                   <div className="pa-tr-menu-item-email">{m.email}</div>
                                 </div>
                               </div>
-                              <span className="pa-tr-pill is-ok" style={{ fontSize: 11, padding: '2px 7px' }}>0 DN</span>
+                              <span className="pa-tr-pill is-ok" style={{ fontSize: 12, padding: '2px 7px' }}>0 DN</span>
                             </button>
                           );
                         })}
@@ -652,7 +652,7 @@ export function PlatformTrialsPage() {
                                       <div className="pa-tr-menu-item-email">{m.email}</div>
                                     </div>
                                   </div>
-                                  <span className="pa-tr-pill is-info" style={{ fontSize: 11, padding: '2px 7px' }}>{m.activeTrials} DN</span>
+                                  <span className="pa-tr-pill is-info" style={{ fontSize: 12, padding: '2px 7px' }}>{m.activeTrials} DN</span>
                                 </button>
                               );
                             })}
@@ -793,7 +793,7 @@ export function PlatformTrialsPage() {
                                 <span>{stageMeta.label}</span>
                               </span>
                               {t.stage !== 'REPORTED' && (sla.tone === 'bad' || sla.tone === 'warn') && (
-                                <span className={`pa-tr-pill is-${sla.tone}`} style={{ fontSize: 11, padding: '1px 6px' }}>
+                                <span className={`pa-tr-pill is-${sla.tone}`} style={{ fontSize: 12, padding: '1px 6px' }}>
                                   {sla.label}
                                 </span>
                               )}

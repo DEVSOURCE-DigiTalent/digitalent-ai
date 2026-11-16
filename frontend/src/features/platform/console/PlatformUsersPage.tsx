@@ -562,7 +562,7 @@ export function PlatformUsersPage() {
 
         {data && data.items.length === 0 && (
           <div className="pa-org-empty-box">
-            <Users size={36} style={{ color: '#94a3b8', margin: '0 auto 8px' }} />
+            <Users size={36} style={{ color: '#64748b', margin: '0 auto 8px' }} />
             <div className="pa-org-empty-title">Không tìm thấy tài khoản người dùng nào</div>
             <p className="pa-org-empty-sub">Thử xóa bộ lọc hoặc đổi từ khóa tìm kiếm.</p>
           </div>
@@ -662,7 +662,7 @@ export function PlatformUsersPage() {
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                   <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>2 khóa học</span>
-                                  <span style={{ fontSize: 11.5, fontWeight: 500, color: '#16a34a' }}>· 1 hoàn thành</span>
+                                  <span style={{ fontSize: 12, fontWeight: 500, color: '#16a34a' }}>· 1 hoàn thành</span>
                                 </div>
                                 <div style={{ width: 90, height: 4, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden' }} aria-hidden="true">
                                   <div style={{ width: '50%', height: '100%', background: '#16a34a', borderRadius: 999 }} />
@@ -673,28 +673,28 @@ export function PlatformUsersPage() {
                                 <span style={{ fontSize: 12.5, fontWeight: 600, color: '#7c3aed' }}>
                                   Thẩm định bài thi
                                 </span>
-                                <span style={{ fontSize: 11, color: '#64748b' }}>4 bài chờ chấm · Đã duyệt 18</span>
+                                <span style={{ fontSize: 12, color: '#64748b' }}>4 bài chờ chấm · Đã duyệt 18</span>
                               </div>
                             ) : isOwner ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <span style={{ fontSize: 12.5, fontWeight: 600, color: '#334155' }}>
                                   Bản quyền doanh nghiệp
                                 </span>
-                                <span style={{ fontSize: 11, color: '#64748b' }}>Quản trị tổ chức · Đại diện pháp lý</span>
+                                <span style={{ fontSize: 12, color: '#64748b' }}>Quản trị tổ chức · Đại diện pháp lý</span>
                               </div>
                             ) : isManager ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <span style={{ fontSize: 12.5, fontWeight: 600, color: '#334155' }}>
                                   Điều phối phòng ban
                                 </span>
-                                <span style={{ fontSize: 11, color: '#64748b' }}>Theo dõi lộ trình đào tạo nội bộ</span>
+                                <span style={{ fontSize: 12, color: '#64748b' }}>Theo dõi lộ trình đào tạo nội bộ</span>
                               </div>
                             ) : (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>
                                   Quản trị hệ thống
                                 </span>
-                                <span style={{ fontSize: 11, color: '#64748b' }}>Toàn quyền cấu hình nền tảng</span>
+                                <span style={{ fontSize: 12, color: '#64748b' }}>Toàn quyền cấu hình nền tảng</span>
                               </div>
                             )}
                           </td>
@@ -712,7 +712,7 @@ export function PlatformUsersPage() {
                                 {isSuperAdmin ? 'DigiTalent Platform' : isMentor ? 'Ban Chuyên gia DigiTalent' : 'Doanh nghiệp'}
                               </strong>
                             )}
-                            <span style={{ fontSize: 11.5, color: '#64748b' }}>
+                            <span style={{ fontSize: 12, color: '#64748b' }}>
                               {[u.departmentName, u.positionName || u.jobTitle].filter(Boolean).join(' · ') ||
                                 (isSuperAdmin ? 'Quản trị hệ thống' : isMentor ? 'Chuyên gia thẩm định bài thi' : 'Nhân sự')}
                             </span>
@@ -754,7 +754,7 @@ export function PlatformUsersPage() {
                               width: 26,
                               height: 26,
                               borderRadius: 6,
-                              color: '#94a3b8',
+                              color: '#64748b',
                               background: '#f8fafc',
                               border: '1px solid #e2e8f0',
                               transition: 'all 0.15s ease',

@@ -34,7 +34,7 @@ export function PlatformUserDetailPage() {
     <>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
             Quản trị nền tảng / Hồ sơ người dùng
           </span>
@@ -60,12 +60,12 @@ export function PlatformUserDetailPage() {
         <div>
           <Box>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <History size={16} style={{ color: '#d97706' }} />
+              <History size={16} style={{ color: '#b45309' }} />
               <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Lịch sử hỗ trợ & Thao tác kiểm toán</span>
             </div>
 
             {data.supportHistory.length === 0 ? (
-              <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>
+              <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>
                 Chưa có thao tác hỗ trợ nào được ghi nhận cho tài khoản này.
               </p>
             ) : (

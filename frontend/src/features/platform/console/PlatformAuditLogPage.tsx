@@ -173,7 +173,7 @@ function AuditActorCell({ email }: { email: string | null }) {
           <div className="pa-org-name" style={{ fontSize: 13, fontWeight: 600 }}>
             {translateUi('Hệ thống tự động')}
           </div>
-          <div className="pa-org-email" style={{ fontSize: 11.5, color: '#64748b' }}>
+          <div className="pa-org-email" style={{ fontSize: 12, color: '#64748b' }}>
             {email ?? 'platform@digitalent.ai'}
           </div>
         </div>
@@ -207,7 +207,7 @@ function AuditActorCell({ email }: { email: string | null }) {
           <div className="pa-org-name" style={{ fontSize: 13, fontWeight: 600 }}>
             {translateUi('Quản trị viên')}
           </div>
-          <div className="pa-org-email" style={{ fontSize: 11.5, color: '#64748b' }}>
+          <div className="pa-org-email" style={{ fontSize: 12, color: '#64748b' }}>
             {email}
           </div>
         </div>
@@ -241,7 +241,7 @@ function AuditActorCell({ email }: { email: string | null }) {
           <div className="pa-org-name" style={{ fontSize: 13, fontWeight: 600 }}>
             {translateUi('Mentor')}
           </div>
-          <div className="pa-org-email" style={{ fontSize: 11.5, color: '#64748b' }}>
+          <div className="pa-org-email" style={{ fontSize: 12, color: '#64748b' }}>
             {email}
           </div>
         </div>
@@ -275,7 +275,7 @@ function AuditActorCell({ email }: { email: string | null }) {
         <div className="pa-org-name" style={{ fontSize: 13, fontWeight: 600 }}>
           {prefix}
         </div>
-        <div className="pa-org-email" style={{ fontSize: 11.5, color: '#64748b' }}>
+        <div className="pa-org-email" style={{ fontSize: 12, color: '#64748b' }}>
           {email}
         </div>
       </div>
@@ -485,7 +485,7 @@ export function PlatformAuditLogPage() {
           >
             <Activity size={13} />
             <span>{translateUi('Tất cả')}</span>
-            <span style={{ fontSize: 11, opacity: 0.7 }}>({rawItems.length})</span>
+            <span style={{ fontSize: 12, opacity: 0.7 }}>({rawItems.length})</span>
           </button>
 
           <button
@@ -528,7 +528,7 @@ export function PlatformAuditLogPage() {
         {/* Thanh tìm kiếm & Dropdown chi tiết */}
         <div className="pa-row-between" style={{ marginBottom: 18, alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', minWidth: 320, flex: 1 }}>
-            <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+            <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#64748b', pointerEvents: 'none' }} />
             <input
               type="search"
               placeholder={translateUi('Tìm theo đối tượng, lý do hoặc email người thực hiện...')}
@@ -555,7 +555,7 @@ export function PlatformAuditLogPage() {
                   top: 10,
                   border: 'none',
                   background: 'transparent',
-                  color: '#94a3b8',
+                  color: '#64748b',
                   cursor: 'pointer',
                   padding: 2,
                 }}
@@ -615,7 +615,7 @@ export function PlatformAuditLogPage() {
 
         {filteredItems.length === 0 && !isLoading && (
           <div style={{ padding: '48px 16px', textAlign: 'center', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
-            <Activity size={36} style={{ color: '#94a3b8', margin: '0 auto 8px' }} />
+            <Activity size={36} style={{ color: '#64748b', margin: '0 auto 8px' }} />
             <div style={{ fontWeight: 600, fontSize: 14.5, color: '#0f172a' }}>
               {translateUi('Chưa có thao tác nào phù hợp')}
             </div>
@@ -658,7 +658,7 @@ export function PlatformAuditLogPage() {
                           <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>
                             {formatRelativeTime(log.createdAt)}
                           </span>
-                          <span style={{ fontSize: 11.5, color: '#64748b', fontFamily: 'monospace' }}>
+                          <span style={{ fontSize: 12, color: '#64748b', fontFamily: 'monospace' }}>
                             {formatDateTime(log.createdAt)}
                           </span>
                         </div>
@@ -696,13 +696,13 @@ export function PlatformAuditLogPage() {
                               {translateUi(log.entityLabel)}
                             </strong>
                           ) : (
-                            <span style={{ fontSize: 12.5, color: '#94a3b8', fontStyle: 'italic' }}>
+                            <span style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic' }}>
                               {translateUi('Mục hệ thống chung')}
                             </span>
                           )}
 
                           {log.organizationName && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#0284c7' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#0369a1' }}>
                               <Building size={11} />
                               <span>{log.organizationName}</span>
                             </span>
@@ -727,7 +727,7 @@ export function PlatformAuditLogPage() {
                             “{reason}”
                           </div>
                         ) : (
-                          <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>
+                          <span style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>
                             {translateUi('Không ghi lý do')}
                           </span>
                         )}
@@ -805,7 +805,7 @@ export function PlatformAuditLogPage() {
           selectedLog?.organizationName ? (
             <span
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 padding: '2px 8px',
                 borderRadius: 999,
                 background: '#eff6ff',
@@ -863,7 +863,7 @@ export function PlatformAuditLogPage() {
               {selectedLog.organizationName && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
                   <span style={{ color: '#64748b' }}>{translateUi('Tổ chức liên quan')}:</span>
-                  <span style={{ color: '#0284c7', fontWeight: 600 }}>{selectedLog.organizationName}</span>
+                  <span style={{ color: '#0369a1', fontWeight: 600 }}>{selectedLog.organizationName}</span>
                 </div>
               )}
 
@@ -939,7 +939,7 @@ export function PlatformAuditLogPage() {
                           <tr key={row.key}>
                             <td>
                               <strong style={{ color: '#0f172a' }}>{row.label}</strong>
-                              <div style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace' }}>{row.key}</div>
+                              <div style={{ fontSize: 12, color: '#64748b', fontFamily: 'monospace' }}>{row.key}</div>
                             </td>
                             <td>
                               <span
@@ -991,7 +991,7 @@ export function PlatformAuditLogPage() {
                       type="button"
                       className="btn btn-outline btn-small inline-flex items-center gap-1.5"
                       onClick={() => handleCopyJson(selectedLog.newValues || selectedLog.oldValues)}
-                      style={{ fontSize: 11.5, padding: '3px 10px', height: 28 }}
+                      style={{ fontSize: 12, padding: '3px 10px', height: 28 }}
                     >
                       {copied ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
                       <span>{copied ? translateUi('Đã sao chép') : translateUi('Sao chép JSON')}</span>
@@ -1004,7 +1004,7 @@ export function PlatformAuditLogPage() {
                       borderRadius: 10,
                       background: '#0f172a',
                       color: '#f8fafc',
-                      fontSize: 11.5,
+                      fontSize: 12,
                       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                       overflowX: 'auto',
                     }}
@@ -1030,7 +1030,7 @@ export function PlatformAuditLogPage() {
                         </pre>
                       </div>
                     ) : (
-                      <div style={{ color: '#94a3b8' }}>
+                      <div style={{ color: '#64748b' }}>
                         {translateUi('Không có dữ liệu chi tiết cho sự kiện này.')}
                       </div>
                     )}

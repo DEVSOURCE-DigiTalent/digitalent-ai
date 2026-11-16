@@ -390,7 +390,7 @@ describe('Platform Admin console (v2)', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Chuẩn năng lực số TT02' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { level: 3, name: 'Khai thác dữ liệu và thông tin' })).toBeInTheDocument();
-    expect(screen.getByText('1 Khóa trong v3 · +1 khóa mới (nháp)')).toBeInTheDocument();
+    expect(screen.getByText('1 khóa trong v3 · +1 khóa mới (nháp)')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /AI1-F/ })).toHaveAttribute('href', '/platform/versions/4/courses/c-AI1-F');
     expect(screen.getByRole('button', { name: 'Thêm lĩnh vực' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Thêm khung/ })).not.toBeInTheDocument();
@@ -650,15 +650,17 @@ describe('Platform Admin console (v2)', () => {
   });
 
   it('SHR-01 is the Platform Admin profile, opened from the header', async () => {
-    service.getAuditLogs.mockResolvedValue({ items: [], pageIndex: 1, pageSize: 1, totalItems: 9, totalPages: 9 });
     renderAt('/platform/account');
     const name = useCurrentUser.getState().user!.fullName;
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Hồ sơ của tôi' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument();
-    expect((await screen.findByText('Khóa học chuẩn hóa')).previousElementSibling).toHaveTextContent('18');
-    await waitFor(() => expect(screen.getByText('Nhật ký kiểm toán').previousElementSibling).toHaveTextContent('9'));
-    expect(service.getAuditLogs).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 1, scope: 'platform' }));
+    // Chỉ hiện việc có thật: các mục dẫn sang trang làm việc đó, không còn số liệu trùng Tổng quan hay lời hứa bảo mật.
+    expect(screen.getByRole('heading', { level: 3, name: 'Việc bạn làm được' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Giá và suất học/ })).toHaveAttribute('href', '/platform/commerce');
+    expect(screen.getByRole('heading', { level: 3, name: 'Hiển thị' })).toBeInTheDocument();
+    expect(screen.queryByText(/Thông tư 02/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/bất biến/)).not.toBeInTheDocument();
 
     // The header menu leads back to this page and signs out.
     fireEvent.click(screen.getByRole('button', { name: `Menu người dùng: ${name}` }));

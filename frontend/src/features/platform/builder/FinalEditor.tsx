@@ -69,7 +69,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
         <div className="pa-cb-panel-body">
           <div>
             <label className="pa-cb-field-label" htmlFor="field-final-title">
-              <span>{translateUi('Tên bài')} {editable && <span style={{ color: '#ef4444' }}>*</span>}</span>
+              <span>{translateUi('Tên bài')} {editable && <span style={{ color: '#dc2626' }}>*</span>}</span>
             </label>
             <input
               id="field-final-title"
