@@ -180,11 +180,10 @@ function summarizeDomain(domain: TrialReport['summary'][number], employees: Tria
     detail.categoryId === domain.categoryId && detail.targetLevel
       ? [{ level: detail.level, target: detail.targetLevel }]
       : []));
-  const targets = [...new Set(comparisons.map(({ target }) => target))].sort((a, b) => a - b);
   const gaps = comparisons.filter(({ level, target }) => level < target);
   const level = gaps.reduce((lowest, detail) => Math.min(lowest, detail.level + 1), 3);
   const course = gaps.length ? { level, code: `M${domain.number}-${nextCourseSuffix[level - 1]}` } : null;
-  return { ...domain, targets, comparedCount: comparisons.length, gapCount: gaps.length, course };
+  return { ...domain, gapCount: gaps.length, course };
 }
 
 /** Bảng năng lực của doanh nghiệp: phân bố mức theo lĩnh vực và mức của từng nhân viên. */
@@ -286,8 +285,7 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="py-3 px-4">{translateUi("Lĩnh vực")}</th>
-                <th className="py-3 px-3 text-center">{translateUi('Mức đạt trung bình')}</th>
-                <th className="py-3 px-3 text-center">{translateUi('Chuẩn vị trí')}</th>
+                <th className="py-3 px-3 text-center">{translateUi('Mức năng lực trung bình')}</th>
                 <th className="py-3 px-4 min-w-[220px]">{translateUi("Phân bổ (")}{report.assessed} người)</th>
                 <th className="py-3 px-4 min-w-[180px]">{translateUi("Khóa học đề xuất")}</th>
               </tr>
@@ -321,18 +319,6 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
 
                     <td className="py-3.5 px-3 text-center">
                       <LevelBadge level={row.level} />
-                    </td>
-                    <td className="py-3.5 px-3 text-center">
-                      {row.targets.length ? (
-                        <>
-                          <div className="flex flex-wrap justify-center gap-1.5">
-                            {row.targets.map((target) => <LevelBadge key={target} level={target} size="sm" />)}
-                          </div>
-                          <p className="mt-1.5 text-slate-600">
-                            {row.comparedCount - row.gapCount}/{row.comparedCount} {translateUi('đạt chuẩn')}
-                          </p>
-                        </>
-                      ) : <span className="text-slate-600">{translateUi('Chưa có chuẩn')}</span>}
                     </td>
 
                     <td className="py-3.5 px-4">
