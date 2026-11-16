@@ -7,6 +7,7 @@ import { DepartmentListPage } from '../pages/DepartmentListPage';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES } from '@/lib/roles';
 import * as deptHooks from '@/hooks/use-departments';
+import * as memberHooks from '@/hooks/use-members';
 
 // Mock sonner
 vi.mock('sonner', () => ({
@@ -158,6 +159,9 @@ describe('DepartmentListPage', () => {
 
   it('CreateDepartmentShowsValidationAndRefreshesList', async () => {
     mockUserWithPermissions();
+    vi.spyOn(memberHooks, 'useMembers').mockReturnValue({
+      data: { items: [{ kind: 'member', employeeId: 'emp-1', fullName: 'Employee', email: 'emp-1@digitalent.ai' }] },
+    } as never);
     const createMutateAsync = vi.fn().mockResolvedValue({ data: { data: { id: 'new-id' } } });
     vi.spyOn(deptHooks, 'useCreateDepartment').mockReturnValue({
       mutateAsync: createMutateAsync,
@@ -177,6 +181,7 @@ describe('DepartmentListPage', () => {
     expect(screen.getByRole('heading', { name: 'Tạo phòng ban' })).toBeInTheDocument();
 
     const saveBtn = screen.getByRole('button', { name: 'Lưu' });
+    fireEvent.change(screen.getByRole('combobox', { name: /Trưởng phòng/ }), { target: { value: 'emp-1' } });
     fireEvent.click(saveBtn);
 
     // Validation should trigger
@@ -191,6 +196,7 @@ describe('DepartmentListPage', () => {
 
     fireEvent.change(codeInput, { target: { value: 'ENG' } });
     fireEvent.change(nameInput, { target: { value: 'Engineering' } });
+    fireEvent.change(screen.getByRole('combobox', { name: /Trưởng phòng/ }), { target: { value: 'emp-1' } });
 
     fireEvent.click(saveBtn);
 
@@ -199,7 +205,7 @@ describe('DepartmentListPage', () => {
         code: 'ENG',
         name: 'Engineering',
         description: '',
-        parentDepartmentId: undefined,
+        managerEmployeeId: 'emp-1',
       });
     });
   });

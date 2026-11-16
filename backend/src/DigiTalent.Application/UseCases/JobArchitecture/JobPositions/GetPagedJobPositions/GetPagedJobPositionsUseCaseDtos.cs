@@ -27,6 +27,7 @@ public class JobPositionListItem
 
     /// <summary>ACTIVE employees holding the position.</summary>
     public int Headcount { get; set; }
+    public bool UsedByOtherDepartments { get; set; }
 
     /// <summary>The position has an ACTIVE competency requirement set (skill gap can be computed).</summary>
     public bool HasRequirementSet { get; set; }

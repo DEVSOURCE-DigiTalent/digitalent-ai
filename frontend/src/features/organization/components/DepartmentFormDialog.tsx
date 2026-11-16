@@ -5,7 +5,7 @@ import { Building2, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useDepartment, useDepartments, useCreateDepartment, useUpdateDepartment } from '@/hooks/use-departments';
+import { useDepartment, useCreateDepartment, useUpdateDepartment } from '@/hooks/use-departments';
 import { useMembers } from '@/hooks/use-members';
 import type { DepartmentDto } from '@/services/department.service';
 import { toast } from 'sonner';
@@ -19,7 +19,6 @@ const formSchema = z.object({
   code: z.string().min(1, 'Vui lòng nhập mã'),
   name: z.string().min(1, 'Vui lòng nhập tên'),
   description: z.string().optional(),
-  parentDepartmentId: z.string().optional(),
   managerEmployeeId: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
@@ -40,28 +39,18 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
   const createMutation = useCreateDepartment();
   const updateMutation = useUpdateDepartment();
 
-  // For parent department dropdown
-  const { data: parentData, isLoading: loadingParents } = useDepartments({ pageIndex: 1, pageSize: 100, status: 'ACTIVE' });
-  const parents = parentData?.items || [];
-
-  // A manager must be an active employee: accounts without an employee profile cannot be chosen.
-  const { data: memberData, isLoading: loadingMembers } = useMembers({ pageIndex: 1, pageSize: 100, status: 'ACTIVE' });
-  const eligibleManagers = (memberData?.items ?? []).flatMap((m) =>
-    m.kind === 'member' && m.employeeId ? [{ employeeId: m.employeeId, label: `${m.fullName} (${m.email})` }] : [],
-  );
-
-  // A list row has no description and PUT replaces every field, so editing starts from the full department.
   const { data: current, isLoading: loadingCurrent } = useDepartment(department?.id ?? '');
-
-  // The current manager stays selectable even when outside the first page of members, so saving keeps them.
-  const managerOptions =
-    current?.managerEmployeeId && !eligibleManagers.some((m) => m.employeeId === current.managerEmployeeId)
-      ? [...eligibleManagers, { employeeId: current.managerEmployeeId, label: current.managerName ?? 'Quản lý hiện tại' }]
-      : eligibleManagers;
-
-  // A native <select> drops a value it has no option for yet: an edited department fills the form once its
-  // manager and parent options are listed.
-  const loadingOptions = isEditing && (loadingMembers || loadingParents);
+  const { data: memberData, isLoading: loadingMembers } = useMembers({
+    pageIndex: 1, pageSize: 100, status: 'ACTIVE', departmentId: department?.id,
+  });
+  const managerId = (current ?? department)?.managerEmployeeId;
+  const canChooseManager = !isEditing || !managerId;
+  const managerOptions = (memberData?.items ?? []).flatMap((member) =>
+    member.kind === 'member' && member.employeeId && (!isEditing || member.departmentId === department.id)
+      ? [{ employeeId: member.employeeId, label: `${member.fullName} (${member.email})` }]
+      : [],
+  );
+  const loadingOptions = canChooseManager && loadingMembers;
 
   const {
     register,
@@ -74,7 +63,6 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
       code: '',
       name: '',
       description: '',
-      parentDepartmentId: '',
       managerEmployeeId: '',
       status: 'ACTIVE',
     },
@@ -88,7 +76,6 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
           code: source.code,
           name: source.name,
           description: source.description ?? '',
-          parentDepartmentId: source.parentDepartmentId ?? '',
           managerEmployeeId: source.managerEmployeeId ?? '',
           status: (source.status as 'ACTIVE' | 'INACTIVE') ?? 'ACTIVE',
         });
@@ -97,7 +84,6 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
           code: '',
           name: '',
           description: '',
-          parentDepartmentId: '',
           managerEmployeeId: '',
           status: 'ACTIVE',
         });
@@ -109,6 +95,10 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
   if (!open) return null;
 
   const onSubmit = async (data: FormData) => {
+    if (!isEditing && !data.managerEmployeeId) {
+      toast.error('Chọn trưởng phòng trước khi tạo phòng ban.');
+      return;
+    }
     try {
       if (isEditing) {
         await updateMutation.mutateAsync({
@@ -117,8 +107,7 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
             code: data.code,
             name: data.name,
             description: data.description,
-            parentDepartmentId: data.parentDepartmentId || undefined,
-            managerEmployeeId: data.managerEmployeeId || undefined,
+            managerEmployeeId: managerId || data.managerEmployeeId || undefined,
             status: data.status as 'ACTIVE' | 'INACTIVE',
           },
         });
@@ -128,7 +117,6 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
           code: data.code,
           name: data.name,
           description: data.description,
-          parentDepartmentId: data.parentDepartmentId || undefined,
           managerEmployeeId: data.managerEmployeeId || undefined,
         });
         toast.success('Đã tạo phòng ban');
@@ -192,39 +180,25 @@ export function DepartmentFormDialog({ open, onClose, department }: DepartmentFo
             />
           </div>
 
-          <div>
-            <label htmlFor="department-manager" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Người quản lý")}</label>
-            <select
-              id="department-manager"
-              {...register('managerEmployeeId')}
-              className={INPUT_CLASS}
-              disabled={isSubmitting}
-            >
-              <option value="">{translateUi("Chưa phân công quản lý")}</option>
-              {managerOptions.map((m) => (
-                <option key={m.employeeId} value={m.employeeId}>
-                  {translateUi(m.label)}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1.5 text-xs text-slate-500">{translateUi("Người được chọn sẽ quản lý và theo dõi nhân sự thuộc phòng ban này.")}</p>
-          </div>
-
-          <div>
-            <label htmlFor="department-parent" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Phòng ban cấp trên")}</label>
-            <select
-              id="department-parent"
-              {...register('parentDepartmentId')}
-              className={INPUT_CLASS}
-              disabled={isSubmitting}
-            >
-              <option value="">{translateUi("Không có (phòng ban gốc)")}</option>
-              {parents
-                .filter((p) => p.id !== department?.id)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-            </select>
+          <div className="position-form-full">
+            <label htmlFor="department-manager" className="block text-sm font-semibold text-slate-700 mb-1.5">
+              {translateUi('Trưởng phòng')}{!isEditing && <span className="ml-1 text-red-600">*</span>}
+            </label>
+            {canChooseManager && (!isEditing || managerOptions.length > 0) ? (
+              <select id="department-manager" {...register('managerEmployeeId')} className={INPUT_CLASS}
+                required={!isEditing} disabled={isSubmitting || loadingOptions}>
+                <option value="">{translateUi('Chọn trưởng phòng')}</option>
+                {managerOptions.map((option) => <option key={option.employeeId} value={option.employeeId}>{option.label}</option>)}
+              </select>
+            ) : (
+              <input id="department-manager" className={INPUT_CLASS}
+                value={managerId ? current?.managerName ?? translateUi('Trưởng phòng hiện tại') : translateUi('Chưa có nhân sự để phân công')} readOnly />
+            )}
+            <p className="mt-1.5 text-xs text-slate-600">
+              {translateUi(isEditing
+                ? managerId ? 'Mỗi phòng ban có một trưởng phòng.' : 'Chỉ nhân sự đang hoạt động thuộc phòng ban này mới có thể được chọn.'
+                : 'Người được chọn sẽ chuyển sang phòng ban mới và được cấp quyền Manager. Vị trí ở phòng ban cũ sẽ được bỏ khỏi hồ sơ.')}
+            </p>
           </div>
 
           {isEditing && (

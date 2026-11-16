@@ -11,6 +11,7 @@ namespace DigiTalent.Application.UseCases.Platform.References;
 /// <summary>Five platform-owned reference positions. Organization requirements remain separate.</summary>
 public sealed class ReferencePositionMatrixService
 {
+    public const string SeedItemNote = "SYSTEM_REFERENCE_POSITION";
     private const string SettingKey = "PLATFORM_REFERENCE_POSITION_DOMAIN_LEVELS_V1";
     private static readonly string[] Codes = ["CEO", "HR", "MARKETING", "SALES_CRM", "ACCOUNTANT"];
     private static readonly Dictionary<string, int[]> Defaults = new()
@@ -33,9 +34,11 @@ public sealed class ReferencePositionMatrixService
         _audit = audit;
     }
 
-    public async Task<ReferencePositionMatrix> GetAsync()
+    public Task<ReferencePositionMatrix> GetAsync() => ReadAsync(_context);
+
+    internal static async Task<ReferencePositionMatrix> ReadAsync(IApplicationDbContext context)
     {
-        var setting = await _context.SystemSettings.AsNoTracking()
+        var setting = await context.SystemSettings.AsNoTracking()
             .SingleOrDefaultAsync(s => s.OrganizationId == null && s.Key == SettingKey);
         return setting == null
             ? new ReferencePositionMatrix { Version = 1, Levels = CopyDefaults() }

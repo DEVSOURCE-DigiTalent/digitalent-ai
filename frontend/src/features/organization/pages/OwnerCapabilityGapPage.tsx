@@ -81,7 +81,7 @@ export function OwnerCapabilityGapPage() {
   const positions = useJobPositions({
     pageSize: 100,
     departmentId: departmentId || undefined,
-    includeAssignedPositions: !!departmentId,
+    status: 'ACTIVE',
   }).data?.items ?? [];
   const scope = { departmentId: departmentId || undefined, jobPositionId: jobPositionId || undefined };
   const company = useLearningNeeds({ ...scope, pageIndex: 1, pageSize: 1 });

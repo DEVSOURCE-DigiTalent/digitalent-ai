@@ -1,7 +1,10 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Me;
 using DigiTalent.Application.UseCases.TrialProgram;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
+using DigiTalent.Application.UseCases.Competency.Common;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
@@ -182,6 +185,8 @@ public class PulseLearnerReader
     public async Task<PulseLearnerSnapshot> LoadForAsync(Employee employee, bool includeContent = false)
     {
         var organizationId = employee.OrganizationId;
+        var placement = await EffectiveJobPositions.Resolve(_context, _context.Employees.AsNoTracking().Where(e => e.Id == employee.Id))
+            .Select(row => row.PositionId).FirstOrDefaultAsync();
         var names = await (
                 from e in _context.Employees.AsNoTracking()
                 join d in _context.Departments.AsNoTracking() on e.DepartmentId equals d.Id
@@ -191,7 +196,7 @@ public class PulseLearnerReader
                 {
                     DepartmentName = d.Name,
                     OrganizationName = o.Name,
-                    PositionName = _context.JobPositions.Where(p => p.Id == e.JobPositionId).Select(p => p.Name).FirstOrDefault(),
+                    PositionName = _context.JobPositions.Where(p => p.Id == placement).Select(p => p.Name).FirstOrDefault(),
                 })
             .FirstOrDefaultAsync();
 
@@ -212,10 +217,18 @@ public class PulseLearnerReader
             .Select(c => new { c.Id, c.Code, c.Name })
             .ToListAsync();
 
-        var requirements = await LoadRequirementsAsync(employee.JobPositionId);
-        var targets = requirements
-            .GroupBy(r => r.CategoryId)
-            .ToDictionary(g => g.Key, g => Math.Clamp(g.Max(r => r.Requirement.RequiredLevel), 0, PulseRules.MaxLevel));
+        var requirements = await LoadRequirementsAsync(placement);
+        var standard = placement is Guid positionId
+            ? (await new PositionTargetsReader(_context).LoadAsync(organizationId, [positionId])).GetValueOrDefault(positionId)
+            : null;
+        var targets = standard?.Levels.ToDictionary(row => row.Key, row => row.Value) ?? new Dictionary<Guid, int>();
+        if (standard?.UsesSystemReference == true)
+        {
+            requirements = requirements.Select(row => (row.CategoryId, row.Requirement with
+            {
+                RequiredLevel = targets.GetValueOrDefault(row.CategoryId, row.Requirement.RequiredLevel),
+            })).ToList();
+        }
         var ceilings = await _ceilings.EffectiveForDepartmentAsync(organizationId, employee.DepartmentId, categoryIds);
 
         // Khung năng lực & Lộ trình của nhân viên:
@@ -396,7 +409,7 @@ public class PulseLearnerReader
                 select new { pc.Code, o.Seats })
             .ToListAsync();
         var purchasedSeatsByCode = seatOrders
-            .GroupBy(s => s.Code, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(s => CourseCodes.Canonical(s.Code), StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Sum(s => s.Seats), StringComparer.OrdinalIgnoreCase);
 
         var usedSeats = await _context.CourseAssignments.AsNoTracking()
@@ -406,10 +419,16 @@ public class PulseLearnerReader
             .Distinct()
             .ToListAsync();
         var usedSeatsByCode = usedSeats
-            .GroupBy(s => s.Code, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+            .GroupBy(s => CourseCodes.Canonical(s.Code), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Select(assignment => assignment.EmployeeId).Distinct().Count(), StringComparer.OrdinalIgnoreCase);
 
-        var hasPosition = employee.JobPositionId.HasValue;
+        bool HasAvailableSeat(string code)
+        {
+            var key = CourseCodes.Canonical(code);
+            return purchasedSeatsByCode.GetValueOrDefault(key) > usedSeatsByCode.GetValueOrDefault(key);
+        }
+
+        var hasPosition = placement.HasValue;
         var now = Now;
         var states = courses
             .Where(c => domains.Any(d => d.CategoryId == c.CategoryId))
@@ -441,17 +460,19 @@ public class PulseLearnerReader
                     : approved || started || entryDone || !entryOffered || awaitingFramework ? PulsePreStatus.NotNeeded
                     : !hasPosition || zone is PulseCourseZone.OutsidePath or PulseCourseZone.AboveCeiling || !prereqApproved ? PulsePreStatus.Locked
                     : PulsePreStatus.Required;
-                var hasPurchasedSeat = purchasedSeatsByCode.GetValueOrDefault(course.Code) > usedSeatsByCode.GetValueOrDefault(course.Code)
+                var hasPurchasedSeat = HasAvailableSeat(course.Code)
                     || courses.Any(higher => higher.CategoryId == course.CategoryId
                                              && higher.Tier > course.Tier
-                                             && purchasedSeatsByCode.GetValueOrDefault(higher.Code) > usedSeatsByCode.GetValueOrDefault(higher.Code));
+                                             && HasAvailableSeat(higher.Code));
                 var access = course.Tier == 1 ? PulseCourseAccess.FreeFull
                     : (enrollment != null || hasPurchasedSeat) ? PulseCourseAccess.SeatActive
                     : PulseCourseAccess.Preview;
-                var block = !hasPosition && !awaitingFramework ? PulseBlockReason.NoPosition
-                    : zone == PulseCourseZone.OutsidePath ? PulseBlockReason.OutsidePath
-                    : zone == PulseCourseZone.AboveCeiling ? PulseBlockReason.AboveCeiling
-                    : !prereqApproved ? PulseBlockReason.PriorLevelRequired
+                // Changes to the roadmap apply to new learning. Keep existing in-progress courses usable.
+                var enforceRoadmap = !started;
+                var block = enforceRoadmap && !hasPosition && !awaitingFramework ? PulseBlockReason.NoPosition
+                    : enforceRoadmap && zone == PulseCourseZone.OutsidePath ? PulseBlockReason.OutsidePath
+                    : enforceRoadmap && zone == PulseCourseZone.AboveCeiling ? PulseBlockReason.AboveCeiling
+                    : enforceRoadmap && !prereqApproved ? PulseBlockReason.PriorLevelRequired
                     : preStatus == PulsePreStatus.Required ? PulseBlockReason.PreAssessmentRequired
                     : preStatus == PulsePreStatus.Pending ? PulseBlockReason.PreAssessmentPending
                     : course.Tier > 1 && enrollment == null && !hasPurchasedSeat ? PulseBlockReason.SeatRequired
@@ -467,11 +488,11 @@ public class PulseLearnerReader
                     : pre?.Decision == Statuses.FinalSubmissionDecision.Passed ? PulseApprovedVia.PreAssessment
                     : courseSubmissions.Any(s => s.Decision == Statuses.FinalSubmissionDecision.Passed) ? PulseApprovedVia.Final
                     : PulseApprovedVia.Legacy;
-                var slot = !hasPosition && !awaitingFramework ? PulseSlotStatus.NoPosition
+                var slot = enforceRoadmap && !hasPosition && !awaitingFramework ? PulseSlotStatus.NoPosition
                     : approved ? PulseSlotStatus.Completed
-                    : zone == PulseCourseZone.OutsidePath ? PulseSlotStatus.OutsidePath
-                    : zone == PulseCourseZone.AboveCeiling ? PulseSlotStatus.AboveCeiling
-                    : !prereqApproved ? PulseSlotStatus.AfterPriorLevel
+                    : enforceRoadmap && zone == PulseCourseZone.OutsidePath ? PulseSlotStatus.OutsidePath
+                    : enforceRoadmap && zone == PulseCourseZone.AboveCeiling ? PulseSlotStatus.AboveCeiling
+                    : enforceRoadmap && !prereqApproved ? PulseSlotStatus.AfterPriorLevel
                     : preStatus == PulsePreStatus.Required ? PulseSlotStatus.PreAssessment
                     : preStatus == PulsePreStatus.Pending ? PulseSlotStatus.PreReview
                     : finalStatus == PulseFinalStatus.Pending ? PulseSlotStatus.InReview

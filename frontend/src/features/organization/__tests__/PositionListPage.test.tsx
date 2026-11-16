@@ -7,6 +7,7 @@ import { PositionListPage } from '../pages/PositionListPage';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES } from '@/lib/roles';
 import * as posHooks from '@/hooks/use-job-positions';
+import * as deptHooks from '@/hooks/use-departments';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -148,6 +149,7 @@ describe('PositionListPage', () => {
 
   it('CreatePositionShowsValidationAndCallsApi', async () => {
     mockUserWithPermissions();
+    vi.spyOn(deptHooks, 'useDepartments').mockReturnValue({ data: { items: [{ id: 'dept-1', name: 'Kế toán' }] } } as never);
     const createMutateAsync = vi.fn().mockResolvedValue({ data: { data: { id: 'new-id' } } });
     vi.spyOn(posHooks, 'useCreateJobPosition').mockReturnValue({
       mutateAsync: createMutateAsync,
@@ -174,22 +176,20 @@ describe('PositionListPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Vui lòng nhập mã')).toBeInTheDocument();
-      expect(screen.getByText('Vui lòng nhập tên')).toBeInTheDocument();
+      expect(screen.getByText('Vui lòng chọn phòng ban')).toBeInTheDocument();
     });
 
-    const codeInput = screen.getByPlaceholderText('Ví dụ: KT-01');
-    const nameInput = screen.getByPlaceholderText('Ví dụ: Kế toán viên');
-
-    fireEvent.change(codeInput, { target: { value: 'QA-01' } });
-    fireEvent.change(nameInput, { target: { value: 'Quality Assurance' } });
+    fireEvent.change(screen.getByLabelText(/Mã vị trí/), { target: { value: 'ACCOUNTANT' } });
+    fireEvent.change(screen.getByLabelText(/Phòng ban/), { target: { value: 'dept-1' } });
 
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
       expect(createMutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({
-          code: 'QA-01',
-          name: 'Quality Assurance',
+          code: 'ACCOUNTANT',
+          name: 'Kế toán',
+          departmentId: 'dept-1',
         }),
       );
     });

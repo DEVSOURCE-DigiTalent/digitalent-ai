@@ -152,12 +152,15 @@ public class MemberDirectory
         return activeAccounts + pendingInvitations;
     }
 
-    /// <summary>Seat limit of the organization's plan; null = unlimited or no plan.</summary>
-    public Task<int?> GetSeatLimitAsync(Guid organizationId) =>
-        _context.Subscriptions
-            .Where(s => s.OrganizationId == organizationId)
-            .Select(s => s.SeatLimit)
-            .FirstOrDefaultAsync();
+    /// <summary>Seat limit for paid organizations. Enterprise trials can invite their full team.</summary>
+    public async Task<int?> GetSeatLimitAsync(Guid organizationId)
+    {
+        if (await _context.TrialWorkspaces.AnyAsync(t => t.OrganizationId == organizationId && t.ConvertedAt == null))
+            return null;
+
+        return await _context.Subscriptions.Where(s => s.OrganizationId == organizationId)
+            .Select(s => s.SeatLimit).FirstOrDefaultAsync();
+    }
 
     /// <summary>Active accounts holding the Owner role — the organization must always keep one.</summary>
     public Task<int> CountActiveOwnersAsync(Guid organizationId) =>

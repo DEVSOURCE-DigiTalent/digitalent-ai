@@ -35,7 +35,7 @@ public class DemoAccountSeedTests
         var users = await db.Users.Include(u => u.UserRoles).ToDictionaryAsync(u => u.Email);
         users.Keys.Should().BeEquivalentTo(new[]
         {
-            "platform@digitalent.ai", "mentor@digitalent.ai", "owner@digitalent.ai", "manager@digitalent.ai",
+            "platform@digitalent.ai", "admin@digitalent.ai", "mentor@digitalent.ai", "owner@digitalent.ai", "manager@digitalent.ai",
             "employee@digitalent.ai", "personal@digitalent.ai", "trial@digitalent.ai", "free@digitalent.ai",
         });
         users["manager@digitalent.ai"].PasswordHash.Should().Be("existing-hash");
@@ -54,9 +54,11 @@ public class DemoAccountSeedTests
         foreach (var (email, expected) in new[]
         {
             ("platform@digitalent.ai", "PLATFORM_ADMIN"), ("mentor@digitalent.ai", "MENTOR"), ("owner@digitalent.ai", "OWNER"),
-            ("manager@digitalent.ai", "MANAGER"), ("employee@digitalent.ai", "EMPLOYEE"),
+            ("admin@digitalent.ai", "PLATFORM_ADMIN"), ("employee@digitalent.ai", "EMPLOYEE"),
         })
             users[email].UserRoles.Select(r => roles[r.RoleId]).Should().Equal(expected);
+
+        users["manager@digitalent.ai"].UserRoles.Select(r => roles[r.RoleId]).Should().BeEquivalentTo("MANAGER", "EMPLOYEE");
 
         (await db.Departments.CountAsync()).Should().Be(1);
         (await db.Employees.CountAsync()).Should().Be(3);

@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,13 +25,16 @@ public class GetCourseAssignmentByIdUseCase : IUseCase<GetCourseAssignmentByIdIn
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var dueSoonThreshold = today.AddDays(7);
 
+        var employees = new EmployeeScope(_context, _currentUser).VisibleEmployees().AsNoTracking();
+        var placements = EffectiveJobPositions.Resolve(_context, employees);
         var result = await (
             from ca in _context.CourseAssignments.AsNoTracking()
-            join emp in new EmployeeScope(_context, _currentUser).VisibleEmployees().AsNoTracking() on ca.EmployeeId equals emp.Id
+            join placement in placements on ca.EmployeeId equals placement.Employee.Id
+            let emp = placement.Employee
             join course in _context.Courses.AsNoTracking() on ca.CourseId equals course.Id
             join dept in _context.Departments.AsNoTracking() on emp.DepartmentId equals dept.Id into deptJoin
             from dept in deptJoin.DefaultIfEmpty()
-            join pos in _context.JobPositions.AsNoTracking() on emp.JobPositionId equals pos.Id into posJoin
+            join pos in _context.JobPositions.AsNoTracking() on placement.PositionId equals pos.Id into posJoin
             from pos in posJoin.DefaultIfEmpty()
             join assignedBy in _context.Users.AsNoTracking() on ca.AssignedByUserId equals assignedBy.Id into userJoin
             from assignedBy in userJoin.DefaultIfEmpty()

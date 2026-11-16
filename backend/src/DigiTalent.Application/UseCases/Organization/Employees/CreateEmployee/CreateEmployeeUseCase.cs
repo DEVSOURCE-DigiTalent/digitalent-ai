@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Departments;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -59,23 +60,14 @@ public class CreateEmployeeUseCase : IUseCase<CreateEmployeeUseCaseInput, Create
         if (positionId.HasValue)
         {
             var positionExists = await _context.JobPositions
-                .AnyAsync(p => p.Id == positionId.Value && p.OrganizationId == organizationId && p.Status != Statuses.MasterData.Archived);
+                .AnyAsync(p => p.Id == positionId.Value && p.OrganizationId == organizationId && p.DepartmentId == input.DepartmentId && p.Status != Statuses.MasterData.Archived);
             if (!positionExists)
             {
-                throw new BadRequestException($"Job position '{positionId.Value}' does not exist or is archived.");
+                throw new BadRequestException($"Job position '{positionId.Value}' không thuộc phòng ban đã chọn hoặc đã lưu trữ.");
             }
         }
 
-        // 5. Quản lý trực tiếp (nếu có) phải thuộc cùng tổ chức và chưa bị archive
-        if (input.DirectManagerId.HasValue)
-        {
-            var managerExists = await _context.Employees
-                .AnyAsync(m => m.Id == input.DirectManagerId.Value && m.OrganizationId == organizationId && m.Status != Statuses.Employee.Archived);
-            if (!managerExists)
-            {
-                throw new BadRequestException($"Direct manager '{input.DirectManagerId.Value}' does not exist or is archived.");
-            }
-        }
+        var managerId = await DepartmentRules.ResolveDirectManagerAsync(_context, input.DepartmentId, input.DirectManagerId);
 
         // 6. Tài khoản user (nếu có) phải tồn tại và chưa được gán cho nhân sự khác
         if (input.UserId.HasValue)
@@ -107,7 +99,7 @@ public class CreateEmployeeUseCase : IUseCase<CreateEmployeeUseCaseInput, Create
             FullName = input.FullName.Trim(),
             DepartmentId = input.DepartmentId,
             JobPositionId = positionId,
-            DirectManagerId = input.DirectManagerId,
+            DirectManagerId = managerId,
             WorkEmail = email,
             Phone = string.IsNullOrWhiteSpace(input.Phone) ? null : input.Phone.Trim(),
             JoinedAt = input.JoinedAt,

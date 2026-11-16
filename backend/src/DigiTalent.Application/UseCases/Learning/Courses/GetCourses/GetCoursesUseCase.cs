@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Entities;
@@ -30,7 +31,8 @@ public class GetCoursesUseCase : IUseCase<GetCoursesUseCaseInput, GetCoursesUseC
         if (!string.IsNullOrWhiteSpace(input.Search))
         {
             var search = input.Search.Trim().ToLower();
-            query = query.Where(x => x.Code.ToLower().Contains(search) || x.Title.ToLower().Contains(search));
+            var aliases = CourseCodes.Aliases(search);
+            query = query.Where(x => x.Code.ToLower().Contains(search) || aliases.Contains(x.Code) || x.Title.ToLower().Contains(search));
         }
 
         if (!string.IsNullOrWhiteSpace(input.Status))
@@ -141,11 +143,12 @@ public class GetCoursesUseCase : IUseCase<GetCoursesUseCaseInput, GetCoursesUseC
 
         foreach (var item in items)
         {
+            item.Code = CourseCodes.Canonical(item.Code);
             item.SeatsPurchased = seatOrders
-                .Where(s => s.Code == item.Code && s.Kind == Domain.Constants.PlatformCatalog.SeatOrderKind.Purchase)
+                .Where(s => CourseCodes.Canonical(s.Code) == item.Code && s.Kind == Domain.Constants.PlatformCatalog.SeatOrderKind.Purchase)
                 .Sum(s => s.Seats);
             item.SeatsGranted = seatOrders
-                .Where(s => s.Code == item.Code && s.Kind == Domain.Constants.PlatformCatalog.SeatOrderKind.AdminGrant)
+                .Where(s => CourseCodes.Canonical(s.Code) == item.Code && s.Kind == Domain.Constants.PlatformCatalog.SeatOrderKind.AdminGrant)
                 .Sum(s => s.Seats);
         }
 

@@ -30,7 +30,6 @@ export function TrialEmployeeResults({ assessment, overview }: {
   const roadmapReady = Boolean(overview?.hasPosition && overview.hasTargets && !overview.awaitingFramework);
   const canTryCourses = Boolean(overview?.awaitingFramework);
   const attained = assessment.levels?.filter((level) => level > 0).length ?? 0;
-  const targets = new Map(overview?.domains?.map((domain) => [domain.categoryId, domain.pathTop]));
 
   return (
     <>
@@ -63,10 +62,10 @@ export function TrialEmployeeResults({ assessment, overview }: {
             <div>
               <h3 className="tt-action-callout-title">{translateUi(roadmapReady
                 ? 'Lộ trình học tập của bạn đã sẵn sàng'
-                : 'Đang chờ doanh nghiệp thiết lập khung năng lực')}</h3>
+                : 'Đã có kết quả đối chiếu đầu vào')}</h3>
               <p className="tt-action-callout-desc">{translateUi(roadmapReady
                 ? 'Xem các khóa học phù hợp với khung năng lực của doanh nghiệp.'
-                : 'Bạn có thể học thử các khóa Cơ bản đang công khai.')}</p>
+                : 'Bạn có thể xem chuẩn theo từng lĩnh vực và học thử các khóa Cơ bản đang công khai.')}</p>
             </div>
           </div>
           <Link to={PULSE_PATHS.path} className="tt-btn-primary tt-action-callout-btn">
@@ -88,7 +87,7 @@ export function TrialEmployeeResults({ assessment, overview }: {
             const detail = details.find((item) => item.categoryId === domain.categoryId);
             const open = openCategory === domain.categoryId;
             const level = assessment.levels?.[index] ?? 0;
-            const target = roadmapReady ? targets.get(domain.categoryId) : undefined;
+            const target = detail?.targetLevel;
             const tiers = [
               [detail?.basicCorrect, detail?.basicTotal],
               [detail?.intermediateCorrect, detail?.intermediateTotal],
@@ -105,7 +104,7 @@ export function TrialEmployeeResults({ assessment, overview }: {
                       <div className="tt-domain-subline">
                         {translateUi('Hiện tại')}{' '}
                         <strong className="tt-domain-highlight">{detail?.mentorLevel != null && <>{translateUi('Mentor xác nhận')} · </>}{translateUi(levelName(level))}</strong>
-                        {target ? <span> · {translateUi('Mục tiêu')}: {translateUi(levelName(target))}</span> : null}
+                        {target ? <span> · {translateUi(detail?.usesSystemReference ? 'Chuẩn hệ thống' : 'Chuẩn doanh nghiệp')}: {translateUi(levelName(target))} · {translateUi(level < target ? 'Cần bổ sung' : 'Đạt chuẩn')}</span> : null}
                       </div>
                     </div>
                   </div>

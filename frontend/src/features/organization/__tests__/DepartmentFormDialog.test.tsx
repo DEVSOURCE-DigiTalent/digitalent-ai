@@ -25,7 +25,7 @@ describe('DepartmentFormDialog', () => {
     vi.clearAllMocks();
     vi.spyOn(deptHooks, 'useDepartments').mockReturnValue({ data: { items: [] } } as never);
     vi.spyOn(deptHooks, 'useUpdateDepartment').mockReturnValue({ mutateAsync: vi.fn() } as never);
-    vi.spyOn(memberHooks, 'useMembers').mockReturnValue({ data: { items: [] } } as never);
+    vi.spyOn(memberHooks, 'useMembers').mockReturnValue({ data: { items: [{ kind: 'member', employeeId: 'emp-1', fullName: 'Employee', email: 'emp-1@digitalent.ai' }] } } as never);
   });
 
   it('shows the reason the server gave when the code is already in use', async () => {
@@ -36,6 +36,7 @@ describe('DepartmentFormDialog', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Ví dụ: ENG'), { target: { value: 'OPS' } });
     fireEvent.change(screen.getByPlaceholderText('Ví dụ: Kỹ thuật'), { target: { value: 'Operations' } });
+    fireEvent.change(screen.getByRole('combobox', { name: /Trưởng phòng/ }), { target: { value: 'emp-1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }));
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Department code 'OPS' already exists."));
@@ -49,6 +50,7 @@ describe('DepartmentFormDialog', () => {
 
     fireEvent.change(screen.getByPlaceholderText('Ví dụ: ENG'), { target: { value: 'OPS' } });
     fireEvent.change(screen.getByPlaceholderText('Ví dụ: Kỹ thuật'), { target: { value: 'Operations' } });
+    fireEvent.change(screen.getByRole('combobox', { name: /Trưởng phòng/ }), { target: { value: 'emp-1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Lưu' }));
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Không tạo được phòng ban'));
@@ -65,7 +67,7 @@ describe('DepartmentFormDialog', () => {
   describe('editing', () => {
     const department = { id: 'dept-1', code: 'QA', name: 'Kiểm thử chất lượng', status: 'ACTIVE' as const, managerEmployeeId: 'emp-9' };
     const member = (employeeId: string, fullName: string) => ({ id: `user-${employeeId}`, kind: 'member', employeeId, fullName, email: `${employeeId}@digitalent.ai`, roles: [], status: 'ACTIVE' });
-    const managerSelect = () => screen.getByRole('combobox', { name: 'Người quản lý' }) as HTMLSelectElement;
+    const managerSelect = () => screen.getByRole('textbox', { name: 'Trưởng phòng' }) as HTMLInputElement;
 
     beforeEach(() => {
       vi.spyOn(deptHooks, 'useDepartment').mockReturnValue({
@@ -74,15 +76,15 @@ describe('DepartmentFormDialog', () => {
       } as never);
     });
 
-    it('selects the manager even when the member list arrives after the department', () => {
+    it('shows the assigned manager without waiting for the member list', () => {
       const useMembers = vi.spyOn(memberHooks, 'useMembers').mockReturnValue({ data: undefined, isLoading: true } as never);
       const { rerender } = renderWithClient(<DepartmentFormDialog open onClose={vi.fn()} department={department} />);
-      expect(screen.getByRole('button', { name: 'Lưu' })).toBeDisabled();
+      expect(managerSelect()).toHaveAttribute('readonly');
 
       useMembers.mockReturnValue({ data: { items: [member('emp-1', 'Employee'), member('emp-9', 'Department Manager')] }, isLoading: false } as never);
       rerender(<QueryClientProvider client={queryClient}><DepartmentFormDialog open onClose={vi.fn()} department={department} /></QueryClientProvider>);
 
-      expect(managerSelect().value).toBe('emp-9');
+      expect(managerSelect().value).toBe('Department Manager');
       expect(screen.getByDisplayValue('Đảm bảo chất lượng sản phẩm')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Lưu' })).toBeEnabled();
     });
@@ -91,8 +93,8 @@ describe('DepartmentFormDialog', () => {
       vi.spyOn(memberHooks, 'useMembers').mockReturnValue({ data: { items: [member('emp-1', 'Employee')] }, isLoading: false } as never);
       renderWithClient(<DepartmentFormDialog open onClose={vi.fn()} department={department} />);
 
-      expect(managerSelect().value).toBe('emp-9');
-      expect(managerSelect().selectedOptions[0].textContent).toBe('Department Manager');
+      expect(managerSelect().value).toBe('Department Manager');
+      expect(managerSelect()).toHaveAttribute('readonly');
     });
   });
 });

@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -35,12 +36,13 @@ public class UpdatePlatformCatalogCourseUseCase : IUseCase<UpdatePlatformCatalog
         var identity = await _context.PlatformCourses.FirstAsync(c => c.Id == course.CourseId);
         if (!string.IsNullOrWhiteSpace(input.Code))
         {
-            var code = input.Code.Trim().ToUpperInvariant();
-            if (code != identity.Code)
+            var code = CourseCodes.Canonical(input.Code.Trim().ToUpperInvariant());
+            var aliases = CourseCodes.Aliases(code);
+            if (code != CourseCodes.Canonical(identity.Code))
             {
                 if (identity.PublishedAt != null)
                     throw new BadRequestException("Mã của khóa đã công bố không đổi được.", "code", "CODE_LOCKED");
-                if (await _context.PlatformCourses.AnyAsync(c => c.Code == code && c.Id != identity.Id))
+                if (await _context.PlatformCourses.AnyAsync(c => aliases.Contains(c.Code) && c.Id != identity.Id))
                     throw new ConflictException($"Mã khóa học '{code}' đã được dùng.");
                 identity.Code = code;
             }

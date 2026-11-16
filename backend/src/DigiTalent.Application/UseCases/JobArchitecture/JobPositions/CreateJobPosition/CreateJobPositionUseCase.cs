@@ -22,12 +22,23 @@ public class CreateJobPositionUseCase : IUseCase<CreateJobPositionUseCaseInput, 
 
     public async Task<CreateJobPositionUseCaseOutput> ExecuteAsync(CreateJobPositionUseCaseInput input)
     {
-        var organizationId = _currentUser.GetRequiredOrganizationId();
-        var code = input.Code.Trim().ToUpper();
+        CreateJobPositionUseCaseOutput? result = null;
+        await _context.ExecuteInSerializableTransactionAsync(async () =>
+        {
+            result = await SaveAsync(input);
+        });
+        return result!;
+    }
 
-        var codeExists = await _context.JobPositions
-            .AnyAsync(p => p.OrganizationId == organizationId && p.Code == code);
-        if (codeExists)
+    private async Task<CreateJobPositionUseCaseOutput> SaveAsync(CreateJobPositionUseCaseInput input)
+    {
+        var organizationId = _currentUser.GetRequiredOrganizationId();
+        var code = input.Code.Trim().ToUpperInvariant();
+        if (!JobPositionCatalog.Positions.TryGetValue(code, out var name))
+            throw new BadRequestException("Chọn một trong 5 vị trí chuẩn.", "code", "INVALID_POSITION_CODE");
+
+        var position = await _context.JobPositions.SingleOrDefaultAsync(p => p.OrganizationId == organizationId && p.Code == code);
+        if (position is not null && (position.DepartmentId.HasValue || position.Status != Statuses.MasterData.Active))
         {
             throw new ConflictException($"Job position code '{code}' already exists in your organization.");
         }
@@ -44,21 +55,21 @@ public class CreateJobPositionUseCase : IUseCase<CreateJobPositionUseCaseInput, 
             }
         }
 
-        await JobPositionRules.EnsureValidDepartmentAsync(_context, organizationId, input.DepartmentId);
+        await JobPositionRules.EnsureDepartmentSlotAsync(_context, organizationId, input.DepartmentId);
 
-        var position = new JobPosition
+        await JobPositionRules.EnsureNameAvailableAsync(_context, organizationId, name, position?.Id);
+
+        if (position == null)
         {
-            OrganizationId = organizationId,
-            JobFamilyId = input.JobFamilyId,
-            DepartmentId = input.DepartmentId,
-            Code = code,
-            Name = input.Name.Trim(),
-            Description = input.Description,
-            JobGrade = JobPositionRules.NormalizeGrade(input.JobGrade),
-            Status = Statuses.MasterData.Active,
-        };
-
-        _context.JobPositions.Add(position);
+            position = new JobPosition { OrganizationId = organizationId, Code = code };
+            _context.JobPositions.Add(position);
+        }
+        position.JobFamilyId = input.JobFamilyId;
+        position.DepartmentId = input.DepartmentId;
+        position.Name = name;
+        position.Description = input.Description;
+        position.JobGrade = JobPositionRules.NormalizeGrade(input.JobGrade);
+        position.Status = Statuses.MasterData.Active;
         await _context.SaveChangesAsync();
 
         await _auditService.LogAsync("POSITION_CREATED", "job_positions", position.Id,

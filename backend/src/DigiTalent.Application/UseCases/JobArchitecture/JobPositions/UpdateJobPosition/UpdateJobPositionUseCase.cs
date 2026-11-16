@@ -21,6 +21,16 @@ public class UpdateJobPositionUseCase : IUseCase<UpdateJobPositionUseCaseInput, 
 
     public async Task<UpdateJobPositionUseCaseOutput> ExecuteAsync(UpdateJobPositionUseCaseInput input)
     {
+        UpdateJobPositionUseCaseOutput? result = null;
+        await _context.ExecuteInSerializableTransactionAsync(async () =>
+        {
+            result = await SaveAsync(input);
+        });
+        return result!;
+    }
+
+    private async Task<UpdateJobPositionUseCaseOutput> SaveAsync(UpdateJobPositionUseCaseInput input)
+    {
         var organizationId = _currentUser.GetRequiredOrganizationId();
 
         var position = await _context.JobPositions
@@ -36,7 +46,11 @@ public class UpdateJobPositionUseCase : IUseCase<UpdateJobPositionUseCaseInput, 
             throw new ConflictException("Archived job positions cannot be edited.");
         }
 
-        var code = input.Code.Trim().ToUpper();
+        var code = input.Code.Trim().ToUpperInvariant();
+        if (!string.Equals(code, position.Code, StringComparison.OrdinalIgnoreCase))
+            throw new BadRequestException("Mã vị trí đã được cố định theo bộ chuẩn.", "code", "POSITION_CODE_IMMUTABLE");
+        var name = JobPositionCatalog.Positions.TryGetValue(code, out var canonicalName)
+            ? canonicalName : input.Name.Trim();
         var codeExists = await _context.JobPositions
             .AnyAsync(p => p.OrganizationId == organizationId && p.Code == code && p.Id != input.Id);
         if (codeExists)
@@ -57,10 +71,24 @@ public class UpdateJobPositionUseCase : IUseCase<UpdateJobPositionUseCaseInput, 
         }
 
         await JobPositionRules.EnsureValidDepartmentAsync(_context, organizationId, input.DepartmentId);
+        if (position.DepartmentId != input.DepartmentId)
+        {
+            await JobPositionRules.EnsureDepartmentSlotAsync(_context, organizationId, input.DepartmentId, position.Id);
+            var usedByOtherDepartments = await _context.Employees.AnyAsync(e => e.OrganizationId == organizationId
+                && e.JobPositionId == position.Id && e.DepartmentId != input.DepartmentId && e.Status != Statuses.Employee.Archived);
+            var hasOtherInvitations = await _context.MemberInvitations.AnyAsync(i => i.OrganizationId == organizationId
+                && i.JobPositionId == position.Id && i.DepartmentId != input.DepartmentId
+                && i.Status == Statuses.MemberInvitation.Pending && i.ExpiresAt > DateTimeOffset.UtcNow);
+            if (usedByOtherDepartments || hasOtherInvitations)
+                throw new ConflictException("Vị trí đang được dùng bởi nhân sự hoặc lời mời ở phòng ban khác. Cập nhật các phân công đó trước.");
+        }
+
+        if (!string.Equals(position.Name.Trim(), name, StringComparison.OrdinalIgnoreCase))
+            await JobPositionRules.EnsureNameAvailableAsync(_context, organizationId, name, position.Id);
 
         var oldValues = new { position.Code, position.Name, position.DepartmentId, position.JobGrade, position.Status };
         position.Code = code;
-        position.Name = input.Name.Trim();
+        position.Name = name;
         position.Description = input.Description;
         position.JobFamilyId = input.JobFamilyId;
         position.DepartmentId = input.DepartmentId;

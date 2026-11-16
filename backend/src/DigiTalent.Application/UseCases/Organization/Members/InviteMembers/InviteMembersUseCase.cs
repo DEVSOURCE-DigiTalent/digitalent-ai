@@ -50,158 +50,194 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
             .Where(o => o.Id == organizationId)
             .Select(o => o.Name)
             .FirstOrDefaultAsync() ?? string.Empty;
-        var roleIds = await _context.Roles.ToDictionaryAsync(r => r.Code, r => r.Id);
-        var allDepartments = await _context.Departments
-            .Where(d => d.OrganizationId == organizationId && d.Status == Statuses.MasterData.Active)
-            .ToListAsync();
-        var departments = allDepartments.ToDictionary(d => d.Id, d => d.Name);
-
-        var allPositions = await _context.JobPositions
-            .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active)
-            .ToListAsync();
-        var positions = allPositions.ToDictionary(p => p.Id, p => new PositionInfo(p.Name, p.DepartmentId));
-        var canGrantRoles = await _permissionService.HasAnyAsync(_currentUser.Roles, new[] { Permissions.UserRole.RoleAssignBusiness });
-
-        // Auto-resolve or create department and job position for rows imported from file
-        foreach (var row in input.Rows)
-        {
-            if (!row.DepartmentId.HasValue && !string.IsNullOrWhiteSpace(row.DepartmentName))
-            {
-                var cleanDeptName = row.DepartmentName.Trim();
-                var matchedDept = allDepartments.FirstOrDefault(d =>
-                    d.Name.Equals(cleanDeptName, StringComparison.OrdinalIgnoreCase)
-                    || d.Code.Equals(cleanDeptName, StringComparison.OrdinalIgnoreCase));
-
-                if (matchedDept != null)
-                {
-                    row.DepartmentId = matchedDept.Id;
-                }
-                else
-                {
-                    var newDeptCode = $"PB-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
-                    var newDept = new Department
-                    {
-                        OrganizationId = organizationId,
-                        Code = newDeptCode,
-                        Name = cleanDeptName,
-                        Status = Statuses.MasterData.Active,
-                    };
-                    _context.Departments.Add(newDept);
-                    await _context.SaveChangesAsync();
-                    allDepartments.Add(newDept);
-                    departments[newDept.Id] = newDept.Name;
-                    row.DepartmentId = newDept.Id;
-                }
-            }
-
-            if (!row.JobPositionId.HasValue && !string.IsNullOrWhiteSpace(row.JobPositionName))
-            {
-                var cleanPosName = row.JobPositionName.Trim();
-                var matchedPos = allPositions.FirstOrDefault(p =>
-                    (p.Name.Equals(cleanPosName, StringComparison.OrdinalIgnoreCase) || p.Code.Equals(cleanPosName, StringComparison.OrdinalIgnoreCase))
-                    && (!p.DepartmentId.HasValue || p.DepartmentId == row.DepartmentId));
-
-                if (matchedPos != null)
-                {
-                    row.JobPositionId = matchedPos.Id;
-                }
-                else
-                {
-                    var newPosCode = $"VT-{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
-                    var newPos = new JobPosition
-                    {
-                        OrganizationId = organizationId,
-                        DepartmentId = row.DepartmentId,
-                        Code = newPosCode,
-                        Name = cleanPosName,
-                        Status = Statuses.MasterData.Active,
-                    };
-                    _context.JobPositions.Add(newPos);
-                    await _context.SaveChangesAsync();
-                    allPositions.Add(newPos);
-                    positions[newPos.Id] = new PositionInfo(newPos.Name, newPos.DepartmentId);
-                    row.JobPositionId = newPos.Id;
-                }
-            }
-        }
-
-        var emails = input.Rows.Select(r => NormalizeEmail(r.Email)).ToList();
-        var takenEmails = (await _context.Users
-                .Where(u => emails.Contains(u.Email))
-                .Select(u => u.Email)
-                .ToListAsync())
-            .Concat(await _context.MemberInvitations
-                .Where(i => i.OrganizationId == organizationId
-                            && i.Status == Statuses.MemberInvitation.Pending
-                            && emails.Contains(i.Email))
-                .Select(i => i.Email)
-                .ToListAsync())
-            .ToHashSet();
-        var takenCodes = (await _context.Employees
-                .Where(e => e.OrganizationId == organizationId)
-                .Select(e => e.EmployeeCode)
-                .ToListAsync())
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var seatLimit = await _directory.GetSeatLimitAsync(organizationId);
-        var seatsUsed = await _directory.CountSeatsInUseAsync(organizationId);
-
-        // 2. Check each row; accepted rows become invitations
         var accepted = new List<(MemberInvitation Invitation, string Token, string Role)>();
-        foreach (var row in input.Rows)
+        var departments = new Dictionary<Guid, string>();
+        var positions = new Dictionary<Guid, string>();
+
+        await _context.ExecuteInSerializableTransactionAsync(async () =>
         {
-            var email = NormalizeEmail(row.Email);
-            var fullName = row.FullName?.Trim() ?? string.Empty;
-            var employeeCode = string.IsNullOrWhiteSpace(row.EmployeeCode) ? null : row.EmployeeCode.Trim().ToUpperInvariant();
-            var roleCode = MemberRoles.ToRoleCode(row.Role);
+            var roleIds = await _context.Roles.ToDictionaryAsync(r => r.Code, r => r.Id);
+            var allDepartments = await _context.Departments
+                .Where(d => d.OrganizationId == organizationId && d.Status == Statuses.MasterData.Active)
+                .ToListAsync();
+            departments = allDepartments.ToDictionary(d => d.Id, d => d.Name);
 
-            var reason = Reject(email, fullName, employeeCode, roleCode, row, canGrantRoles, takenEmails, takenCodes, departments, positions);
-            if (reason == null && seatLimit.HasValue && seatsUsed >= seatLimit.Value)
+            var allPositions = await _context.JobPositions
+                .Where(p => p.OrganizationId == organizationId)
+                .ToListAsync();
+            positions = allPositions.ToDictionary(p => p.Id, p => p.Name);
+            var canGrantRoles = await _permissionService.HasAnyAsync(_currentUser.Roles, new[] { Permissions.UserRole.RoleAssignBusiness });
+
+            var emails = input.Rows.Select(r => NormalizeEmail(r.Email)).ToList();
+            var takenEmails = (await _context.Users
+                    .Where(u => emails.Contains(u.Email))
+                    .Select(u => u.Email)
+                    .ToListAsync())
+                .Concat(await _context.MemberInvitations
+                    .Where(i => i.OrganizationId == organizationId
+                                && i.Status == Statuses.MemberInvitation.Pending
+                                && emails.Contains(i.Email))
+                    .Select(i => i.Email)
+                    .ToListAsync())
+                .ToHashSet();
+            var takenCodes = (await _context.Employees
+                    .Where(e => e.OrganizationId == organizationId)
+                    .Select(e => e.EmployeeCode)
+                    .ToListAsync())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var seatLimit = await _directory.GetSeatLimitAsync(organizationId);
+            var seatsUsed = await _directory.CountSeatsInUseAsync(organizationId);
+
+            // 2. Check each row; accepted rows become invitations
+            var managerRoleId = roleIds.TryGetValue(Roles.Manager, out var managerId) ? managerId : Guid.Empty;
+            var reservedDepartments = (await _context.MemberInvitations
+                    .Where(i => i.OrganizationId == organizationId && i.RoleId == managerRoleId
+                        && i.DepartmentId.HasValue && i.Status == Statuses.MemberInvitation.Pending && i.ExpiresAt > now)
+                    .Select(i => i.DepartmentId!.Value).ToListAsync()).ToHashSet();
+            var staffedDepartments = allDepartments.Where(d => d.ManagerEmployeeId.HasValue).Select(d => d.Id).ToHashSet();
+            foreach (var row in input.Rows.OrderByDescending(r => MemberRoles.ToRoleCode(r.Role) == Roles.Manager))
             {
-                reason = "Đã hết quyền sử dụng của gói.";
+                var email = NormalizeEmail(row.Email);
+                var fullName = row.FullName?.Trim() ?? string.Empty;
+                var employeeCode = string.IsNullOrWhiteSpace(row.EmployeeCode) ? null : row.EmployeeCode.Trim().ToUpperInvariant();
+                var roleCode = MemberRoles.ToRoleCode(row.Role);
+
+                var department = row.DepartmentId.HasValue
+                    ? allDepartments.FirstOrDefault(d => d.Id == row.DepartmentId.Value)
+                    : allDepartments.FirstOrDefault(d =>
+                        d.Name.Equals(row.DepartmentName?.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                        d.Code.Equals(row.DepartmentName?.Trim(), StringComparison.OrdinalIgnoreCase));
+                var reason = RejectIdentity(email, fullName, employeeCode, roleCode, canGrantRoles, takenEmails, takenCodes);
+                if (reason == null)
+                {
+                    reason = row.DepartmentId.HasValue && department == null ? "Phòng ban không hợp lệ."
+                        : (roleCode == Roles.Employee || roleCode == Roles.Manager) && department == null &&
+                            (roleCode != Roles.Manager || string.IsNullOrWhiteSpace(row.DepartmentName) || row.DepartmentName.Trim().Length > 150)
+                            ? "Phòng ban cần có trưởng phòng trước khi thêm nhân viên."
+                        : roleCode == Roles.Manager && department != null &&
+                            (staffedDepartments.Contains(department.Id) || reservedDepartments.Contains(department.Id))
+                            ? "Phòng ban đã có trưởng phòng hoặc lời mời trưởng phòng."
+                        : roleCode == Roles.Employee && department != null && !staffedDepartments.Contains(department.Id) &&
+                            !reservedDepartments.Contains(department.Id)
+                            ? "Phòng ban cần có trưởng phòng trước khi thêm nhân viên."
+                        : null;
+                }
+                if (reason == null && seatLimit.HasValue && seatsUsed >= seatLimit.Value)
+                {
+                    reason = "Đã hết quyền sử dụng của gói.";
+                }
+
+                if (reason != null)
+                {
+                    output.Rejected.Add(new RejectedInvitation { Email = email, Reason = reason });
+                    continue;
+                }
+
+                var newDepartment = department == null && roleCode == Roles.Manager;
+                if (newDepartment)
+                {
+                    department = new Department
+                    {
+                        OrganizationId = organizationId, Code = $"PB-{Guid.NewGuid():N}"[..15],
+                        Name = row.DepartmentName!.Trim(), Status = Statuses.MasterData.Active,
+                    };
+                }
+
+                var positionName = row.JobPositionName?.Trim() ?? string.Empty;
+                var departmentPositions = department == null ? new List<JobPosition>()
+                    : allPositions.Where(p => p.DepartmentId == department.Id && p.Status != Statuses.MasterData.Archived).ToList();
+                bool MatchesPosition(JobPosition item) => item.Name.Equals(positionName, StringComparison.OrdinalIgnoreCase)
+                    || item.Code.Equals(positionName, StringComparison.OrdinalIgnoreCase)
+                    || item.Code.Equals(JobPositionCatalog.ResolveCode(positionName), StringComparison.OrdinalIgnoreCase);
+                var position = row.JobPositionId.HasValue
+                    ? departmentPositions.Find(p => p.Id == row.JobPositionId.Value)
+                    : departmentPositions.Find(MatchesPosition);
+                var nameBelongsToAnotherDepartment = positionName.Length > 0 && allPositions.Any(p =>
+                    p.DepartmentId.HasValue && p.DepartmentId != department?.Id && MatchesPosition(p));
+                if (position is { Status: not Statuses.MasterData.Active } ||
+                    (position == null && (row.JobPositionId.HasValue ||
+                        (positionName.Length > 0 && (departmentPositions.Count > 0 || nameBelongsToAnotherDepartment)))))
+                {
+                    output.Rejected.Add(new RejectedInvitation { Email = email, Reason = "Vị trí công việc không thuộc phòng ban đã chọn hoặc không còn hoạt động." });
+                    continue;
+                }
+
+                if (position == null && (roleCode == Roles.Employee || roleCode == Roles.Manager))
+                {
+                    if (department == null || positionName.Length is 0 or > 150)
+                    {
+                        output.Rejected.Add(new RejectedInvitation { Email = email, Reason = "Nhập vị trí công việc hợp lệ cho phòng ban." });
+                        continue;
+                    }
+                    var code = JobPositionCatalog.ResolveCode(positionName);
+                    if (code == null)
+                    {
+                        output.Rejected.Add(new RejectedInvitation { Email = email, Reason = "Chọn một trong 5 vị trí chuẩn." });
+                        continue;
+                    }
+
+                    position = allPositions.Find(p => p.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
+                    if (position != null && (position.DepartmentId.HasValue || position.Status != Statuses.MasterData.Active))
+                    {
+                        output.Rejected.Add(new RejectedInvitation { Email = email, Reason = "Vị trí chuẩn đã được dùng tại phòng khác hoặc đã ngừng sử dụng." });
+                        continue;
+                    }
+
+                    if (position == null)
+                    {
+                        position = new JobPosition { OrganizationId = organizationId, Code = code, Name = JobPositionCatalog.Positions[code] };
+                        _context.JobPositions.Add(position);
+                        allPositions.Add(position);
+                    }
+                    position.DepartmentId = department.Id;
+                    positions[position.Id] = position.Name;
+                }
+
+                if (newDepartment)
+                {
+                    _context.Departments.Add(department!);
+                    allDepartments.Add(department!);
+                    departments[department!.Id] = department.Name;
+                }
+
+                row.JobPositionId = position?.Id;
+                row.DepartmentId = department?.Id;
+                if (roleCode == Roles.Manager && department != null)
+                    reservedDepartments.Add(department.Id);
+
+                var token = InvitationTokens.NewToken();
+                var invitation = new MemberInvitation
+                {
+                    OrganizationId = organizationId,
+                    Email = email,
+                    FullName = fullName,
+                    EmployeeCode = employeeCode,
+                    RoleId = roleIds[roleCode!],
+                    DepartmentId = row.DepartmentId,
+                    JobPositionId = row.JobPositionId,
+                    TokenHash = InvitationTokens.Hash(token),
+                    Status = Statuses.MemberInvitation.Pending,
+                    InvitedByUserId = _currentUser.UserId,
+                    InvitedAt = now,
+                    ExpiresAt = now.Add(InvitationTokens.Lifetime),
+                };
+                _context.MemberInvitations.Add(invitation);
+                accepted.Add((invitation, token, MemberRoles.FromRoleCode(roleCode!)!));
+
+                takenEmails.Add(email);
+                if (employeeCode != null)
+                {
+                    takenCodes.Add(employeeCode);
+                }
+
+                seatsUsed++;
             }
 
-            if (reason != null)
-            {
-                output.Rejected.Add(new RejectedInvitation { Email = email, Reason = reason });
-                continue;
-            }
+            if (accepted.Count > 0) await _context.SaveChangesAsync();
+        });
 
-            var token = InvitationTokens.NewToken();
-            var invitation = new MemberInvitation
-            {
-                OrganizationId = organizationId,
-                Email = email,
-                FullName = fullName,
-                EmployeeCode = employeeCode,
-                RoleId = roleIds[roleCode!],
-                DepartmentId = row.DepartmentId,
-                JobPositionId = row.JobPositionId,
-                TokenHash = InvitationTokens.Hash(token),
-                Status = Statuses.MemberInvitation.Pending,
-                InvitedByUserId = _currentUser.UserId,
-                InvitedAt = now,
-                ExpiresAt = now.Add(InvitationTokens.Lifetime),
-            };
-            _context.MemberInvitations.Add(invitation);
-            accepted.Add((invitation, token, MemberRoles.FromRoleCode(roleCode!)!));
-
-            takenEmails.Add(email);
-            if (employeeCode != null)
-            {
-                takenCodes.Add(employeeCode);
-            }
-
-            seatsUsed++;
-        }
-
-        if (accepted.Count == 0)
-        {
-            return output;
-        }
-
-        // 3. Save all invitations at once, then deliver the links and log (outside the unit of work)
-        await _context.SaveChangesAsync();
+        if (accepted.Count == 0) return output;
 
         var trial = await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == organizationId);
         var assessmentNote = trial?.TestDeadline is { } deadline
@@ -211,8 +247,17 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
             ? assessmentNote
             : input.EmailNote.Contains("đánh giá") ? input.EmailNote : $"{input.EmailNote}\n\n{assessmentNote}";
 
+        var failedManagerDepartments = new HashSet<Guid>();
         foreach (var (invitation, token, role) in accepted)
         {
+            if (role == MemberRoles.Employee && invitation.DepartmentId is { } departmentId && failedManagerDepartments.Contains(departmentId))
+            {
+                invitation.Status = Statuses.MemberInvitation.Revoked;
+                await _context.SaveChangesAsync();
+                output.Rejected.Add(new RejectedInvitation { Email = invitation.Email, Reason = "Chưa gửi được lời mời trưởng phòng của phòng ban này." });
+                continue;
+            }
+
             string? link;
             try
             {
@@ -220,6 +265,8 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
             }
             catch
             {
+                if (role == MemberRoles.Manager && invitation.DepartmentId is { } managerDepartmentId)
+                    failedManagerDepartments.Add(managerDepartmentId);
                 // A failed email must not leave a reserved seat or a misleading "sent" invitation.
                 invitation.Status = Statuses.MemberInvitation.Revoked;
                 await _context.SaveChangesAsync();
@@ -234,7 +281,7 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
                 Role = role,
                 EmployeeCode = invitation.EmployeeCode,
                 DepartmentName = invitation.DepartmentId.HasValue ? departments[invitation.DepartmentId.Value] : null,
-                PositionName = invitation.JobPositionId.HasValue ? positions[invitation.JobPositionId.Value].Name : null,
+                PositionName = invitation.JobPositionId.HasValue ? positions[invitation.JobPositionId.Value] : null,
                 ExpiresAt = invitation.ExpiresAt,
                 Token = link == null ? null : token,
                 DebugLink = link,
@@ -252,17 +299,14 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
     }
 
     /// <summary>Reason (Vietnamese UI text) why a row cannot be invited; null when it is valid.</summary>
-    private static string? Reject(
+    private static string? RejectIdentity(
         string email,
         string fullName,
         string? employeeCode,
         string? roleCode,
-        InviteMemberRow row,
         bool canGrantRoles,
         HashSet<string> takenEmails,
-        HashSet<string> takenCodes,
-        Dictionary<Guid, string> departments,
-        Dictionary<Guid, PositionInfo> positions)
+        HashSet<string> takenCodes)
     {
         if (!IsValidEmail(email))
         {
@@ -295,38 +339,10 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
             return "Mã nhân viên không hợp lệ hoặc đã tồn tại.";
         }
 
-        if (row.DepartmentId.HasValue && !departments.ContainsKey(row.DepartmentId.Value))
-        {
-            return "Phòng ban không hợp lệ.";
-        }
-
-        if ((roleCode == Roles.Employee || roleCode == Roles.Manager) && !row.DepartmentId.HasValue)
-        {
-            return "Chọn phòng ban trước khi mời nhân viên hoặc quản lý.";
-        }
-
-        if (roleCode == Roles.Employee && !row.JobPositionId.HasValue)
-        {
-            return "Chọn vị trí công việc để xác định lộ trình học của nhân viên.";
-        }
-
-        if (row.JobPositionId.HasValue && !positions.ContainsKey(row.JobPositionId.Value))
-        {
-            return "Vị trí công việc không hợp lệ.";
-        }
-
-        if (row.JobPositionId.HasValue && positions.TryGetValue(row.JobPositionId.Value, out var position)
-            && position.DepartmentId.HasValue && position.DepartmentId != row.DepartmentId)
-        {
-            return "Vị trí công việc không thuộc phòng ban đã chọn.";
-        }
-
         return null;
     }
 
     private static string NormalizeEmail(string? email) => email?.Trim().ToLowerInvariant() ?? string.Empty;
-
-    private sealed record PositionInfo(string Name, Guid? DepartmentId);
 
     private static bool IsValidEmail(string email) =>
         email.Length is > 0 and <= 255

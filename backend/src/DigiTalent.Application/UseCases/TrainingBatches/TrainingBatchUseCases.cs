@@ -1,3 +1,5 @@
+using DigiTalent.Domain.Constants;
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
@@ -261,15 +263,19 @@ public class CreateTrainingBatchUseCase : IUseCase<CreateTrainingBatchInput, Cre
                            course.EntryLevel >= 2;
         if (isPaidCourse)
         {
+            var courseCodes = CourseCodes.Aliases(course.Code);
             var purchasedSeats = await (
                 from o in _context.CourseSeatOrders.AsNoTracking()
                 join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-                where o.OrganizationId == orgId && pc.Code == course.Code
+                where o.OrganizationId == orgId && courseCodes.Contains(pc.Code)
                 select (int?)o.Seats
             ).SumAsync() ?? 0;
 
             var usedSeats = await _context.CourseAssignments.AsNoTracking()
-                .CountAsync(ca => ca.CourseId == course.Id && ca.Status == "ACTIVE");
+                .Where(ca => _context.Courses.Any(version => version.Id == ca.CourseId
+                    && version.OrganizationId == course.OrganizationId && courseCodes.Contains(version.Code))
+                    && ca.Status == Statuses.CourseAssignment.Active)
+                .Select(ca => ca.EmployeeId).Distinct().CountAsync();
 
             var availableSeats = Math.Max(0, purchasedSeats - usedSeats);
             var requestedEmployeesCount = input.EmployeeIds.Distinct().Count();

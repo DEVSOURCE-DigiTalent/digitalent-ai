@@ -9,6 +9,7 @@ export const rowError = (row: TrialParticipantRow): string | null =>
   : !EMAIL.test(row.email.trim()) ? 'Email chưa đúng'
   : !row.department.trim() ? 'Thiếu phòng ban'
   : !row.position.trim() ? 'Thiếu vị trí'
+  : row.role && row.role !== 'EMPLOYEE' && row.role !== 'MANAGER' ? 'Vai trò phải là Nhân viên hoặc Trưởng phòng'
   : null;
 
 export const emptyRows = (count = 3): TrialParticipantRow[] => Array.from({ length: count }, () => ({ ...EMPTY_ROW }));

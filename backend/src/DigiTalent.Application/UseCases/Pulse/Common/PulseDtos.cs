@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Domain.Constants;
 
 namespace DigiTalent.Application.UseCases.Pulse;
@@ -254,7 +255,7 @@ public static class PulseMapping
     public static PulseCourseSummaryDto Course(PulseCourseState c) => new()
     {
         CourseId = c.Course.CourseId,
-        Code = c.Course.Code,
+        Code = CourseCodes.Canonical(c.Course.Code),
         Title = c.Course.Title,
         CategoryId = c.Course.CategoryId,
         DomainNumber = c.Domain.Number,
