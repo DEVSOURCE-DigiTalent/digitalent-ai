@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phác Thảo Cảnh 3: Lộ Trình Vị Trí DigiTalent AI</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #090d16;
+      color: #ffffff;
+      margin: 0;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(16px);
+    }
+    .tab-btn {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tab-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #60a5fa;
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-center items-center">
+
+  <div class="w-full max-w-5xl mx-auto space-y-6">
+    <!-- Header Indicator -->
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <span class="mono text-xs uppercase tracking-widest text-blue-400 font-semibold flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+          Phác Thảo Trực Quan Cảnh 3 • DigiTalent AI
+        </span>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white mt-1">
+          Lộ Trình Khóa Học Chuẩn Hóa Theo Từng Vị Trí
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          Lấy vị trí công việc làm gốc. DigiTalent AI định nghĩa sẵn khung năng lực, gán khóa học chuẩn và bài thực hành đầu ra.
+        </p>
+      </div>
+      <div class="text-right hidden md:block">
+        <span class="text-xs px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 mono">
+          Khung tham chiếu TT02 / 2026
+        </span>
+      </div>
+    </div>
+
+    <!-- Position Tabs Switcher -->
+    <div class="flex flex-wrap gap-2.5 p-1.5 rounded-2xl glass-card">
+      <button onclick="switchTab('sales')" id="tab-sales" class="tab-btn active px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent">
+        <span>📈</span> Kinh Doanh & Sales B2B
+      </button>
+      <button onclick="switchTab('tech')" id="tab-tech" class="tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-300 hover:text-white border border-transparent hover:bg-white/5">
+        <span>💻</span> Kỹ Sư AI & Dữ Liệu
+      </button>
+      <button onclick="switchTab('ops')" id="tab-ops" class="tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-300 hover:text-white border border-transparent hover:bg-white/5">
+        <span>⚙️</span> Vận Hành & Nhân Sự Số
+      </button>
+      <button onclick="switchTab('finance')" id="tab-finance" class="tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-300 hover:text-white border border-transparent hover:bg-white/5">
+        <span>📊</span> Kế Toán & Tài Chính Số
+      </button>
+    </div>
+
+    <!-- Main Blueprint Canvas -->
+    <div id="blueprint-content" class="glass-panel rounded-3xl p-6 md:p-8 space-y-6">
+      <!-- Dynamic Content Rendered Here via JS -->
+    </div>
+
+    <!-- Bottom Enterprise Value Proposition -->
+    <div class="p-4 rounded-2xl bg-blue-950/30 border border-blue-500/20 flex items-start md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold shrink-0">
+          ✓
+        </div>
+        <p class="text-xs md:text-sm text-slate-300">
+          <strong class="text-white">Không cần tự mày mò khung đào tạo:</strong> DigiTalent AI đã đóng gói sẵn 18 khóa học chuẩn cho 5 khối chức năng SME. Doanh nghiệp chỉ cần 1 click là kích hoạt và giao lộ trình cho nhân sự.
+        </p>
+      </div>
+      <span class="mono text-xs px-3 py-1 rounded-md bg-blue-600/30 text-blue-300 border border-blue-500/30 whitespace-nowrap hidden sm:inline-block">
+        Chuẩn TT02
+      </span>
+    </div>
+  </div>
+
+  <script>
+    const data = {
+      sales: {
+        title: "Chuyên viên Kinh doanh Số (Digital B2B Sales)",
+        dept: "Khối Kinh doanh & Marketing",
+        level: "Intermediate (Bậc 3-4)",
+        code: "ROLE-SALES-02",
+        summary: "Ứng dụng AI phân tích tệp khách hàng tiềm năng, cá nhân hóa kịch bản chốt deal và tự động hóa quy trình nuôi dưỡng Lead trên CRM.",
+        competencies: [
+          { name: "Khai thác dữ liệu khách hàng", desc: "Tìm kiếm, phân loại và làm giàu dữ liệu Lead bằng công cụ số", level: "Intermediate", tag: "Miền 1" },
+          { name: "Sáng tạo nội dung tiếp cận bằng AI", desc: "Soạn thảo email, proposal và tài liệu chào hàng đa kênh", level: "Basic", tag: "Miền 3" },
+          { name: "Ứng dụng AI trong đàm phán", desc: "Dự đoán nhu cầu, phản biện tình huống và tối ưu kịch bản", level: "Intermediate", tag: "Miền 6" }
+        ],
+        courses: [
+          { code: "CRS-M1-L2", title: "Khai thác Dữ liệu Thị trường & Lead B2B", hours: "6 giờ", level: "Intermediate" },
+          { code: "CRS-M6-L1", title: "Prompt Engineering Thực Chiến cho Đội Ngũ Sales", hours: "4 giờ", level: "Basic" },
+          { code: "CRS-M6-L2", title: "Tự Động Hóa Kịch Bản Bán Hàng & Chăm Sóc Khách", hours: "8 giờ", level: "Intermediate" }
+        ],
+        task: {
+          title: "Xây dựng Workflow Phân loại Lead & Kịch bản Chốt Deal AI-Assisted",
+          submission: "File template prompt CRM, sơ đồ phân luồng Lead và kết quả test 50 khách hàng thực tế.",
+          aiCriteria: "Độ chính xác phân loại >90% • Tốc độ phản hồi <5 phút • Barem chấm chuẩn hóa"
+        }
+      },
+      tech: {
+        title: "Kỹ sư Dữ liệu & AI (Data & AI Specialist)",
+        dept: "Khối Kỹ thuật & Công nghệ",
+        level: "Advanced (Bậc 5-6)",
+        code: "ROLE-TECH-01",
+        summary: "Thiết kế pipeline dữ liệu tự động, tích hợp an toàn các mô hình LLM vào phần mềm nội bộ và bảo vệ tuyệt đối mã nguồn.",
+        competencies: [
+          { name: "Xử lý & Khai thác Dữ liệu lớn", desc: "Thiết lập pipeline ETL tự động, chuẩn hóa dữ liệu đầu vào", level: "Advanced", tag: "Miền 1" },
+          { name: "An toàn Thông tin & Bảo mật Số", desc: "Phòng chống rò rỉ dữ liệu, kiểm soát rủi ro prompt injection", level: "Intermediate", tag: "Miền 4" },
+          { name: "Ứng dụng & Tích hợp Trí tuệ Nhân tạo", desc: "Triển khai LLM Adapter, RAG và fine-tuning tác vụ nội bộ", level: "Advanced", tag: "Miền 6" }
+        ],
+        courses: [
+          { code: "CRS-M1-L3", title: "Kiến trúc Pipeline Dữ liệu Doanh nghiệp", hours: "12 giờ", level: "Advanced" },
+          { code: "CRS-M4-L2", title: "Bảo mật & Phòng thủ Dữ liệu Ứng dụng AI", hours: "8 giờ", level: "Intermediate" },
+          { code: "CRS-M6-L3", title: "Tích hợp LLM & Hệ thống AI Nội bộ Thực chiến", hours: "16 giờ", level: "Advanced" }
+        ],
+        task: {
+          title: "Triển khai Pipeline Xử lý Dữ liệu Nội bộ Kèm Cơ chế Bảo mật ISO",
+          submission: "Repository mã nguồn sạch, tài liệu kiến trúc API, benchmark tốc độ và log kiểm thử an toàn.",
+          aiCriteria: "Code tối ưu 96% • Zero Data Leak • Chấm tự luận bằng AI-assisted grading"
+        }
+      },
+      ops: {
+        title: "Chuyên viên Vận hành & HR Số (Digital HR & Operations)",
+        dept: "Khối Vận hành & Nhân sự",
+        level: "Intermediate (Bậc 3-4)",
+        code: "ROLE-OPS-03",
+        summary: "Số hóa quy trình văn phòng, tự động hóa onboarding nhân sự mới và quản trị tri thức doanh nghiệp bằng công cụ AI.",
+        competencies: [
+          { name: "Giao tiếp & Hợp tác Môi trường Số", desc: "Làm chủ công cụ cộng tác trực tuyến, phân quyền dữ liệu", level: "Intermediate", tag: "Miền 2" },
+          { name: "Giải quyết vấn đề bằng Công nghệ", desc: "Tự động hóa luồng phê duyệt và giảm thiểu quy trình thủ công", level: "Intermediate", tag: "Miền 5" },
+          { name: "An toàn dữ liệu cá nhân & Nhân sự", desc: "Tuân thủ quy định bảo vệ dữ liệu cá nhân và bí mật nội bộ", level: "Basic", tag: "Miền 4" }
+        ],
+        courses: [
+          { code: "CRS-M2-L2", title: "Quản trị Cộng tác Số & Điều phối Dự án", hours: "6 giờ", level: "Intermediate" },
+          { code: "CRS-M5-L2", title: "Tự Động Hóa Quy Trình Văn Phòng với No-Code & AI", hours: "10 giờ", level: "Intermediate" },
+          { code: "CRS-M4-L1", title: "Bảo vệ Dữ liệu Nhân sự & Tuân thủ Nội bộ", hours: "4 giờ", level: "Basic" }
+        ],
+        task: {
+          title: "Thiết lập Quy trình Onboard Tự động & Chatbot Giải đáp Nội bộ",
+          submission: "Kịch bản tự động hóa luồng tiếp nhận, file tri thức tài liệu hỏi đáp và checklist nghiệm thu.",
+          aiCriteria: "Giảm 70% thời gian thủ công • Đạt chuẩn bảo mật • Quản lý duyệt trực tiếp"
+        }
+      },
+      finance: {
+        title: "Chuyên viên Kế toán & Tài chính Số (Digital Accounting)",
+        dept: "Khối Tài chính & Kế toán",
+        level: "Intermediate (Bậc 3-4)",
+        code: "ROLE-FIN-04",
+        summary: "Ứng dụng AI đối soát hóa đơn chứng từ, tự động phát hiện số liệu bất thường và lập dashboard dự báo dòng tiền.",
+        competencies: [
+          { name: "Khai thác & Phân tích Dữ liệu Số", desc: "Trích xuất, đối chiếu số liệu bảng cân đối và dòng tiền", level: "Intermediate", tag: "Miền 1" },
+          { name: "Giải quyết sự cố tài chính số", desc: "Phát hiện sai lệch dữ liệu tự động, tối ưu chu kỳ kết toán", level: "Intermediate", tag: "Miền 5" },
+          { name: "Ứng dụng AI trong Kiểm soát", desc: "Prompt trích xuất thông tin hóa đơn và tổng hợp báo cáo", level: "Basic", tag: "Miền 6" }
+        ],
+        courses: [
+          { code: "CRS-M1-L2", title: "Phân tích Báo cáo Tài chính Nâng cao với Dữ liệu Số", hours: "8 giờ", level: "Intermediate" },
+          { code: "CRS-M6-L1", title: "Ứng dụng AI Hỗ trợ Đối soát Chứng từ & Kê khai", hours: "6 giờ", level: "Basic" },
+          { code: "CRS-M5-L2", title: "Xây dựng Dashboard Quản trị Dòng tiền Thời Gian Thực", hours: "8 giờ", level: "Intermediate" }
+        ],
+        task: {
+          title: "Xây dựng Bảng Kiểm soát Dòng tiền Tự động & Báo cáo Bất thường",
+          submission: "Template dashboard tài chính động, luồng tự động hóa đối soát và báo cáo phân tích rủi ro.",
+          aiCriteria: "Tự động hóa 85% khâu nhập liệu • Đối soát chính xác 99.8% • Minh chứng được duyệt"
+        }
+      }
+    };
+
+    function renderContent(key) {
+      const item = data[key];
+      const container = document.getElementById('blueprint-content');
+      
+      container.innerHTML = `
+        <!-- Top Metadata Row -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="mono text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                ${item.code}
+              </span>
+              <span class="text-xs text-slate-400">${item.dept}</span>
+            </div>
+            <h2 class="text-xl md:text-2xl font-bold text-white">${item.title}</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 font-medium">
+              Chuẩn đầu ra: <strong class="text-emerald-400 font-semibold">${item.level}</strong>
+            </span>
+          </div>
+        </div>
+
+        <p class="text-sm text-slate-300 leading-relaxed">
+          ${item.summary}
+        </p>
+
+        <!-- Two Columns Architecture -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+          
+          <!-- Column 1: Required Competencies (3 Năng lực số bắt buộc) -->
+          <div class="space-y-3">
+            <h3 class="text-xs mono uppercase font-bold text-slate-400 tracking-wider flex items-center justify-between">
+              <span>01. Năng lực số bắt buộc</span>
+              <span class="text-blue-400">3 Năng lực</span>
+            </h3>
+            
+            <div class="space-y-2.5">
+              ${item.competencies.map((comp, idx) => `
+                <div class="glass-card p-3.5 rounded-2xl flex items-start gap-3 hover:border-blue-500/40 transition">
+                  <span class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    ${idx + 1}
+                  </span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2">
+                      <h4 class="text-sm font-semibold text-white truncate">${comp.name}</h4>
+                      <span class="mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">${comp.tag}</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5 line-clamp-1">${comp.desc}</p>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Column 2: Standard Courses (Gói khóa học tương ứng) -->
+          <div class="space-y-3">
+            <h3 class="text-xs mono uppercase font-bold text-slate-400 tracking-wider flex items-center justify-between">
+              <span>02. Lộ trình khóa học chuẩn hóa</span>
+              <span class="text-cyan-400">18 Khóa có sẵn</span>
+            </h3>
+
+            <div class="space-y-2.5">
+              ${item.courses.map((crs) => `
+                <div class="glass-card p-3.5 rounded-2xl flex items-start gap-3 hover:border-cyan-500/40 transition">
+                  <span class="text-cyan-400 text-sm mt-0.5">📘</span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2">
+                      <h4 class="text-sm font-semibold text-white truncate">${crs.title}</h4>
+                      <span class="mono text-[11px] text-cyan-300 font-medium">${crs.hours}</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="mono text-[10px] text-slate-400">${crs.code}</span>
+                      <span class="text-[11px] text-slate-500">•</span>
+                      <span class="text-xs text-slate-400">${crs.level}</span>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Practical Task Box: Golden Path Bridge -->
+        <div class="p-5 rounded-2xl bg-gradient-to-r from-blue-900/40 via-indigo-950/40 to-slate-900/60 border border-blue-500/30 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-emerald-400 text-base">🛠️</span>
+              <span class="mono text-xs font-bold text-emerald-400 uppercase tracking-wide">
+                Nhiệm vụ thực hành đầu ra (Practical Task)
+              </span>
+            </div>
+            <span class="text-xs text-slate-400 italic">Học xong chưa xác nhận, phải nộp sản phẩm</span>
+          </div>
+          
+          <h4 class="text-sm md:text-base font-bold text-white">
+            ${item.task.title}
+          </h4>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
+            <div class="p-2.5 rounded-xl bg-black/30 border border-white/5">
+              <span class="text-slate-400 block mb-0.5">📦 Sản phẩm nộp thẩm định:</span>
+              <span class="text-slate-200 font-medium">${item.task.submission}</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-black/30 border border-white/5">
+              <span class="text-slate-400 block mb-0.5">🤖 AI-Assisted Grading:</span>
+              <span class="text-slate-200 font-medium">${item.task.aiCriteria}</span>
+            </div>
+          </div>
+        </div>
+
+      `;
+    }
+
+    function switchTab(key) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'text-white');
+        btn.classList.add('text-slate-300', 'border-transparent');
+      });
+      const activeBtn = document.getElementById('tab-' + key);
+      activeBtn.classList.add('active', 'text-white');
+      activeBtn.classList.remove('text-slate-300', 'border-transparent');
+      renderContent(key);
+    }
+
+    // Initial render
+    renderContent('sales');
+  </script>
+</body>
+</html>
