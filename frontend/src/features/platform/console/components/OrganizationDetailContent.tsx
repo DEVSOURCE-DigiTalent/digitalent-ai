@@ -18,6 +18,7 @@ import {
   isReasonValid,
 } from '../../components/pulse-format';
 import { CompanyAvatar } from '../../components/CompanyAvatar';
+import { extractContracts } from './contracts';
 import {
   BookOpen,
   Users,
@@ -27,11 +28,7 @@ import {
   Calendar,
   Layers,
   ArrowRight,
-  FileText,
   FileCheck,
-  CheckCircle2,
-  Copy,
-  X,
 } from 'lucide-react';
 
 type SupportAction = 'grant' | 'suspend' | 'restore';
@@ -40,31 +37,6 @@ type DetailTab = 'overview' | 'people' | 'orders' | 'support';
 interface OrganizationDetailContentProps {
   orgId: string;
   isDrawer?: boolean;
-}
-
-function getOrganizationContractMeta(o: {
-  id: string;
-  code: string;
-  createdAt: string;
-  stage: string;
-  status: string;
-  planRenewsAt: string | null;
-}) {
-  const suspended = o.status === 'SUSPENDED';
-  const paidRenewalDate = o.planRenewsAt ? formatDate(o.planRenewsAt) : '31/12/2027';
-
-  // Dùng thử được để mãi mãi, không giới hạn 14 ngày nên không có thời hạn bản quyền
-  const text = suspended
-    ? 'Đã ngắt quyền truy cập'
-    : o.stage === 'PAID'
-      ? `Đến ${paidRenewalDate} · Chu kỳ hàng năm`
-      : 'Không giới hạn thời gian (Dùng thử liên tục)';
-
-  return {
-    validityText: text,
-    contractCode: `HĐ-2026/DIGITALENT-${o.code || o.id.slice(0, 8).toUpperCase()}`,
-    esignCode: `DT-ESIGN-${o.id.replace(/-/g, '').slice(0, 16).toUpperCase()}`,
-  };
 }
 
 export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetailContentProps) {
@@ -76,7 +48,6 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
   const canManage = can(PERMISSIONS.PLATFORM_ORGANIZATION_MANAGE);
 
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
-  const [showContractModal, setShowContractModal] = useState(false);
   const [kind, setKind] = useState<SupportAction>('grant');
   const [courseCode, setCourseCode] = useState('');
   const [reason, setReason] = useState('');
@@ -110,13 +81,8 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
   const totalSeats = (o.seatsPurchased ?? 0) + (o.seatsGranted ?? 0);
   const pctActivated = Math.min(100, Math.round((participantCount / Math.max(employeeCount, 1)) * 100));
 
-  // Date and contract calculation logic
-  const { validityText, contractCode, esignCode } = getOrganizationContractMeta(o);
-
-  const copyContractCode = () => {
-    navigator.clipboard.writeText(contractCode);
-    toast.success(`Đã sao chép mã hợp đồng: ${contractCode}`);
-  };
+  // Hợp đồng điện tử thật: đọc từ ghi chú các đơn mua, không sinh mã
+  const contracts = extractContracts(ordersList);
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -269,90 +235,66 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <Calendar size={14} />
                 </span>
-                {o.stage === 'PAID' ? 'Thông tin dịch vụ & Thời hạn bản quyền' : 'Thông tin dịch vụ & Thỏa thuận sử dụng'}
+                Trạng thái tổ chức
               </span>
-              <span style={{ fontSize: 12, color: '#64748b' }}>
-                Gia nhập: {formatDate(o.createdAt)}
-              </span>
+              <span style={{ fontSize: 12, color: 'var(--pa-ink-3)' }}>Đăng ký: {formatDate(o.createdAt)}</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
-              <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>
-                  {o.stage === 'PAID' ? 'Trạng thái hợp đồng' : 'Trạng thái tài khoản'}
-                </span>
-                <strong style={{ color: '#0f172a', display: 'block' }}>
-                  {suspended
-                    ? 'Tạm ngưng quyền truy cập'
-                    : o.stage === 'PAID'
-                      ? 'Hợp đồng dịch vụ B2B'
-                      : 'Tài khoản dùng thử doanh nghiệp'}
+              <div style={{ padding: '9px 12px', background: 'var(--pa-surface-sub)', borderRadius: 8, border: '1px solid var(--pa-border)' }}>
+                <span style={{ fontSize: 12, color: 'var(--pa-ink-3)', display: 'block', marginBottom: 2 }}>Trạng thái</span>
+                <strong style={{ color: suspended ? 'var(--pa-danger)' : 'var(--pa-ink)', display: 'block' }}>
+                  {suspended ? 'Đang tạm ngưng' : o.stage === 'PAID' ? 'Đã mua khóa' : 'Đang dùng thử'}
                 </strong>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>Mã: {o.code || o.id.slice(0, 8).toUpperCase()}</span>
+                <span style={{ fontSize: 12, color: 'var(--pa-ink-3)' }}>
+                  {suspended ? 'Nhân viên không đăng nhập được' : `Mã tổ chức: ${o.code || o.id.slice(0, 8).toUpperCase()}`}
+                </span>
               </div>
 
-              <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>
-                  {o.stage === 'PAID' ? 'Thời hạn bản quyền' : 'Thời hạn sử dụng'}
-                </span>
-                <strong style={{ color: suspended ? '#dc2626' : '#0f172a', display: 'block' }}>
-                  {suspended ? 'Đã ngắt quyền truy cập' : o.stage === 'PAID' ? validityText : 'Vô thời hạn'}
-                </strong>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>
-                  {suspended
-                    ? 'Chờ đối soát từ ban quản trị'
-                    : o.stage === 'PAID'
-                      ? 'Tự động gia hạn bản quyền'
-                      : 'Không giới hạn thời gian trải nghiệm'}
-                </span>
+              <div style={{ padding: '9px 12px', background: 'var(--pa-surface-sub)', borderRadius: 8, border: '1px solid var(--pa-border)' }}>
+                <span style={{ fontSize: 12, color: 'var(--pa-ink-3)', display: 'block', marginBottom: 2 }}>Chủ doanh nghiệp</span>
+                <strong style={{ color: 'var(--pa-ink)', display: 'block' }}>{o.ownerName || 'Chưa có chủ doanh nghiệp'}</strong>
+                <span style={{ fontSize: 12, color: 'var(--pa-ink-3)' }}>{o.ownerEmail ?? 'Chưa gán tài khoản chủ'}</span>
               </div>
             </div>
           </div>
 
-          {/* Quick Contract & Legal eSign Card */}
           <div className="pa-org-detail-card">
             <div className="pa-org-detail-card-head">
               <span className="pa-org-detail-card-title">
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <FileCheck size={14} />
                 </span>
-                Hồ sơ hợp đồng & Pháp lý điện tử
+                Hợp đồng điện tử
               </span>
-              <button
-                type="button"
-                className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-                style={{
-                  borderColor: 'var(--pa-accent-border)',
-                  color: 'var(--pa-accent-solid)',
-                  background: '#ffffff',
-                }}
-                onClick={() => setShowContractModal(true)}
-              >
-                <FileText size={13} aria-hidden="true" />
-                <span>Xem nhanh hợp đồng</span>
-              </button>
+              <span style={{ fontSize: 12, color: 'var(--pa-ink-3)' }}>{contracts.length} hợp đồng</span>
             </div>
 
-            <div className="pa-contract-meta-grid">
-              <div className="pa-contract-meta-cell">
-                <span className="pa-contract-meta-label">Mã số hợp đồng</span>
-                <span className="pa-contract-meta-val">{contractCode}</span>
-              </div>
-
-              <div className="pa-contract-meta-cell">
-                <span className="pa-contract-meta-label">Đại diện ký kết</span>
-                <span className="pa-contract-meta-val" title={o.ownerEmail ?? ''}>
-                  {o.ownerName || 'Chủ tài khoản doanh nghiệp'}
-                </span>
-              </div>
-
-              <div className="pa-contract-meta-cell">
-                <span className="pa-contract-meta-label">Xác thực pháp lý</span>
-                <span className="pa-contract-meta-val" style={{ color: o.stage === 'PAID' ? '#15803d' : '#b45309' }}>
-                  {o.stage === 'PAID' ? 'Ký số eSign · Hợp lệ' : 'Thỏa thuận trực tuyến'}
-                </span>
-              </div>
-            </div>
+            {contracts.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--pa-ink-3)', margin: 0 }}>
+                {o.stage === 'PAID'
+                  ? 'Các đơn mua của tổ chức này chưa gắn với hợp đồng điện tử.'
+                  : 'Chưa có hợp đồng. Tổ chức đang dùng thử, chưa mua khóa nào.'}
+              </p>
+            ) : (
+              <ul className="pa-contract-list">
+                {contracts.map((c) => (
+                  <li key={c.code} className="pa-contract-item">
+                    <div>
+                      <code className="pa-contract-code">{c.code}</code>
+                      <div className="pa-contract-sub">
+                        Ký ngày {formatDate(c.signedAt)}
+                        {c.signer ? ` · Đại diện: ${c.signer}` : ''}
+                      </div>
+                    </div>
+                    <div className="pa-contract-amount">
+                      <strong>{formatMoney(c.totalAmount)}</strong>
+                      <span>{c.seats} suất · {c.orderCount} khóa</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Courses in use */}
@@ -715,137 +657,6 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
         </div>
       )}
 
-      {/* Contract Quick View Modal */}
-      {showContractModal && (
-        <div
-          className="pa-contract-modal-backdrop"
-          onClick={() => setShowContractModal(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="contract-modal-title"
-        >
-          <div className="pa-contract-modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="pa-contract-modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span className="pa-org-detail-icon-box" aria-hidden="true">
-                  <FileText size={15} />
-                </span>
-                <div>
-                  <h3 id="contract-modal-title" style={{ fontSize: 14.5, fontWeight: 800, margin: 0, color: '#0f172a' }}>
-                    {o.stage === 'PAID' ? 'Hợp đồng dịch vụ B2B điện tử' : 'Thỏa thuận dùng thử doanh nghiệp'}
-                  </h3>
-                  <p style={{ fontSize: 11.5, color: '#64748b', margin: '2px 0 0' }}>
-                    Mã xác thực: {contractCode}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="pa-drawer-close"
-                onClick={() => setShowContractModal(false)}
-                aria-label="Đóng (Esc)"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="pa-contract-modal-body">
-              {/* Status and Timestamp Banner */}
-              <div className="pa-contract-banner">
-                <div>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#b85c24', display: 'block', marginBottom: 2 }}>
-                    Tình trạng ký kết
-                  </span>
-                  <strong style={{ fontSize: 13, color: '#0f172a' }}>
-                    {o.stage === 'PAID' ? 'Đã ký số điện tử (DigiTalent eSign)' : 'Thỏa thuận trực tuyến vô thời hạn'}
-                  </strong>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Thời gian ghi nhận</span>
-                  <strong style={{ fontSize: 12, color: '#0f172a' }}>{formatDateTime(o.createdAt)}</strong>
-                </div>
-              </div>
-
-              {/* Parties */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
-                    Bên A: Đơn vị cung cấp
-                  </span>
-                  <strong style={{ fontSize: 12.5, color: '#0f172a', display: 'block' }}>
-                    Công ty Cổ phần Công nghệ DigiTalent Việt Nam
-                  </strong>
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-                    Mã số thuế: 0109998888
-                    <br />
-                    Đại diện: Giám đốc điều hành
-                  </div>
-                </div>
-
-                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
-                    Bên B: Doanh nghiệp thụ hưởng
-                  </span>
-                  <strong style={{ fontSize: 12.5, color: '#0f172a', display: 'block' }}>
-                    {o.name}
-                  </strong>
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-                    Mã doanh nghiệp: {o.code || o.id.slice(0, 8).toUpperCase()}
-                    <br />
-                    Đại diện: {o.ownerName || 'Chủ tài khoản doanh nghiệp'} ({o.ownerEmail})
-                  </div>
-                </div>
-              </div>
-
-              {/* Scope & Terms */}
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
-                  Quy mô cấp quyền & Điều khoản dịch vụ
-                </span>
-                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: '#334155', display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <li>
-                    <strong>Định mức bản quyền:</strong> {totalSeats > 0 ? `${totalSeats} suất đào tạo trực tuyến có phí` : 'Suất trải nghiệm theo quy định dùng thử'}
-                  </li>
-                  <li>
-                    <strong>Thời hạn hiệu lực:</strong> {validityText}
-                  </li>
-                  <li>
-                    <strong>Phạm vi đào tạo:</strong> Khóa học theo khung chuẩn năng lực số theo từng cấp độ
-                  </li>
-                  <li>
-                    <strong>Cam kết vận hành (SLA):</strong> Đảm bảo hệ thống hoạt động ổn định 99.9%, mã hóa an toàn dữ liệu
-                  </li>
-                </ul>
-              </div>
-
-              {/* Digital Signature Stamp */}
-              <div className="pa-contract-stamp-box">
-                <CheckCircle2 size={16} />
-                <span>Xác thực bởi DigiTalent eSign Authority: {esignCode}</span>
-              </div>
-            </div>
-
-            <div className="pa-contract-modal-footer">
-              <button
-                type="button"
-                className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-                onClick={copyContractCode}
-              >
-                <Copy size={13} aria-hidden="true" />
-                <span>Sao chép mã hợp đồng</span>
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-small"
-                onClick={() => setShowContractModal(false)}
-                style={{ background: 'var(--pa-accent-solid)', borderColor: 'var(--pa-accent-solid)' }}
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

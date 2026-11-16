@@ -1115,7 +1115,6 @@ route('GET', '/platform/frameworks/:id', () => {
     releases: [
       {
         versionNo: 1,
-        releaseNote: 'Công bố chuẩn Thông tư 02/2025/TT-BGDĐT phiên bản neo ban đầu.',
         releaseNote: 'Công bố chuẩn phiên bản neo ban đầu.',
         publishedByEmail: 'admin@digitalent.ai',
         publishedAt: '2026-10-01T00:00:00Z',
@@ -1570,39 +1569,6 @@ route('GET', '/platform/commerce', () => {
   };
 });
 
-route('GET', '/platform/catalog/versions', () => {
-  const currentSummary = {
-    versionNo: 5,
-    status: 'CURRENT' as const,
-    basedOnVersionNo: 4,
-    releaseNote: 'Công bố chuẩn hóa danh mục khóa học số v5.',
-    createdAt: '2026-11-01T00:00:00Z',
-    publishedAt: '2026-11-05T08:00:00Z',
-    publishedByEmail: 'admin@digitalent.ai',
-    courseCount: 18,
-    frameworkCount: 1,
-    newCount: 0,
-    editedCount: 0,
-  };
-  const retiredSummary = {
-    versionNo: 4,
-    status: 'RETIRED' as const,
-    basedOnVersionNo: 3,
-    releaseNote: 'Phiên bản v4 lưu trữ.',
-    createdAt: '2026-10-15T00:00:00Z',
-    publishedAt: '2026-10-20T08:00:00Z',
-    publishedByEmail: 'admin@digitalent.ai',
-    courseCount: 18,
-    frameworkCount: 1,
-    newCount: 0,
-    editedCount: 0,
-  };
-  return {
-    items: [currentSummary, retiredSummary],
-    currentVersionNo: 5,
-    draftVersionNo: null,
-  };
-});
 // ── PLT-03 & PLT-04: Catalog Versions & Course Builder Mock Store ──
 interface CatalogStoreState {
   currentVersionNo: number;
@@ -1612,22 +1578,6 @@ interface CatalogStoreState {
   courseDetails: Map<string, CatalogCourseDetail>;
 }
 
-route('GET', '/platform/catalog/versions/:versionNo', (context) => {
-  const vNo = Number(context.params.versionNo) || 5;
-  const versionSummary = {
-    versionNo: vNo,
-    status: (vNo === 5 ? 'CURRENT' : 'RETIRED') as 'CURRENT' | 'RETIRED' | 'DRAFT',
-    basedOnVersionNo: vNo > 1 ? vNo - 1 : null,
-    releaseNote: vNo === 5 ? 'Công bố chuẩn hóa danh mục khóa học số v5.' : `Phiên bản v${vNo} lưu trữ.`,
-    createdAt: '2026-11-01T00:00:00Z',
-    publishedAt: '2026-11-05T08:00:00Z',
-    publishedByEmail: 'admin@digitalent.ai',
-    courseCount: 18,
-    frameworkCount: 1,
-    newCount: 0,
-    editedCount: 0,
-  };
-  const courseRows = COURSES.filter((c) => c.status === 'PUBLISHED').map((c) => {
     function createDefaultCourseRows(): CatalogCourseRow[] {
       return COURSES.filter((c) => c.status === 'PUBLISHED').map((c) => {
         const cat = CATEGORIES.find((category) => category.id === c.categoryId);
@@ -1638,14 +1588,9 @@ route('GET', '/platform/catalog/versions/:versionNo', (context) => {
           frameworkId: 'fw-standard',
           frameworkName: 'Khung chuẩn năng lực số doanh nghiệp',
           domainId: c.categoryId,
-          domainName: CATEGORIES.find((cat) => cat.id === c.categoryId)?.name ?? '',
           domainName: cat?.name ?? '',
           level: c.level,
           levelName: levelLabel(c.level),
-          title: c.title,
-          pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
-          salesStatus: 'OPEN' as const,
-          changeKind: 'UNCHANGED' as const,
           moduleCount: c.modules,
           questionCount: 12,
           pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
@@ -1733,7 +1678,6 @@ route('GET', '/platform/catalog/versions/:versionNo', (context) => {
       }
 
       return {
-        version: versionSummary,
         currentVersionNo: 5,
         draftVersionNo: null,
         versions,
@@ -1896,7 +1840,22 @@ route('GET', '/platform/catalog/versions/:versionNo', (context) => {
       };
     }, { message: 'Đã tạo bản nháp mới.' });
 
-    route('GET', '/platform/catalog/versions/:versionNo', (context) => {
+ route('DELETE', '/platform/catalog/versions/:versionNo', (context) => {
+  const vNo = Number(context.params.versionNo);
+  if (catalogStore.draftVersionNo === vNo) {
+    catalogStore.draftVersionNo = null;
+    catalogStore.versions.delete(vNo);
+    catalogStore.courseRowsByVersion.delete(vNo);
+  }
+  const items = Array.from(catalogStore.versions.values()).sort((a, b) => b.versionNo - a.versionNo);
+  return {
+    items,
+    currentVersionNo: catalogStore.currentVersionNo,
+    draftVersionNo: catalogStore.draftVersionNo,
+  };
+}, { message: 'Đã hủy bản nháp.' });
+
+   route('GET', '/platform/catalog/versions/:versionNo', (context) => {
       const vNo = Number(context.params.versionNo) || catalogStore.currentVersionNo;
       let summary = catalogStore.versions.get(vNo);
       if (!summary) {
@@ -1948,7 +1907,6 @@ route('GET', '/platform/catalog/versions/:versionNo', (context) => {
       return {
         version: summary,
         editable: false,
-        courses: courseRows,
         courses: getCoursesForVersion(vNo),
       };
     }, { message: 'Đã công bố phiên bản danh mục.' });
@@ -2926,7 +2884,7 @@ route('PUT', '/platform/feedbacks/:id', (context) => {
   const found = mockFeedbacks.find((f) => f.id === id);
   if (found) {
     if (body.status) found.status = body.status as MockFeedbackItem['status'];
-    if (body.adminNote !== undefined) found.adminNote = body.adminNote;
+    if (body.adminNote !== undefined) found.adminNote = typeof body.adminNote === 'string' ? body.adminNote : null;
   }
   return { success: true };
 });

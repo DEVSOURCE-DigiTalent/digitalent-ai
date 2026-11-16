@@ -871,15 +871,15 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
         {/* ✦ 4. BẢNG DỮ LIỆU SỰ CỐ MẬT ĐỘ CAO (HIGH-DENSITY OPERATIONAL TABLE) */}
         {displayedItems.length > 0 && (
           <div className="table-scroll">
-            <table className="data-table">
+            <table className="data-table pa-fb-table">
               <thead>
                 <tr>
-                  <th style={{ width: 140 }}>{translateUi(isBug ? 'Mã và khu vực' : 'Mã và điểm')}</th>
+                  <th style={{ width: 124 }}>{translateUi(isBug ? 'Mã và khu vực' : 'Mã và điểm')}</th>
                   <th>{translateUi('Nội dung')}</th>
-                  <th style={{ width: 230 }}>{translateUi('Người gửi')}</th>
-                  <th style={{ width: 130 }}>{translateUi('Ngày gửi')}</th>
-                  <th style={{ width: 145 }}>{translateUi('Trạng thái')}</th>
-                  <th style={{ width: 100, textAlign: 'right' }}>{translateUi('Thao tác')}</th>
+                  <th style={{ width: 200 }}>{translateUi('Người gửi')}</th>
+                  <th style={{ width: 104 }}>{translateUi('Ngày gửi')}</th>
+                  <th style={{ width: 128 }}>{translateUi('Trạng thái')}</th>
+                  <th style={{ width: 104, textAlign: 'right' }}>{translateUi('Thao tác')}</th>
                 </tr>
               </thead>
               <tbody>

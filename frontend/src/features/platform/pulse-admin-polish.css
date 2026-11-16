@@ -258,3 +258,91 @@
   text-transform: none;
   letter-spacing: 0;
 }
+
+/* ---------- Hồ sơ tổ chức: danh sách hợp đồng điện tử ---------- */
+
+.pulse-ui.pa-console .pa-contract-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pulse-ui.pa-console .pa-contract-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--pa-border);
+}
+
+.pulse-ui.pa-console .pa-contract-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.pulse-ui.pa-console .pa-contract-code {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pa-ink);
+}
+
+.pulse-ui.pa-console .pa-contract-sub {
+  font-size: 12px;
+  color: var(--pa-ink-3);
+  margin-top: 2px;
+}
+
+.pulse-ui.pa-console .pa-contract-amount {
+  display: grid;
+  justify-items: end;
+  font-size: 12px;
+  color: var(--pa-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.pulse-ui.pa-console .pa-contract-amount strong {
+  font-size: 14px;
+  color: var(--pa-ink);
+}
+
+/* ---------- Bảng danh sách: cột chữ dài được xuống dòng thay vì làm bảng tràn ngang ---------- */
+
+.pulse-ui.pa-console .pa-org-table td,
+.pulse-ui.pa-console .pa-tr-table td {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* Cột đầu (tên tổ chức, người dùng) không bị ép quá hẹp khi khung nhỏ */
+.pulse-ui.pa-console .pa-org-table td:first-child,
+.pulse-ui.pa-console .pa-tr-table td:first-child {
+  min-width: 200px;
+}
+
+.pulse-ui.pa-console .pa-org-table td.num,
+.pulse-ui.pa-console .pa-org-table td:last-child,
+.pulse-ui.pa-console .pa-org-table td .pa-pill,
+.pulse-ui.pa-console .pa-org-table td .pa-org-level-pill {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+/* Nút mở chi tiết chỉ còn biểu tượng */
+.pulse-ui.pa-console .pa-org-btn-view {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 6px;
+  justify-content: center;
+}
+
+/* Góp ý và Báo lỗi: cố định chiều rộng cột, nội dung và người gửi tự cắt bằng dấu ba chấm */
+.pulse-ui.pa-console .pa-fb-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.pulse-ui.pa-console .pa-fb-table td:last-child .btn,
+.pulse-ui.pa-console .pa-fb-table td:last-child button {
+  white-space: nowrap;
+}

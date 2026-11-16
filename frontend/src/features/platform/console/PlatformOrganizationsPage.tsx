@@ -275,7 +275,7 @@ export function PlatformOrganizationsPage() {
                     <th>Khóa đang học</th>
                     <th className="num">{translateUi('Nhân viên đang học')}</th>
                     <th>{translateUi('Ngày đăng ký')}</th>
-                    <th style={{ width: 110 }}>{translateUi('Thao tác')}</th>
+                    <th style={{ width: 56 }}><span className="sr-only">{translateUi('Thao tác')}</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -355,9 +355,9 @@ export function PlatformOrganizationsPage() {
                               setDrawerOrgId(o.id);
                             }}
                             title="Xem chi tiết tổ chức"
+                            aria-label={`Xem chi tiết ${o.name}`}
                           >
-                            <span>Xem chi tiết</span>
-                            <ChevronRight size={13} aria-hidden="true" />
+                            <ChevronRight size={16} aria-hidden="true" />
                           </button>
                         </td>
                       </tr>
