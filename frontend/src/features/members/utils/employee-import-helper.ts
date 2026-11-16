@@ -25,29 +25,34 @@ const ROLE_ALIASES: Record<string, MemberRole> = {
   'quản lý': 'MANAGER',
   'quan ly': 'MANAGER',
   'trưởng phòng': 'MANAGER',
+  'truong phong': 'MANAGER',
   employee: 'EMPLOYEE',
   'nhân viên': 'EMPLOYEE',
   'nhan vien': 'EMPLOYEE',
   'học viên': 'EMPLOYEE',
 };
 
+export const EMPLOYEE_IMPORT_COLUMNS = ['Họ tên', 'Email', 'Phòng ban', 'Vị trí', 'Vai trò'] as const;
+
+export function departmentRoleError(role: string, hasManager: boolean): string | null {
+  if (role === 'MANAGER' && hasManager) return 'Phòng ban đã có trưởng phòng hoặc lời mời trưởng phòng.';
+  if (role === 'EMPLOYEE' && !hasManager) return 'Phòng ban cần có trưởng phòng trước khi thêm nhân viên.';
+  return null;
+}
+
+export function parseEmployeeImportRole(value: string): MemberRole | null {
+  return value.trim() ? ROLE_ALIASES[normalizeStr(value)] ?? null : 'EMPLOYEE';
+}
+
 /**
  * Tạo và tải về file CSV mẫu định dạng chuẩn UTF-8 (kèm BOM để mở trực tiếp trên Excel tiếng Việt không bị lỗi font).
  */
-export function downloadEmployeeTemplate(
-  departments: { id: string; name: string }[],
-  positions: { id: string; name: string }[],
-) {
-  const dept1 = departments[0]?.name || 'Kinh doanh';
-  const dept2 = departments[1]?.name || 'Kỹ thuật';
-  const pos1 = positions.find((p) => p.name.includes('Kinh doanh'))?.name || positions[0]?.name || 'Chuyên viên kinh doanh';
-  const pos2 = positions.find((p) => p.name.includes('Kỹ thuật') || p.name.includes('Phần mềm'))?.name || positions[1]?.name || 'Kỹ sư phần mềm';
-
+export function downloadEmployeeTemplate() {
   const rows = [
-    ['Họ và tên', 'Email', 'Mã nhân viên', 'Phòng ban', 'Vị trí công việc', 'Vai trò'],
-    ['Nguyễn Văn An', 'an.nguyen@congty.vn', 'NV001', dept1, pos1, 'Nhân viên'],
-    ['Trần Thị Bình', 'binh.tran@congty.vn', 'NV002', dept2, pos2, 'Quản lý'],
-    ['Lê Hoàng Long', 'long.le@congty.vn', 'NV003', dept1, pos1, 'Nhân viên'],
+    EMPLOYEE_IMPORT_COLUMNS,
+    ['Nguyễn Văn An', 'an.nguyen@congty.vn', 'Phòng mẫu Kinh doanh', 'Sales / CRM', 'Trưởng phòng'],
+    ['Trần Thị Bình', 'binh.tran@congty.vn', 'Phòng mẫu Kế toán', 'Kế toán', 'Trưởng phòng'],
+    ['Lê Hoàng Long', 'long.le@congty.vn', 'Phòng mẫu Kinh doanh', 'Sales / CRM', 'Nhân viên'],
   ];
 
   const csvContent = '\uFEFF' + rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\r\n');
@@ -113,12 +118,6 @@ export function parseSmartEmployeeCsv(
     if (d.code) deptMap.set(normalizeStr(d.code), d);
   });
 
-  const posMap = new Map<string, { id: string; name: string; code?: string; departmentId?: string }>();
-  positions.forEach((p) => {
-    posMap.set(normalizeStr(p.name), p);
-    if (p.code) posMap.set(normalizeStr(p.code), p);
-  });
-
   // Kiểm tra dòng đầu tiên xem có phải là tiêu đề (header) không
   const firstLineCells = splitLine(lines[0]).map((c) => normalizeStr(c));
   let headerIndex = {
@@ -160,9 +159,9 @@ export function parseSmartEmployeeCsv(
     // Nếu cell 1 có '@' -> fullName, email, code, department, position, role
     const sampleCells = splitLine(lines[0]);
     if (sampleCells[0] && sampleCells[0].includes('@')) {
-      headerIndex = { email: 0, fullName: 1, employeeCode: 2, department: 3, position: 4, role: 5 };
+      headerIndex = { email: 0, fullName: 1, employeeCode: sampleCells.length >= 6 ? 2 : -1, department: sampleCells.length >= 6 ? 3 : 2, position: sampleCells.length >= 6 ? 4 : 3, role: sampleCells.length >= 6 ? 5 : 4 };
     } else {
-      headerIndex = { fullName: 0, email: 1, employeeCode: 2, department: 3, position: 4, role: 5 };
+      headerIndex = { fullName: 0, email: 1, employeeCode: sampleCells.length >= 6 ? 2 : -1, department: sampleCells.length >= 6 ? 3 : 2, position: sampleCells.length >= 6 ? 4 : 3, role: sampleCells.length >= 6 ? 5 : 4 };
     }
   }
 
@@ -202,33 +201,21 @@ export function parseSmartEmployeeCsv(
       seenEmails.add(email);
     }
 
-    // Khớp Phòng ban (hỗ trợ cả tìm mờ và theo mã)
-    let matchedDept = deptRaw ? deptMap.get(normalizeStr(deptRaw)) : undefined;
-    if (!matchedDept && deptRaw) {
-      const target = normalizeStr(deptRaw);
-      matchedDept = departments.find((d) =>
-        normalizeStr(d.name).includes(target) ||
-        target.includes(normalizeStr(d.name)) ||
-        (d.code && normalizeStr(d.code) === target),
-      );
-    }
-
-    // Khớp Vị trí công việc (hỗ trợ cả tìm mờ và theo mã)
-    let matchedPos = posRaw ? posMap.get(normalizeStr(posRaw)) : undefined;
-    if (!matchedPos && posRaw) {
-      const target = normalizeStr(posRaw);
-      matchedPos = positions.find((p) =>
-        normalizeStr(p.name).includes(target) ||
-        target.includes(normalizeStr(p.name)) ||
-        (p.code && normalizeStr(p.code) === target),
-      );
-    }
+    const matchedDept = deptRaw ? deptMap.get(normalizeStr(deptRaw)) : undefined;
+    const positionKey = normalizeStr(posRaw);
+    const matchedPos = posRaw ? positions.find((position) =>
+      Boolean(matchedDept && position.departmentId === matchedDept.id) &&
+      (normalizeStr(position.name) === positionKey || normalizeStr(position.code ?? '') === positionKey),
+    ) : undefined;
 
     // Khớp Vai trò
-    const role: MemberRole = roleRaw ? ROLE_ALIASES[normalizeStr(roleRaw)] || 'EMPLOYEE' : 'EMPLOYEE';
+    const importedRole = parseEmployeeImportRole(roleRaw);
+    const role: MemberRole = importedRole === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
+    if (importedRole !== 'EMPLOYEE' && importedRole !== 'MANAGER') errors.push('Vai trò phải là Nhân viên hoặc Trưởng phòng.');
+    if (!posRaw) errors.push('Chưa có thông tin vị trí.');
 
     // Không bắt buộc phải có sẵn phòng ban trong hệ thống — file có gì sẽ tự động tạo phòng ban đó
-    if (!matchedDept && !deptRaw && role !== 'OWNER') {
+    if (!matchedDept && !deptRaw) {
       errors.push('Chưa có thông tin phòng ban');
     }
 

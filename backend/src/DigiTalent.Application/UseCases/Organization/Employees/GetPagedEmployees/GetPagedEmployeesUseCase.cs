@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,53 +39,51 @@ public class GetPagedEmployeesUseCase : IUseCase<GetPagedEmployeesUseCaseInput, 
             query = query.Where(e => e.DepartmentId == input.DepartmentId.Value);
         }
 
-        var positionId = input.PositionId ?? input.JobPositionId;
-        if (positionId.HasValue)
-        {
-            query = query.Where(e => e.JobPositionId == positionId.Value);
-        }
-
         query = string.IsNullOrWhiteSpace(input.Status)
             ? query.Where(e => e.Status != Statuses.Employee.Archived)
             : query.Where(e => e.Status == input.Status.Trim().ToUpper());
 
-        var totalItems = await query.CountAsync();
+        var placements = EffectiveJobPositions.Resolve(_context, query.AsNoTracking());
+        var positionId = input.PositionId ?? input.JobPositionId;
+        if (positionId.HasValue)
+            placements = placements.Where(row => row.PositionId == positionId.Value);
+        var totalItems = await placements.CountAsync();
 
         var pageIndex = input.PageIndex < 1 ? 1 : input.PageIndex;
         var pageSize = Math.Clamp(input.PageSize, 1, 100);
 
-        var items = await query
-            .OrderBy(e => e.EmployeeCode)
+        var items = await placements
+            .OrderBy(row => row.Employee.EmployeeCode)
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => new EmployeeListItem
+            .Select(row => new EmployeeListItem
             {
-                Id = e.Id,
-                OrganizationId = e.OrganizationId,
-                UserId = e.UserId,
-                DepartmentId = e.DepartmentId,
+                Id = row.Employee.Id,
+                OrganizationId = row.Employee.OrganizationId,
+                UserId = row.Employee.UserId,
+                DepartmentId = row.Employee.DepartmentId,
                 DepartmentName = _context.Departments
-                    .Where(d => d.Id == e.DepartmentId)
+                    .Where(d => d.Id == row.Employee.DepartmentId)
                     .Select(d => d.Name)
                     .FirstOrDefault(),
-                JobPositionId = e.JobPositionId,
+                JobPositionId = row.PositionId,
                 PositionName = _context.JobPositions
-                    .Where(p => p.Id == e.JobPositionId)
+                    .Where(p => p.Id == row.PositionId)
                     .Select(p => p.Name)
                     .FirstOrDefault(),
-                DirectManagerId = e.DirectManagerId,
+                DirectManagerId = row.Employee.DirectManagerId,
                 DirectManagerName = _context.Employees
-                    .Where(m => m.Id == e.DirectManagerId)
+                    .Where(m => m.Id == row.Employee.DirectManagerId)
                     .Select(m => m.FullName)
                     .FirstOrDefault(),
-                EmployeeCode = e.EmployeeCode,
-                FullName = e.FullName,
-                WorkEmail = e.WorkEmail,
-                Phone = e.Phone,
-                Status = e.Status,
-                JoinedAt = e.JoinedAt,
-                CreatedAt = e.CreatedAt,
-                UpdatedAt = e.UpdatedAt,
+                EmployeeCode = row.Employee.EmployeeCode,
+                FullName = row.Employee.FullName,
+                WorkEmail = row.Employee.WorkEmail,
+                Phone = row.Employee.Phone,
+                Status = row.Employee.Status,
+                JoinedAt = row.Employee.JoinedAt,
+                CreatedAt = row.Employee.CreatedAt,
+                UpdatedAt = row.Employee.UpdatedAt,
             })
             .ToListAsync();
 

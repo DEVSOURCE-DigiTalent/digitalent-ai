@@ -1,5 +1,7 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Pulse;
+using DigiTalent.Application.UseCases.Competency.Common;
 using DigiTalent.Application.UseCases.Platform.References;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
@@ -82,8 +84,10 @@ public class CapabilityCeilingReader
             .Where(e => e.OrganizationId == organizationId && e.Status == Statuses.Employee.Active)
             .Select(e => new { e.DepartmentId, e.JobPositionId })
             .ToListAsync();
+        var templateCodes = JobPositionCatalog.Positions.Keys.ToArray();
         var positionsInOrganization = await _context.JobPositions.AsNoTracking()
-            .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active)
+            .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active
+                && (p.DepartmentId != null || !templateCodes.Contains(p.Code)))
             .Select(p => new { p.Id, p.DepartmentId, p.Code, p.Name })
             .ToListAsync();
         var reference = _references == null ? null : await _references.GetAsync();
@@ -114,14 +118,17 @@ public class CapabilityCeilingReader
                 g => g.Key,
                 g => g.GroupBy(r => r.CategoryId).ToDictionary(c => c.Key, c => Clamp(c.Max(r => (int)r.RequiredLevel))));
 
+        var effectiveTargets = await new PositionTargetsReader(_context).LoadAsync(organizationId, positionsInOrganization.Select(p => p.Id).ToArray());
         int Suggest(IEnumerable<Guid> positionIds, Guid categoryId) => positionIds
-            .Select(id => requirementByPosition.TryGetValue(id, out var levels)
+            .Select(id => effectiveTargets.TryGetValue(id, out var target) && target.UsesSystemReference && target.Levels.ContainsKey(categoryId)
+                ? target.Levels[categoryId]
+                : requirementByPosition.TryGetValue(id, out var levels)
                 ? levels.GetValueOrDefault(categoryId)
                 : referenceByPosition.TryGetValue(id, out var sample) ? sample[domainNumbers[categoryId] - 1] : 0)
             .DefaultIfEmpty(0)
             .Max();
 
-        var allPositions = requirementByPosition.Keys.Concat(referenceByPosition.Keys).Distinct().ToList();
+        var allPositions = requirementByPosition.Keys.Concat(referenceByPosition.Keys).Concat(effectiveTargets.Keys).Distinct().ToList();
 
         // Tải các đơn mua suất học của doanh nghiệp để xác định bản quyền đã mở
         var seatOrders = await (
@@ -153,19 +160,19 @@ public class CapabilityCeilingReader
                 var fallbackCode = domainNum > 0 ? $"M{domainNum}-{levelSuffix}" : null;
 
                 // Chuẩn hóa hiển thị tiền tố M (M1-F, M1-I, M1-A...) theo yêu cầu doanh nghiệp
-                var displayCode = CanonicalCourseCode(rawCode ?? fallbackCode);
+                var displayCode = CourseCodes.Canonical(rawCode ?? fallbackCode);
                 if (string.IsNullOrEmpty(displayCode))
                 {
                     displayCode = rawCode ?? fallbackCode;
                 }
 
-                var expectedCanonical = CanonicalCourseCode(displayCode);
+                var expectedCanonical = CourseCodes.Canonical(displayCode);
 
                 // Cấp 1 (Cơ bản) luôn mở miễn phí 100%. Cấp 2 và Cấp 3 chỉ mở khi có suất học đã mua.
                 var seats = level == 1
                     ? 999
                     : seatOrders.Where(so => so.Level == level && (
-                        (expectedCanonical.Length > 0 && CanonicalCourseCode(so.Code) == expectedCanonical) ||
+                        (expectedCanonical.Length > 0 && CourseCodes.Canonical(so.Code) == expectedCanonical) ||
                         (rawCode != null && string.Equals(so.Code, rawCode, StringComparison.OrdinalIgnoreCase)) ||
                         (displayCode != null && string.Equals(so.Code, displayCode, StringComparison.OrdinalIgnoreCase))
                       )).Sum(so => so.Seats);
@@ -211,11 +218,8 @@ public class CapabilityCeilingReader
 
         foreach (var department in departments)
         {
-            var positions = employees
-                .Where(e => e.DepartmentId == department.Id && e.JobPositionId.HasValue)
-                .Select(e => e.JobPositionId!.Value)
-                .Concat(positionsInOrganization.Where(p => p.DepartmentId == department.Id).Select(p => p.Id))
-                .Distinct()
+            var positions = positionsInOrganization.Where(p => p.DepartmentId == department.Id)
+                .Select(p => p.Id)
                 .ToList();
             deptRows.TryGetValue(department.Id, out var custom);
             var values = domains.Select(domain =>
@@ -287,19 +291,14 @@ public class CapabilityCeilingReader
         var suggested = new Dictionary<Guid, int>();
         if (unsaved.Count > 0)
         {
-            var requirements = await (
-                    from set in _context.PositionRequirementSets.AsNoTracking()
-                    join position in _context.JobPositions.AsNoTracking() on set.JobPositionId equals position.Id
-                    join item in _context.PositionRequirementItems.AsNoTracking() on set.Id equals item.RequirementSetId
-                    join competency in _context.Competencies.AsNoTracking() on item.CompetencyId equals competency.Id
-                    where position.OrganizationId == organizationId
-                          && set.Status == Statuses.PositionRequirementSet.Active
-                          && unsaved.Contains(competency.CategoryId)
-                    select new { competency.CategoryId, item.RequiredLevel })
-                .ToListAsync();
-            suggested = requirements
-                .GroupBy(r => r.CategoryId)
-                .ToDictionary(g => g.Key, g => Clamp(g.Max(r => (int)r.RequiredLevel)));
+            var templateCodes = JobPositionCatalog.Positions.Keys.ToArray();
+            var positionIds = await _context.JobPositions.AsNoTracking()
+                .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active
+                    && (p.DepartmentId != null || !templateCodes.Contains(p.Code)))
+                .Select(p => p.Id).ToListAsync();
+            var targets = await new PositionTargetsReader(_context).LoadAsync(organizationId, positionIds);
+            suggested = targets.Values.SelectMany(t => t.Levels).Where(t => unsaved.Contains(t.Key))
+                .GroupBy(t => t.Key).ToDictionary(g => g.Key, g => Clamp(g.Max(t => t.Value)));
         }
 
         return ids.ToDictionary(id => id, id =>
@@ -310,15 +309,4 @@ public class CapabilityCeilingReader
     }
 
     private static int Clamp(int level) => Math.Clamp(level, 0, CapabilityCeiling.MaxLevel);
-
-    private static string CanonicalCourseCode(string? code)
-    {
-        if (string.IsNullOrWhiteSpace(code)) return string.Empty;
-        var trimmed = code.Trim().ToUpperInvariant();
-        if ((trimmed.StartsWith('A') || trimmed.StartsWith('M')) && trimmed.Length > 2 && char.IsDigit(trimmed[1]))
-        {
-            return "M" + trimmed[1..];
-        }
-        return trimmed;
-    }
 }

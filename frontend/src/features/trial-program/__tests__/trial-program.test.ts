@@ -21,6 +21,14 @@ describe('trial participant file', () => {
     ]);
   });
 
+  it('maps the Vietnamese role column to the department manager role', () => {
+    const result = rowsFromCells([
+      ['Họ tên', 'Email', 'Phòng ban', 'Vị trí', 'Vai trò'],
+      ['Lê Chi', 'chi@cty.vn', 'Marketing', 'Marketing', 'Trưởng phòng'],
+    ]);
+    expect(result[0]).toMatchObject({ department: 'Marketing', position: 'Marketing', role: 'MANAGER' });
+  });
+
   it('uses the template order when the file has no header row', () => {
     expect(rowsFromCells([['Lê Chi', 'chi@cty.vn', 'Marketing', 'Chuyên viên']])).toEqual([
       { fullName: 'Lê Chi', email: 'chi@cty.vn', department: 'Marketing', position: 'Chuyên viên' },

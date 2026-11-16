@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Events;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using DigiTalent.Domain.Events;
@@ -52,10 +53,10 @@ public class SkillGapRecalculationHandler :
         var employeeIds = new List<Guid>();
         foreach (var positionId in events.Select(e => e.JobPositionId).Distinct())
         {
-            var ids = await _context.Employees
-                .AsNoTracking()
-                .Where(e => e.JobPositionId == positionId && e.Status == Statuses.Employee.Active)
-                .Select(e => e.Id)
+            var ids = await EffectiveJobPositions.Resolve(_context,
+                    _context.Employees.AsNoTracking().Where(e => e.Status == Statuses.Employee.Active))
+                .Where(row => row.PositionId == positionId)
+                .Select(row => row.Employee.Id)
                 .Take(MaxEmployeesPerActivation + 1)
                 .ToListAsync(cancellationToken);
 

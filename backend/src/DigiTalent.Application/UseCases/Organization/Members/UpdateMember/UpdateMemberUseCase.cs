@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Departments;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
@@ -119,6 +120,16 @@ public class UpdateMemberUseCase : IUseCase<UpdateMemberUseCaseInput, UpdateMemb
             .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { UserRole = ur, r.Code })
             .ToListAsync();
 
+        var managesDepartment = member.EmployeeId.HasValue && await _context.Departments.AnyAsync(d =>
+            d.OrganizationId == organizationId && d.ManagerEmployeeId == member.EmployeeId && d.Status != Statuses.MasterData.Archived);
+        if (managesDepartment && !desired.Contains(Roles.Manager)
+            && !(current.All(r => r.Code != Roles.Manager) && desired.Contains(Roles.Owner)))
+            throw new ConflictException("Không thể bỏ quyền Manager của trưởng phòng đang phụ trách.");
+        if ((managesDepartment || desired.Contains(Roles.Manager)) && !desired.Contains(Roles.Employee))
+            desired.Add(Roles.Employee);
+        if (!managesDepartment && desired.Contains(Roles.Manager) && current.All(r => r.Code != Roles.Manager))
+            throw new BadRequestException("Phân công trưởng phòng tại trang Phòng ban để cấp quyền Manager.", "roles", "MANAGER_REQUIRES_DEPARTMENT");
+
         // Revoke managed roles that are no longer wanted
         foreach (var row in current.Where(r => MemberRoles.ManagedRoleCodes.Contains(r.Code) && !desired.Contains(r.Code)))
         {
@@ -159,23 +170,28 @@ public class UpdateMemberUseCase : IUseCase<UpdateMemberUseCaseInput, UpdateMemb
 
         // "" clears the position, a GUID assigns it, null leaves it as is (validator guarantees the format)
         Guid? jobPositionId = string.IsNullOrEmpty(jobPositionIdText) ? null : Guid.Parse(jobPositionIdText);
-        if (jobPositionId.HasValue)
-        {
-            var positionIsActive = await _context.JobPositions.AnyAsync(p =>
-                p.Id == jobPositionId.Value && p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active);
-            if (!positionIsActive)
-            {
-                throw new BadRequestException("Job position does not exist or is not active.", "jobPositionId", "INVALID_JOB_POSITION");
-            }
-        }
-
         var employee = member.EmployeeId.HasValue
             ? await _context.Employees.FirstAsync(e => e.Id == member.EmployeeId.Value)
             : await CreateProfileAsync(organizationId, member, departmentId);
 
+        var targetDepartmentId = departmentId ?? employee.DepartmentId;
+        var targetPositionId = jobPositionIdText == null ? employee.JobPositionId : jobPositionId;
+        if (targetPositionId.HasValue && (targetPositionId != employee.JobPositionId || targetDepartmentId != employee.DepartmentId))
+        {
+            var validPosition = await _context.JobPositions.AnyAsync(p => p.Id == targetPositionId.Value
+                && p.OrganizationId == organizationId && p.DepartmentId == targetDepartmentId && p.Status == Statuses.MasterData.Active);
+            if (!validPosition)
+                throw new BadRequestException("Vị trí công việc không thuộc phòng ban đã chọn.", "jobPositionId", "INVALID_JOB_POSITION");
+        }
+
         var changed = false;
         if (departmentId.HasValue && employee.DepartmentId != departmentId.Value)
         {
+            await DepartmentRules.EnsureManagerCanChangePlacementAsync(_context, employee.Id, organizationId);
+            var managerId = await DepartmentRules.ResolveDirectManagerAsync(_context, departmentId.Value, null, employee.Id);
+            if (!managerId.HasValue)
+                throw new ConflictException("Phòng ban nhận nhân sự chưa có trưởng phòng hợp lệ.");
+            employee.DirectManagerId = managerId;
             employee.DepartmentId = departmentId.Value;
             changed = true;
         }
@@ -198,11 +214,16 @@ public class UpdateMemberUseCase : IUseCase<UpdateMemberUseCaseInput, UpdateMemb
                 "This member has no employee profile yet. Choose a department to create it.", "departmentId", "NO_EMPLOYEE_PROFILE");
         }
 
+        var managerId = await DepartmentRules.ResolveDirectManagerAsync(_context, departmentId.Value, null);
+        if (!managerId.HasValue)
+            throw new ConflictException("Phòng ban nhận nhân sự chưa có trưởng phòng.");
+
         var employee = new Employee
         {
             OrganizationId = organizationId,
             UserId = member.UserId,
             DepartmentId = departmentId.Value,
+            DirectManagerId = managerId,
             EmployeeCode = await EmployeeCodeGenerator.NextAsync(_context, organizationId),
             FullName = member.FullName,
             WorkEmail = member.Email,

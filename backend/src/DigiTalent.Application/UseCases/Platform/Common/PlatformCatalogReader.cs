@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
@@ -119,9 +120,12 @@ public static class PlatformCatalogReader
     /// <summary>A published course by code (seat grants only apply to courses in the version in use).</summary>
     public static async Task<PlatformCourse> FindCourseAsync(IApplicationDbContext context, string code)
     {
-        var normalized = code.Trim().ToUpperInvariant();
+        var requested = code.Trim().ToUpperInvariant();
+        var normalized = CourseCodes.Canonical(requested);
+        var aliases = CourseCodes.Aliases(normalized);
         return await context.PlatformCourses.Include(c => c.Domain)
-                   .FirstOrDefaultAsync(c => c.Code == normalized && c.PublishedAt != null)
+                   .Where(c => aliases.Contains(c.Code) && c.PublishedAt != null)
+                   .OrderByDescending(c => c.Code == requested).ThenByDescending(c => c.Code == normalized).ThenBy(c => c.Id).FirstOrDefaultAsync()
                ?? throw new DigiTalent.Application.Common.Exceptions.NotFoundException($"Course '{code}' not found.");
     }
 }

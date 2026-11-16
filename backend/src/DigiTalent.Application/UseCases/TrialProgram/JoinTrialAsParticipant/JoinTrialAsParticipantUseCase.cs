@@ -26,6 +26,13 @@ public class JoinTrialAsParticipantUseCase : IUseCase<JoinTrialAsParticipantUseC
 
     public async Task<JoinTrialAsParticipantUseCaseOutput> ExecuteAsync(JoinTrialAsParticipantUseCaseInput input)
     {
+        JoinTrialAsParticipantUseCaseOutput? result = null;
+        await _context.ExecuteInSerializableTransactionAsync(async () => result = await JoinAsync(input));
+        return result!;
+    }
+
+    private async Task<JoinTrialAsParticipantUseCaseOutput> JoinAsync(JoinTrialAsParticipantUseCaseInput input)
+    {
         var trial = await _reader.ForOwnerAsync();
         var owner = await _context.Users.Include(u => u.UserRoles).FirstAsync(u => u.Id == trial.OwnerUserId);
         var existing = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == owner.Id && e.OrganizationId == trial.OrganizationId);
@@ -49,12 +56,14 @@ public class JoinTrialAsParticipantUseCase : IUseCase<JoinTrialAsParticipantUseC
         }
 
         var structure = await TrialOrgStructure.LoadAsync(_context, trial.OrganizationId);
+        var department = structure.Department(departmentName, out var createdDepartment);
         var employee = new Employee
         {
             OrganizationId = trial.OrganizationId,
             UserId = owner.Id,
-            DepartmentId = structure.Department(departmentName).Id,
-            JobPositionId = structure.Position(positionName).Id,
+            DepartmentId = department.Id,
+            JobPositionId = structure.Position(department, positionName).Id,
+            DirectManagerId = department.ManagerEmployeeId,
             EmployeeCode = await EmployeeCodeGenerator.NextAsync(_context, trial.OrganizationId),
             FullName = owner.DisplayName,
             WorkEmail = owner.Email,
@@ -68,6 +77,13 @@ public class JoinTrialAsParticipantUseCase : IUseCase<JoinTrialAsParticipantUseC
         }
 
         await _context.SaveChangesAsync();
+        if (createdDepartment)
+        {
+            // The owner can lead the department created during self-enrollment using existing Owner permissions.
+            department.ManagerEmployeeId = employee.Id;
+            await _context.SaveChangesAsync();
+        }
+
         return new JoinTrialAsParticipantUseCaseOutput { EmployeeId = employee.Id };
     }
 }

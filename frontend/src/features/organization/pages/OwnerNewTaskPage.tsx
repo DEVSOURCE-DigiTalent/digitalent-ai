@@ -284,7 +284,7 @@ export function OwnerNewTaskPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <OwnerFilterSelect label={translateUi("Lọc nhân sự theo phòng ban")} value={selectedDepartmentId} onChange={(value) => setValue('departmentId', value, { shouldDirty: true })} options={[{ value: '', label: 'Tất cả phòng ban' }, ...departments.map(([id, name]) => ({ value: id, label: name }))]} className="sm:w-56" />
+              <OwnerFilterSelect icon="filter" label={translateUi("Lọc nhân sự theo phòng ban")} value={selectedDepartmentId} onChange={(value) => setValue('departmentId', value, { shouldDirty: true })} options={[{ value: '', label: 'Tất cả phòng ban' }, ...departments.map(([id, name]) => ({ value: id, label: name }))]} className="sm:w-56" />
               <label className="owner-filter-search flex-1"><Search size={17} aria-hidden="true" /><input
                 type="search"
                 aria-label={translateUi("Tìm nhân viên")}

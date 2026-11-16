@@ -111,7 +111,8 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                     join course in _context.Courses.AsNoTracking() on preAssessment.CourseId equals course.Id
                     join department in _context.Departments.AsNoTracking() on employee.DepartmentId equals department.Id
                     where (input.OrganizationId == null || employee.OrganizationId == input.OrganizationId)
-                          && (input.IncludeReviewed || preAssessment.Decision == null)
+                          // Bài cũ chờ chấm đã bị thay bằng bài kiểm tra đầu vào tự chấm: không còn vào hàng chờ; bài đã chấm chỉ còn là lịch sử.
+                          && input.IncludeReviewed && preAssessment.Decision != null
                     select new PreAssessmentRow(
                         preAssessment,
                         employee.Id,

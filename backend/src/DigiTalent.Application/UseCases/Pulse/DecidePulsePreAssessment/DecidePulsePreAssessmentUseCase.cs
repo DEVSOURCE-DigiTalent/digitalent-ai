@@ -35,6 +35,14 @@ public class DecidePulsePreAssessmentUseCase : IUseCase<DecidePulsePreAssessment
     public async Task<DecidePulsePreAssessmentUseCaseOutput> ExecuteAsync(DecidePulsePreAssessmentUseCaseInput input)
     {
         var (preAssessment, employee) = await _scope.LoadPreAssessmentAsync(input.PreAssessmentId);
+        if (preAssessment.Decision == null)
+        {
+            throw new BadRequestException(
+                "Bài đánh giá đầu vào có tự luận đã được thay bằng bài kiểm tra đầu vào trắc nghiệm tự chấm, nên không còn chấm bài này. Nhân viên sẽ làm bài kiểm tra đầu vào mới.",
+                "preAssessmentId",
+                "PRE_ASSESSMENT_SUPERSEDED");
+        }
+
         if (preAssessment.Decision != null)
         {
             throw new ConflictException("Bài đánh giá này đã có quyết định.");

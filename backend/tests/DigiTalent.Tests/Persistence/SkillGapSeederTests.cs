@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Entities;
 using DigiTalent.Infrastructure.Persistence;
 using DigiTalent.Infrastructure.Persistence.Seed;
 using FluentAssertions;
@@ -156,8 +157,29 @@ public class SkillGapSeederTests
             e.EmployeeId == employee.Id && e.SourceType == Statuses.EvidenceSourceType.Migration && e.IsLevelConfirming))
             .Should().Be(24);
 
-        var salesCrm = await context.JobPositions.SingleAsync(p => p.Code == "SALES_CRM");
-        (await context.Employees.SingleAsync(e => e.WorkEmail == "manager@digitalent.ai")).JobPositionId.Should().Be(salesCrm.Id);
+        accountant.DepartmentId.Should().Be(employee.DepartmentId);
+        (await context.Employees.SingleAsync(e => e.WorkEmail == "manager@digitalent.ai")).JobPositionId.Should().Be(accountant.Id);
+    }
+
+    [Fact]
+    public async Task ExistingTemplatesBindToMatchingDepartmentCodesWithoutReplacingStandards()
+    {
+        using var context = await SeededTwiceAsync();
+        var templates = await context.JobPositions.Where(p => p.Code != "ACCOUNTANT").ToListAsync();
+        var org = templates.First().OrganizationId;
+        var departments = templates.ToDictionary(p => p.Code, p => new Department
+        {
+            OrganizationId = org, Code = p.Code, Name = p.Name,
+        });
+        context.Departments.AddRange(departments.Values);
+        await context.SaveChangesAsync();
+        var standards = await context.PositionRequirementSets.CountAsync();
+
+        await SkillGapSeeder.EnsureOrganizationFrameworkAndCoursesAsync(context, org);
+        await SkillGapSeeder.EnsureOrganizationFrameworkAndCoursesAsync(context, org);
+
+        templates.Should().HaveCount(4).And.OnlyContain(p => p.DepartmentId == departments[p.Code].Id);
+        (await context.PositionRequirementSets.CountAsync()).Should().Be(standards);
     }
 
     [Fact]

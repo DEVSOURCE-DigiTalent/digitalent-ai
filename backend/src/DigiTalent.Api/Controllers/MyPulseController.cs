@@ -90,6 +90,41 @@ public class MyPulseController : ControllerBase
         return Ok(ApiResponse<SubmitPulseModuleQuizUseCaseOutput>.Ok(result));
     }
 
+    // GET api/v1/me/pulse/courses/{courseId}/skip-test — bài kiểm tra vượt học: 20 câu trắc nghiệm từ các mô đun, đạt 80% mở bài cuối khóa
+    [HttpGet("courses/{courseId:guid}/skip-test")]
+    [HasPermission(Permissions.Assessment.Read)]
+    public async Task<ActionResult<ApiResponse<GetPulseSkipTestUseCaseOutput>>> GetSkipTest(
+        Guid courseId,
+        [FromServices] IUseCase<GetPulseSkipTestUseCaseInput, GetPulseSkipTestUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new GetPulseSkipTestUseCaseInput { CourseId = courseId });
+        return Ok(ApiResponse<GetPulseSkipTestUseCaseOutput>.Ok(result));
+    }
+
+    // POST api/v1/me/pulse/courses/{courseId}/skip-test/start — bắt đầu một lần làm (tính giờ), trả đề không kèm đáp án
+    [HttpPost("courses/{courseId:guid}/skip-test/start")]
+    [HasPermission(Permissions.Assessment.AttemptSubmit)]
+    public async Task<ActionResult<ApiResponse<StartPulseSkipTestUseCaseOutput>>> StartSkipTest(
+        Guid courseId,
+        [FromServices] IUseCase<StartPulseSkipTestUseCaseInput, StartPulseSkipTestUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new StartPulseSkipTestUseCaseInput { CourseId = courseId });
+        return Ok(ApiResponse<StartPulseSkipTestUseCaseOutput>.Ok(result));
+    }
+
+    // POST api/v1/me/pulse/courses/{courseId}/skip-test — nộp lần làm đang mở, { attemptNo, answers: [{ questionId, optionId }] }
+    [HttpPost("courses/{courseId:guid}/skip-test")]
+    [HasPermission(Permissions.Assessment.AttemptSubmit)]
+    public async Task<ActionResult<ApiResponse<SubmitPulseSkipTestUseCaseOutput>>> SubmitSkipTest(
+        Guid courseId,
+        [FromBody] SubmitPulseSkipTestUseCaseInput input,
+        [FromServices] IUseCase<SubmitPulseSkipTestUseCaseInput, SubmitPulseSkipTestUseCaseOutput> useCase)
+    {
+        input.CourseId = courseId;
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<SubmitPulseSkipTestUseCaseOutput>.Ok(result));
+    }
+
     // GET api/v1/me/pulse/courses/{courseId}/pre-assessment — bài đánh giá trước khi học của khóa
     [HttpGet("courses/{courseId:guid}/pre-assessment")]
     [HasPermission(Permissions.Assessment.Read)]

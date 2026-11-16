@@ -868,6 +868,8 @@ Xem kết quả|View results
 Chờ hoàn thành|Awaiting completion
 Làm bài đánh giá|Take assessment
 Chưa làm bài|Not started
+Đã làm bài|Completed
+Trạng thái bài làm|Submission status
 Đang làm bài|In progress
 Đã nộp bài|Submitted
 Thời điểm hoàn thành|Completed at

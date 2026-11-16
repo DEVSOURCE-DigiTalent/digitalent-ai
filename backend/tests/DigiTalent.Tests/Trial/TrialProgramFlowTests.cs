@@ -131,7 +131,7 @@ public class TrialProgramFlowTests
         (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Participants.Should().BeEmpty();
         await FluentActions.Awaiting(() => asOwner.Join.ExecuteAsync(new JoinTrialAsParticipantUseCaseInput { Department = "", Position = "Giám đốc" }))
             .Should().ThrowAsync<BadRequestException>();
-        await asOwner.Join.ExecuteAsync(new JoinTrialAsParticipantUseCaseInput { Department = "Ban giám đốc", Position = "Giám đốc" });
+        var joined = await asOwner.Join.ExecuteAsync(new JoinTrialAsParticipantUseCaseInput { Department = "Ban giám đốc", Position = "Giám đốc" });
         world.Context.ChangeTracker.Clear();
 
         var roles = await world.Context.UserRoles.Where(r => r.UserId == owner.Id).Select(r => r.Role.Code).ToListAsync();
@@ -140,8 +140,9 @@ public class TrialProgramFlowTests
         me.IsOwner.Should().BeTrue();
         me.DepartmentName.Should().Be("Ban giám đốc");
         me.Status.Should().Be(TrialProgramRules.ParticipantActive);
-        await FluentActions.Awaiting(() => asOwner.Join.ExecuteAsync(new JoinTrialAsParticipantUseCaseInput { Department = "Ban giám đốc", Position = "Giám đốc" }))
-            .Should().ThrowAsync<ConflictException>();
+        var repeated = await asOwner.Join.ExecuteAsync(new JoinTrialAsParticipantUseCaseInput { Department = "Ban giám đốc", Position = "Giám đốc" });
+        repeated.EmployeeId.Should().Be(joined.EmployeeId);
+        (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Participants.Should().ContainSingle();
     }
 
     [Fact]
@@ -196,8 +197,9 @@ public class TrialProgramFlowTests
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var mentor = await world.AsAsync("mentor@digitalent.ai", Roles.Mentor);
         var mentorUser = await world.UserAsync("mentor@digitalent.ai");
+        var baselineHistory = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { IncludeReviewed = true });
 
-        // Nhân viên nộp bài cuối cấp M1-F (Cơ bản), bài cuối cấp M3-F (Cơ bản, miền khác), và bài đánh giá trước khi học M2-F (để chứng minh mentor không nhận bài đánh giá trước khi học).
+        // Nhân viên nộp bài cuối cấp M1-F (Cơ bản), bài cuối cấp M3-F (Cơ bản, miền khác), và làm bài kiểm tra đầu vào M5-F.
         var m1f = await world.OpenForLearningAsync(employee, "M1-F");
         await world.PassAllModulesAsync(employee, m1f.CourseId);
         var finalM1f = await world.SubmitFinalAsync(employee, m1f.CourseId);
@@ -206,13 +208,13 @@ public class TrialProgramFlowTests
         await world.PassAllModulesAsync(employee, m3f.CourseId);
         var finalM3f = await world.SubmitFinalAsync(employee, m3f.CourseId);
 
-        await world.SubmitPreAssessmentAsync(employee, "M2-F");
+        await world.OpenForLearningAsync(employee, "M5-F");
 
         var opsManager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
         var managerQueue = await opsManager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
-        managerQueue.Items.Should().Contain(
-            i => i.CourseCode == "M2-F" && i.Kind == Statuses.ProctoringKind.PreAssessment,
-            "quản lý vẫn nhận bài đánh giá trước khi học trong hàng chờ của phòng ban");
+        managerQueue.Items.Should().NotContain(
+            i => i.Kind == Statuses.ProctoringKind.PreAssessment,
+            "bài kiểm tra đầu vào trắc nghiệm tự chấm, không vào hàng chờ của người chấm");
 
         (await world.Context.Notifications.AnyAsync(n =>
             n.RecipientUserId == mentorUser.Id && n.Type == SubmitPulseFinalUseCase.NotificationType))
@@ -220,20 +222,18 @@ public class TrialProgramFlowTests
 
         var activeQueue = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
         activeQueue.PendingCount.Should().Be(2);
-        activeQueue.PreAssessmentCount.Should().Be(0, "mentor không chấm bài đánh giá trước khi học");
+        activeQueue.PreAssessmentCount.Should().Be(0);
         activeQueue.ReviewedCount.Should().Be(0);
-        activeQueue.Items.Select(i => i.CourseCode).Should().BeEquivalentTo(new[] { "M1-F", "M3-F" });
+        activeQueue.Items.Where(i => i.Kind == Statuses.ProctoringKind.Final).Select(i => i.CourseCode).Should().BeEquivalentTo(new[] { "M1-F", "M3-F" });
         activeQueue.Items.Should().OnlyContain(i =>
-            i.Kind == Statuses.ProctoringKind.Final
-            && i.OrganizationId != Guid.Empty
+            i.OrganizationId != Guid.Empty
             && !string.IsNullOrEmpty(i.DomainName)
             && i.Tier == 1);
 
         var withHistory = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { IncludeReviewed = true });
-        withHistory.ReviewedCount.Should().Be(0);
+        withHistory.ReviewedCount.Should().Be(baselineHistory.ReviewedCount, "bài kiểm tra đầu vào không có kết luận của người chấm");
         withHistory.PendingCount.Should().Be(2);
         withHistory.PreAssessmentCount.Should().Be(0);
-        withHistory.Items.Should().OnlyContain(i => i.Kind == Statuses.ProctoringKind.Final);
 
         // Mentor chấm đạt M1-F (cuối cấp -> mở khóa M1-I) và đạt M3-F.
         await mentor.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
@@ -250,30 +250,8 @@ public class TrialProgramFlowTests
         });
         world.Context.ChangeTracker.Clear();
 
-        // Nhân viên đạt M1-F -> cấp suất học cấp Trung cấp M1-I, học xong các mô đun rồi nộp bài cuối cấp M1-I để mentor thấy nhiều cấp độ.
+        // M1-I đã được cấp suất trong dữ liệu demo.
         var m1i = await world.OpenForLearningAsync(employee, "M1-I");
-        var empEntity = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
-        var ownerUser = await world.UserAsync(PulseTestWorld.OwnerEmail);
-        var m1iAssignment = new CourseAssignment
-        {
-            CourseId = m1i.CourseId,
-            EmployeeId = empEntity.Id,
-            AssignmentSource = Statuses.CourseAssignmentSource.SkillGap,
-            AssignedByUserId = ownerUser.Id,
-            AssignedAt = world.Clock.Now,
-            Status = Statuses.CourseAssignment.Active,
-        };
-        world.Context.CourseAssignments.Add(m1iAssignment);
-        world.Context.Enrollments.Add(new Enrollment
-        {
-            CourseAssignmentId = m1iAssignment.Id,
-            EmployeeId = empEntity.Id,
-            CourseId = m1i.CourseId,
-            Status = Statuses.Enrollment.NotStarted,
-            ProgressPercent = 0,
-        });
-        await world.Context.SaveChangesAsync();
-        world.Context.ChangeTracker.Clear();
         await world.PassAllModulesAsync(employee, m1i.CourseId);
         var finalM1i = await world.SubmitFinalAsync(employee, m1i.CourseId);
 
@@ -286,7 +264,7 @@ public class TrialProgramFlowTests
         var fullHistory = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { IncludeReviewed = true });
         fullHistory.PendingCount.Should().Be(1);
         fullHistory.PreAssessmentCount.Should().Be(0);
-        fullHistory.ReviewedCount.Should().Be(2);
+        fullHistory.ReviewedCount.Should().Be(baselineHistory.ReviewedCount + 2, "mentor đã chấm đạt M1-F và M3-F");
         fullHistory.Items.Should().Contain(i => i.SubmissionId == finalM1f.SubmissionId && i.Status == PulseFinalStatus.Approved);
         fullHistory.Items.Should().Contain(i => i.SubmissionId == finalM3f.SubmissionId && i.Status == PulseFinalStatus.Approved);
     }

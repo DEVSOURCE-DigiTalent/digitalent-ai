@@ -144,9 +144,20 @@ public class PulseModuleReader
             .GroupBy(a => a.EnrollmentId)
             .ToDictionary(g => g.Key, g => g.Select(a => a.AssessmentId).ToHashSet());
 
+        // Đạt bài kiểm tra vượt học (PulseSkipTest) của đúng khóa của lượt học = qua mọi mô đun.
+        var passedAssessmentIds = passedAttempts.Select(a => a.AssessmentId).Distinct().ToList();
+        var skipTests = passedAssessmentIds.Count == 0
+            ? new Dictionary<Guid, Guid>()
+            : await _context.Assessments
+                .AsNoTracking()
+                .Where(a => passedAssessmentIds.Contains(a.Id) && a.Code == PulseRules.SkipTestCode && a.ModuleId == null)
+                .ToDictionaryAsync(a => a.Id, a => a.CourseId);
+
         foreach (var (enrollmentId, status, courseId) in enrollments)
         {
-            var completedAll = status == Statuses.Enrollment.Completed;
+            var skipped = (passedByEnrollment.GetValueOrDefault(enrollmentId) ?? new HashSet<Guid>())
+                .Any(id => skipTests.TryGetValue(id, out var skipCourseId) && skipCourseId == courseId);
+            var completedAll = status == Statuses.Enrollment.Completed || skipped;
             var lessonIds = lessonsByEnrollment.GetValueOrDefault(enrollmentId) ?? new HashSet<Guid>();
             var quizIds = passedByEnrollment.GetValueOrDefault(enrollmentId) ?? new HashSet<Guid>();
             result[enrollmentId] = (modulesByCourse.GetValueOrDefault(courseId) ?? new List<PulseModuleInfo>())

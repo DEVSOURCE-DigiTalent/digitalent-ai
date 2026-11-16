@@ -89,8 +89,8 @@ export function CourseAssignmentPage() {
         onSearchChange={(value) => { setSearch(value); setPage(1); }}
         filters={
           <>
-            <OwnerFilterSelect label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...STATUSES.map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
-            <OwnerFilterSelect label={translateUi("Lọc theo phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
+            <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...STATUSES.map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
+            <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
           </>
         }
         pageInfo={{ page, pageSize: PAGE_SIZE, total: data?.totalItems ?? 0, onPageChange: setPage }}

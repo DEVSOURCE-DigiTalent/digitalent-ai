@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Departments;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Events;
 using Microsoft.EntityFrameworkCore;
@@ -69,31 +70,22 @@ public class UpdateEmployeeUseCase : IUseCase<UpdateEmployeeUseCaseInput, Update
 
         // 5. Vị trí công việc (nếu có) phải tồn tại trong tổ chức và chưa bị archive
         var positionId = input.PositionId ?? input.JobPositionId;
-        if (positionId.HasValue)
+        if (positionId.HasValue && (positionId != employee.JobPositionId || input.DepartmentId != employee.DepartmentId))
         {
             var positionExists = await _context.JobPositions
-                .AnyAsync(p => p.Id == positionId.Value && p.OrganizationId == organizationId && p.Status != Statuses.MasterData.Archived);
+                .AnyAsync(p => p.Id == positionId.Value && p.OrganizationId == organizationId && p.DepartmentId == input.DepartmentId && p.Status != Statuses.MasterData.Archived);
             if (!positionExists)
             {
                 throw new BadRequestException($"Job position '{positionId.Value}' does not exist or is archived.");
             }
         }
 
-        // 6. Quản lý trực tiếp (nếu có) không được là chính mình, phải cùng tổ chức và chưa bị archive
-        if (input.DirectManagerId.HasValue)
-        {
-            if (input.DirectManagerId.Value == input.Id)
-            {
-                throw new BadRequestException("An employee cannot be their own manager.");
-            }
+        var changesManagerEligibility = input.DepartmentId != employee.DepartmentId || input.UserId != employee.UserId
+            || (!string.IsNullOrWhiteSpace(input.Status) && input.Status.Trim().ToUpperInvariant() != Statuses.Employee.Active);
+        if (changesManagerEligibility)
+            await DepartmentRules.EnsureManagerCanChangePlacementAsync(_context, employee.Id, organizationId);
 
-            var managerExists = await _context.Employees
-                .AnyAsync(m => m.Id == input.DirectManagerId.Value && m.OrganizationId == organizationId && m.Status != Statuses.Employee.Archived);
-            if (!managerExists)
-            {
-                throw new BadRequestException($"Direct manager '{input.DirectManagerId.Value}' does not exist or is archived.");
-            }
-        }
+        var managerId = await DepartmentRules.ResolveDirectManagerAsync(_context, input.DepartmentId, input.DirectManagerId, employee.Id);
 
         // 7. Tài khoản user (nếu có) phải tồn tại và chưa được gán cho nhân sự khác
         if (input.UserId.HasValue)
@@ -119,7 +111,7 @@ public class UpdateEmployeeUseCase : IUseCase<UpdateEmployeeUseCaseInput, Update
         employee.FullName = input.FullName.Trim();
         employee.DepartmentId = input.DepartmentId;
         employee.JobPositionId = positionId;
-        employee.DirectManagerId = input.DirectManagerId;
+        employee.DirectManagerId = managerId;
         employee.WorkEmail = email;
         employee.Phone = string.IsNullOrWhiteSpace(input.Phone) ? null : input.Phone.Trim();
         employee.JoinedAt = input.JoinedAt;

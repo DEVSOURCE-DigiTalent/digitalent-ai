@@ -20,6 +20,7 @@ public class DepartmentListItem
     public Guid? ParentDepartmentId { get; set; }
     public string? ParentDepartmentName { get; set; }
     public Guid? ManagerEmployeeId { get; set; }
+    public bool HasPendingManagerInvitation { get; set; }
     public string? ManagerName { get; set; }
     public int Headcount { get; set; }                                       // số nhân viên ACTIVE
     public Dictionary<string, int> GradeDistribution { get; set; } = new(); // { "G1": n, "G2": n, "G3": n }

@@ -35,6 +35,7 @@ export interface JobPositionListItem {
   jobGrade?: 'G1' | 'G2' | 'G3';
   jobGradeName?: string;
   headcount?: number;
+  usedByOtherDepartments?: boolean;
   hasRequirementSet?: boolean;
   status: JobPositionStatus;
 }

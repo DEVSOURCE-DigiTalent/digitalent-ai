@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -73,17 +74,13 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
             throw new BadRequestException("Khóa học Cơ bản được mở miễn phí toàn bộ trong gói dùng thử, không cần mua suất.");
         }
 
-        // Chuẩn hóa mã tìm kiếm: hỗ trợ cả tiền tố M (M1..M6) và tiền tố di sản A (A1..A5)
-        var rawCode = course.Code.Trim();
-        var normalizedCode = rawCode.StartsWith("A", StringComparison.OrdinalIgnoreCase) && rawCode.Length > 2 && char.IsDigit(rawCode[1])
-            ? "M" + rawCode[1..]
-            : rawCode;
-        var legacyCode = normalizedCode.StartsWith("M", StringComparison.OrdinalIgnoreCase) && normalizedCode.Length > 2 && char.IsDigit(normalizedCode[1])
-            ? "A" + normalizedCode[1..]
-            : normalizedCode;
-
+        var codes = CourseCodes.Aliases(course.Code);
+        var normalizedCode = CourseCodes.Canonical(course.Code);
         var platformCourse = await _context.PlatformCourses.AsNoTracking()
-            .FirstOrDefaultAsync(pc => pc.Code == rawCode || pc.Code == normalizedCode || pc.Code == legacyCode)
+            .Where(pc => codes.Contains(pc.Code))
+            .OrderByDescending(pc => pc.Code == normalizedCode)
+            .ThenBy(pc => pc.Id)
+            .FirstOrDefaultAsync()
             ?? throw new NotFoundException($"Khóa học chuẩn '{course.Code}' chưa được niêm yết trên nền tảng.");
 
         var unitPrice = platformCourse.PricePerSeat > 0
@@ -186,12 +183,13 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
 
         var totalPurchased = await (
             from o in _context.CourseSeatOrders.AsNoTracking()
-            where o.OrganizationId == organizationId && o.CourseId == platformCourse.Id
+            join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
+            where o.OrganizationId == organizationId && codes.Contains(pc.Code)
             select o.Seats
         ).SumAsync();
 
         var versionIds = await _context.Courses.AsNoTracking()
-            .Where(c => c.OrganizationId == organizationId && (c.Code == rawCode || c.Code == normalizedCode || c.Code == legacyCode))
+            .Where(c => c.OrganizationId == organizationId && codes.Contains(c.Code))
             .Select(c => c.Id).ToListAsync();
         var assignedCount = await _context.CourseAssignments.AsNoTracking()
             .Where(ca => versionIds.Contains(ca.CourseId) && ca.Status == Statuses.CourseAssignment.Active)

@@ -110,11 +110,12 @@ export function CapabilityCeilingMatrix() {
       return;
     }
     const code = course.code || `M${domain.sortOrder}-${course.level === 2 ? 'I' : 'A'}`;
+    const deselect = selectedToBuy.has(code);
+    // The updater stays pure: StrictMode runs it twice, so a toast inside it would show twice.
     setSelectedToBuy((prev) => {
       const next = new Map(prev);
-      if (next.has(code)) {
+      if (deselect) {
         next.delete(code);
-        toast.info(`Đã bỏ chọn khóa ${code}`);
       } else {
         next.set(code, {
           code,
@@ -123,12 +124,16 @@ export function CapabilityCeilingMatrix() {
           domainName: domain.name,
           price: course.pricePerSeat || (course.level === 3 ? 699000 : 399000),
         });
-        toast.success(`Đã chọn khóa ${code} để mua bản quyền`, {
-          description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.',
-        });
       }
       return next;
     });
+    if (deselect) {
+      toast.info(`Đã bỏ chọn khóa ${code}`);
+    } else {
+      toast.success(`Đã chọn khóa ${code} để mua bản quyền`, {
+        description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.',
+      });
+    }
   };
 
   if (isLoading) {
@@ -197,6 +202,10 @@ export function CapabilityCeilingMatrix() {
     const ceilings = Object.entries(current).map(([categoryId, level]) => ({ categoryId, level }));
     if (activeScope === ALL && ceilings.some(({ categoryId, level }) => level > (matrix.domains.find((item) => item.categoryId === categoryId)?.maxAllowedCeiling ?? 1))) {
       toast.error('Có cấp chưa mua suất học. Chọn khóa để mua trước khi mở rộng phạm vi.');
+      return;
+    }
+    if (activeScope !== ALL && ceilings.some(({ categoryId, level }) => level > (orgSaved[categoryId] ?? 0))) {
+      toast.error('Cấp độ áp dụng của phòng ban không được vượt mức doanh nghiệp đã thiết lập.');
       return;
     }
     try {
@@ -480,7 +489,7 @@ export function CapabilityCeilingMatrix() {
                         <div className="cc-domain-panel" data-domain={domain.sortOrder}>
                         <button type="button" className="cc-domain-panel__header" onClick={closeSelection} aria-label={translateUi(`Thu gọn ${domain.name}`)} aria-expanded={isSelected} aria-controls={`domain-panel-content-${domain.categoryId}`}>
                           <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
-                          <span className="cc-domain-panel__heading"><small>{activeCourse ? translateUi('KHÓA HỌC & SUẤT HỌC') : 'CHUẨN VỊ TRÍ THEO LĨNH VỰC'}</small><strong>{translateUi(domain.name)}</strong></span>
+                          <span className="cc-domain-panel__heading"><small>{activeCourse ? translateUi('KHÓA HỌC & SUẤT HỌC') : activeScope === ALL ? translateUi('CHUẨN VỊ TRÍ THEO LĨNH VỰC') : translateUi('CHUẨN VỊ TRÍ CỦA PHÒNG BAN')}</small><strong>{translateUi(domain.name)}</strong></span>
                           <span className="cc-domain-panel__collapse">{translateUi("Thu gọn ")}<ChevronDown size={16} aria-hidden="true" /></span>
                         </button>
                         <div id={`domain-panel-content-${domain.categoryId}`}>
@@ -491,10 +500,10 @@ export function CapabilityCeilingMatrix() {
                           scopeLabel={activeScope === ALL ? 'doanh nghiệp' : 'phòng ban'}
                           onSelectToBuy={() => toggleSelectToBuy(activeCourse, activeDomain)}
                         /> : <DomainPositionStandardPanel
-                          key={activeDomain.categoryId}
+                          key={activeScope + activeDomain.categoryId}
                           domain={activeDomain}
                           domains={matrix.domains}
-                          departmentId={activeScope === ALL ? null : activeScope}
+                          departmentId={activeScope === ALL ? undefined : activeScope}
                           initialPositionId={initialPositionId}
                           canEdit={canEdit}
                         />}

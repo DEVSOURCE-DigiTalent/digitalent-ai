@@ -81,15 +81,15 @@ export function OwnerCapabilityGapPage() {
   const positions = useJobPositions({
     pageSize: 100,
     departmentId: departmentId || undefined,
-    includeAssignedPositions: !!departmentId,
+    status: 'ACTIVE',
   }).data?.items ?? [];
   const scope = { departmentId: departmentId || undefined, jobPositionId: jobPositionId || undefined };
   const company = useLearningNeeds({ ...scope, pageIndex: 1, pageSize: 1 });
   const people = useLearningNeeds({ ...scope, search: search || undefined, pageIndex: page, pageSize }, peopleOpen);
   return <div className="company-gap-page">
     <header className="company-gap-page-header"><h1>{translateUi("Khoảng trống năng lực")}</h1><div>
-      <OwnerFilterSelect label={translateUi("Phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setJobPositionId(''); setPage(1); }} options={[{ value: '', label: 'Toàn doanh nghiệp' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
-      <OwnerFilterSelect label={translateUi("Vị trí")} value={jobPositionId} onChange={(value) => { setJobPositionId(value); setPage(1); }} options={[{ value: '', label: 'Tất cả vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
+      <OwnerFilterSelect icon="filter" label={translateUi("Phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setJobPositionId(''); setPage(1); }} options={[{ value: '', label: 'Toàn doanh nghiệp' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
+      <OwnerFilterSelect icon="filter" label={translateUi("Vị trí")} value={jobPositionId} onChange={(value) => { setJobPositionId(value); setPage(1); }} options={[{ value: '', label: 'Tất cả vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
       <button className="company-gap-refresh" type="button" aria-label={translateUi("Làm mới")} onClick={() => { void company.refetch(); if (peopleOpen) void people.refetch(); }} disabled={company.isFetching}><RefreshCw size={17} /></button>
     </div></header>
     {(company.isLoading || company.isFetching) && (

@@ -1,3 +1,4 @@
+import { canonicalCourseCode, courseCodeKey, distinctCourseCodes } from '@/features/courses/course-code';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -26,16 +27,6 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { PULSE_TOKENS } from '../owner-theme';
 import type { CourseListItem } from '@/services/assignment.service';
 
-/** Chuẩn hóa mã khóa học chuẩn (A1..A6 <-> M1..M6). */
-function canonicalCode(code?: string): string {
-  if (!code) return '';
-  const trimmed = code.trim().toUpperCase();
-  if ((trimmed.startsWith('A') || trimmed.startsWith('M')) && trimmed.length > 2 && !isNaN(Number(trimmed[1]))) {
-    return 'M' + trimmed.slice(1);
-  }
-  return trimmed;
-}
-
 interface CartItem {
   course: CourseListItem;
   canonicalCode: string;
@@ -59,10 +50,7 @@ export function CourseCheckoutPage() {
   const defaultSeats = Math.max(1, Number(searchParams.get('seats')) || 10);
 
   const requestedCodes = useMemo(() => {
-    return coursesParam
-      .split(',')
-      .map((c) => canonicalCode(c))
-      .filter(Boolean);
+    return distinctCourseCodes(coursesParam);
   }, [coursesParam]);
 
   // Giỏ hàng lưu trữ các khóa học được chọn thanh toán
@@ -76,13 +64,13 @@ export function CourseCheckoutPage() {
     const allCourses = coursesData.items;
 
     requestedCodes.forEach((reqCode) => {
-      const match = allCourses.find((c) => canonicalCode(c.code) === reqCode || c.code.toUpperCase() === reqCode);
+      const match = allCourses.find((c) => courseCodeKey(c.code) === reqCode);
       if (match) {
         const level = match.code.endsWith('-A') ? 3 : match.code.endsWith('-I') ? 2 : 1;
         const unitPrice = level === 3 ? 699000 : level === 2 ? 399000 : 0;
         items.push({
           course: match,
-          canonicalCode: reqCode,
+          canonicalCode: canonicalCourseCode(match.code),
           level,
           unitPrice,
           seats: defaultSeats,
@@ -97,7 +85,7 @@ export function CourseCheckoutPage() {
         const level = defaultCourse.code.endsWith('-A') ? 3 : 2;
         items.push({
           course: defaultCourse,
-          canonicalCode: canonicalCode(defaultCourse.code),
+          canonicalCode: canonicalCourseCode(defaultCourse.code),
           level,
           unitPrice: level === 3 ? 699000 : 399000,
           seats: defaultSeats,

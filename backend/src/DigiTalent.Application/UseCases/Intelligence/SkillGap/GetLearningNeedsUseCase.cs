@@ -3,6 +3,9 @@ using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Application.UseCases.TrialProgram;
+using DigiTalent.Application.UseCases.Competency.Common;
+using DigiTalent.Domain.Constants;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Intelligence.SkillGap;
@@ -71,15 +74,32 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
         var query = _scope.VisibleEmployees().AsNoTracking().Where(e => e.Status == "ACTIVE");
         if (input.EmployeeId.HasValue) query = query.Where(e => e.Id == input.EmployeeId);
         if (input.DepartmentId.HasValue) query = query.Where(e => e.DepartmentId == input.DepartmentId);
-        if (input.JobPositionId.HasValue) query = query.Where(e => e.JobPositionId == input.JobPositionId);
-        if (!string.IsNullOrWhiteSpace(input.JobGrade)) query = query.Where(e => _db.JobPositions.Any(p => p.Id == e.JobPositionId && p.JobGrade == input.JobGrade));
         if (!string.IsNullOrWhiteSpace(input.Search)) { var search = input.Search.Trim().ToLower(); query = query.Where(e => e.FullName.ToLower().Contains(search) || e.EmployeeCode.ToLower().Contains(search)); }
         var pageSize = Math.Clamp(input.PageSize, 1, 100);
-        var output = new GetLearningNeedsOutput { PageIndex = Math.Max(1, input.PageIndex), PageSize = pageSize, TotalItems = await query.CountAsync() };
+        var activePositions = await _db.JobPositions.AsNoTracking()
+            .Where(p => p.OrganizationId == orgId && p.Status == Statuses.MasterData.Active && p.DepartmentId != null)
+            .ToListAsync();
+        var positionsById = activePositions.ToDictionary(p => p.Id);
+
+
         // Aggregate the entire visible scope before paging the employee lookup.
-        var employees = await query.OrderBy(e => e.FullName).ThenBy(e => e.Id).ToListAsync();
-        var employeeIds = employees.Select(e => e.Id).ToList();
-        var positionIds = employees.Where(e => e.JobPositionId.HasValue).Select(e => e.JobPositionId!.Value).Distinct().ToList();
+        var placements = await EffectiveJobPositions.Resolve(_db, query)
+            .OrderBy(row => row.Employee.FullName).ThenBy(row => row.Employee.Id).ToListAsync();
+        var employees = placements
+            .Select(row => (row.Employee, Position: row.PositionId is Guid id ? positionsById.GetValueOrDefault(id) : null))
+            .Where(row => (!input.JobPositionId.HasValue || row.Position?.Id == input.JobPositionId)
+                && (string.IsNullOrWhiteSpace(input.JobGrade) || row.Position?.JobGrade == input.JobGrade))
+            .ToList();
+        var output = new GetLearningNeedsOutput { PageIndex = Math.Max(1, input.PageIndex), PageSize = pageSize, TotalItems = employees.Count };
+        var employeeIds = employees.Select(row => row.Employee.Id).ToList();
+        var positionIds = employees.Where(row => row.Position != null).Select(row => row.Position!.Id).Distinct().ToList();
+        var targetsByPosition = await new PositionTargetsReader(_db).LoadAsync(orgId, positionIds);
+        var systemCompetencies = await (
+            from competency in _db.Competencies.AsNoTracking()
+            join category in _db.CompetencyCategories.AsNoTracking() on competency.CategoryId equals category.Id
+            where category.OrganizationId == orgId && category.Code.StartsWith("TT02_D") && competency.Status == Statuses.Competency.Active
+            select new { RequirementSetId = Guid.Empty, CompetencyId = competency.Id, RequiredLevel = 1, competency.Name,
+                CategoryId = category.Id, CategoryName = category.Name, category.SortOrder }).ToListAsync();
         var sets = await _db.PositionRequirementSets.AsNoTracking().Where(s => positionIds.Contains(s.JobPositionId) && s.Status == "ACTIVE").OrderByDescending(s => s.VersionNo).ToListAsync();
         var setIds = sets.Select(s => s.Id).ToList();
         var requirements = await (from item in _db.PositionRequirementItems.AsNoTracking()
@@ -87,7 +107,6 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
             join category in _db.CompetencyCategories on competency.CategoryId equals category.Id
             where setIds.Contains(item.RequirementSetId)
             select new { item.RequirementSetId, item.CompetencyId, item.RequiredLevel, competency.Name, CategoryId = category.Id, CategoryName = category.Name, category.SortOrder }).ToListAsync();
-        var positions = await _db.JobPositions.AsNoTracking().Where(p => positionIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name);
         var departments = await _db.Departments.AsNoTracking().Where(d => d.OrganizationId == orgId).ToDictionaryAsync(d => d.Id, d => d.Name);
         var publishedAt = await _db.TrialWorkspaces.AsNoTracking().Where(w => w.OrganizationId == orgId && w.ReportPublishedAt != null)
             .OrderByDescending(w => w.ReportPublishedAt).Select(w => w.ReportPublishedAt).FirstOrDefaultAsync();
@@ -109,21 +128,25 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
             .ToLookup(a => a.EmployeeId);
         var profiles = await _db.EmployeeCompetencyProfiles.AsNoTracking().Where(p => employeeIds.Contains(p.EmployeeId)).ToDictionaryAsync(p => new { p.EmployeeId, p.CompetencyId });
         var catalog = await new PulseCatalogReader(_db).LoadAsync(orgId);
-        foreach (var employee in employees)
+        foreach (var (employee, position) in employees)
         {
-            var row = new EmployeeLearningNeeds { EmployeeId = employee.Id, EmployeeName = employee.FullName, PositionId = employee.JobPositionId,
-                PositionName = employee.JobPositionId.HasValue ? positions.GetValueOrDefault(employee.JobPositionId.Value) : null,
-                DepartmentName = departments.GetValueOrDefault(employee.DepartmentId) };
+            var row = new EmployeeLearningNeeds { EmployeeId = employee.Id, EmployeeName = employee.FullName, PositionId = position?.Id,
+                PositionName = position?.Name, DepartmentName = departments.GetValueOrDefault(employee.DepartmentId) };
             output.Items.Add(row);
-            var standard = sets.FirstOrDefault(s => s.JobPositionId == employee.JobPositionId);
-            if (standard == null) { row.State = "NO_STANDARD"; continue; }
+            var standard = sets.FirstOrDefault(s => s.JobPositionId == position?.Id);
+            var targets = position == null ? null : targetsByPosition.GetValueOrDefault(position.Id);
+            if (targets == null) { row.State = "NO_STANDARD"; continue; }
+            var lines = targets.UsesSystemReference ? systemCompetencies
+                : requirements.Where(r => r.RequirementSetId == standard?.Id && r.RequiredLevel > 0);
+
             var assessment = assessments[employee.Id].FirstOrDefault();
             var assessedAt = assessment?.ReviewedAt ?? assessment?.SubmittedAt;
             var domainResults = assessment == null ? null : resultsByAssessment.GetValueOrDefault(assessment.Id)?.ToDictionary(d => d.CategoryId);
-            foreach (var domain in requirements.Where(r => r.RequirementSetId == standard.Id && r.RequiredLevel > 0).GroupBy(r => r.CategoryId).OrderBy(g => g.First().SortOrder))
+            foreach (var domain in lines.Where(r => targets.Levels.ContainsKey(r.CategoryId))
+                .GroupBy(r => r.CategoryId).OrderBy(g => g.First().SortOrder))
             {
                 var first = domain.First();
-                var target = domain.Max(r => r.RequiredLevel);
+                var target = targets.Levels[domain.Key];
                 var need = new LearningNeedDomain { CategoryId = first.CategoryId, Name = first.CategoryName, Number = first.SortOrder, RequiredLevel = target };
                 row.Domains.Add(need);
                 need.Competencies = domain.Select(r => new LearningNeedCompetency { CompetencyId = r.CompetencyId, Name = r.Name, RequiredLevel = target }).ToList();
@@ -154,4 +177,5 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
         output.Items = output.Items.Skip((output.PageIndex - 1) * pageSize).Take(pageSize).ToList();
         return output;
     }
+
 }

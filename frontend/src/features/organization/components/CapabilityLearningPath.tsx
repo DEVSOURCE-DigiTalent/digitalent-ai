@@ -62,7 +62,7 @@ export function CapabilityLearningPath({ competencies, isLoading }: CapabilityLe
               <button type="button" aria-pressed={view === 'met'} onClick={() => setView('met')}>{translateUi("Đạt chuẩn ")}<b>{metCount}</b></button>
             </div>
             <div className="gap-toolbar-fields">
-              <OwnerFilterSelect label={translateUi("Lọc theo lĩnh vực năng lực")} value={category} onChange={setCategory} options={[{ value: '', label: 'Mọi lĩnh vực' }, ...categories.map((name) => ({ value: name, label: name }))]} />
+              <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo lĩnh vực năng lực")} value={category} onChange={setCategory} options={[{ value: '', label: 'Mọi lĩnh vực' }, ...categories.map((name) => ({ value: name, label: name }))]} />
               <label className="gap-search owner-filter-search"><Search size={17} aria-hidden="true" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={translateUi("Tìm mã hoặc tên năng lực")} aria-label={translateUi("Tìm năng lực")} /></label>
             </div>
           </div>

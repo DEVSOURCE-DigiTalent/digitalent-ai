@@ -51,7 +51,7 @@ public class GetEmployeeCapabilityUseCase : IUseCase<GetEmployeeCapabilityUseCas
         {
             Employee = summary,
             Summary = summary,
-            Competencies = await LoadCompetencyLevelsAsync(employee.OrganizationId, employee.JobPositionId, evidence),
+            Competencies = await LoadCompetencyLevelsAsync(employee.OrganizationId, summary.JobPositionId, evidence),
             SkillGap = run == null
                 ? null
                 : new WorkforceSkillGap
@@ -114,7 +114,10 @@ public class GetEmployeeCapabilityUseCase : IUseCase<GetEmployeeCapabilityUseCas
     /// </summary>
     private async Task<List<CompetencyLevelRow>> LoadCompetencyLevelsAsync(Guid organizationId, Guid? jobPositionId, List<EvidenceRow> evidence)
     {
-        var required = jobPositionId == null
+        var standard = jobPositionId is Guid positionId
+            ? (await new PositionTargetsReader(_context).LoadAsync(organizationId, [positionId])).GetValueOrDefault(positionId)
+            : null;
+        var required = jobPositionId == null || standard?.UsesSystemReference == true
             ? new Dictionary<Guid, int>()
             : await (
                     from item in _context.PositionRequirementItems.AsNoTracking()
@@ -134,6 +137,7 @@ public class GetEmployeeCapabilityUseCase : IUseCase<GetEmployeeCapabilityUseCas
                     competency.Id,
                     competency.Name,
                     competency.Status,
+                    competency.CategoryId,
                     CategoryName = category.Name,
                     category.SortOrder,
                     FrameworkCode = tt02.Where(m => m.CompetencyId == competency.Id).Select(m => m.SourceCode).FirstOrDefault(),
@@ -156,7 +160,9 @@ public class GetEmployeeCapabilityUseCase : IUseCase<GetEmployeeCapabilityUseCas
                     CategoryName = c.CategoryName,
                     CategorySortOrder = c.SortOrder,
                     CurrentLevel = confirmed?.Level,
-                    RequiredLevel = required.GetValueOrDefault(c.Id),
+                    RequiredLevel = standard?.UsesSystemReference == true && c.FrameworkCode != null && c.Status == Statuses.Competency.Active
+                        ? standard.Levels.GetValueOrDefault(c.CategoryId)
+                        : required.GetValueOrDefault(c.Id),
                     Source = confirmed?.Source,
                     ConfirmedAt = confirmed?.ConfirmedAt,
                     Note = confirmed?.Note,

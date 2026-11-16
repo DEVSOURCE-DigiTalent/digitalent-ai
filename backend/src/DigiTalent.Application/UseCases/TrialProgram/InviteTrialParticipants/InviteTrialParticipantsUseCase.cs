@@ -12,16 +12,13 @@ namespace DigiTalent.Application.UseCases.TrialProgram;
 /// </summary>
 public class InviteTrialParticipantsUseCase : IUseCase<InviteTrialParticipantsUseCaseInput, InviteTrialParticipantsUseCaseOutput>
 {
-    private readonly IApplicationDbContext _context;
     private readonly TrialProgramReader _reader;
     private readonly IUseCase<InviteMembersUseCaseInput, InviteMembersUseCaseOutput> _invite;
 
     public InviteTrialParticipantsUseCase(
-        IApplicationDbContext context,
         TrialProgramReader reader,
         IUseCase<InviteMembersUseCaseInput, InviteMembersUseCaseOutput> invite)
     {
-        _context = context;
         _reader = reader;
         _invite = invite;
     }
@@ -42,8 +39,6 @@ public class InviteTrialParticipantsUseCase : IUseCase<InviteTrialParticipantsUs
 
         var output = new InviteTrialParticipantsUseCaseOutput();
 
-        var structure = await TrialOrgStructure.LoadAsync(_context, trial.OrganizationId);
-
         var rows = new List<InviteMemberRow>();
         foreach (var row in input.Rows)
         {
@@ -51,21 +46,20 @@ public class InviteTrialParticipantsUseCase : IUseCase<InviteTrialParticipantsUs
             var departmentName = TrialOrgStructure.Clean(row.Department);
             var positionName = TrialOrgStructure.Clean(row.Position);
             var reason = TrialOrgStructure.Problem(departmentName, positionName);
+            if (row.Role is not (MemberRoles.Employee or MemberRoles.Manager)) reason = "Vai trò phải là Nhân viên hoặc Trưởng phòng.";
             if (reason != null)
             {
                 output.Rejected.Add(new TrialRejectedDto { Email = email, Reason = reason });
                 continue;
             }
 
-            var department = structure.Department(departmentName);
-            var position = structure.Position(positionName);
             rows.Add(new InviteMemberRow
             {
                 Email = email,
                 FullName = row.FullName?.Trim() ?? string.Empty,
-                Role = MemberRoles.Employee,
-                DepartmentId = department.Id,
-                JobPositionId = position.Id,
+                Role = row.Role,
+                DepartmentName = departmentName,
+                JobPositionName = positionName,
             });
         }
 
@@ -73,9 +67,6 @@ public class InviteTrialParticipantsUseCase : IUseCase<InviteTrialParticipantsUs
         {
             return output;
         }
-
-        // Phòng ban / vị trí mới phải có trước khi tạo lời mời (lời mời tham chiếu tới chúng).
-        await _context.SaveChangesAsync();
 
         var invited = await _invite.ExecuteAsync(new InviteMembersUseCaseInput
         {

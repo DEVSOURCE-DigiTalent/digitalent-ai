@@ -1,7 +1,6 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
-using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,20 +16,17 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
     private readonly ICurrentUser _currentUser;
     private readonly IAuditService _auditService;
     private readonly CapabilityCeilingReader _reader;
-    private readonly PulseCatalogReader _catalog;
 
     public UpdateOrganizationCeilingsUseCase(
         IApplicationDbContext context,
         ICurrentUser currentUser,
         IAuditService auditService,
-        CapabilityCeilingReader reader,
-        PulseCatalogReader catalog)
+        CapabilityCeilingReader reader)
     {
         _context = context;
         _currentUser = currentUser;
         _auditService = auditService;
         _reader = reader;
-        _catalog = catalog;
     }
 
     public async Task<UpdateOrganizationCeilingsUseCaseOutput> ExecuteAsync(UpdateOrganizationCeilingsUseCaseInput input)
@@ -38,7 +34,9 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
         var organizationId = _currentUser.GetRequiredOrganizationId();
 
         // 1. Phải đủ đúng các lĩnh vực của ma trận
-        var domainIds = (await _reader.LoadDomainsAsync(organizationId)).Select(d => d.Id).ToHashSet();
+        var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(organizationId);
+        var domains = matrix.Domains.ToDictionary(d => d.CategoryId);
+        var domainIds = domains.Keys;
         var requested = input.Ceilings.ToDictionary(c => c.CategoryId, c => (short)c.Level);
         if (requested.Keys.Any(id => !domainIds.Contains(id)))
         {
@@ -52,29 +50,15 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
 
         // 2. Xác nhận quyền học trước khi thay đổi phạm vi. Không được âm thầm hạ cấp: UI cần
         // nhận lỗi rõ ràng để hướng người dùng mua đúng khóa học đang chọn.
-        var catalog = await _catalog.LoadAsync(organizationId);
-        var seatOrders = await (
-            from o in _context.CourseSeatOrders.AsNoTracking()
-            join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-            where o.OrganizationId == organizationId && o.Seats > 0
-            select new { pc.Code, pc.Level }
-        ).ToListAsync();
-
-        var maxAllowedByDomain = new Dictionary<Guid, int>();
-        foreach (var order in seatOrders)
+        foreach (var (categoryId, requestedLevel) in requested)
         {
-            var matched = catalog.FirstOrDefault(c => c.Code.Equals(order.Code, StringComparison.OrdinalIgnoreCase));
-            if (matched != null)
-            {
-                var cur = maxAllowedByDomain.GetValueOrDefault(matched.CategoryId, 1);
-                maxAllowedByDomain[matched.CategoryId] = Math.Max(cur, order.Level);
-            }
-        }
+            var domain = domains[categoryId];
+            if (requestedLevel <= domain.MaxAllowedCeiling) continue;
 
-        if (requested.Any(item => item.Value > Math.Max(1, maxAllowedByDomain.GetValueOrDefault(item.Key, 1))))
-        {
+            var code = domain.Courses.FirstOrDefault(course => course.Level == requestedLevel)?.Code;
+            var target = code ?? $"cấp {requestedLevel}";
             throw new BadRequestException(
-                "Purchase a seat for this course level before raising the organization ceiling.",
+                $"Lĩnh vực {domain.Name} chưa có suất học cho {target}. Hãy mua suất học trước khi nâng phạm vi doanh nghiệp.",
                 "ceilings",
                 "COURSE_LICENSE_REQUIRED");
         }

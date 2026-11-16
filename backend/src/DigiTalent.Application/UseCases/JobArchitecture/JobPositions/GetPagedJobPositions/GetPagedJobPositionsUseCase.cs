@@ -103,6 +103,9 @@ public class GetPagedJobPositionsUseCase : IUseCase<GetPagedJobPositionsUseCaseI
                 Headcount = _context.Employees
                     .Count(e => e.JobPositionId == p.Id && e.Status == Statuses.Employee.Active
                         && (!input.IncludeAssignedPositions || !input.DepartmentId.HasValue || e.DepartmentId == input.DepartmentId)),
+                UsedByOtherDepartments = input.DepartmentId.HasValue && _context.Employees.Any(e =>
+                    e.OrganizationId == organizationId && e.JobPositionId == p.Id
+                    && e.Status != Statuses.Employee.Archived && e.DepartmentId != input.DepartmentId.Value),
                 HasRequirementSet = _context.PositionRequirementSets
                     .Any(s => s.JobPositionId == p.Id && s.Status == Statuses.PositionRequirementSet.Active),
                 Status = p.Status,

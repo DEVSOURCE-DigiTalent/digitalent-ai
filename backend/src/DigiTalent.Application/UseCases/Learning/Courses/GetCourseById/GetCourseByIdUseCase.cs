@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -88,19 +89,20 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
 
         var calculatedLevel = level > 0 ? level : (course.EntryLevel.HasValue ? course.EntryLevel.Value + 1 : 1);
 
-        var platformCourse = await _context.PlatformCourses.AsNoTracking()
-            .FirstOrDefaultAsync(pc => pc.Code == course.Code);
-
-        var seatOrders = platformCourse == null ? new List<CourseSeatOrder>() : await _context.CourseSeatOrders.AsNoTracking()
-            .Where(o => o.OrganizationId == organizationId && o.CourseId == platformCourse.Id)
-            .ToListAsync();
+        var codes = CourseCodes.Aliases(course.Code);
+        var seatOrders = await (
+            from order in _context.CourseSeatOrders.AsNoTracking()
+            join platform in _context.PlatformCourses.AsNoTracking() on order.CourseId equals platform.Id
+            where order.OrganizationId == organizationId && codes.Contains(platform.Code)
+            select order
+        ).ToListAsync();
 
         var seatsPurchased = seatOrders.Where(o => o.Kind == DigiTalent.Domain.Constants.PlatformCatalog.SeatOrderKind.Purchase).Sum(o => o.Seats);
         var seatsGranted = seatOrders.Where(o => o.Kind == DigiTalent.Domain.Constants.PlatformCatalog.SeatOrderKind.AdminGrant).Sum(o => o.Seats);
         var totalSeats = seatsPurchased + seatsGranted;
 
         var courseVersionIds = await _context.Courses.AsNoTracking()
-            .Where(c => c.OrganizationId == organizationId && c.Code == course.Code)
+            .Where(c => c.OrganizationId == organizationId && codes.Contains(c.Code))
             .Select(c => c.Id).ToListAsync();
         var usedSeats = await _context.CourseAssignments.AsNoTracking()
             .Where(ca => courseVersionIds.Contains(ca.CourseId)
@@ -113,7 +115,7 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
         {
             Final = hasLicense ? (await new DigiTalent.Application.UseCases.Learning.Content.LearningContentReader(_context).FinalsAsync(new[] { course.Id })).GetValueOrDefault(course.Id) : null,
             Id = course.Id,
-            Code = course.Code,
+            Code = CourseCodes.Canonical(course.Code),
             Title = course.Title,
             Description = course.Description,
             Purpose = course.Purpose,

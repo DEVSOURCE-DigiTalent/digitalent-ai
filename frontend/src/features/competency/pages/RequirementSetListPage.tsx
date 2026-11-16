@@ -224,7 +224,7 @@ export function RequirementSetListPage() {
           />
         </label>
         <div className="w-56 max-w-full">
-          <OwnerFilterSelect
+          <OwnerFilterSelect icon="filter"
             label={translateUi("Lọc theo phòng ban")}
             value={selectedDept}
             onChange={(value) => {
@@ -236,7 +236,7 @@ export function RequirementSetListPage() {
           />
         </div>
         <div className="w-48 max-w-full">
-          <OwnerFilterSelect
+          <OwnerFilterSelect icon="filter"
             label={translateUi("Lọc theo trạng thái")}
             value={selectedStatus}
             onChange={(value) => {

@@ -1,8 +1,10 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Email;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.IndividualCommerce;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -50,9 +52,10 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
             throw new BadRequestException("Chỉ giao được khóa học đã xuất bản.");
 
         var targetEmployees = await ResolveTargetEmployees(organizationId, input.Targets);
-        var targetIds = targetEmployees.Select(e => e.Id).ToList();
+        var targetIds = targetEmployees.Select(row => row.Employee.Id).ToList();
+        var codes = CourseCodes.Aliases(course.Code);
         var versionIds = await _context.Courses.AsNoTracking()
-            .Where(c => c.OrganizationId == organizationId && c.Code == course.Code)
+            .Where(c => c.OrganizationId == organizationId && codes.Contains(c.Code))
             .Select(c => c.Id).ToListAsync();
         var existingAssignments = await _context.CourseAssignments.AsNoTracking()
             .Where(ca => versionIds.Contains(ca.CourseId) && ca.Status == Statuses.CourseAssignment.Active
@@ -71,7 +74,7 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
             var purchasedSeats = await (
                 from o in _context.CourseSeatOrders.AsNoTracking()
                 join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-                where o.OrganizationId == organizationId && pc.Code == course.Code
+                where o.OrganizationId == organizationId && codes.Contains(pc.Code)
                 select (int?)o.Seats
             ).SumAsync() ?? 0;
 
@@ -80,8 +83,8 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
                 .Select(ca => ca.EmployeeId).Distinct().CountAsync();
 
             var availableSeats = Math.Max(0, purchasedSeats - usedSeats);
-            var neededSeats = targetEmployees.Count(e => e.Status == Statuses.Employee.Active
-                && !existingAssignments.Contains(e.Id) && !completedEnrollments.Contains(e.Id));
+            var neededSeats = targetEmployees.Count(row => row.Employee.Status == Statuses.Employee.Active
+                && !existingAssignments.Contains(row.Employee.Id) && !completedEnrollments.Contains(row.Employee.Id));
             if (availableSeats < neededSeats)
             {
                 var price = course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ? "699.000 ₫" : "399.000 ₫";
@@ -96,8 +99,9 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
 
         var output = new CreateCourseAssignmentOutput();
 
-        foreach (var emp in targetEmployees)
+        foreach (var row in targetEmployees)
         {
+            var emp = row.Employee;
             if (completedEnrollments.Contains(emp.Id))
             {
                 output.Skipped.Add(new SkippedEmployee { EmployeeId = emp.Id, EmployeeName = emp.FullName, Reason = "ALREADY_COMPLETED" });
@@ -121,7 +125,7 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
                 EmployeeId = emp.Id,
                 AssignmentSource = "MANUAL",
                 SourceDepartmentId = emp.DepartmentId,
-                SourceJobPositionId = emp.JobPositionId,
+                SourceJobPositionId = row.PositionId,
                 AssignedByUserId = userId,
                 AssignedAt = DateTimeOffset.UtcNow,
                 DueDate = dueDate,
@@ -189,7 +193,7 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
                 {
                     foreach (var row in output.Created)
                     {
-                        var emp = targetEmployees.FirstOrDefault(e => e.Id == row.EmployeeId);
+                        var emp = targetEmployees.Select(target => target.Employee).FirstOrDefault(e => e.Id == row.EmployeeId);
                         if (emp == null) continue;
 
                         if (emp.UserId.HasValue)
@@ -239,7 +243,7 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
         return output;
     }
 
-    private async Task<List<Employee>> ResolveTargetEmployees(Guid organizationId, CreateAssignmentTargets targets)
+    private async Task<List<EffectiveJobPositions.Placement>> ResolveTargetEmployees(Guid organizationId, CreateAssignmentTargets targets)
     {
         var query = _context.Employees.AsNoTracking()
             .Where(e => e.OrganizationId == organizationId);
@@ -252,11 +256,11 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
         {
             if (targets.DepartmentId.HasValue)
                 query = query.Where(e => e.DepartmentId == targets.DepartmentId.Value);
-
-            if (targets.JobPositionId.HasValue)
-                query = query.Where(e => e.JobPositionId == targets.JobPositionId.Value);
         }
 
-        return await query.ToListAsync();
+        var placements = EffectiveJobPositions.Resolve(_context, query);
+        if (targets.EmployeeIds is not { Count: > 0 } && targets.JobPositionId.HasValue)
+            placements = placements.Where(row => row.PositionId == targets.JobPositionId.Value);
+        return await placements.ToListAsync();
     }
 }
