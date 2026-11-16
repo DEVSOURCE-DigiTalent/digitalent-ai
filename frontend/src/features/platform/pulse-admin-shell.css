@@ -1751,18 +1751,21 @@ dialog.pa-cmd-dialog::backdrop {
   font-size: 13.5px;
 }
 
-.pulse-ui.pa-console .main-area .btn-primary {
+.pulse-ui.pa-console .main-area .btn-primary,
+.pulse-ui.pa-console .pa-drawer-panel .btn-primary {
   background: var(--pa-accent);
   color: #ffffff;
   border-color: var(--pa-accent);
 }
 
-.pulse-ui.pa-console .main-area .btn-primary:hover:not(:disabled) {
+.pulse-ui.pa-console .main-area .btn-primary:hover:not(:disabled),
+.pulse-ui.pa-console .pa-drawer-panel .btn-primary:hover:not(:disabled) {
   background: var(--pa-accent-hover);
   border-color: var(--pa-accent-hover);
 }
 
-.pulse-ui.pa-console .main-area .btn-outline {
+.pulse-ui.pa-console .main-area .btn-outline,
+.pulse-ui.pa-console .pa-drawer-panel .btn-outline {
   background: var(--pa-surface);
   color: var(--pa-ink);
   border: 1px solid #cbd5e1;
@@ -6552,10 +6555,10 @@ dialog.pa-cmd-dialog::backdrop {
 
 @media (max-width: 1024px) {
   .pulse-ui.pa-console .pa-page-header {
-  margin-bottom: 24px;
-}
+    margin-bottom: 24px;
+  }
 
-.pulse-ui.pa-console .pa-ver-layout {
+  .pulse-ui.pa-console .pa-ver-layout {
     grid-template-columns: 1fr;
     gap: 24px;
     margin-top: 16px;
@@ -7033,6 +7036,867 @@ dialog.pa-cmd-dialog::backdrop {
   }
 }
 
+/* ───────────── Course Builder & Level Detail (PA-04) ───────────── */
+.pulse-ui.pa-console .pa-cb-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.pulse-ui.pa-console .pa-cb-status-readonly {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.pulse-ui.pa-console .pa-cb-status-draft {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.pulse-ui.pa-console .pa-cb-status-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pulse-ui.pa-console .pa-cb-status-icon {
+  flex-shrink: 0;
+}
+
+.pulse-ui.pa-console .pa-cb-status-text {
+  font-weight: 500;
+}
+
+.pulse-ui.pa-console .pa-cb-draft-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pulse-ui.pa-console .pa-ol-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 6px;
+}
+
+.pulse-ui.pa-console .pa-ol-header-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.pulse-ui.pa-console .pa-ol-header-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.pulse-ui.pa-console .pa-ol-item {
+  border: 1px solid transparent;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.pulse-ui.pa-console .pa-ol-item:hover {
+  background: #f8fafc;
+  border-color: #f1f5f9;
+}
+
+.pulse-ui.pa-console .pa-ol-item[aria-current="step"] {
+  background: var(--pa-accent-soft, #fef3e7);
+  border-color: var(--pa-accent-border, #efc69b);
+  color: var(--pa-accent-solid, #7c2d12);
+}
+
+.pulse-ui.pa-console .pa-ol-item[aria-current="step"] strong {
+  color: var(--pa-accent-solid, #7c2d12);
+}
+
+.pulse-ui.pa-console .pa-ol-item strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #1e293b;
+  overflow-wrap: anywhere;
+}
+
+.pulse-ui.pa-console .pa-ol-item small {
+  display: block;
+  font-size: 12.5px;
+  color: #475569;
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.pulse-ui.pa-console .pa-ol-icon-box {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.pulse-ui.pa-console .pa-ol-item[aria-current="step"] .pa-ol-icon-box {
+  background: var(--pa-accent, #b85c24);
+  color: #ffffff;
+}
+
+.pulse-ui.pa-console .pa-ol-number-box {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.pulse-ui.pa-console .pa-ol-item[aria-current="step"] .pa-ol-number-box {
+  background: var(--pa-accent, #b85c24);
+  color: #ffffff;
+}
+
+.pulse-ui.pa-console .pa-ol-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px dashed var(--pa-accent-border, #efc69b);
+  border-radius: 10px;
+  background: var(--pa-accent-soft, #fef3e7);
+  color: var(--pa-accent, #b85c24);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.pulse-ui.pa-console .pa-ol-add:hover {
+  border-color: var(--pa-accent, #b85c24);
+  background: #fde8d0;
+}
+
+.pulse-ui.pa-console .pa-cb-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.pulse-ui.pa-console .pa-cb-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafbfc;
+}
+
+.pulse-ui.pa-console .pa-cb-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pulse-ui.pa-console .pa-cb-sec {
+  padding: 18px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pulse-ui.pa-console .pa-cb-sec:last-child {
+  border-bottom: none;
+}
+
+.pulse-ui.pa-console .pa-cb-sec-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pulse-ui.pa-console .pa-cb-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.pulse-ui.pa-console .pa-cb-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.pulse-ui.pa-console .pa-cb-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.pulse-ui.pa-console .pa-cb-meta-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pulse-ui.pa-console .pa-cb-meta-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pulse-ui.pa-console .pa-cb-meta-value {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.pulse-ui.pa-console .pa-cb-outcome-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.pulse-ui.pa-console .pa-cb-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #fafbfc;
+  border-top: 1px solid #f1f5f9;
+}
+
+@media (max-width: 900px) {
+  .pulse-ui.pa-console .pa-cb-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+
+  .pulse-ui.pa-console .pa-cb-grid-4,
+  .pulse-ui.pa-console .pa-cb-grid-3,
+  .pulse-ui.pa-console .pa-cb-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ───────────── Course Builder Header Badges & Indicator ───────────── */
+.pulse-ui.pa-console .pa-cb-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pulse-ui.pa-console .pa-cb-version-draft-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--pa-accent-soft, #fef3e7);
+  border: 1px solid var(--pa-accent-border, #efc69b);
+  color: var(--pa-accent-solid, #7c2d12);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pulse-ui.pa-console .pa-cb-version-current-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pulse-ui.pa-console .pa-cb-autosave-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #475569;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.pulse-ui.pa-console .pa-cb-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pa-accent, #b85c24);
+  box-shadow: 0 0 0 2px var(--pa-accent-soft, #fef3e7);
+}
+
+/* ───────────── Course Builder 3 Modular Panels ───────────── */
+.pulse-ui.pa-console .pa-cb-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: border-color 150ms ease;
+}
+
+.pulse-ui.pa-console .pa-cb-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafbfc;
+}
+
+.pulse-ui.pa-console .pa-cb-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.pulse-ui.pa-console .pa-cb-panel-title svg {
+  color: var(--pa-accent, #b85c24);
+}
+
+.pulse-ui.pa-console .pa-cb-panel-desc {
+  font-size: 13px;
+  color: #475569;
+  margin-top: 3px;
+  line-height: 1.45;
+}
+
+.pulse-ui.pa-console .pa-cb-panel-body {
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+}
+
+.pulse-ui.pa-console .pa-cb-field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 7px;
+}
+
+.pulse-ui.pa-console .pa-cb-input {
+  width: 100%;
+  height: 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 0 13px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #ffffff;
+  box-sizing: border-box;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.pulse-ui.pa-console .pa-cb-input:focus {
+  border-color: var(--pa-accent, #b85c24);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 92, 36, 0.15);
+}
+
+.pulse-ui.pa-console .pa-cb-input:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.pulse-ui.pa-console .pa-cb-select {
+  width: 100%;
+  height: 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 0 13px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #ffffff;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.pulse-ui.pa-console .pa-cb-select:focus {
+  border-color: var(--pa-accent, #b85c24);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 92, 36, 0.15);
+}
+
+.pulse-ui.pa-console .pa-cb-textarea {
+  width: 100%;
+  min-height: 100px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #0f172a;
+  background: #ffffff;
+  box-sizing: border-box;
+  resize: vertical;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.pulse-ui.pa-console .pa-cb-textarea:focus {
+  border-color: var(--pa-accent, #b85c24);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 92, 36, 0.15);
+}
+
+.pulse-ui.pa-console .pa-cb-level-seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.pulse-ui.pa-console .pa-cb-level-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.pulse-ui.pa-console .pa-cb-level-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.pulse-ui.pa-console .pa-cb-level-btn.is-level-1.is-active {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #15803d;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px #16a34a;
+}
+
+.pulse-ui.pa-console .pa-cb-level-btn.is-level-2.is-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.pulse-ui.pa-console .pa-cb-level-btn.is-level-3.is-active {
+  border-color: #d97706;
+  background: #fefce8;
+  color: #b45309;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px #d97706;
+}
+
+.pulse-ui.pa-console .pa-cb-status-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pulse-ui.pa-console .pa-cb-status-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 120ms ease;
+}
+
+.pulse-ui.pa-console .pa-cb-status-card:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.pulse-ui.pa-console .pa-cb-status-card.is-active.is-open {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.pulse-ui.pa-console .pa-cb-status-card.is-active.is-paused {
+  border-color: #ea580c;
+  background: #fff7ed;
+}
+
+.pulse-ui.pa-console .pa-cb-status-card-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.pulse-ui.pa-console .pa-cb-status-card-dot.is-open {
+  background: #16a34a;
+}
+
+.pulse-ui.pa-console .pa-cb-status-card-dot.is-paused {
+  background: #ea580c;
+}
+
+.pulse-ui.pa-console .pa-cb-status-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pulse-ui.pa-console .pa-cb-status-card-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.pulse-ui.pa-console .pa-cb-price-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pulse-ui.pa-console .pa-cb-price-input-wrap input {
+  padding-right: 28px;
+}
+
+.pulse-ui.pa-console .pa-cb-price-suffix {
+  position: absolute;
+  right: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.pulse-ui.pa-console .pa-cb-action-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  margin-top: 6px;
+}
+
+/* ───────────── Course Builder Criteria Rubric (FinalEditor) ───────────── */
+.pulse-ui.pa-console .pa-cb-criterion-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pulse-ui.pa-console .pa-cb-criterion-badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--pa-accent-soft, #fef3e7);
+  color: var(--pa-accent-solid, #7c2d12);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pulse-ui.pa-console .pa-cb-criterion-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  color: #0f172a;
+}
+
+.pulse-ui.pa-console .pa-cb-criterion-input:focus {
+  border-color: var(--pa-accent, #b85c24);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 92, 36, 0.15);
+}
+
+/* ───────────── Notice box & Module actions ───────────── */
+.pulse-ui.pa-console .pa-cb-notice-box {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.55;
+  margin-top: 12px;
+}
+
+.pulse-ui.pa-console .pa-cb-module-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ───────────── Global Full-Screen Modal Portal ───────────── */
+.pa-global-modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.pa-global-modal-dialog {
+  width: 100%;
+  max-width: 480px;
+  max-height: min(90dvh, 600px);
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: auto;
+  animation: paModalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes paModalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ───────────── Accent overrides for Builder Blocks & Add Bar ───────────── */
+.pulse-ui.pa-console .pa-add-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  margin: 10px 0;
+}
+
+.pulse-ui.pa-console .pa-add-bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1.5px dashed #e2e8f0;
+  transition: border-color 0.2s ease;
+}
+
+.pulse-ui.pa-console .pa-add-bar:hover::before,
+.pulse-ui.pa-console .pa-add-bar:focus-within::before {
+  border-top: 1.5px dashed var(--pa-accent, #b85c24);
+}
+
+.pulse-ui.pa-console .pa-add-bar button {
+  position: relative;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pa-accent-border, #efc69b);
+  background: #ffffff;
+  color: var(--pa-accent, #b85c24);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.95;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(184, 92, 36, 0.08);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pulse-ui.pa-console .pa-add-bar:hover button {
+  border-color: var(--pa-accent, #b85c24);
+  background: var(--pa-accent-soft, #fef3e7);
+  opacity: 1;
+  transform: scale(1.08);
+  box-shadow: 0 3px 10px rgba(184, 92, 36, 0.18);
+}
+
+.pulse-ui.pa-console .pa-add-bar button:hover,
+.pulse-ui.pa-console .pa-add-bar button:focus-visible {
+  border-color: var(--pa-accent, #b85c24);
+  background: var(--pa-accent, #b85c24);
+  color: #ffffff;
+  opacity: 1;
+  transform: scale(1.18);
+  box-shadow: 0 4px 14px rgba(184, 92, 36, 0.35);
+  outline: none;
+}
+
+.pulse-ui.pa-console .pa-type-menu {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+.pulse-ui.pa-console .pa-type-menu button:hover,
+.pulse-ui.pa-console .pa-type-menu button:focus-visible {
+  border-color: var(--pa-accent, #b85c24);
+  box-shadow: 0 0 0 3px rgba(184, 92, 36, 0.12);
+}
+
+.pulse-ui.pa-console .pa-block {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.pulse-ui.pa-console .pa-block.editing {
+  border-color: var(--pa-accent, #b85c24);
+  box-shadow: 0 0 0 3px rgba(184, 92, 36, 0.12);
+}
+
+.pulse-ui.pa-console .pa-question {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.pulse-ui.pa-console .pa-question.open {
+  border-color: var(--pa-accent, #b85c24);
+  box-shadow: 0 0 0 3px rgba(184, 92, 36, 0.1);
+}
+
+.pulse-ui.pa-console .pa-question-head {
+  padding: 11px 14px;
+}
+
+.pulse-ui.pa-console .pa-question-head .qn {
+  background: var(--pa-accent-soft, #fef3e7);
+  color: var(--pa-accent-solid, #7c2d12);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+}
+
+.pulse-ui.pa-console .pa-question-head .qt {
+  font-size: 13.5px;
+  color: #0f172a;
+}
+
+.pulse-ui.pa-console .pa-question-head small {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pulse-ui.pa-console .pa-option input[type="radio"] {
+  accent-color: var(--pa-accent, #b85c24);
+  width: 17px;
+  height: 17px;
+}
+
+.pulse-ui.pa-console .pa-rte:focus-within {
+  border-color: var(--pa-accent, #b85c24);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 92, 36, 0.12);
+}
+
+.pulse-ui.pa-console .pa-rte-toolbar button:hover:not(:disabled) {
+  background: var(--pa-accent-soft, #fef3e7);
+  color: var(--pa-accent, #b85c24);
+}
+
+.pulse-ui.pa-console .pa-rte-toolbar button[aria-pressed="true"] {
+  background: var(--pa-accent-soft, #fef3e7);
+  color: var(--pa-accent-solid, #7c2d12);
+}
+
+@media (max-width: 768px) {
+  .pulse-ui.pa-console .pa-cb-status-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pulse-ui.pa-console .pa-ov-sk-block {
     animation: none;
@@ -7073,4 +7937,158 @@ dialog.pa-cmd-dialog::backdrop {
   .pulse-ui.pa-console .pa-fw-course-item:hover {
     transform: none;
   }
+}
+
+/* ==========================================================================
+   PA-10 · High-density Security Audit Log Enhancements
+   ========================================================================== */
+.pa-audit-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.pa-audit-kpi-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.pa-audit-kpi-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+}
+
+.pa-audit-kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.pa-audit-kpi-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.pa-audit-kpi-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Quick Filter Chips */
+.pa-audit-chip-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 14px;
+}
+
+.pa-audit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 120ms ease;
+}
+
+.pa-audit-chip:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.pa-audit-chip.is-active {
+  background: var(--pa-accent-soft, #fef3e7);
+  border-color: var(--pa-accent-border, #efc69b);
+  color: var(--pa-accent-solid, #7c2d12);
+  font-weight: 600;
+}
+
+/* Audit Table Row Hover */
+.pa-audit-row {
+  cursor: pointer;
+  transition: background-color 100ms ease;
+}
+
+.pa-audit-row:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Diff Tab System */
+.pa-diff-nav {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+.pa-diff-tab-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.pa-diff-tab-btn.is-active {
+  background: var(--pa-accent-soft, #fef3e7);
+  color: var(--pa-accent-solid, #7c2d12);
+}
+
+.pa-diff-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 12.5px;
+}
+
+.pa-diff-table th {
+  background: #f8fafc;
+  padding: 8px 12px;
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.pa-diff-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+
+.pa-diff-table tr:last-child td {
+  border-bottom: none;
 }

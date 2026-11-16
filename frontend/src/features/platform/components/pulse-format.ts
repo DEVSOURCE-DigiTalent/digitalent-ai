@@ -93,9 +93,11 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   PLATFORM_FRAMEWORK_DRAFT_SAVED: 'Lưu nháp khung chuẩn',
   PLATFORM_FRAMEWORK_PUBLISHED: 'Công bố khung chuẩn',
   PLATFORM_CATALOG_DRAFT_CREATED: 'Tạo bản nháp phiên bản khóa học',
+  PLATFORM_CATALOG_DRAFT_DISCARDED: 'Hủy bản nháp khóa học',
   PLATFORM_CATALOG_COURSE_ADDED: 'Thêm khóa học vào bản nháp',
   PLATFORM_CATALOG_COURSE_REMOVED: 'Bỏ khóa học khỏi bản nháp',
   PLATFORM_CATALOG_PUBLISHED: 'Công bố phiên bản khóa học',
+  PLATFORM_CATALOG_PRICES_UPDATED: 'Cập nhật bảng giá khóa học',
   PLATFORM_COURSE_DRAFT_SAVED: 'Lưu nháp khóa học',
   PLATFORM_COURSE_PUBLISHED: 'Phát hành khóa học',
   PLATFORM_COURSE_QUESTION_ADDED: 'Thêm câu hỏi nháp',
@@ -104,14 +106,53 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   PLATFORM_ORGANIZATION_RESTORED: 'Khôi phục tổ chức',
   PLATFORM_USER_LOCKED: 'Khóa tài khoản',
   PLATFORM_USER_UNLOCKED: 'Mở khóa tài khoản',
+  PULSE_FINAL_DECIDED: 'Chấm điểm bài đánh giá cuối khóa',
+  PULSE_PRE_ASSESSMENT_DECIDED: 'Duyệt bài đánh giá đầu vào',
   TRIAL_MENTOR_ASSIGNED: 'Gán người hướng dẫn dùng thử',
+  TRIAL_CREATED: 'Tạo đợt dùng thử',
+  TRIAL_FEEDBACK_SUBMITTED: 'Gửi phản hồi dùng thử',
   MENTOR_CREATED: 'Tạo tài khoản chuyên gia hướng dẫn',
   PLATFORM_REFERENCE_POSITIONS_UPDATED: 'Cập nhật chuẩn mẫu vị trí việc làm',
   ORGANIZATION_CREATED: 'Tạo mới tổ chức',
   ORGANIZATION_STATUS_CHANGED: 'Đổi trạng thái tổ chức',
   USER_CREATED: 'Tạo tài khoản mới',
   USER_PASSWORD_RESET_ASSISTED: 'Hỗ trợ cấp lại mật khẩu',
+  POSITION_ARCHIVED: 'Lưu trữ vị trí việc làm',
+  POSITION_CREATED: 'Tạo vị trí việc làm',
+  POSITION_UPDATED: 'Cập nhật vị trí việc làm',
+  DEPARTMENT_ARCHIVED: 'Lưu trữ phòng ban',
+  DEPARTMENT_CREATED: 'Tạo phòng ban',
+  DEPARTMENT_UPDATED: 'Cập nhật phòng ban',
+  MEMBER_DEACTIVATED: 'Vô hiệu hóa thành viên',
+  MEMBER_REACTIVATED: 'Kích hoạt lại thành viên',
+  MEMBER_INVITED: 'Mời thành viên mới',
+  MEMBER_UPDATED: 'Cập nhật thông tin thành viên',
+  INVITATION_RESENT: 'Gửi lại lời mời',
+  INVITATION_REVOKED: 'Thu hồi lời mời',
+  ROLE_CHANGED: 'Thay đổi vai trò',
+  SUBSCRIPTION_UPDATED: 'Cập nhật gói dịch vụ',
+  CERTIFICATE_ISSUED: 'Cấp chứng chỉ hoàn thành',
+  JOB_GRADE_UPDATED: 'Cập nhật cấp bậc công việc',
+  MANUAL_EVIDENCE_CREATED: 'Thêm minh chứng năng lực thủ công',
 };
+
+export function formatRelativeTime(isoString: string): string {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return 'Vừa xong';
+  if (diffMin < 60) return `${diffMin} phút trước`;
+  if (diffHour < 24) return `${diffHour} giờ trước`;
+  if (diffDay === 1) return 'Hôm qua';
+  if (diffDay < 7) return `${diffDay} ngày trước`;
+  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
 export const auditActionLabel = (action: string) => {
   if (!action) return 'Thao tác hệ thống';

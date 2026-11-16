@@ -468,9 +468,8 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                         </td>
                         <td>
                           <span
-                            className={`pa-org-level-pill ${
-                              c.level === 1 ? 'is-basic' : c.level === 2 ? 'is-inter' : 'is-adv'
-                            }`}
+                            className={`pa-org-level-pill ${c.level === 1 ? 'is-basic' : c.level === 2 ? 'is-inter' : 'is-adv'
+                              }`}
                           >
                             {c.levelName}
                           </span>
