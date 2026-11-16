@@ -19,9 +19,7 @@ import {
   Copy,
   CheckCheck,
   ZoomIn,
-  Layers,
   ArrowUpRight,
-  Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { feedbackService, type FeedbackItem } from '@/services/feedback.service';
@@ -212,6 +210,108 @@ function Stars({ count, showScore = false }: { count: number; showScore?: boolea
           {count}.0
         </span>
       )}
+    </div>
+  );
+}
+
+function getAvatarPalette(text: string) {
+  const charCode = (text || 'A').charCodeAt(0) % 4;
+  switch (charCode) {
+    case 0:
+      return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' }; // Xanh biển
+    case 1:
+      return { bg: '#f5f3ff', color: '#7c3aed', border: '#ede9fe' }; // Tím sapphire
+    case 2:
+      return { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' }; // Xanh ngọc
+    default:
+      return { bg: 'var(--pa-accent-soft, #fef3e7)', color: 'var(--pa-accent-solid, #c2410c)', border: 'var(--pa-accent-border, #fed7aa)' }; // Cam ấm
+  }
+}
+
+function FeedbackSenderCell({
+  name,
+  email,
+  organizationName,
+}: {
+  name: string | null;
+  email: string | null;
+  organizationName: string | null;
+}) {
+  const displayName = name || translateUi('Người dùng ẩn danh');
+  const initial = (name || email || '?').trim()[0]!.toUpperCase();
+  const palette = getAvatarPalette(name || email || 'A');
+
+  return (
+    <div className="pa-org-cell-main" style={{ gap: 10 }}>
+      <div
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: '50%',
+          background: palette.bg,
+          border: `1px solid ${palette.border}`,
+          color: palette.color,
+          display: 'grid',
+          placeItems: 'center',
+          fontWeight: 700,
+          fontSize: 12.5,
+          flexShrink: 0,
+        }}
+        aria-hidden="true"
+      >
+        {initial}
+      </div>
+      <div style={{ minWidth: 0, display: 'grid', gap: 2 }}>
+        <div
+          className="pa-org-name"
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+          title={displayName}
+        >
+          {displayName}
+        </div>
+        <div
+          className="pa-org-email"
+          style={{
+            fontSize: 11.5,
+            color: '#64748b',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+          title={email || ''}
+        >
+          {email || ''}
+        </div>
+        {organizationName ? (
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 11.5,
+              fontWeight: 500,
+              color: '#0284c7',
+              marginTop: 1,
+            }}
+            title={organizationName}
+          >
+            <Building size={11} style={{ flexShrink: 0 }} />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 190 }}>
+              {organizationName}
+            </span>
+          </div>
+        ) : (
+          <span style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>
+            {translateUi('Tài khoản cá nhân')}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -409,56 +509,45 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
 
   return (
     <>
-      {/* ✦ 1. HEADER TRANG & NÚT HÀNH ĐỘNG */}
-      <div className="pa-page-header">
-        <div className="pa-row-between" style={{ alignItems: 'flex-start', gap: 16 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>
-                {translateUi('Quản trị nền tảng')}
-              </span>
-              <span style={{ color: '#cbd5e1' }}>/</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--pa-accent, #b85c24)' }}>
-                {translateUi(isBug ? 'Báo lỗi kỹ thuật' : 'Ý kiến phản hồi')}
-              </span>
-            </div>
-            <h1 className="pa-header-title">
-              {translateUi(isBug ? 'Quản lý sự cố kỹ thuật từ người dùng' : 'Ý kiến phản hồi & Đóng góp từ người dùng')}
-            </h1>
-            <p className="pa-header-subtitle">
-              {translateUi(
-                isBug
-                  ? 'Theo dõi, phân loại và cập nhật tiến độ xử lý các lỗi kỹ thuật phát sinh trong quá trình học và thi.'
-                  : 'Tiếp nhận ý kiến đóng góp, mức độ hài lòng và gửi thông điệp phản hồi trực tiếp tới hộp thư người dùng.',
-              )}
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <button
-              type="button"
-              className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              title={translateUi('Tải lại dữ liệu mới nhất')}
-            >
-              <RotateCw size={13} className={isFetching ? 'animate-spin' : ''} />
-              <span>{translateUi('Làm mới')}</span>
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-              onClick={handleExportCsv}
-              disabled={displayedItems.length === 0}
-              title={translateUi('Xuất danh sách sang file CSV')}
-            >
-              <Download size={13} />
-              <span>{translateUi('Xuất CSV')}</span>
-            </button>
-          </div>
+      {/* ✦ 1. HEADER TRANG & NÚT HÀNH ĐỘNG (Chuẩn pa-org-header đồng bộ) */}
+      <header className="pa-org-header">
+        <div>
+          <h1 className="pa-org-title">
+            {translateUi(isBug ? 'Quản lý sự cố kỹ thuật từ người dùng' : 'Ý kiến phản hồi & Đóng góp từ người dùng')}
+          </h1>
+          <p className="pa-org-subtitle">
+            {translateUi(
+              isBug
+                ? 'Theo dõi, phân loại và cập nhật tiến độ xử lý các lỗi kỹ thuật phát sinh trong quá trình học và thi.'
+                : 'Tiếp nhận ý kiến đóng góp, mức độ hài lòng và gửi thông điệp phản hồi trực tiếp tới hộp thư người dùng.',
+            )}
+          </p>
         </div>
-      </div>
+
+        <div className="pa-org-actions">
+          <button
+            type="button"
+            className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            title={translateUi('Tải lại dữ liệu mới nhất')}
+          >
+            <RotateCw size={14} className={isFetching ? 'animate-spin' : ''} aria-hidden="true" />
+            <span>{translateUi('Làm mới')}</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+            onClick={handleExportCsv}
+            disabled={displayedItems.length === 0}
+            title={translateUi('Xuất danh sách sang file CSV')}
+          >
+            <Download size={14} aria-hidden="true" />
+            <span>{translateUi('Xuất CSV')}</span>
+          </button>
+        </div>
+      </header>
 
       {/* ✦ 2. DẢI CHỈ SỐ KPI THÔNG MINH (INTERACTIVE METRIC STRIP) */}
       <div className="pa-audit-kpi-grid">
@@ -796,7 +885,6 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
               <tbody>
                 {displayedItems.map((item) => {
                   const st = FEEDBACK_STATUS[item.status] ?? FEEDBACK_STATUS.OPEN;
-                  const initialLetter = (item.userName || item.userEmail || '?')[0]!.toUpperCase();
                   const ticketCode = getTicketCode(item, isBug);
                   const mod = inferModule(item);
                   const hasScreenshots = item.screenshots && item.screenshots.length > 0;
@@ -909,47 +997,13 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                         </div>
                       </td>
 
-                      {/* Cột 3: Người gửi & Tổ chức gộp gọn */}
+                      {/* Cột 3: Người gửi & Tổ chức (Avatar pastel + Typography chuẩn admin) */}
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                          <div
-                            style={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: '50%',
-                              background: '#f1f5f9',
-                              border: '1px solid #e2e8f0',
-                              color: '#334155',
-                              display: 'grid',
-                              placeItems: 'center',
-                              fontWeight: 700,
-                              fontSize: 12,
-                              flexShrink: 0,
-                            }}
-                          >
-                            {initialLetter}
-                          </div>
-                          <div style={{ minWidth: 0, display: 'grid', gap: 1 }}>
-                            <strong style={{ fontSize: 13, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {item.userName || translateUi('Người dùng ẩn danh')}
-                            </strong>
-                            <small style={{ fontSize: 11.5, color: '#64748b', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {item.userEmail || ''}
-                            </small>
-                            {item.organizationName ? (
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#0284c7' }}>
-                                <Building size={11} style={{ flexShrink: 0 }} />
-                                <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {item.organizationName}
-                                </span>
-                              </div>
-                            ) : (
-                              <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>
-                                {translateUi('Tài khoản cá nhân')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        <FeedbackSenderCell
+                          name={item.userName}
+                          email={item.userEmail}
+                          organizationName={item.organizationName}
+                        />
                       </td>
 
                       {/* Cột 4: Thời gian gửi */}
