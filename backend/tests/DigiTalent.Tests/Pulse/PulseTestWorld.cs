@@ -154,7 +154,10 @@ internal sealed class PulseTestWorld : IDisposable
             new GetPulseOutcomeUseCase(learner, outcomes),
             new GetPulseFinalReviewsUseCase(Context, scope, catalog, final, recordings, paper, current.Object, Clock, new StubGeminiService()),
             new DecidePulseFinalUseCase(Context, scope, policy, audit, Clock),
-            new RecordPulseFinalSupportUseCase(Context, scope, Clock));
+            new RecordPulseFinalSupportUseCase(Context, scope, Clock),
+            new GetPulseSkipTestUseCase(workspace, skip),
+            new StartPulseSkipTestUseCase(Context, workspace, skip),
+            new SubmitPulseSkipTestUseCase(Context, workspace, skip));
     }
 
     /// <summary>Đáp án đúng của một câu (test đọc thẳng DB — API không bao giờ trả đáp án).</summary>
@@ -247,12 +250,83 @@ internal sealed class PulseTestWorld : IDisposable
         Context.ChangeTracker.Clear();
     }
 
-    /// <summary>Bài đánh giá trước khi học chưa đạt → khóa mở để học (bước chuẩn bị của các test học mô đun).</summary>
+    /// <summary>
+    /// Bài kiểm tra đầu vào (trắc nghiệm tự chấm) chưa đạt → khóa mở để học tuần tự (bước chuẩn bị của các test học mô đun).
+    /// </summary>
     public async Task<PulseCourseSummaryDto> OpenForLearningAsync(UseCases employee, string code)
     {
-        var manager = await AsAsync(OwnerEmail, Roles.Owner);
-        await DecidePreAssessmentAsync(employee, manager, code, Statuses.FinalSubmissionDecision.NotYet);
+        var course = await CourseAsync(employee, code);
+        var started = await employee.StartSkipTest.ExecuteAsync(new StartPulseSkipTestUseCaseInput { CourseId = course.CourseId });
+        Context.ChangeTracker.Clear();
+        await employee.SubmitSkipTest.ExecuteAsync(new SubmitPulseSkipTestUseCaseInput
+        {
+            CourseId = course.CourseId,
+            AttemptNo = started.Attempt!.AttemptNo,
+            Answers = await AnswersAsync(started.Attempt.Questions, 0),
+        });
+        Context.ChangeTracker.Clear();
         return await CourseAsync(employee, code);
+    }
+
+    /// <summary>Đạt bài kiểm tra đầu vào (đúng mọi câu) → mọi mô-đun tính là đã qua, bài cuối khóa mở.</summary>
+    public async Task<PulseCourseSummaryDto> PassEntryTestAsync(UseCases employee, string code)
+    {
+        var course = await CourseAsync(employee, code);
+        var started = await employee.StartSkipTest.ExecuteAsync(new StartPulseSkipTestUseCaseInput { CourseId = course.CourseId });
+        Context.ChangeTracker.Clear();
+        await employee.SubmitSkipTest.ExecuteAsync(new SubmitPulseSkipTestUseCaseInput
+        {
+            CourseId = course.CourseId,
+            AttemptNo = started.Attempt!.AttemptNo,
+            Answers = await AnswersAsync(started.Attempt.Questions),
+        });
+        Context.ChangeTracker.Clear();
+        return await CourseAsync(employee, code);
+    }
+
+    /// <summary>
+    /// Bài đánh giá trước khi học cũ (có tự luận, người chấm) như dữ liệu đã có trước khi đổi sang bài kiểm tra đầu vào trắc
+    /// nghiệm: ghi thẳng vào DB vì API không còn nhận bài mới. <paramref name="decision"/> null = còn chờ chấm.
+    /// </summary>
+    public async Task<CoursePreAssessment> SeedLegacyPreAssessmentAsync(string email, string code, string? decision)
+    {
+        var uc = await AsAsync(email);
+        var course = await CourseAsync(uc, code);
+        var employee = await EmployeeAsync(email);
+        var reviewer = await UserAsync(OwnerEmail);
+        var pre = new CoursePreAssessment
+        {
+            CourseId = course.CourseId,
+            EmployeeId = employee.Id,
+            EvidenceText = Evidence,
+            ChoiceScore = 6,
+            ChoiceTotal = 10,
+            SubmittedAt = Clock.Now,
+            Decision = decision,
+            DecisionReason = decision == null ? null : "Kết luận của người chấm theo luồng cũ.",
+            ReviewedAt = decision == null ? null : Clock.Now,
+            ReviewedByUserId = decision == null ? null : reviewer.Id,
+        };
+        if (decision == Statuses.FinalSubmissionDecision.Passed)
+        {
+            // Như DecidePulsePreAssessmentUseCase cũ: đạt thì lượt học hoàn thành, khóa được công nhận.
+            var enrollment = new Enrollment
+            {
+                EmployeeId = employee.Id,
+                CourseId = course.CourseId,
+                Status = Statuses.Enrollment.Completed,
+                ProgressPercent = 100,
+                StartedAt = Clock.Now,
+                CompletedAt = Clock.Now,
+            };
+            Context.Enrollments.Add(enrollment);
+            pre.EnrollmentId = enrollment.Id;
+        }
+
+        Context.CoursePreAssessments.Add(pre);
+        await Context.SaveChangesAsync();
+        Context.ChangeTracker.Clear();
+        return pre;
     }
 
     /// <summary>Làm bài cuối khóa có giám sát và nộp; <paramref name="correct"/> câu trắc nghiệm đúng (mặc định tất cả).</summary>
@@ -325,7 +399,10 @@ internal sealed class PulseTestWorld : IDisposable
         GetPulseOutcomeUseCase Outcome,
         GetPulseFinalReviewsUseCase Reviews,
         DecidePulseFinalUseCase Decide,
-        RecordPulseFinalSupportUseCase Support);
+        RecordPulseFinalSupportUseCase Support,
+        GetPulseSkipTestUseCase GetSkipTest,
+        StartPulseSkipTestUseCase StartSkipTest,
+        SubmitPulseSkipTestUseCase SubmitSkipTest);
 
     public void Dispose() => Context.Dispose();
 }
