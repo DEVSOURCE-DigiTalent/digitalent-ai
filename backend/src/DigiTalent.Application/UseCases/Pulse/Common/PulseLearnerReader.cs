@@ -72,8 +72,11 @@ public sealed class PulseCourseState
     public int ModulesPassed => PulseModuleReader.CountPassed(Modules, Progress);
     public bool AllModulesPassed => Modules.Count > 0 && ModulesPassed == Modules.Count;
     public int ProgressPercent => PulseRules.ProgressPercent(Modules, Progress);
-    /// <summary>Có thể bắt đầu bài đánh giá trước khi học ngay bây giờ.</summary>
-    public bool CanStartPreAssessment => PreStatus == PulsePreStatus.Required;
+    /// <summary>
+    /// Bài đánh giá trước khi học cũ (trắc nghiệm + tự luận, có giám sát, người chấm) không còn mở: bài đầu vào nay là bài
+    /// kiểm tra trắc nghiệm tự chấm (<see cref="PulseSkipTest"/>). Giữ thuộc tính để API cũ trả lời "chưa mở".
+    /// </summary>
+    public bool CanStartPreAssessment => false;
     /// <summary>Có thể bắt đầu bài cuối khóa (có giám sát) ngay bây giờ.</summary>
     public bool CanStartFinal => CanWork && Enrollment != null && PulseRules.CanSubmitFinal(FinalStatus);
 }

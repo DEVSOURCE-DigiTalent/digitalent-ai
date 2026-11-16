@@ -106,6 +106,7 @@ public class PulseCourseWorkspace
         PulsePreStatus.Passed => "Bạn đã đạt bài đánh giá trước khi học của khóa này.",
         PulsePreStatus.NotYet => "Mỗi khóa có một bài đánh giá trước khi học. Bài của bạn chưa đạt — hãy học khóa rồi làm bài cuối khóa.",
         PulsePreStatus.NotNeeded => "Khóa này không cần bài đánh giá trước khi học: khóa đã được công nhận hoặc bạn đã bắt đầu học.",
+        PulsePreStatus.Required => "Bài đánh giá đầu vào có tự luận đã được thay bằng bài kiểm tra đầu vào trắc nghiệm (tự chấm, không cần người chấm). Hãy làm bài kiểm tra đầu vào của khóa.",
         _ => state.BlockReason is { } reason && reason is not PulseBlockReason.PreAssessmentRequired and not PulseBlockReason.SeatRequired
             ? BlockMessage(reason)
             : "Bài đánh giá trước khi học của khóa này chưa mở.",
