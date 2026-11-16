@@ -167,7 +167,7 @@ describe('PlatformTrialsPage (PA-14)', () => {
 
     // REQUESTED and ASSIGNED must have distinct labels inside the table (not merged as "Đang khảo sát")
     expect(within(getTable()).getAllByText('Chờ phân công').length).toBeGreaterThanOrEqual(1);
-    expect(within(getTable()).getAllByText('Đang chấm thi').length).toBeGreaterThanOrEqual(1);
+    expect(within(getTable()).getAllByText('Đang chấm').length).toBeGreaterThanOrEqual(1);
     expect(within(getTable()).getByText('Chưa phân công')).toBeInTheDocument();
 
     // Filter via KPI card "Chờ phân công"
@@ -197,7 +197,7 @@ describe('PlatformTrialsPage (PA-14)', () => {
 
     // Select Nguyễn Thu Hương and submit
     fireEvent.click(screen.getByRole('radio', { name: /Nguyễn Thu Hương/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Xác nhận phân công Mentor/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Xác nhận phân công/i }));
 
     await waitFor(() =>
       expect(trialServiceMock.assignMentor).toHaveBeenCalledWith('org-req', 'm-2'),

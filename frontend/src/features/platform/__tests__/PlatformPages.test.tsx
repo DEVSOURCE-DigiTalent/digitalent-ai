@@ -356,18 +356,18 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/dashboard');
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Toàn cảnh nền tảng hôm nay.' })).toBeInTheDocument();
-    expect((await screen.findByText('Phiên bản đang dùng')).nextElementSibling).toHaveTextContent('v3');
-    expect(screen.getByText('+1 khóa mới · 2 đã sửa')).toBeInTheDocument();
+    expect((await screen.findByText('Đang dùng')).nextElementSibling).toHaveTextContent('v3');
+    expect(screen.getByText('1 khóa mới, 2 khóa đã sửa')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mở bản nháp' })).toHaveAttribute('href', '/platform/versions/4');
-    expect(screen.getByText('+29%')).toBeInTheDocument();
+    expect(screen.getByText(/trong 7 ngày/)).toBeInTheDocument();
     expect(screen.queryByText(/hết hạn trong vòng 48 giờ/)).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Doanh thu suất học' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Cơ cấu tổ chức' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Doanh thu' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Tổ chức theo trạng thái' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Nhật ký' }));
     expect(screen.getByText(/Chưa có thao tác quản trị nào được ghi nhận/)).toBeInTheDocument();
     const sidebar = screen.getByRole('complementary', { name: 'Điều hướng quản trị nền tảng' });
     expect(within(sidebar).getByRole('link', { name: /Phiên bản khóa học/ })).toHaveAttribute('href', '/platform/versions');
-    expect(within(sidebar).getByRole('link', { name: /Đơn giá/ })).toHaveAttribute('href', '/platform/commerce');
+    expect(within(sidebar).getByRole('link', { name: /Giá và đơn hàng/ })).toHaveAttribute('href', '/platform/commerce');
   });
 
   it('PA-01 shows matched skeleton loading state while overview data is pending', async () => {
@@ -459,8 +459,8 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/versions');
 
     expect(await screen.findByText('Phiên bản v3')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { level: 2, name: 'Danh mục khóa học thuộc v4' })).toBeInTheDocument();
-    expect(screen.getByText('Bản nháp chép từ v3: 1 khóa mới, 0 khóa đã sửa.')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Khóa học trong v4' })).toBeInTheDocument();
+    expect(screen.getByText('Sao chép từ v3. 1 khóa mới, 0 khóa đã sửa.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Công bố v4' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Sửa' })).toHaveLength(3);
   });
@@ -474,7 +474,7 @@ describe('Platform Admin console (v2)', () => {
     });
     renderAt('/platform/versions/4');
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Danh mục khóa học thuộc v4' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Khóa học trong v4' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Bỏ AI1-F khỏi bản nháp' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Công bố v4' }));
 
@@ -640,7 +640,7 @@ describe('Platform Admin console (v2)', () => {
 
     const input = await screen.findByRole('spinbutton', { name: 'Giá bản nháp của A1-I' });
     expect(screen.queryByRole('spinbutton', { name: 'Giá bản nháp của A1-F' })).not.toBeInTheDocument();
-    const save = screen.getByRole('button', { name: 'Lưu giá vào bản nháp v4' });
+    const save = screen.getByRole('button', { name: 'Lưu vào bản nháp v4' });
     expect(save).toBeDisabled();
     fireEvent.change(input, { target: { value: '520000' } });
     fireEvent.change(screen.getByRole('combobox', { name: 'Trạng thái bán của A1-I' }), { target: { value: 'PAUSED' } });
@@ -654,7 +654,7 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/account');
     const name = useCurrentUser.getState().user!.fullName;
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Hồ sơ cá nhân & Thiết lập hệ thống.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Hồ sơ của tôi' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument();
     expect((await screen.findByText('Khóa học chuẩn hóa')).previousElementSibling).toHaveTextContent('18');
     await waitFor(() => expect(screen.getByText('Nhật ký kiểm toán').previousElementSibling).toHaveTextContent('9'));
@@ -682,11 +682,11 @@ describe('Platform Admin console (v2)', () => {
   it('PA-13 renders enterprise reference positions matrix with 4 KPI cards without regulatory text', async () => {
     renderAt('/platform/reference-positions');
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Mẫu vị trí chuẩn doanh nghiệp' })).toBeInTheDocument();
-    expect(await screen.findByText('CHỨC DANH CHUẨN')).toBeInTheDocument();
-    expect(screen.getByText('ĐỘ PHỦ NĂNG LỰC')).toBeInTheDocument();
-    expect(screen.getByText('KỲ VỌNG TRUNG BÌNH')).toBeInTheDocument();
-    expect(screen.getByText('TRẠNG THÁI ÁP DỤNG')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Vị trí tham chiếu' })).toBeInTheDocument();
+    expect(await screen.findByText('Vị trí')).toBeInTheDocument();
+    expect(screen.getByText('Ô mức Nâng cao')).toBeInTheDocument();
+    expect(screen.getByText('Mức trung bình')).toBeInTheDocument();
+    expect(screen.getByText('Trạng thái')).toBeInTheDocument();
     expect(screen.queryByText(/Thông tư 02/i)).not.toBeInTheDocument();
   });
 });

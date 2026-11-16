@@ -3,12 +3,15 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { usePlatformOverview, usePlatformUsers } from '@/hooks/use-platform-admin';
+import { platformAdminService } from '@/services/platform-admin.service';
 import { Box, Footer, LoadError, Loading, Pager } from '../components/pulse-ui';
 import {
   ROLE_LABELS,
+  USER_STATUS,
   formatDateTime,
   formatNumber,
 } from '../components/pulse-format';
+import { CSV_EXPORT_LIMIT, csvFileName, downloadCsv } from '../components/csv';
 import { PlatformDrawer } from '../components/PlatformDrawer';
 import { UserDetailContent } from './components/UserDetailContent';
 import {
@@ -17,7 +20,7 @@ import {
   Building2,
   TrendingUp,
   Sparkles,
-  UserPlus,
+  Lock,
   FileSpreadsheet,
   ExternalLink,
   ChevronRight,
@@ -28,11 +31,11 @@ import {
 } from 'lucide-react';
 
 const TABS = [
-  { key: 'ALL', label: 'Tất cả người dùng', role: '', dotColor: '#64748b' },
+  { key: 'ALL', label: 'Tất cả', role: '', dotColor: '#64748b' },
   { key: 'OWNER', label: 'Chủ doanh nghiệp', role: 'OWNER', dotColor: '#0284c7' },
-  { key: 'MANAGER', label: 'Quản lý phòng ban', role: 'MANAGER', dotColor: '#10b981' },
+  { key: 'MANAGER', label: 'Quản lý', role: 'MANAGER', dotColor: '#10b981' },
   { key: 'EMPLOYEE', label: 'Nhân viên', role: 'EMPLOYEE', dotColor: '#ea580c' },
-  { key: 'MENTOR', label: 'Chuyên gia (Mentor)', role: 'MENTOR', dotColor: '#8b5cf6' },
+  { key: 'MENTOR', label: 'Mentor', role: 'MENTOR', dotColor: '#8b5cf6' },
   { key: 'ADMIN', label: 'Quản trị viên', role: 'PLATFORM_ADMIN', dotColor: '#f59e0b' },
 ] as const;
 
@@ -72,25 +75,45 @@ export function PlatformUsersPage() {
 
   const overview = overviewQuery.data;
   const stats = data?.stats ?? {
-    total: overview?.userCount ?? 38,
-    owners: 9,
-    managers: 1,
-    employees: 19,
-    mentors: 4,
-    admins: 2,
-    learners: 3,
+    total: overview?.userCount ?? 0,
+    owners: 0,
+    managers: 0,
+    employees: 0,
+    mentors: 0,
+    admins: 0,
+    learners: 0,
     locked: overview?.lockedUserCount ?? 0,
-    active: (overview?.userCount ?? 38) - (overview?.lockedUserCount ?? 0),
+    active: (overview?.userCount ?? 0) - (overview?.lockedUserCount ?? 0),
   };
 
   // KPI Calculations
-  const recentUsers7d = overview?.recentUsers7d ?? 17;
-  const baseUsers = Math.max(1, stats.total - recentUsers7d);
-  const growthPct = Math.round((recentUsers7d / baseUsers) * 100);
-  const paidOrgs = overview?.paidOrganizationCount ?? 4;
-  const trialOrgs = overview?.trialOrganizationCount ?? 6;
-  const totalOrgs = overview?.organizationCount ?? (paidOrgs + trialOrgs);
-  const paidOrgPct = totalOrgs > 0 ? Math.round((paidOrgs / totalOrgs) * 100) : 40;
+  // Không dùng số dự phòng gắn cứng: chưa có dữ liệu thì hiện 0.
+  const recentUsers7d = overview?.recentUsers7d ?? 0;
+  const personalTrials = data?.trials ?? { active: 0, endingSoon: 0, ended: 0 };
+  const isLockedFilter = status === 'LOCKED';
+  const [isExporting, setIsExporting] = useState(false);
+
+  /** Xuất danh sách đang lọc (tối đa 100 tài khoản) ra CSV. */
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const page = await platformAdminService.getUsers({ search, role: queryRole, status: queryStatus, pageIndex: 1, pageSize: CSV_EXPORT_LIMIT });
+      const header = ['Họ tên', 'Email', 'Vai trò', 'Tổ chức', 'Phòng ban', 'Vị trí', 'Trạng thái', 'Đăng nhập gần nhất', 'Ngày tạo'];
+      const rows = page.items.map((u) => [
+        u.displayName, u.email, ROLE_LABELS[u.role] ?? u.role, u.organizationName, u.departmentName, u.positionName,
+        USER_STATUS[u.status]?.label ?? u.status,
+        u.lastLoginAt ? formatDateTime(u.lastLoginAt) : '', formatDateTime(u.createdAt),
+      ]);
+      downloadCsv(csvFileName('nguoi-dung'), header, rows);
+      if (page.totalItems > page.items.length) {
+        toast.info(`Đã xuất ${page.items.length}/${page.totalItems} tài khoản. Lọc hẹp hơn để xuất phần còn lại.`);
+      }
+    } catch {
+      toast.error('Không xuất được danh sách. Thử lại sau.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Sorting logic
   const sortedItems = useMemo(() => {
@@ -251,104 +274,97 @@ export function PlatformUsersPage() {
       {/* Modern, clean header (zero kicker badge, clear typography) */}
       <header className="pa-org-header">
         <div>
-          <h1 className="pa-org-title" aria-label="Quản trị tài khoản người dùng">
-            Quản trị tài khoản người dùng
+          <h1 className="pa-org-title" aria-label="Người dùng">
+            Người dùng
           </h1>
           <p className="pa-org-subtitle">
-            Quản lý danh sách tài khoản toàn hệ thống, theo dõi vai trò, phiên truy cập và bảo mật tài khoản.
+            Tài khoản của mọi tổ chức và tài khoản cá nhân. Khóa, mở khóa và gửi liên kết đặt lại mật khẩu.
           </p>
         </div>
 
         <div className="pa-org-actions">
           <button
             type="button"
-            className="btn btn-primary btn-small inline-flex items-center gap-1.5"
-            title="Thêm tài khoản người dùng mới"
-            onClick={() => toast.info('Tính năng thêm tài khoản mới trực tiếp sẽ mở trong bản cập nhật kế tiếp.')}
-          >
-            <UserPlus size={14} aria-hidden="true" />
-            <span>Thêm người dùng</span>
-          </button>
-          <button
-            type="button"
             className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-            title="Xuất bảng tính danh sách người dùng"
-            onClick={() => window.print()}
+            title="Tải danh sách người dùng đang lọc dạng CSV"
+            disabled={isExporting}
+            onClick={() => void handleExport()}
           >
             <FileSpreadsheet size={14} aria-hidden="true" />
-            <span>Xuất dữ liệu</span>
+            <span>{isExporting ? 'Đang xuất…' : 'Xuất CSV'}</span>
           </button>
         </div>
       </header>
 
       {/* Redesigned 4 KPI Cards */}
       <div className="pa-org-kpi-grid" role="region" aria-label="Thống kê cơ cấu người dùng và khách hàng">
-        {/* Card 1: Tổng tài khoản */}
+        {/* Card 1: Tài khoản */}
         <div className="pa-org-stat-card">
           <div className="pa-org-kpi-head">
-            <span className="pa-org-kpi-label">Tổng tài khoản</span>
+            <span className="pa-org-kpi-label">Tài khoản</span>
             <div className="pa-kpi-icon-wrap emerald" aria-hidden="true">
               <Users size={14} />
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
             <span className="pa-org-kpi-val">{formatNumber(stats.total)}</span>
-            <span className="pa-org-kpi-sub">
-              Toàn hệ thống · Hoạt động: {stats.active}
-            </span>
+            <span className="pa-org-kpi-sub">{formatNumber(stats.active)} đang hoạt động</span>
           </div>
         </div>
 
-        {/* Card 2: Tăng trưởng 7 ngày */}
+        {/* Card 2: Mới trong 7 ngày */}
         <div className="pa-org-stat-card">
           <div className="pa-org-kpi-head">
-            <span className="pa-org-kpi-label">Tăng trưởng 7 ngày</span>
+            <span className="pa-org-kpi-label">Mới trong 7 ngày</span>
             <div className="pa-kpi-icon-wrap sky" aria-hidden="true">
               <TrendingUp size={14} />
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
-            <span className="pa-org-kpi-val" style={{ color: '#0284c7' }}>
-              +{growthPct}%
-            </span>
-            <span className="pa-org-kpi-sub">
-              +{recentUsers7d} tài khoản mới tuần này
-            </span>
+            <span className="pa-org-kpi-val">+{formatNumber(recentUsers7d)}</span>
+            <span className="pa-org-kpi-sub">tài khoản tạo trong 7 ngày qua</span>
           </div>
         </div>
 
-        {/* Card 3: Doanh nghiệp trả gói */}
-        <div className="pa-org-stat-card">
+        {/* Card 3: Đã khóa (bấm để lọc) */}
+        <button
+          type="button"
+          className="pa-org-stat-card pa-org-kpi-btn"
+          aria-pressed={isLockedFilter}
+          title={isLockedFilter ? 'Bỏ lọc tài khoản đã khóa' : 'Chỉ hiện tài khoản đã khóa'}
+          onClick={() => {
+            setStatus(isLockedFilter ? '' : 'LOCKED');
+            setPageIndex(1);
+          }}
+        >
           <div className="pa-org-kpi-head">
-            <span className="pa-org-kpi-label">Doanh nghiệp trả gói</span>
-            <div className="pa-kpi-icon-wrap emerald" aria-hidden="true">
-              <Building2 size={14} />
+            <span className="pa-org-kpi-label">Đã khóa</span>
+            <div className="pa-kpi-icon-wrap amber" aria-hidden="true">
+              <Lock size={14} />
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
-            <span className="pa-org-kpi-val" style={{ color: '#15803d' }}>
-              {formatNumber(paidOrgs)}
+            <span className="pa-org-kpi-val" style={stats.locked > 0 ? { color: 'var(--pa-danger)' } : undefined}>
+              {formatNumber(stats.locked)}
             </span>
-            <span className="pa-org-kpi-sub">
-              Chiếm {paidOrgPct}% trên {totalOrgs} tổ chức
-            </span>
+            <span className="pa-org-kpi-sub">không đăng nhập được</span>
           </div>
-        </div>
+        </button>
 
-        {/* Card 4: Doanh nghiệp dùng thử */}
+        {/* Card 4: Dùng thử cá nhân 7 ngày */}
         <div className="pa-org-stat-card">
           <div className="pa-org-kpi-head">
-            <span className="pa-org-kpi-label">Doanh nghiệp dùng thử</span>
+            <span className="pa-org-kpi-label">Dùng thử cá nhân</span>
             <div className="pa-kpi-icon-wrap amber" aria-hidden="true">
               <Sparkles size={14} />
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
-            <span className="pa-org-kpi-val" style={{ color: '#d97706' }}>
-              {formatNumber(trialOrgs)}
-            </span>
+            <span className="pa-org-kpi-val">{formatNumber(personalTrials.active)}</span>
             <span className="pa-org-kpi-sub">
-              Đang trải nghiệm đánh giá hệ thống
+              {personalTrials.endingSoon > 0
+                ? `${formatNumber(personalTrials.endingSoon)} sắp hết hạn`
+                : 'đang trong 7 ngày dùng thử'}
             </span>
           </div>
         </div>
@@ -496,9 +512,9 @@ export function PlatformUsersPage() {
               >
                 <option value="DEFAULT">Sắp xếp: Mặc định</option>
                 <option value="LAST_LOGIN_DESC">Đăng nhập gần nhất</option>
-                <option value="NAME_ASC">Tên người dùng (A đến Z)</option>
-                <option value="NAME_DESC">Tên người dùng (Z đến A)</option>
-                <option value="ROLE">Theo cấp bậc vai trò</option>
+                <option value="NAME_ASC">Tên A đến Z</option>
+                <option value="NAME_DESC">Tên Z đến A</option>
+                <option value="ROLE">Theo vai trò</option>
               </select>
               <ArrowUpDown
                 size={14}
@@ -564,7 +580,7 @@ export function PlatformUsersPage() {
                     ) : (
                       <th style={{ minWidth: 175 }}>{dynamicColumnHeader}</th>
                     )}
-                    <th style={{ minWidth: 175 }}>Tổ chức / Phòng ban</th>
+                    <th style={{ minWidth: 175 }}>Tổ chức</th>
                     <th style={{ minWidth: 110 }}>{translateUi('Trạng thái')}</th>
                     <th style={{ minWidth: 120 }}>Đăng nhập gần nhất</th>
                     <th style={{ width: 44, textAlign: 'right', paddingRight: 14 }} aria-label="Chi tiết" />

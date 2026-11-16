@@ -7,14 +7,14 @@ import type { SidebarConfig } from './types';
  */
 export const PLATFORM_SIDEBAR: SidebarConfig = [
   { label: 'Tổng quan', icon: LayoutDashboard, screenId: 'PA-01', activeFor: ['PLT-01'] },
-  { label: 'Khung chuẩn', icon: Gem, screenId: 'PA-02', activeFor: ['PLT-04'] },
-  { label: 'Mẫu vị trí', icon: BriefcaseBusiness, screenId: 'PA-13' },
+  { label: 'Khung năng lực số', icon: Gem, screenId: 'PA-02', activeFor: ['PLT-04'] },
+  { label: 'Vị trí tham chiếu', icon: BriefcaseBusiness, screenId: 'PA-13' },
   { label: 'Phiên bản khóa học', icon: Anchor, screenId: 'PA-03', activeFor: ['PA-12', 'PA-04', 'PLT-05', 'PLT-06', 'PLT-06E'] },
   { label: 'Tổ chức', icon: Building2, screenId: 'PA-05', activeFor: ['PA-06', 'PLT-02', 'PLT-03'] },
   { label: 'Đánh giá dùng thử', icon: FlaskConical, screenId: 'PA-14' },
   { label: 'Người dùng', icon: Users, screenId: 'PA-07', activeFor: ['PA-08'] },
-  { label: 'Đơn giá', icon: ReceiptText, screenId: 'PA-09', activeFor: ['PLT-10', 'PLT-11'] },
-  { label: 'Nhật ký kiểm tra', icon: ScrollText, screenId: 'PA-10', activeFor: ['PLT-12'] },
+  { label: 'Giá và đơn hàng', icon: ReceiptText, screenId: 'PA-09', activeFor: ['PLT-10', 'PLT-11'] },
+  { label: 'Nhật ký hoạt động', icon: ScrollText, screenId: 'PA-10', activeFor: ['PLT-12'] },
   { label: 'Góp ý', icon: MessageSquare, screenId: 'PA-15' },
   { label: 'Báo lỗi', icon: Bug, screenId: 'PA-16' },
 ];

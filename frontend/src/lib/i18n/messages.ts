@@ -1148,4 +1148,92 @@ Tìm trang, tổ chức, user...|Find page, org, or user...
 Menu người dùng|User menu
 Hồ sơ quản trị viên|Admin profile
 Đăng xuất hệ thống|Sign out of system
+Khách hàng|Customers
+Doanh thu|Revenue
+Vị trí tham chiếu|Reference positions
+Giá và đơn hàng|Pricing & orders
+Bảo mật|Security
+Đã mua khóa|Course purchased
+Xem tổ chức|View organizations
+Theo tháng|By month
+Xem đơn hàng|View orders
+Đang chấm|Grading
+Đã có báo cáo|Report ready
+Chưa gửi yêu cầu|Not requested yet
+Tổ chức mới|New organizations
+Tổ chức theo trạng thái|Organizations by status
+Bấm một dòng để mở danh sách đã lọc|Click a row to open the filtered list
+Đối tượng|Object
+Mở bản nháp|Open draft
+Tổ chức dùng thử|Trial organizations
+Mọi thời hạn|Any deadline
+Sắp hết hạn hoặc quá hạn|Due soon or overdue
+Hạn nộp|Due date
+Tổ chức phụ trách|Assigned organizations
+Đang rảnh|Available
+Chọn mentor|Choose mentor
+Đổi mentor|Change mentor
+Xác nhận phân công|Confirm assignment
+Thêm mentor|Add mentor
+Thêm mentor mới|Add new mentor
+Mở hồ sơ tổ chức|Open organization profile
+Đăng ký tổ chức mới|Register new organization
+In danh sách|Print list
+Suất học đã bán|Seats sold
+Trên tổng số tổ chức|Of all organizations
+Trạng thái và suất đã mua|Status and seats purchased
+Khóa đang học|Courses in progress
+Ngày đăng ký|Registered on
+Chưa mua khóa|No course purchased
+Chưa có chủ doanh nghiệp|No business owner yet
+Mới trong 7 ngày|New in 7 days
+Tổ chức đã mua khóa|Organizations with purchased courses
+Tên A đến Z|Name A to Z
+Tên Z đến A|Name Z to A
+Theo vai trò|By role
+Phiên bản|Version
+Chưa có thay đổi nào cần công bố.|No changes to publish.
+Ghi chú công bố (không bắt buộc)|Release note (optional)
+Lịch sử công bố|Release history
+Mức yêu cầu theo vị trí|Required level by position
+Kinh doanh|Sales
+Vị trí|Positions
+Đã thay thế|Replaced
+Giá mỗi suất|Price per seat
+Thay đổi|Changes
+Lượt mua|Purchases
+Khóa đang bán|Courses on sale
+Đơn hàng|Orders
+Bảng giá theo phiên bản|Price list by version
+Mua|Purchase
+Được cấp|Granted
+Mở bán|On sale
+Suất học|Seats
+Bỏ thay đổi|Discard changes
+Tổng thao tác|Total actions
+Suất học và giá|Seats and pricing
+Tổ chức và mentor|Organizations and mentors
+Mọi thao tác|All actions
+Tất cả tổ chức|All organizations
+Không ghi lý do|No reason given
+Lý do|Reason
+Đăng xuất khỏi thiết bị khác|Sign out of other devices
+Trình duyệt|Browser
+Xem thao tác của tôi|View my activity
+Đang xử lý|In progress
+Đã giải quyết|Resolved
+Điểm hài lòng|Satisfaction score
+Mã và điểm|Code and score
+Mã và khu vực|Code and area
+Người gửi|Sender
+Ngày gửi|Sent on
+Trả lời người gửi|Reply to sender
+Trang gặp lỗi|Page with the error
+Thi và giám sát|Exams and proctoring
+Phân công mentor|Assign mentor
+Tạo tài khoản mentor|Create mentor account
+Công bố khóa học|Publish course
+Cấp suất học|Grant seats
+Chấm bài cuối khóa|Grade course final
+Gửi liên kết đặt lại mật khẩu|Send password reset link
 `.trim().split('\n').map(line => { const separator = line.indexOf('|'); return [line.slice(0, separator), line.slice(separator + 1)]; })) };

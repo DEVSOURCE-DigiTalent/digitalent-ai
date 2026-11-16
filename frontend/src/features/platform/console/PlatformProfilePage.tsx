@@ -13,7 +13,6 @@ import {
   Clock,
   Layers,
   BookOpen,
-  Anchor,
   FileCheck2,
 } from 'lucide-react';
 
@@ -40,15 +39,15 @@ export function PlatformProfilePage() {
               <span className="pa-eyebrow-dot" />
               QUẢN TRỊ NỀN TẢNG / HỒ SƠ QUẢN TRỊ VIÊN
             </div>
-            <h1 className="pa-header-title">Hồ sơ cá nhân & Thiết lập hệ thống.</h1>
+            <h1 className="pa-header-title">Hồ sơ của tôi</h1>
             <p className="pa-header-subtitle">
-              Quản lý định danh tài khoản quản trị tối cao, phạm vi phân quyền vận hành DigiTalent AI và các tùy chọn cá nhân.
+              Thông tin tài khoản quản trị của bạn.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <Link to="/platform/account/security" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <KeyRound size={15} />
-              Đổi mật khẩu & Bảo mật
+              Đổi mật khẩu
             </Link>
           </div>
         </div>
@@ -88,7 +87,7 @@ export function PlatformProfilePage() {
                 <Mail size={14} />
                 <span>{user?.email ?? 'platform@digitalent.ai'}</span>
               </div>
-              <Pill tone="green">Toàn quyền nền tảng (SUPER_ADMIN)</Pill>
+              <Pill tone="green">Quản trị nền tảng</Pill>
             </div>
 
             <div style={{ padding: '16px 0 0', display: 'grid', gap: 12 }}>
@@ -98,14 +97,8 @@ export function PlatformProfilePage() {
                   <ShieldCheck size={14} />{translateUi(" Đang hoạt động")}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span style={{ color: '#64748b' }}>Không gian làm việc:</span>
-                <span style={{ fontWeight: 600, color: '#0f172a' }}>Vận hành Nền tảng</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span style={{ color: '#64748b' }}>Phiên bản phục vụ:</span>
-                <span style={{ fontWeight: 600, color: '#d97706', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <Anchor size={13} /> Catalog v1 (Ổn định)
-                </span>
+                <span style={{ color: '#64748b' }}>Vai trò:</span>
+                <span style={{ fontWeight: 600, color: '#0f172a' }}>Quản trị nền tảng</span>
               </div>
             </div>
 
@@ -116,7 +109,7 @@ export function PlatformProfilePage() {
                 style={{ width: '100%', justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}
               >
                 <KeyRound size={14} />
-                Thiết lập mật khẩu & Bảo mật
+                Đổi mật khẩu
               </Link>
               <Link
                 to="/platform/audit-log"
@@ -124,7 +117,7 @@ export function PlatformProfilePage() {
                 style={{ width: '100%', justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}
               >
                 <Activity size={14} />
-                Xem nhật ký thao tác
+                Xem thao tác của tôi
               </Link>
             </div>
           </div>

@@ -16,7 +16,8 @@ import {
   useUpdatePrices,
 } from '@/hooks/use-platform-catalog';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
-import type { PlatformCourse, SalesStatus } from '@/services/platform-admin.service';
+import { platformAdminService, type PlatformCourse, type SalesStatus } from '@/services/platform-admin.service';
+import { CSV_EXPORT_LIMIT, csvFileName, downloadCsv } from '../components/csv';
 import { Box, Footer, LoadError, Loading, Pager, Pill } from '../components/pulse-ui';
 import { LEVEL_NAMES, SALES_STATUS, errorMessage, formatDateTime, formatMoney, formatNumber } from '../components/pulse-format';
 import {
@@ -46,7 +47,7 @@ type CommerceTab = 'PRICING' | 'ORDERS';
 type AugmentedPlatformCourse = PlatformCourse & { isNewInDraft?: boolean };
 
 /**
- * PA-09 · Đơn giá & Doanh thu suất học B2B
+ * PA-09 · Giá và đơn hàng B2B
  * Quản trị biểu giá niêm yết theo phiên bản và sổ cái giao dịch mua/cấp bù suất học.
  */
 export function PlatformCommercePage() {
@@ -135,8 +136,45 @@ export function PlatformCommercePage() {
   // Metrics calculations
   const totalRevenue = data?.revenue ?? 0;
   const seatsPurchased = data?.seatsPurchased ?? 0;
-  const paidCourses = useMemo(() => combinedCourses.filter((c) => !c.isFree).length, [combinedCourses]);
-  const freeCourses = useMemo(() => combinedCourses.filter((c) => c.isFree).length, [combinedCourses]);
+  // API còn trả khóa của phiên bản cũ (vẫn có suất đã bán). Thẻ "Khóa đang bán" chỉ đếm phiên bản đang dùng.
+  const currentCourses = useMemo(
+    () => (currentNo ? combinedCourses.filter((c) => c.versionNo === currentNo) : combinedCourses),
+    [combinedCourses, currentNo],
+  );
+  const paidCourses = currentCourses.filter((c) => !c.isFree).length;
+  const freeCourses = currentCourses.filter((c) => c.isFree).length;
+  const [isExporting, setIsExporting] = useState(false);
+
+  /** Xuất bảng giá (tab Bảng giá) hoặc 100 đơn hàng gần nhất (tab Đơn hàng). */
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      if (activeTab === 'ORDERS') {
+        const page = await platformAdminService.getCommerce({ pageIndex: 1, pageSize: CSV_EXPORT_LIMIT });
+        downloadCsv(
+          csvFileName('don-hang'),
+          ['Thời gian', 'Tổ chức', 'Mã khóa', 'Khóa học', 'Loại', 'Số suất', 'Đơn giá (VND)', 'Thành tiền (VND)', 'Người thực hiện', 'Ghi chú'],
+          page.orders.items.map((o) => [
+            formatDateTime(o.createdAt), o.organizationName, o.courseCode, o.courseTitle,
+            o.kind === 'PURCHASE' ? 'Mua' : 'Được cấp', o.seats, o.unitPrice, o.totalAmount, o.createdByEmail, o.reason,
+          ]),
+        );
+      } else {
+        downloadCsv(
+          csvFileName('bang-gia'),
+          ['Mã khóa', 'Khóa học', 'Lĩnh vực', 'Cấp độ', 'Phiên bản', 'Giá mỗi suất (VND)', 'Mở bán', 'Suất đã bán', 'Suất được cấp', 'Doanh thu (VND)'],
+          combinedCourses.map((c) => [
+            c.code, c.title, c.domainName, c.levelName, `v${c.versionNo}`, c.pricePerSeat,
+            SALES_STATUS[c.salesStatus]?.label ?? c.salesStatus, c.seatsPurchased, c.seatsGranted, c.revenue,
+          ]),
+        );
+      }
+    } catch {
+      toast.error('Không xuất được dữ liệu. Thử lại sau.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Filtered orders for client-side search
   const filteredOrders = useMemo(() => {
@@ -157,11 +195,11 @@ export function PlatformCommercePage() {
       {/* Modern, clean executive header (zero kicker badge, clear typography) */}
       <header className="pa-org-header">
         <div>
-          <h1 className="pa-org-title" aria-label="Đơn giá và Doanh thu suất học">
-            Đơn giá & Doanh thu suất học
+          <h1 className="pa-org-title" aria-label="Giá và đơn hàng">
+            Giá và đơn hàng
           </h1>
           <p className="pa-org-subtitle">
-            Quản trị biểu giá niêm yết theo phiên bản khóa học, theo dõi doanh thu và lịch sử cấp phát suất học doanh nghiệp.
+            Giá mỗi suất của từng khóa và lịch sử mua, cấp suất của các tổ chức.
           </p>
         </div>
 
@@ -181,20 +219,6 @@ export function PlatformCommercePage() {
 
           {draftNo !== null && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              {canManage && (
-                <button
-                  type="button"
-                  className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-                  style={{ color: '#ef4444', borderColor: '#fca5a5' }}
-                  onClick={() => setDiscardModalOpen(true)}
-                  disabled={discardDraft.isPending}
-                  title={`Hủy bản nháp v${draftNo} và quay lại phiên bản v${currentNo}`}
-                >
-                  <Trash2 size={14} aria-hidden="true" />
-                  <span>Hủy bản nháp v{draftNo}</span>
-                </button>
-              )}
-
               <Link
                 className="btn btn-primary btn-small inline-flex items-center gap-1.5"
                 to={`/platform/versions/${draftNo}`}
@@ -209,11 +233,12 @@ export function PlatformCommercePage() {
           <button
             type="button"
             className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-            title="Xuất bảng tính biểu giá và doanh thu suất học"
-            onClick={() => window.print()}
+            title={activeTab === 'ORDERS' ? 'Tải lịch sử đơn hàng dạng CSV' : 'Tải bảng giá dạng CSV'}
+            disabled={isExporting}
+            onClick={() => void handleExport()}
           >
             <FileSpreadsheet size={14} aria-hidden="true" />
-            <span>Xuất dữ liệu</span>
+            <span>{isExporting ? 'Đang xuất…' : 'Xuất CSV'}</span>
           </button>
         </div>
       </header>
@@ -228,7 +253,7 @@ export function PlatformCommercePage() {
             {/* Card 1: Doanh thu suất học */}
             <div className="pa-org-stat-card">
               <div className="pa-org-kpi-head">
-                <span className="pa-org-kpi-label">Doanh thu suất học</span>
+                <span className="pa-org-kpi-label">Doanh thu</span>
                 <div className="pa-kpi-icon-wrap emerald" aria-hidden="true">
                   <ReceiptText size={14} />
                 </div>
@@ -237,14 +262,14 @@ export function PlatformCommercePage() {
                 <span className="pa-org-kpi-val" style={{ color: '#15803d', whiteSpace: 'nowrap', fontSize: 20 }}>
                   {formatMoney(totalRevenue)}
                 </span>
-                <span className="pa-org-kpi-sub">Lũy kế có phí</span>
+                <span className="pa-org-kpi-sub">từ trước đến nay</span>
               </div>
             </div>
 
             {/* Card 2: Suất đã kích hoạt */}
             <div className="pa-org-stat-card">
               <div className="pa-org-kpi-head">
-                <span className="pa-org-kpi-label">Suất đã kích hoạt</span>
+                <span className="pa-org-kpi-label">Suất đã bán</span>
                 <div className="pa-kpi-icon-wrap sky" aria-hidden="true">
                   <Building2 size={14} />
                 </div>
@@ -253,14 +278,14 @@ export function PlatformCommercePage() {
                 <span className="pa-org-kpi-val" style={{ color: '#0284c7' }}>
                   {formatNumber(seatsPurchased)}
                 </span>
-                <span className="pa-org-kpi-sub">Đào tạo doanh nghiệp</span>
+                <span className="pa-org-kpi-sub">suất có phí, mọi tổ chức</span>
               </div>
             </div>
 
             {/* Card 3: Đơn hàng giao dịch */}
             <div className="pa-org-stat-card">
               <div className="pa-org-kpi-head">
-                <span className="pa-org-kpi-label">Đơn hàng giao dịch</span>
+                <span className="pa-org-kpi-label">Lượt mua</span>
                 <div className="pa-kpi-icon-wrap sky" style={{ background: '#ede9fe', color: '#7c3aed' }} aria-hidden="true">
                   <ShoppingBag size={14} />
                 </div>
@@ -269,23 +294,25 @@ export function PlatformCommercePage() {
                 <span className="pa-org-kpi-val" style={{ color: '#7c3aed' }}>
                   {formatNumber(data.orders.totalItems)}
                 </span>
-                <span className="pa-org-kpi-sub">Hợp đồng hoàn tất</span>
+                <span className="pa-org-kpi-sub">lượt mua và cấp suất</span>
               </div>
             </div>
 
             {/* Card 4: Danh mục khóa học */}
             <div className="pa-org-stat-card">
               <div className="pa-org-kpi-head">
-                <span className="pa-org-kpi-label">Khóa học kinh doanh</span>
+                <span className="pa-org-kpi-label">Khóa đang bán</span>
                 <div className="pa-kpi-icon-wrap amber" aria-hidden="true">
                   <Layers size={14} />
                 </div>
               </div>
               <div className="pa-org-kpi-val-row">
                 <span className="pa-org-kpi-val" style={{ color: '#d97706' }}>
-                  {combinedCourses.length} khóa
+                  {currentCourses.length} khóa
                 </span>
-                <span className="pa-org-kpi-sub">{paidCourses} có phí · {freeCourses} miễn phí</span>
+                <span className="pa-org-kpi-sub">
+                  {paidCourses} có phí · {freeCourses} miễn phí{currentNo ? ` · v${currentNo}` : ''}
+                </span>
               </div>
             </div>
           </div>
@@ -302,7 +329,7 @@ export function PlatformCommercePage() {
                 onClick={() => chooseTab('PRICING')}
               >
                 <Tag size={14} aria-hidden="true" />
-                <span>Biểu giá khóa học</span>
+                <span>Bảng giá</span>
                 <span className="pa-org-tab-count">{combinedCourses.length}</span>
               </button>
 
@@ -315,7 +342,7 @@ export function PlatformCommercePage() {
                 onClick={() => chooseTab('ORDERS')}
               >
                 <History size={14} aria-hidden="true" />
-                <span>Lịch sử đơn hàng & Cấp phát</span>
+                <span>Đơn hàng</span>
                 <span className="pa-org-tab-count">{data.orders.totalItems}</span>
               </button>
             </div>
@@ -341,7 +368,7 @@ export function PlatformCommercePage() {
                 <div>
                   <h2 className="pa-commerce-section-title">
                     <History size={17} style={{ color: '#0f172a' }} aria-hidden="true" />
-                    <span>Lịch sử đơn hàng & Cấp phát suất học</span>
+                    <span>Đơn hàng</span>
                   </h2>
                   <p className="pa-commerce-section-desc">
                     Nhật ký giao dịch mua suất từ doanh nghiệp và các lượt cấp bù hỗ trợ từ quản trị viên.
@@ -383,8 +410,8 @@ export function PlatformCommercePage() {
                   aria-label="Phân loại đơn hàng"
                 >
                   <option value="">Tất cả loại đơn</option>
-                  <option value="PURCHASE">Doanh nghiệp mua</option>
-                  <option value="ADMIN_GRANT">Quản trị viên cấp</option>
+                  <option value="PURCHASE">Mua</option>
+                  <option value="ADMIN_GRANT">Được cấp</option>
                 </select>
 
                 {(orderSearch || kind) && (
@@ -417,11 +444,11 @@ export function PlatformCommercePage() {
                       <thead>
                         <tr>
                           <th style={{ width: 150 }}>Thời gian</th>
-                          <th style={{ minWidth: 260 }}>Khóa học & Doanh nghiệp</th>
-                          <th style={{ width: 160 }}>Loại đơn</th>
+                          <th style={{ minWidth: 260 }}>Khóa học và tổ chức</th>
+                          <th style={{ width: 160 }}>Loại</th>
                           <th style={{ width: 110, textAlign: 'right' }}>Số suất</th>
-                          <th style={{ width: 140, textAlign: 'right' }}>Tổng tiền</th>
-                          <th style={{ minWidth: 260 }}>Người thực hiện & Ghi chú</th>
+                          <th style={{ width: 140, textAlign: 'right' }}>Thành tiền</th>
+                          <th style={{ minWidth: 260 }}>Người mua và ghi chú</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -468,7 +495,7 @@ export function PlatformCommercePage() {
                                     fontWeight: 700,
                                   }}
                                 >
-                                  {isPurchase ? 'Doanh nghiệp mua' : 'Quản trị cấp'}
+                                  {isPurchase ? 'Mua' : 'Được cấp'}
                                 </span>
                               </td>
                               <td style={{ textAlign: 'right' }}>
@@ -756,11 +783,11 @@ function PriceTable({
         <div>
           <h2 className="pa-commerce-section-title">
             <Tag size={17} style={{ color: '#0f172a' }} aria-hidden="true" />
-            <span>Biểu giá khóa học theo phiên bản</span>
+            <span>Bảng giá theo phiên bản</span>
           </h2>
           <p className="pa-commerce-section-desc">
             {draftNo !== null
-              ? `Đang áp dụng phiên bản chính thức v${currentNo}. Mọi thay đổi trong bản nháp v${draftNo} sẽ có hiệu lực ngay khi công bố.`
+              ? `Giá đang dùng thuộc v${currentNo}. Giá sửa ở đây lưu vào bản nháp v${draftNo} và áp dụng khi công bố.`
               : `Giá đang dùng thuộc phiên bản v${currentNo ?? 6}. Tạo bản nháp mới để điều chỉnh đơn giá niêm yết.`}
           </p>
         </div>
@@ -900,16 +927,16 @@ function PriceTable({
           <table className="data-table pa-org-table" style={{ width: '100%' }}>
             <thead>
               <tr>
-                <th style={{ minWidth: 260 }}>Khóa học & Lĩnh vực</th>
+                <th style={{ minWidth: 260 }}>Khóa học</th>
                 <th style={{ width: 130, textAlign: 'center' }}>Cấp độ</th>
-                <th style={{ width: 170, textAlign: 'right' }}>Giá đang dùng (v{currentNo ?? 6})</th>
+                <th style={{ width: 170, textAlign: 'right' }}>Giá v{currentNo ?? 6}</th>
                 {draftNo !== null && (
                   <th style={{ width: 180, textAlign: 'left', color: '#c2410c' }}>
-                    Giá bản nháp v{draftNo}
+                    Giá v{draftNo} (nháp)
                   </th>
                 )}
-                <th style={{ width: 140, textAlign: 'center' }}>Trạng thái bán</th>
-                <th style={{ width: 140, textAlign: 'right' }}>Suất đã cấp</th>
+                <th style={{ width: 140, textAlign: 'center' }}>Mở bán</th>
+                <th style={{ width: 140, textAlign: 'right' }}>Suất học</th>
                 {draftNo !== null && editable && (
                   <th style={{ width: 90, textAlign: 'center' }}>Thao tác</th>
                 )}
@@ -952,6 +979,15 @@ function PriceTable({
                               </code>
                               {c.isNewInDraft && (
                                 <span className="pa-badge-new">Mới</span>
+                              )}
+                              {currentNo !== null && c.versionNo !== currentNo && !c.isNewInDraft && (
+                                <span
+                                  className="pa-cell-sub"
+                                  style={{ fontSize: 12, whiteSpace: 'nowrap' }}
+                                  title="Khóa của phiên bản cũ: không còn bán mới, suất đã mua vẫn học bình thường"
+                                >
+                                  Bản v{c.versionNo}
+                                </span>
                               )}
                             </div>
                             <div>
@@ -1153,7 +1189,7 @@ function PriceTable({
               disabled={!changed.length || save.isPending}
             >
               <RotateCcw size={14} />
-              <span>Hủy thay đổi</span>
+              <span>Bỏ thay đổi</span>
             </button>
             <button
               type="button"
@@ -1162,7 +1198,7 @@ function PriceTable({
               disabled={!changed.length || invalid || save.isPending}
             >
               <Save size={15} />
-              <span>{save.isPending ? 'Đang lưu…' : `Lưu giá vào bản nháp v${draftNo}`}</span>
+              <span>{save.isPending ? 'Đang lưu…' : `Lưu vào bản nháp v${draftNo}`}</span>
             </button>
           </div>
         </div>

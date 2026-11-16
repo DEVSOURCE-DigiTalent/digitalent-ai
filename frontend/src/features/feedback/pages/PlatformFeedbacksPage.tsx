@@ -93,7 +93,7 @@ export function inferModule(item: FeedbackItem): ModuleInfo {
   ) {
     return {
       key: 'EXAM',
-      label: 'Khảo thí & Giám sát',
+      label: 'Thi và giám sát',
       color: '#6d28d9',
       bg: '#f5f3ff',
       border: '#ddd6fe',
@@ -111,7 +111,7 @@ export function inferModule(item: FeedbackItem): ModuleInfo {
   ) {
     return {
       key: 'LEARNING',
-      label: 'Học tập & Học liệu',
+      label: 'Học tập',
       color: '#0369a1',
       bg: '#f0f9ff',
       border: '#bae6fd',
@@ -145,7 +145,7 @@ export function inferModule(item: FeedbackItem): ModuleInfo {
   ) {
     return {
       key: 'AUTH',
-      label: 'Tài khoản & Truy cập',
+      label: 'Tài khoản',
       color: '#c2410c',
       bg: '#fff7ed',
       border: '#fed7aa',
@@ -154,7 +154,7 @@ export function inferModule(item: FeedbackItem): ModuleInfo {
 
   return {
     key: 'GENERAL',
-    label: 'Hệ thống chung',
+    label: 'Khác',
     color: '#475569',
     bg: '#f8fafc',
     border: '#e2e8f0',
@@ -163,11 +163,11 @@ export function inferModule(item: FeedbackItem): ModuleInfo {
 
 const MODULE_OPTIONS = [
   { value: 'ALL', label: 'Tất cả khu vực' },
-  { value: 'EXAM', label: 'Khảo thí & Giám sát' },
-  { value: 'LEARNING', label: 'Học tập & Học liệu' },
+  { value: 'EXAM', label: 'Thi và giám sát' },
+  { value: 'LEARNING', label: 'Học tập' },
   { value: 'ORGANIZATION', label: 'Quản trị tổ chức' },
-  { value: 'AUTH', label: 'Tài khoản & Truy cập' },
-  { value: 'GENERAL', label: 'Hệ thống chung' },
+  { value: 'AUTH', label: 'Tài khoản' },
+  { value: 'GENERAL', label: 'Khác' },
 ];
 
 const BUG_RESPONSE_TEMPLATES = [
@@ -513,13 +513,13 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
       <header className="pa-org-header">
         <div>
           <h1 className="pa-org-title">
-            {translateUi(isBug ? 'Quản lý sự cố kỹ thuật từ người dùng' : 'Ý kiến phản hồi & Đóng góp từ người dùng')}
+            {translateUi(isBug ? 'Báo lỗi' : 'Góp ý')}
           </h1>
           <p className="pa-org-subtitle">
             {translateUi(
               isBug
-                ? 'Theo dõi, phân loại và cập nhật tiến độ xử lý các lỗi kỹ thuật phát sinh trong quá trình học và thi.'
-                : 'Tiếp nhận ý kiến đóng góp, mức độ hài lòng và gửi thông điệp phản hồi trực tiếp tới hộp thư người dùng.',
+                ? 'Lỗi người dùng báo từ trong ứng dụng. Cập nhật trạng thái và trả lời người gửi.'
+                : 'Góp ý và điểm hài lòng người dùng gửi từ trong ứng dụng.',
             )}
           </p>
         </div>
@@ -573,7 +573,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
           </div>
           <div>
             <div className="pa-audit-kpi-value">{kpiStats.total}</div>
-            <div className="pa-audit-kpi-label">{translateUi(isBug ? 'Tổng số sự cố' : 'Tổng số phản hồi')}</div>
+            <div className="pa-audit-kpi-label">{translateUi(isBug ? 'Báo lỗi' : 'Góp ý')}</div>
           </div>
         </div>
 
@@ -596,11 +596,11 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
           </div>
           <div>
             <div className="pa-audit-kpi-value">{kpiStats.openCount}</div>
-            <div className="pa-audit-kpi-label">{translateUi(isBug ? 'Chờ tiếp nhận' : 'Đang chờ xử lý')}</div>
+            <div className="pa-audit-kpi-label">{translateUi(isBug ? 'Chờ xử lý' : 'Chờ xử lý')}</div>
           </div>
         </div>
 
-        {/* Card 3: Đang tiến hành */}
+        {/* Card 3: Đang xử lý */}
         <div
           className="pa-audit-kpi-card"
           onClick={() => {
@@ -619,7 +619,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
           </div>
           <div>
             <div className="pa-audit-kpi-value">{kpiStats.inProgressCount}</div>
-            <div className="pa-audit-kpi-label">{translateUi(isBug ? 'Đang điều tra & sửa' : 'Đang tiến hành')}</div>
+            <div className="pa-audit-kpi-label">{translateUi(isBug ? 'Đang xử lý' : 'Đang xử lý')}</div>
           </div>
         </div>
 
@@ -652,7 +652,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
               {isBug ? `${kpiStats.totalResolved} (${kpiStats.resolveRate}%)` : `${kpiStats.avgScore} ★`}
             </div>
             <div className="pa-audit-kpi-label">
-              {translateUi(isBug ? 'Đã khắc phục xong' : 'Đánh giá hài lòng')}
+              {translateUi(isBug ? 'Đã giải quyết' : 'Điểm hài lòng')}
             </div>
           </div>
         </div>
@@ -874,10 +874,10 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: 140 }}>{translateUi(isBug ? 'Mã & Khu vực' : 'Mã & Đánh giá')}</th>
-                  <th>{translateUi('Tiêu đề & Nội dung sự cố')}</th>
-                  <th style={{ width: 230 }}>{translateUi('Người gửi & Tổ chức')}</th>
-                  <th style={{ width: 130 }}>{translateUi('Thời gian gửi')}</th>
+                  <th style={{ width: 140 }}>{translateUi(isBug ? 'Mã và khu vực' : 'Mã và điểm')}</th>
+                  <th>{translateUi('Nội dung')}</th>
+                  <th style={{ width: 230 }}>{translateUi('Người gửi')}</th>
+                  <th style={{ width: 130 }}>{translateUi('Ngày gửi')}</th>
                   <th style={{ width: 145 }}>{translateUi('Trạng thái')}</th>
                   <th style={{ width: 100, textAlign: 'right' }}>{translateUi('Thao tác')}</th>
                 </tr>
@@ -997,16 +997,16 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                         </div>
                       </td>
 
-                      {/* Cột 3: Người gửi & Tổ chức (Avatar pastel + Typography chuẩn admin) */}
+                      {/* Cột 3: Người gửi (Avatar pastel + Typography chuẩn admin) */}
                       <td>
                         <FeedbackSenderCell
-                          name={item.userName}
-                          email={item.userEmail}
-                          organizationName={item.organizationName}
+                          name={item.userName ?? null}
+                          email={item.userEmail ?? null}
+                          organizationName={item.organizationName ?? null}
                         />
                       </td>
 
-                      {/* Cột 4: Thời gian gửi */}
+                      {/* Cột 4: Ngày gửi */}
                       <td>
                         <div style={{ display: 'grid', gap: 2 }}>
                           <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>
@@ -1147,7 +1147,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
               <Clock size={12} />
               <span>{formatDateTime(viewingItem.createdAt)}</span>
               <span>•</span>
-              <span>{isBug ? (currentModule?.label ?? translateUi('Báo lỗi kỹ thuật')) : translateUi('Ý kiến phản hồi')}</span>
+              <span>{isBug ? (currentModule?.label ?? translateUi('Báo lỗi')) : translateUi('Góp ý')}</span>
             </div>
           ) : undefined
         }
@@ -1245,7 +1245,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                   <ExternalLink size={14} style={{ color: '#0284c7', flexShrink: 0 }} />
-                  <span style={{ color: '#64748b', flexShrink: 0 }}>{translateUi('Trang phát sinh')}:</span>
+                  <span style={{ color: '#64748b', flexShrink: 0 }}>{translateUi('Trang gặp lỗi')}:</span>
                   <code style={{ color: '#0f172a', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {viewingItem.pageUrl}
                   </code>
@@ -1281,7 +1281,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
             {/* Nội dung chi tiết */}
             <div style={{ display: 'grid', gap: 8 }}>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0f172a' }}>
-                {translateUi(isBug ? 'Mô tả chi tiết sự cố kỹ thuật' : 'Nội dung góp ý / Báo cáo')}:
+                {translateUi(isBug ? 'Mô tả' : 'Nội dung góp ý / Báo cáo')}:
               </span>
               <div
                 style={{
@@ -1358,7 +1358,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
             <div style={{ display: 'grid', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
-                  {translateUi('Cập nhật trạng thái xử lý')}
+                  {translateUi('Trạng thái')}
                 </label>
                 <select
                   value={drawerStatus}
@@ -1385,7 +1385,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                   <label style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
-                    {translateUi('Nội dung phản hồi cho người gửi')}
+                    {translateUi('Trả lời người gửi')}
                   </label>
                   <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
                     {drawerNote.length}/2000 {translateUi('ký tự')}
@@ -1452,7 +1452,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                   onClick={() => setViewingItem(null)}
                   style={{ minHeight: 38, padding: '0 16px', fontSize: 13, fontWeight: 600 }}
                 >
-                  {translateUi('Hủy bỏ')}
+                  {translateUi('Đóng')}
                 </button>
 
                 <button

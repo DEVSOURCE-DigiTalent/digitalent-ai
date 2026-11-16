@@ -1,8 +1,10 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { usePlatformOrganizations, usePlatformOverview } from '@/hooks/use-platform-admin';
-import type { PlatformOrganization } from '@/services/platform-admin.service';
+import { platformAdminService, type PlatformOrganization } from '@/services/platform-admin.service';
+import { CSV_EXPORT_LIMIT, csvFileName, downloadCsv } from '../components/csv';
 import { Box, Footer, LoadError, Pager } from '../components/pulse-ui';
 import {
   ORG_STATUS,
@@ -29,7 +31,7 @@ import {
 } from 'lucide-react';
 
 const TABS = [
-  { key: 'ALL', label: 'Tất cả tổ chức', filter: {} },
+  { key: 'ALL', label: 'Tất cả', filter: {} },
   { key: 'TRIAL', label: 'Đang dùng thử', filter: { stage: 'TRIAL', status: 'ACTIVE' } },
   { key: 'PAID', label: 'Đã mua khóa', filter: { stage: 'PAID', status: 'ACTIVE' } },
   { key: 'SUSPENDED', label: 'Tạm ngưng', filter: { status: 'SUSPENDED' } },
@@ -58,6 +60,32 @@ export function PlatformOrganizationsPage() {
   };
 
   const selectedOrg = data?.items.find((o) => o.id === drawerOrgId);
+  const [isExporting, setIsExporting] = useState(false);
+
+  /** Xuất danh sách đang lọc (tối đa 100 tổ chức) ra CSV. */
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const page = await platformAdminService.getOrganizations({ search, ...filter, pageIndex: 1, pageSize: CSV_EXPORT_LIMIT });
+      const header = ['Tổ chức', 'Mã', 'Chủ doanh nghiệp', 'Email chủ doanh nghiệp', 'Trạng thái', 'Suất đã mua', 'Suất được cấp',
+        'Doanh thu (VND)', 'Nhân viên', 'Nhân viên đang học', 'Khóa Cơ bản', 'Khóa Trung cấp', 'Khóa Nâng cao', 'Ngày đăng ký'];
+      const rows = page.items.map((o) => [
+        o.name, o.code, o.ownerName, o.ownerEmail,
+        o.status === 'SUSPENDED' ? ORG_STATUS.SUSPENDED.label : STAGE_LABELS[o.stage]?.label ?? o.stage,
+        o.seatsPurchased, o.seatsGranted, o.revenue, o.employeeCount, o.participantCount,
+        o.coursesInUseByLevel?.[0] ?? 0, o.coursesInUseByLevel?.[1] ?? 0, o.coursesInUseByLevel?.[2] ?? 0,
+        formatDate(o.createdAt),
+      ]);
+      downloadCsv(csvFileName('to-chuc'), header, rows);
+      if (page.totalItems > page.items.length) {
+        toast.info(`Đã xuất ${page.items.length}/${page.totalItems} tổ chức. Lọc hẹp hơn để xuất phần còn lại.`);
+      }
+    } catch {
+      toast.error('Không xuất được danh sách. Thử lại sau.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Global counts for metrics and tab badges
   const overview = overviewQuery.data;
@@ -84,10 +112,10 @@ export function PlatformOrganizationsPage() {
       <header className="pa-org-header">
         <div>
           <h1 className="pa-org-title" aria-label="Doanh nghiệp đang dùng nền tảng.">
-            Quản trị tổ chức khách hàng doanh nghiệp
+            Tổ chức
           </h1>
           <p className="pa-org-subtitle">
-            Theo dõi hợp đồng, gói dịch vụ, phân bổ suất học và nhân sự của từng doanh nghiệp.
+            Trạng thái, suất học đã mua và số nhân viên đang học của từng tổ chức.
           </p>
         </div>
 
@@ -97,21 +125,20 @@ export function PlatformOrganizationsPage() {
             target="_blank"
             rel="noreferrer"
             className="btn btn-primary btn-small inline-flex items-center gap-1.5"
-            title="Thêm tổ chức doanh nghiệp mới"
+            title="Mở form đăng ký dùng thử cho tổ chức mới"
           >
             <Plus size={14} aria-hidden="true" />
-            <span>Thêm tổ chức</span>
+            <span>Đăng ký tổ chức mới</span>
           </Link>
           <button
             type="button"
             className="btn btn-outline btn-small inline-flex items-center gap-1.5"
-            title="Tải bảng tính báo cáo doanh nghiệp"
-            onClick={() => {
-              window.print();
-            }}
+            title="Tải danh sách tổ chức đang lọc dạng CSV"
+            disabled={isExporting}
+            onClick={() => void handleExport()}
           >
             <FileSpreadsheet size={14} aria-hidden="true" />
-            <span>Xuất dữ liệu</span>
+            <span>{isExporting ? 'Đang xuất…' : 'Xuất CSV'}</span>
           </button>
         </div>
       </header>
@@ -120,53 +147,53 @@ export function PlatformOrganizationsPage() {
       <div className="pa-org-kpi-grid" role="region" aria-label="Thống kê quy mô và hiệu quả kinh doanh B2B">
         <div className="pa-org-stat-card">
           <div className="pa-org-kpi-head">
-            <span className="pa-org-kpi-label">Doanh nghiệp hợp tác</span>
+            <span className="pa-org-kpi-label">Tổ chức</span>
             <div className="pa-kpi-icon-wrap emerald" aria-hidden="true">
               <Building2 size={14} />
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
             <span className="pa-org-kpi-val">{formatNumber(totalCount)}</span>
-            <span className="pa-org-kpi-sub">Toàn hệ thống</span>
+            <span className="pa-org-kpi-sub">{formatNumber(trialCount)} dùng thử · {formatNumber(paidCount)} đã mua khóa</span>
           </div>
         </div>
 
         <div className="pa-org-stat-card">
           <div className="pa-org-kpi-head">
-            <span className="pa-org-kpi-label">Suất học có phí</span>
+            <span className="pa-org-kpi-label">Suất học đã bán</span>
             <div className="pa-kpi-icon-wrap sky" aria-hidden="true">
               <CheckCircle2 size={14} />
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
-            <span className="pa-org-kpi-val" style={{ color: '#0284c7' }}>{formatNumber(seatsPurchased)}</span>
-            <span className="pa-org-kpi-sub">Đã kích hoạt</span>
+            <span className="pa-org-kpi-val" style={{ color: '#0284c7' }}>{overviewQuery.isLoading ? '…' : formatNumber(seatsPurchased)}</span>
+            <span className="pa-org-kpi-sub">suất có phí, mọi tổ chức</span>
           </div>
         </div>
 
         <div className="pa-org-stat-card">
           <div className="pa-org-kpi-head">
-            <span className="pa-org-kpi-label">Tỷ lệ chuyển đổi</span>
+            <span className="pa-org-kpi-label">Đã mua khóa</span>
             <div className="pa-kpi-icon-wrap amber" aria-hidden="true">
               <TrendingUp size={14} />
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
-            <span className="pa-org-kpi-val" style={{ color: '#d97706' }}>{conversionRate}%</span>
-            <span className="pa-org-kpi-sub">Dùng thử sang mua</span>
+            <span className="pa-org-kpi-val" style={{ color: '#d97706' }}>{overviewQuery.isLoading ? '…' : `${conversionRate}%`}</span>
+            <span className="pa-org-kpi-sub">Trên tổng số tổ chức</span>
           </div>
         </div>
 
         <div className="pa-org-stat-card">
           <div className="pa-org-kpi-head">
-            <span className="pa-org-kpi-label">Doanh thu B2B</span>
+            <span className="pa-org-kpi-label">Doanh thu</span>
             <div className="pa-kpi-icon-wrap purple" aria-hidden="true">
               <CreditCard size={14} />
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
-            <span className="pa-org-kpi-val" style={{ color: '#7c3aed' }}>{formatMoney(revenue)}</span>
-            <span className="pa-org-kpi-sub">Lũy kế dịch vụ</span>
+            <span className="pa-org-kpi-val" style={{ color: '#7c3aed' }}>{overviewQuery.isLoading ? '…' : formatMoney(revenue)}</span>
+            <span className="pa-org-kpi-sub">Từ trước đến nay</span>
           </div>
         </div>
       </div>
@@ -243,11 +270,11 @@ export function PlatformOrganizationsPage() {
               <table className="data-table pa-org-table">
                 <thead>
                   <tr>
-                    <th>Doanh nghiệp</th>
-                    <th>Tình trạng & Suất mua</th>
-                    <th>Khóa học theo cấp</th>
-                    <th className="num">{translateUi('Nhân sự tham gia')}</th>
-                    <th>{translateUi('Ngày tạo')}</th>
+                    <th>Tổ chức</th>
+                    <th>Trạng thái và suất đã mua</th>
+                    <th>Khóa đang học</th>
+                    <th className="num">{translateUi('Nhân viên đang học')}</th>
+                    <th>{translateUi('Ngày đăng ký')}</th>
                     <th style={{ width: 110 }}>{translateUi('Thao tác')}</th>
                   </tr>
                 </thead>
@@ -273,7 +300,7 @@ export function PlatformOrganizationsPage() {
                             <CompanyAvatar name={o.name} size={36} />
                             <div>
                               <div className="pa-org-name">{o.name}</div>
-                              <div className="pa-org-email">{o.ownerEmail ?? 'Chưa gán chủ sở hữu'}</div>
+                              <div className="pa-org-email">{o.ownerEmail ?? 'Chưa có chủ doanh nghiệp'}</div>
                             </div>
                           </div>
                         </td>
@@ -281,17 +308,15 @@ export function PlatformOrganizationsPage() {
                           <PlanCell organization={o} />
                         </td>
                         <td>
-                          <div className="pa-org-level-wrap">
-                            <span className={`pa-org-level-pill ${c0 > 0 ? 'is-basic' : 'is-empty'}`}>
-                              Cơ bản · {c0}
-                            </span>
-                            <span className={`pa-org-level-pill ${c1 > 0 ? 'is-inter' : 'is-empty'}`}>
-                              Trung cấp · {c1}
-                            </span>
-                            <span className={`pa-org-level-pill ${c2 > 0 ? 'is-adv' : 'is-empty'}`}>
-                              Nâng cao · {c2}
-                            </span>
-                          </div>
+                          {c0 + c1 + c2 === 0 ? (
+                            <span className="pa-cell-sub">Chưa học khóa nào</span>
+                          ) : (
+                            <div className="pa-org-level-wrap">
+                              {c0 > 0 && <span className="pa-org-level-pill is-basic">Cơ bản · {c0}</span>}
+                              {c1 > 0 && <span className="pa-org-level-pill is-inter">Trung cấp · {c1}</span>}
+                              {c2 > 0 && <span className="pa-org-level-pill is-adv">Nâng cao · {c2}</span>}
+                            </div>
+                          )}
                         </td>
                         <td className="num">
                           <div className="pa-org-ratio-wrap">
@@ -309,9 +334,15 @@ export function PlatformOrganizationsPage() {
                                 style={{ width: `${Math.max(pct > 0 ? 8 : 0, pct)}%` }}
                               />
                             </div>
-                            <small className="pa-cell-sub" style={{ fontSize: 10 }}>
-                              {pct}% nhân sự
-                            </small>
+                            {o.stage === 'PAID' && pCount === 0 ? (
+                              <small className="pa-cell-sub" style={{ fontSize: 12, color: 'var(--pa-amber)' }}>
+                                Đã mua, chưa ai học
+                              </small>
+                            ) : (
+                              <small className="pa-cell-sub" style={{ fontSize: 12 }}>
+                                {pct}% nhân viên
+                              </small>
+                            )}
                           </div>
                         </td>
                         <td>{formatDate(o.createdAt)}</td>
@@ -424,7 +455,7 @@ function PlanCell({ organization: o }: { organization: PlatformOrganization }) {
         ) : isPaid ? (
           <span className="pa-tr-pill is-ok">
             <span className="pa-tr-pill-dot" aria-hidden="true" />
-            <span>Đã mua gói</span>
+            <span>Đã mua khóa</span>
           </span>
         ) : (
           <span className="pa-tr-pill is-warn">
@@ -446,7 +477,7 @@ function PlanCell({ organization: o }: { organization: PlatformOrganization }) {
             {o.planRenewsAt && <span> · Hạn {formatDate(o.planRenewsAt)}</span>}
           </>
         ) : (
-          <span>{o.seatLimit ? `Tối đa ${o.seatLimit} nhân sự` : 'Dùng thử không giới hạn'}</span>
+          <span>{o.seatLimit ? `Tối đa ${o.seatLimit} nhân sự` : 'Chưa mua khóa'}</span>
         )}
       </small>
     </div>

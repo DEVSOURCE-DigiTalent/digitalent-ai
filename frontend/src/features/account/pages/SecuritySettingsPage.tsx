@@ -26,6 +26,16 @@ import { toast } from 'sonner';
  * Thiết kế chuẩn Enterprise: 2 cột cân xứng, thanh đo độ mạnh mật khẩu,
  * khắc phục hoàn toàn lỗi autofill nền đen, bảng lịch sử phiên đăng nhập chuyên nghiệp.
  */
+/** Trình duyệt và hệ điều hành của phiên hiện tại, đọc từ userAgent (không gửi đi đâu). */
+function describeCurrentDevice(): string {
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+  const browser = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox'
+    : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Trình duyệt khác';
+  const os = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS'
+    : /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'HĐH khác';
+  return `${browser} trên ${os}`;
+}
+
 export function SecuritySettingsPage() {
   const { pathname } = useLocation();
   const isOwner = useCurrentUser((s) => s.user?.roles.includes('OWNER'));
@@ -113,11 +123,11 @@ function SharedSecuritySettings() {
               <span className="pa-eyebrow-dot" />
               {isMentor ? 'KHÔNG GIAN MENTOR / AN NINH & BẢO MẬT TÀI KHOẢN' : 'QUẢN TRỊ NỀN TẢNG / AN NINH & BẢO MẬT TÀI KHOẢN'}
             </div>
-            <h1 className="pa-header-title">Bảo mật tài khoản & Phiên đăng nhập</h1>
+            <h1 className="pa-header-title">Bảo mật</h1>
             <p className="pa-header-subtitle">
               {isMentor
                 ? 'Quản lý mật khẩu truy cập cổng Mentor, giám sát các phiên hoạt động và thiết lập an toàn tài khoản.'
-                : 'Quản lý mật khẩu truy cập tài khoản quản trị nền tảng, giám sát các phiên hoạt động và áp dụng các tiêu chuẩn an toàn thông tin.'}
+                : 'Đổi mật khẩu và xem các lần đăng nhập gần đây.'}
             </p>
           </div>
         </div>
@@ -146,7 +156,7 @@ function SharedSecuritySettings() {
               <KeyRound size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Đổi mật khẩu tài khoản</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Đổi mật khẩu</h2>
               <span style={{ fontSize: 12, color: '#64748b' }}>{isMentor ? 'Đặt mật khẩu mạnh để bảo vệ tài khoản chấm bài' : 'Yêu cầu mật khẩu mạnh để bảo vệ quyền quản trị nền tảng'}</span>
             </div>
           </div>
@@ -321,15 +331,7 @@ function SharedSecuritySettings() {
             <div style={{ padding: 12, borderRadius: 10, background: '#f8fafc', border: '1px solid #f1f5f9', fontSize: 12, color: '#334155', display: 'grid', gap: 6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#64748b' }}>Trình duyệt & HĐH:</span>
-                <strong>Chrome trên Windows</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Địa chỉ IP:</span>
-                <span style={{ fontFamily: 'monospace' }}>127.0.0.1 (Localhost)</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Khu vực:</span>
-                <span>Việt Nam (VN)</span>
+                <strong>{describeCurrentDevice()}</strong>
               </div>
             </div>
 
@@ -340,7 +342,7 @@ function SharedSecuritySettings() {
               style={{ marginTop: 14, width: '100%', justifyContent: 'center', color: '#dc2626', borderColor: '#fca5a5', display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               <LogOut size={13} />
-              Đăng xuất các thiết bị khác
+              Đăng xuất khỏi thiết bị khác
             </button>
           </div>
 
@@ -364,18 +366,18 @@ function SharedSecuritySettings() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ShieldCheck size={20} style={{ color: '#059669' }} />
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Lịch sử các phiên đăng nhập gần đây</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Đăng nhập gần đây</h2>
           </div>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Ghi nhận 15 phiên đăng nhập gần nhất</span>
+          <span style={{ fontSize: 12, color: '#64748b' }}>Các lần đăng nhập gần nhất</span>
         </div>
 
         <div className="table-scroll">
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: 220 }}>Thời gian đăng nhập</th>
+                <th style={{ width: 220 }}>Thời gian</th>
                 <th>Địa chỉ IP</th>
-                <th>Trình duyệt & Thiết bị</th>
+                <th>Trình duyệt</th>
                 <th style={{ width: 140 }}>Trạng thái</th>
               </tr>
             </thead>

@@ -41,12 +41,12 @@ const POSITION_PROFILES: Record<string, { title: string; subtitle: string; code:
     code: 'HR',
   },
   MARKETING: {
-    title: 'Tiếp thị & Tăng trưởng',
+    title: 'Marketing',
     subtitle: 'Truyền thông & Khách hàng',
     code: 'MKT',
   },
   SALES_CRM: {
-    title: 'Kinh doanh & CRM',
+    title: 'Kinh doanh',
     subtitle: 'Bán hàng & Dữ liệu CRM',
     code: 'SALES',
   },
@@ -94,13 +94,13 @@ export function PlatformReferencePositionsPage() {
       <header className="pa-ov-header">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1>Mẫu vị trí chuẩn doanh nghiệp</h1>
+            <h1>Vị trí tham chiếu</h1>
             {query.data?.version && (
               <span className="pa-rp-version-badge">v{query.data.version}</span>
             )}
           </div>
           <p className="pa-ov-subtitle">
-            Khung thiết lập mức kỳ vọng 5 chức danh mẫu theo 6 lĩnh vực năng lực số cho các tổ chức tham chiếu.
+            Mức năng lực yêu cầu của 5 vị trí mẫu theo 6 lĩnh vực. Tổ chức dùng làm mặc định khi thiết lập vị trí.
           </p>
         </div>
 
@@ -177,6 +177,13 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
     return count > 0 ? (sum / count).toFixed(1) : '2.0';
   }, [levels]);
 
+  // Số ô yêu cầu mức Nâng cao (3) trên toàn ma trận
+  const totalCells = useMemo(() => Object.values(levels).reduce((n, arr) => n + arr.length, 0), [levels]);
+  const advancedCells = useMemo(
+    () => Object.values(levels).reduce((n, arr) => n + arr.filter((v) => v === 3).length, 0),
+    [levels],
+  );
+
   // Count changed cells
   const changedCount = useMemo(() => {
     let diff = 0;
@@ -219,58 +226,60 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
         {/* KPI 1: Chức danh chuẩn */}
         <div className="pa-ov-kpi-card is-tone-sky">
           <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">CHỨC DANH CHUẨN</span>
+            <span className="pa-ov-kpi-label">Vị trí</span>
             <div className="pa-kpi-icon-box" aria-hidden="true">
               <Briefcase size={18} />
             </div>
           </div>
-          <div className="pa-ov-kpi-val">{REFERENCE_POSITIONS.length} Vị trí</div>
-          <div className="pa-ov-kpi-sub">CEO, HR, Marketing, Sales, Kế toán</div>
+          <div className="pa-ov-kpi-val">{REFERENCE_POSITIONS.length}</div>
+          <div className="pa-ov-kpi-sub">Giám đốc, Nhân sự, Marketing, Kinh doanh, Kế toán</div>
         </div>
 
         {/* KPI 2: Độ phủ năng lực */}
         <div className="pa-ov-kpi-card is-tone-orange">
           <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">ĐỘ PHỦ NĂNG LỰC</span>
+            <span className="pa-ov-kpi-label">Ô mức Nâng cao</span>
             <div className="pa-kpi-icon-box" aria-hidden="true">
               <Layers size={18} />
             </div>
           </div>
-          <div className="pa-ov-kpi-val">{TT02_DOMAINS.length} Lĩnh vực</div>
-          <div className="pa-ov-kpi-sub">Bao phủ 24 chuẩn năng lực số cốt lõi</div>
+          <div className="pa-ov-kpi-val">
+            {advancedCells} <small style={{ fontSize: 14, color: 'var(--pa-ink-3)', fontWeight: 500 }}>/ {totalCells}</small>
+          </div>
+          <div className="pa-ov-kpi-sub">ô yêu cầu mức 3 trên {TT02_DOMAINS.length} lĩnh vực</div>
         </div>
 
         {/* KPI 3: Kỳ vọng trung bình */}
         <div className="pa-ov-kpi-card is-tone-amber">
           <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">KỲ VỌNG TRUNG BÌNH</span>
+            <span className="pa-ov-kpi-label">Mức trung bình</span>
             <div className="pa-kpi-icon-box" aria-hidden="true">
               <TrendingUp size={18} />
             </div>
           </div>
           <div className="pa-ov-kpi-val">
-            Lv {overallAvg} <small style={{ fontSize: 14, color: 'var(--pa-ink-3)', fontWeight: 500 }}>/ 3.0</small>
+            {overallAvg.replace('.', ',')} <small style={{ fontSize: 14, color: 'var(--pa-ink-3)', fontWeight: 500 }}>/ 3</small>
           </div>
-          <div className="pa-ov-kpi-sub">Toàn bộ 30 điểm đối chuẩn tham chiếu</div>
+          <div className="pa-ov-kpi-sub">trên mọi vị trí và lĩnh vực</div>
         </div>
 
         {/* KPI 4: Trạng thái áp dụng & đồng bộ */}
         <div className={`pa-ov-kpi-card ${dirty ? 'is-tone-amber' : 'is-tone-green'}`}>
           <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">TRẠNG THÁI ÁP DỤNG</span>
+            <span className="pa-ov-kpi-label">Trạng thái</span>
             <div className="pa-kpi-icon-box" aria-hidden="true">
               <ShieldCheck size={18} />
             </div>
           </div>
           <div className="pa-ov-kpi-val">
             {dirty ? (
-              <span style={{ fontSize: 24, color: 'var(--pa-amber)' }}>{changedCount} Thay đổi</span>
+              <span style={{ fontSize: 24, color: 'var(--pa-amber)' }}>{changedCount} ô chưa lưu</span>
             ) : (
-              <span style={{ fontSize: 24, color: 'var(--pa-live)' }}>Sẵn sàng</span>
+              <span style={{ fontSize: 24, color: 'var(--pa-live)' }}>Đã lưu</span>
             )}
           </div>
           <div className="pa-ov-kpi-sub">
-            {dirty ? 'Chưa lưu vào cấu hình mẫu chuẩn' : `Đã đồng bộ phiên bản v${version}`}
+            {dirty ? 'Bấm "Lưu thay đổi" để áp dụng' : `Bản ${version} đang dùng làm mặc định`}
           </div>
         </div>
       </div>
@@ -280,9 +289,9 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
         {/* Panel Header with Integrated Inline Legend */}
         <div className="pa-rp-panel-head">
           <div className="pa-rp-panel-title-wrap">
-            <h2 id="matrix-panel-title">Ma trận kỳ vọng năng lực chuẩn theo chức danh</h2>
+            <h2 id="matrix-panel-title">Mức yêu cầu theo vị trí</h2>
             <p>
-              Khung định vị cấp độ năng lực số chuẩn hóa, dùng làm căn cứ thiết lập lộ trình đào tạo cho tổ chức.
+              Bấm mức 1, 2 hoặc 3 trong từng ô để thay đổi.
             </p>
           </div>
 
@@ -312,7 +321,7 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
             <table className="pa-rp-table">
               <thead>
                 <tr>
-                  <th className="pa-rp-th-domain">LĨNH VỰC NĂNG LỰC SỐ</th>
+                  <th className="pa-rp-th-domain">Lĩnh vực</th>
                   {REFERENCE_POSITIONS.map((pos) => {
                     const profile = POSITION_PROFILES[pos.code] ?? {
                       title: pos.name,
@@ -401,7 +410,7 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
               <tfoot>
                 <tr className="pa-rp-tfoot-tr">
                   <th className="pa-rp-tfoot-domain">
-                    MỨC KỲ VỌNG TRUNG BÌNH
+                    Trung bình
                   </th>
                   {REFERENCE_POSITIONS.map((pos) => {
                     const posLevels = levels[pos.code] || [];
@@ -414,7 +423,7 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
                     return (
                       <td key={pos.code} className="pa-rp-tfoot-cell">
                         <div className="pa-rp-avg-num">
-                          Lv {avgStr} <small>/ 3.0</small>
+                          Mức {avgStr} <small>/ 3.0</small>
                         </div>
                         <div className="pa-rp-meter-bar" title={`Tỷ lệ đạt ${fillPercent}%`}>
                           <div

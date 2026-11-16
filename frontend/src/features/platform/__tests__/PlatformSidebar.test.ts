@@ -7,14 +7,14 @@ describe('Platform Admin navigation (Pulse)', () => {
   it('lists the console areas in the Platform Admin v2 order', () => {
     expect(PLATFORM_SIDEBAR.map((s) => s.label)).toEqual([
       'Tổng quan',
-      'Khung chuẩn',
-      'Mẫu vị trí',
+      'Khung năng lực số',
+      'Vị trí tham chiếu',
       'Phiên bản khóa học',
       'Tổ chức',
       'Đánh giá dùng thử',
       'Người dùng',
-      'Đơn giá',
-      'Nhật ký kiểm tra',
+      'Giá và đơn hàng',
+      'Nhật ký hoạt động',
       'Góp ý',
       'Báo lỗi',
     ]);

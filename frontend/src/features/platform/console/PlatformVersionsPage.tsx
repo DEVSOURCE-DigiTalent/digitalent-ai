@@ -72,14 +72,14 @@ export function PlatformVersionsPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h1 aria-label="Mỗi lần thêm hoặc sửa khóa là một phiên bản.">
-              {translateUi('Phiên bản khóa học chuẩn')}
+              {translateUi('Phiên bản khóa học')}
             </h1>
             {data?.currentVersionNo && (
               <span className="pa-rp-version-badge">v{data.currentVersionNo}</span>
             )}
           </div>
           <p className="pa-ov-subtitle">
-            {translateUi('Quản lý các mốc phiên bản nội dung đào tạo chuẩn hóa, hỗ trợ biên soạn bản nháp và công bố áp dụng trên toàn hệ thống.')}
+            {translateUi('Sửa khóa học trong bản nháp, rồi công bố để áp dụng cho mọi tổ chức.')}
           </p>
         </div>
 
@@ -166,7 +166,7 @@ function VersionStatus({ version, compact = false }: { version: CatalogVersionSu
   }
   return (
     <span className="pa-ver-badge is-archived">
-      {translateUi("Đã thay")}
+      {translateUi("Đã thay thế")}
     </span>
   );
 }
@@ -203,7 +203,7 @@ function VersionList({ versions, selected }: { versions: CatalogVersionsOutput; 
         </div>
         {v.status === 'DRAFT' && (
           <div className="pa-ver-changes-tag">
-            +{v.newCount} {translateUi("mới")} · {v.editedCount} {translateUi("đã sửa")}
+            {v.newCount} khóa mới, {v.editedCount} khóa đã sửa
           </div>
         )}
         {v.releaseNote && (
@@ -219,19 +219,19 @@ function VersionList({ versions, selected }: { versions: CatalogVersionsOutput; 
     <nav className="pa-ver-sidebar pa-ver-list" aria-label="Các phiên bản">
       {draft && (
         <div className="pa-ver-section">
-          <div className="pa-ver-section-label">Bản nháp đang soạn</div>
+          <div className="pa-ver-section-label">Bản nháp</div>
           {renderCard(draft)}
         </div>
       )}
       {current && (
         <div className="pa-ver-section">
-          <div className="pa-ver-section-label">Đang áp dụng chính thức</div>
+          <div className="pa-ver-section-label">Đang dùng</div>
           {renderCard(current)}
         </div>
       )}
       {archived.length > 0 && (
         <div className="pa-ver-section">
-          <div className="pa-ver-section-label">Lịch sử lưu trữ ({archived.length})</div>
+          <div className="pa-ver-section-label">Đã thay thế ({archived.length})</div>
           <div className="pa-ver-history-list">
             {archived.map(renderCard)}
           </div>
@@ -291,9 +291,9 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
 
   const summary =
     version.status === 'DRAFT'
-      ? `Bản nháp chép từ v${version.basedOnVersionNo ?? '—'}: ${version.newCount} khóa mới, ${version.editedCount} khóa đã sửa.`
+      ? `Sao chép từ v${version.basedOnVersionNo ?? '—'}. ${version.newCount} khóa mới, ${version.editedCount} khóa đã sửa.`
       : version.status === 'CURRENT'
-        ? 'Nội dung đào tạo chuẩn hóa phục vụ đào tạo và đánh giá cho toàn bộ doanh nghiệp.'
+        ? 'Nội dung khóa học đang áp dụng cho mọi tổ chức.'
         : 'Phiên bản lưu trữ lịch sử (chỉ xem).';
 
   return (
@@ -304,7 +304,7 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
           <div className="pa-ver-detail-head-left">
             <div className="pa-ver-title-row">
               <h2 id="version-courses" className="panel-title" style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                Danh mục khóa học thuộc v{version.versionNo}
+                Khóa học trong v{version.versionNo}
               </h2>
               {version.status !== 'CURRENT' && <VersionStatus version={version} />}
             </div>
@@ -413,20 +413,20 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
             <span className="pa-ver-context-meta">
               {term || levelFilter !== 'ALL' || changedOnly
                 ? `Hiển thị ${rows.length} / ${totalCount} khóa`
-                : `${totalCount} khóa học chuẩn hóa`}
+                : `${totalCount} khóa học`}
             </span>
           </div>
 
           <table className="pa-ver-table pa-course-table">
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', minWidth: 260 }}>KHÓA HỌC & LĨNH VỰC</th>
-                <th style={{ textAlign: 'center', width: 110 }}>{translateUi("CẤP ĐỘ")}</th>
-                <th style={{ textAlign: 'center', width: 85 }}>MÔ ĐUN</th>
-                <th style={{ textAlign: 'center', width: 85 }}>CÂU HỎI</th>
-                <th style={{ textAlign: 'right', width: 120 }}>{translateUi("ĐƠN GIÁ")}</th>
-                <th style={{ textAlign: 'center', width: 110 }}>{translateUi("TRẠNG THÁI")}</th>
-                <th style={{ width: 105, textAlign: 'right' }}>{translateUi("THAO TÁC")}</th>
+                <th style={{ textAlign: 'left', minWidth: 260 }}>Khóa học</th>
+                <th style={{ textAlign: 'center', width: 110 }}>{translateUi("Cấp độ")}</th>
+                <th style={{ textAlign: 'center', width: 85 }}>Mô đun</th>
+                <th style={{ textAlign: 'center', width: 85 }}>Câu hỏi</th>
+                <th style={{ textAlign: 'right', width: 120 }}>{translateUi("Giá mỗi suất")}</th>
+                <th style={{ textAlign: 'center', width: 110 }}>{translateUi("Thay đổi")}</th>
+                <th style={{ width: 105, textAlign: 'right' }}>{translateUi("Thao tác")}</th>
               </tr>
             </thead>
             <tbody>

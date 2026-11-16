@@ -72,7 +72,7 @@ interface DiffRow {
 const FIELD_LABELS: Record<string, string> = {
   versionNo: 'Số phiên bản',
   status: 'Trạng thái',
-  reason: 'Lý do can thiệp',
+  reason: 'Lý do',
   price: 'Đơn giá',
   pricePerSeat: 'Đơn giá mỗi suất',
   seatLimit: 'Hạn mức suất học',
@@ -143,9 +143,11 @@ function computeFieldDiff(oldRaw: string | null, newRaw: string | null): DiffRow
 }
 
 function AuditActorCell({ email }: { email: string | null }) {
-  const isSystem = !email || email.includes('platform') || email.includes('system');
-  const isAdmin = !isSystem && email.includes('admin');
+  // Chỉ là "Hệ thống tự động" khi nhật ký không có người thực hiện. Có email thì là người thật:
+  // tài khoản quản trị nền tảng (platform@, admin@) hoặc mentor. Nhật ký chưa lưu vai trò nên phân loại theo email.
+  const isSystem = !email;
   const isMentor = !isSystem && email.includes('mentor');
+  const isAdmin = !isSystem && !isMentor && (email.includes('admin') || email.includes('platform'));
 
   if (isSystem) {
     return (
@@ -237,7 +239,7 @@ function AuditActorCell({ email }: { email: string | null }) {
         </div>
         <div style={{ minWidth: 0, display: 'grid', gap: 1 }}>
           <div className="pa-org-name" style={{ fontSize: 13, fontWeight: 600 }}>
-            {translateUi('Chuyên gia')}
+            {translateUi('Mentor')}
           </div>
           <div className="pa-org-email" style={{ fontSize: 11.5, color: '#64748b' }}>
             {email}
@@ -395,11 +397,11 @@ export function PlatformAuditLogPage() {
       <header className="pa-org-header">
         <div>
           <h1 className="pa-org-title">
-            {translateUi('Nhật ký kiểm tra & Truy vết hệ thống')}
+            {translateUi('Nhật ký hoạt động')}
           </h1>
           <p className="pa-org-subtitle">
             {translateUi(
-              'Lưu trữ bất biến toàn bộ hoạt động an ninh, xuất bản khóa học, cấp suất học và điều chỉnh tổ chức phục vụ kiểm toán.',
+              'Mọi thao tác quản trị: ai làm, lúc nào, thay đổi gì và lý do.',
             )}
           </p>
         </div>
@@ -437,7 +439,7 @@ export function PlatformAuditLogPage() {
           </div>
           <div>
             <div className="pa-audit-kpi-value">{kpiStats.total}</div>
-            <div className="pa-audit-kpi-label">{translateUi('Tổng lượt thao tác')}</div>
+            <div className="pa-audit-kpi-label">{translateUi('Tổng thao tác')}</div>
           </div>
         </div>
 
@@ -447,7 +449,7 @@ export function PlatformAuditLogPage() {
           </div>
           <div>
             <div className="pa-audit-kpi-value">{kpiStats.security}</div>
-            <div className="pa-audit-kpi-label">{translateUi('An ninh & Khóa nhạy cảm')}</div>
+            <div className="pa-audit-kpi-label">{translateUi('Tài khoản')}</div>
           </div>
         </div>
 
@@ -457,7 +459,7 @@ export function PlatformAuditLogPage() {
           </div>
           <div>
             <div className="pa-audit-kpi-value">{kpiStats.catalog}</div>
-            <div className="pa-audit-kpi-label">{translateUi('Khóa học & Khung chuẩn')}</div>
+            <div className="pa-audit-kpi-label">{translateUi('Nội dung')}</div>
           </div>
         </div>
 
@@ -467,7 +469,7 @@ export function PlatformAuditLogPage() {
           </div>
           <div>
             <div className="pa-audit-kpi-value">{kpiStats.seats}</div>
-            <div className="pa-audit-kpi-label">{translateUi('Suất học & Bảng giá')}</div>
+            <div className="pa-audit-kpi-label">{translateUi('Suất học và giá')}</div>
           </div>
         </div>
       </div>
@@ -492,7 +494,7 @@ export function PlatformAuditLogPage() {
             onClick={() => setCategory('security')}
           >
             <ShieldAlert size={13} />
-            <span>{translateUi('An ninh & Khóa')}</span>
+            <span>{translateUi('Tài khoản')}</span>
           </button>
 
           <button
@@ -501,7 +503,7 @@ export function PlatformAuditLogPage() {
             onClick={() => setCategory('catalog')}
           >
             <Sparkles size={13} />
-            <span>{translateUi('Khóa học & Khung chuẩn')}</span>
+            <span>{translateUi('Nội dung')}</span>
           </button>
 
           <button
@@ -510,7 +512,7 @@ export function PlatformAuditLogPage() {
             onClick={() => setCategory('seats')}
           >
             <CreditCard size={13} />
-            <span>{translateUi('Suất học & Bảng giá')}</span>
+            <span>{translateUi('Suất học và giá')}</span>
           </button>
 
           <button
@@ -519,7 +521,7 @@ export function PlatformAuditLogPage() {
             onClick={() => setCategory('members')}
           >
             <Building size={13} />
-            <span>{translateUi('Tổ chức & Chuyên gia')}</span>
+            <span>{translateUi('Tổ chức và mentor')}</span>
           </button>
         </div>
 
@@ -571,7 +573,7 @@ export function PlatformAuditLogPage() {
               aria-label={translateUi('Loại thao tác')}
               style={{ height: 38, padding: '0 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13 }}
             >
-              <option value="">{translateUi('Tất cả loại thao tác')}</option>
+              <option value="">{translateUi('Mọi thao tác')}</option>
               {Object.entries(AUDIT_ACTIONS).map(([code, label]) => (
                 <option key={code} value={code}>
                   {translateUi(label)}
@@ -585,8 +587,8 @@ export function PlatformAuditLogPage() {
               aria-label={translateUi('Phạm vi')}
               style={{ height: 38, padding: '0 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13 }}
             >
-              <option value="platform">{translateUi('Thao tác của nền tảng')}</option>
-              <option value="all">{translateUi('Mọi tổ chức trên hệ thống')}</option>
+              <option value="platform">{translateUi('Quản trị nền tảng')}</option>
+              <option value="all">{translateUi('Tất cả tổ chức')}</option>
             </select>
 
             {(search || action || category !== 'all') && (
@@ -630,10 +632,10 @@ export function PlatformAuditLogPage() {
               <thead>
                 <tr>
                   <th style={{ width: 180 }}>{translateUi('Thời gian')}</th>
-                  <th style={{ width: 250 }}>{translateUi('Hành động an ninh')}</th>
-                  <th>{translateUi('Đối tượng & Tổ chức')}</th>
-                  <th>{translateUi('Lý do thao tác')}</th>
-                  <th style={{ width: 210 }}>{translateUi('Tác nhân thực hiện')}</th>
+                  <th style={{ width: 250 }}>{translateUi('Thao tác')}</th>
+                  <th>{translateUi('Đối tượng')}</th>
+                  <th>{translateUi('Lý do')}</th>
+                  <th style={{ width: 210 }}>{translateUi('Người thực hiện')}</th>
                   <th style={{ width: 100, textAlign: 'right' }}>{translateUi('Chi tiết')}</th>
                 </tr>
               </thead>
@@ -726,7 +728,7 @@ export function PlatformAuditLogPage() {
                           </div>
                         ) : (
                           <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>
-                            {translateUi('Không kèm ghi chú')}
+                            {translateUi('Không ghi lý do')}
                           </span>
                         )}
                       </td>
@@ -760,7 +762,7 @@ export function PlatformAuditLogPage() {
                           title={translateUi('Xem chi tiết dữ liệu')}
                         >
                           <FileJson size={13} style={{ color: 'var(--pa-accent, #b85c24)' }} />
-                          <span>{translateUi('Đối chiếu')}</span>
+                          <span>{translateUi('Xem')}</span>
                         </button>
                       </td>
                     </tr>
@@ -875,7 +877,7 @@ export function PlatformAuditLogPage() {
               {auditReason(selectedLog.newValues) && (
                 <div style={{ paddingTop: 10, borderTop: '1px solid #e2e8f0', marginTop: 4 }}>
                   <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 4 }}>
-                    {translateUi('Lý do can thiệp')}:
+                    {translateUi('Lý do')}:
                   </span>
                   <div
                     style={{
@@ -904,7 +906,7 @@ export function PlatformAuditLogPage() {
                 >
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <TableIcon size={14} />
-                    <span>{translateUi('Bảng đối chiếu trường')}</span>
+                    <span>{translateUi('Thay đổi')}</span>
                   </span>
                 </button>
 
@@ -915,7 +917,7 @@ export function PlatformAuditLogPage() {
                 >
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <FileJson size={14} />
-                    <span>{translateUi('Mã JSON gốc')}</span>
+                    <span>{translateUi('JSON')}</span>
                   </span>
                 </button>
               </div>
