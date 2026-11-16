@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Me;
+using DigiTalent.Application.UseCases.Learning.Courses;
 using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
@@ -63,7 +64,7 @@ public class CapabilityCeilingTests : IDisposable
 
     public void Dispose() => _context.Dispose();
 
-    private UpdateOrganizationCeilingsUseCase OrganizationUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader, new PulseCatalogReader(_context));
+    private UpdateOrganizationCeilingsUseCase OrganizationUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader);
 
     private UpdateDepartmentCeilingsUseCase DepartmentUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader);
 
@@ -110,6 +111,22 @@ public class CapabilityCeilingTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdateDepartment_UsesTheSameEffectiveOrganizationCeilingAsTheMatrix()
+    {
+        await SaveOrganization(data: 2, ai: 1);
+        var dataCourseIds = await _context.PlatformCourses.Where(c => c.Code.StartsWith("M1-")).Select(c => c.Id).ToListAsync();
+        _context.CourseSeatOrders.RemoveRange(_context.CourseSeatOrders.Where(o => dataCourseIds.Contains(o.CourseId)));
+        await _context.SaveChangesAsync();
+
+        var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(_orgId);
+        matrix.Domains.Single(d => d.CategoryId == _dataId).OrganizationCeiling.Should().Be(1);
+        (await FluentActions.Invoking(() => SaveDepartment(2)).Should().ThrowAsync<BadRequestException>())
+            .Which.Errors.Single().Code.Should().Be("CEILING_ABOVE_ORGANIZATION");
+        var saved = await SaveDepartment(1);
+        saved.Departments.Single().Ceilings.Single(c => c.CategoryId == _dataId).Level.Should().Be(1);
+    }
+
+    [Fact]
     public async Task UpdateOrganization_Lower_AdjustsDepartmentCeilings()
     {
         await SaveOrganization(data: 3, ai: 3);
@@ -134,6 +151,47 @@ public class CapabilityCeilingTests : IDisposable
         });
 
         (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("CEILINGS_INCOMPLETE");
+    }
+
+    [Fact]
+    public async Task UpdateOrganization_AcceptsLegacyCourseCodeShownAsUnlocked()
+    {
+        var legacyCourse = await _context.PlatformCourses.SingleAsync(c => c.Code == "M1-I");
+        legacyCourse.Code = "A1-I";
+        await _context.SaveChangesAsync();
+
+        var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(_orgId);
+        matrix.Domains.Single(d => d.CategoryId == _dataId).Courses.Single(c => c.Code == "M1-I")
+            .IsUnlocked.Should().BeTrue();
+
+        var saved = await SaveOrganization(data: 2, ai: 1);
+        saved.Domains.Single(d => d.CategoryId == _dataId).OrganizationCeiling.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task CourseCatalogAndDetailRecognizeSeatsFromBothPrefixesOnce()
+    {
+        var course = await _context.Courses.SingleAsync(c => c.Code == "M1-I");
+        course.Code = "A1-I";
+        var legacyCourse = new PlatformCourse { Code = "A1-I", Level = 2, Title = course.Title };
+        _context.PlatformCourses.Add(legacyCourse);
+        _context.CourseSeatOrders.Add(new CourseSeatOrder
+        {
+            OrganizationId = _orgId, CourseId = legacyCourse.Id, Seats = 2, Kind = PlatformCatalog.SeatOrderKind.AdminGrant,
+        });
+        await _context.SaveChangesAsync();
+
+        var catalog = await new GetCoursesUseCase(_context, _currentUser.Object)
+            .ExecuteAsync(new GetCoursesUseCaseInput { Search = "M1-I" });
+        var item = catalog.Items.Should().ContainSingle().Which;
+        item.Code.Should().Be("M1-I");
+        item.TotalSeats.Should().Be(7);
+
+        var detail = await new GetCourseByIdUseCase(_context, _currentUser.Object)
+            .ExecuteAsync(new GetCourseByIdUseCaseInput { Id = course.Id });
+        detail.Code.Should().Be("M1-I");
+        detail.SeatsPurchased.Should().Be(5);
+        detail.SeatsGranted.Should().Be(2);
     }
 
     [Fact]

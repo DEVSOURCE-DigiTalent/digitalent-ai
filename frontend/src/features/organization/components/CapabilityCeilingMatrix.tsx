@@ -204,6 +204,10 @@ export function CapabilityCeilingMatrix() {
       toast.error('Có cấp chưa mua suất học. Chọn khóa để mua trước khi mở rộng phạm vi.');
       return;
     }
+    if (activeScope !== ALL && ceilings.some(({ categoryId, level }) => level > (orgSaved[categoryId] ?? 0))) {
+      toast.error('Cấp độ áp dụng của phòng ban không được vượt mức doanh nghiệp đã thiết lập.');
+      return;
+    }
     try {
       if (activeScope === ALL) {
         const result = await saveOrganization.mutateAsync(ceilings);
@@ -485,7 +489,7 @@ export function CapabilityCeilingMatrix() {
                         <div className="cc-domain-panel" data-domain={domain.sortOrder}>
                         <button type="button" className="cc-domain-panel__header" onClick={closeSelection} aria-label={translateUi(`Thu gọn ${domain.name}`)} aria-expanded={isSelected} aria-controls={`domain-panel-content-${domain.categoryId}`}>
                           <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
-                          <span className="cc-domain-panel__heading"><small>{activeCourse ? translateUi('KHÓA HỌC & SUẤT HỌC') : 'CHUẨN VỊ TRÍ THEO LĨNH VỰC'}</small><strong>{translateUi(domain.name)}</strong></span>
+                          <span className="cc-domain-panel__heading"><small>{activeCourse ? translateUi('KHÓA HỌC & SUẤT HỌC') : activeScope === ALL ? translateUi('CHUẨN VỊ TRÍ THEO LĨNH VỰC') : translateUi('CHUẨN VỊ TRÍ CỦA PHÒNG BAN')}</small><strong>{translateUi(domain.name)}</strong></span>
                           <span className="cc-domain-panel__collapse">{translateUi("Thu gọn ")}<ChevronDown size={16} aria-hidden="true" /></span>
                         </button>
                         <div id={`domain-panel-content-${domain.categoryId}`}>
@@ -496,10 +500,10 @@ export function CapabilityCeilingMatrix() {
                           scopeLabel={activeScope === ALL ? 'doanh nghiệp' : 'phòng ban'}
                           onSelectToBuy={() => toggleSelectToBuy(activeCourse, activeDomain)}
                         /> : <DomainPositionStandardPanel
-                          key={activeDomain.categoryId}
+                          key={activeScope + activeDomain.categoryId}
                           domain={activeDomain}
                           domains={matrix.domains}
-                          departmentId={activeScope === ALL ? null : activeScope}
+                          departmentId={activeScope === ALL ? undefined : activeScope}
                           initialPositionId={initialPositionId}
                           canEdit={canEdit}
                         />}
