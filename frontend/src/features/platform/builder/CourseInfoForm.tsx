@@ -25,8 +25,8 @@ const LEVEL_STYLES: Record<number, { bg: string; color: string; border: string }
 };
 
 const cleanFrameworkName = (name?: string) => {
-  if (!name) return 'Khung chuẩn năng lực số doanh nghiệp';
-  if (/thông tư|tt02/i.test(name)) return 'Khung chuẩn năng lực số doanh nghiệp';
+  if (!name) return 'Khung năng lực số';
+  if (/thông tư|tt02/i.test(name)) return 'Khung năng lực số';
   return name;
 };
 
@@ -107,10 +107,10 @@ export function CourseInfoForm({
             <div>
               <div className="pa-cb-panel-title">
                 <Layers size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
-                <span>{translateUi('Chuẩn hóa & Phân loại')}</span>
+                <span>{translateUi('Phân loại')}</span>
               </div>
               <div className="pa-cb-panel-desc">
-                {translateUi('Vị trí và cấp độ học phần trong khung chuẩn năng lực số.')}
+                {translateUi('Lĩnh vực và cấp độ của khóa học.')}
               </div>
             </div>
             <span
@@ -127,22 +127,22 @@ export function CourseInfoForm({
               }}
             >
               <Lock size={13} aria-hidden="true" />
-              <span>{translateUi(`Bản chuẩn hóa v${course.versionNo}`)}</span>
+              <span>{translateUi(`Phiên bản v${course.versionNo}`)}</span>
             </span>
           </div>
 
           <div className="pa-cb-panel-body">
             <div className="pa-cb-grid-4">
               <div className="pa-cb-meta-cell">
-                <span className="pa-cb-meta-label">{translateUi('Khung chuẩn')}</span>
+                <span className="pa-cb-meta-label">{translateUi('Khung năng lực')}</span>
                 <span className="pa-cb-meta-value">{cleanFrameworkName(course.frameworkName)}</span>
               </div>
               <div className="pa-cb-meta-cell">
-                <span className="pa-cb-meta-label">{translateUi('Lĩnh vực năng lực')}</span>
+                <span className="pa-cb-meta-label">{translateUi('Lĩnh vực')}</span>
                 <span className="pa-cb-meta-value">{translateUi(course.domainName)}</span>
               </div>
               <div className="pa-cb-meta-cell">
-                <span className="pa-cb-meta-label">{translateUi('Cấp độ đào tạo')}</span>
+                <span className="pa-cb-meta-label">{translateUi('Cấp độ')}</span>
                 <div>
                   <span
                     style={{
@@ -161,7 +161,7 @@ export function CourseInfoForm({
                 </div>
               </div>
               <div className="pa-cb-meta-cell">
-                <span className="pa-cb-meta-label">{translateUi('Mã học phần')}</span>
+                <span className="pa-cb-meta-label">{translateUi('Mã khóa')}</span>
                 <div>
                   <span className="pa-rp-version-badge" style={{ fontFamily: 'monospace', fontWeight: 700 }}>
                     {course.code}
@@ -178,10 +178,10 @@ export function CourseInfoForm({
             <div>
               <div className="pa-cb-panel-title">
                 <BookOpen size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
-                <span>{translateUi('Nội dung & Chuẩn đầu ra')}</span>
+                <span>{translateUi('Tên và mục tiêu')}</span>
               </div>
               <div className="pa-cb-panel-desc">
-                {translateUi('Tên khóa học và kỹ năng đầu ra sau khi học viên hoàn thành.')}
+                {translateUi('Tên khóa học và những gì nhân viên làm được sau khóa.')}
               </div>
             </div>
           </div>
@@ -197,14 +197,14 @@ export function CourseInfoForm({
             </div>
             <div>
               <div className="pa-cb-meta-label" style={{ marginBottom: 6 }}>
-                {translateUi('Chuẩn đầu ra sau khi hoàn thành')}
+                {translateUi('Sau khóa học, nhân viên làm được gì')}
               </div>
               <div className="pa-cb-outcome-box">
                 {course.outcome ? (
                   <span>{course.outcome}</span>
                 ) : (
                   <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>
-                    {translateUi('Chưa cập nhật kết quả đầu ra.')}
+                    {translateUi('Chưa có mô tả kết quả.')}
                   </span>
                 )}
               </div>
@@ -218,10 +218,10 @@ export function CourseInfoForm({
             <div>
               <div className="pa-cb-panel-title">
                 <DollarSign size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
-                <span>{translateUi('Chính sách đào tạo & Mở bán')}</span>
+                <span>{translateUi('Giá và mở bán')}</span>
               </div>
               <div className="pa-cb-panel-desc">
-                {translateUi('Học phí đào tạo mỗi suất và trạng thái tiếp nhận đăng ký.')}
+                {translateUi('Giá mỗi suất và trạng thái mở bán.')}
               </div>
             </div>
           </div>
@@ -229,7 +229,7 @@ export function CourseInfoForm({
           <div className="pa-cb-panel-body">
             <div className="pa-cb-grid-2">
               <div className="pa-cb-meta-cell">
-                <span className="pa-cb-meta-label">{translateUi('Học phí mỗi suất học')}</span>
+                <span className="pa-cb-meta-label">{translateUi('Giá mỗi suất')}</span>
                 <span className="pa-cb-meta-value">
                   {course.level === 1 ? (
                     <span style={{ color: '#16a34a', fontWeight: 700 }}>
@@ -277,8 +277,8 @@ export function CourseInfoForm({
         <div className="pa-cb-action-footer">
           <span style={{ fontSize: 13, color: '#475569' }}>
             {course.modules.length > 0
-              ? translateUi(`Học phần gồm ${course.modules.length} mô đun đào tạo chuẩn hóa.`)
-              : translateUi('Học phần chưa có mô đun nào.')}
+              ? translateUi(`Khóa học có ${course.modules.length} mô đun.`)
+              : translateUi('Khóa học chưa có mô đun nào.')}
           </span>
           {course.modules.length > 0 && (
             <button
@@ -305,11 +305,11 @@ export function CourseInfoForm({
             <div className="pa-cb-panel-title">
               <Layers size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
               <h2 id="course-info-title" style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {translateUi('Chuẩn hóa & Phân loại')}
+                {translateUi('Phân loại')}
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Xác định vị trí và phân cấp học phần trong khung chuẩn năng lực số.')}
+              {translateUi('Lĩnh vực và cấp độ của khóa học.')}
             </div>
           </div>
           {!course.codeEditable && (
@@ -337,7 +337,7 @@ export function CourseInfoForm({
           <div className="pa-cb-grid-2">
             <div>
               <label className="pa-cb-field-label" htmlFor="field-framework">
-                <span>{translateUi('Khung chuẩn năng lực')}</span>
+                <span>{translateUi('Khung năng lực')}</span>
               </label>
               <select
                 id="field-framework"
@@ -355,7 +355,7 @@ export function CourseInfoForm({
 
             <div>
               <label className="pa-cb-field-label" htmlFor="field-domain">
-                <span>{translateUi('Lĩnh vực năng lực')} <span style={{ color: '#ef4444' }}>*</span></span>
+                <span>{translateUi('Lĩnh vực')} <span style={{ color: '#ef4444' }}>*</span></span>
               </label>
               <select
                 id="field-domain"
@@ -379,12 +379,12 @@ export function CourseInfoForm({
           {/* Hàng 2: Bộ 3 nút chọn Cấp độ 1 chạm */}
           <div>
             <div className="pa-cb-field-label">
-              <span>{translateUi('Cấp độ đào tạo (Chọn 1 chạm)')}</span>
+              <span>{translateUi('Cấp độ')}</span>
               <span style={{ fontSize: 12.5, color: '#475569' }}>
-                {form.level === 1 ? translateUi('Khóa Cơ bản luôn miễn phí') : translateUi('Được thiết lập mức học phí')}
+                {form.level === 1 ? translateUi('Khóa Cơ bản luôn miễn phí') : translateUi('Đặt được giá')}
               </span>
             </div>
-            <div className="pa-cb-level-seg" role="radiogroup" aria-label={translateUi('Cấp độ đào tạo')}>
+            <div className="pa-cb-level-seg" role="radiogroup" aria-label={translateUi('Cấp độ')}>
               {[1, 2, 3].map((lvl) => {
                 const isSelected = form.level === lvl;
                 const lvlName = translateUi(LEVEL_NAMES[lvl]) ?? `Cấp độ ${lvl}`;
@@ -418,8 +418,8 @@ export function CourseInfoForm({
           {course.codeEditable && (
             <div>
               <label className="pa-cb-field-label" htmlFor="field-code">
-                <span>{translateUi('Mã học phần')} <span style={{ color: '#ef4444' }}>*</span></span>
-                <span style={{ fontSize: 12.5, color: '#475569' }}>{translateUi('Khóa lại khi công bố lần đầu')}</span>
+                <span>{translateUi('Mã khóa')} <span style={{ color: '#ef4444' }}>*</span></span>
+                <span style={{ fontSize: 12.5, color: '#475569' }}>{translateUi('Không đổi được sau lần công bố đầu')}</span>
               </label>
               <input
                 id="field-code"
@@ -445,11 +445,11 @@ export function CourseInfoForm({
             <div className="pa-cb-panel-title">
               <BookOpen size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
               <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {translateUi('Nội dung & Mục tiêu đào tạo')}
+                {translateUi('Tên và mục tiêu')}
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Tên khóa học và kết quả đạt được hiển thị cho học viên và doanh nghiệp.')}
+              {translateUi('Tên khóa học và kết quả đạt được, hiển thị cho nhân viên và tổ chức.')}
             </div>
           </div>
         </div>
@@ -469,13 +469,13 @@ export function CourseInfoForm({
               required
               minLength={3}
               style={{ fontWeight: 600, fontSize: 14.5 }}
-              placeholder={translateUi('Nhập tên khóa học chuẩn hóa...')}
+              placeholder={translateUi('Nhập tên khóa học...')}
             />
           </div>
 
           <div>
             <label className="pa-cb-field-label" htmlFor="field-outcome">
-              <span>{translateUi('Chuẩn đầu ra sau khi hoàn thành')}</span>
+              <span>{translateUi('Sau khóa học, nhân viên làm được gì')}</span>
               <span style={{ fontSize: 12.5, color: form.outcome.length < 10 ? '#c2410c' : '#475569' }}>
                 {form.outcome.length}/4000 {form.outcome.length < 10 ? translateUi('(tối thiểu 10 ký tự)') : ''}
               </span>
@@ -487,10 +487,10 @@ export function CourseInfoForm({
               onChange={(e) => set('outcome', e.target.value)}
               maxLength={4000}
               rows={4}
-              placeholder={translateUi('VD: Học viên nắm vững cách tìm kiếm dữ liệu chính xác, phân biệt nguồn tin cậy và lưu trữ có hệ thống...')}
+              placeholder={translateUi('VD: Nhân viên nắm vững cách tìm kiếm dữ liệu chính xác, phân biệt nguồn tin cậy và lưu trữ có hệ thống...')}
             />
             <span style={{ fontSize: 13, color: '#475569', marginTop: 5, display: 'block' }}>
-              {translateUi('Hiển thị trên trang giới thiệu khóa học cho doanh nghiệp và nhân viên trước khi bắt đầu học.')}
+              {translateUi('Hiển thị trên trang giới thiệu khóa học cho tổ chức và nhân viên trước khi bắt đầu học.')}
             </span>
           </div>
         </div>
@@ -503,11 +503,11 @@ export function CourseInfoForm({
             <div className="pa-cb-panel-title">
               <DollarSign size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
               <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {translateUi('Chính sách đào tạo & Mở bán')}
+                {translateUi('Giá và mở bán')}
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Thiết lập mức học phí mỗi suất và trạng thái kinh doanh của học phần.')}
+              {translateUi('Giá mỗi suất và trạng thái mở bán.')}
             </div>
           </div>
         </div>
@@ -517,10 +517,10 @@ export function CourseInfoForm({
             {/* Cột 1: Học phí */}
             <div>
               <label className="pa-cb-field-label" htmlFor="field-price">
-                <span>{translateUi('Học phí mỗi suất (VND)')}</span>
+                <span>{translateUi('Giá mỗi suất (₫)')}</span>
                 {free && (
                   <span style={{ fontSize: 12.5, color: '#16a34a', fontWeight: 600 }}>
-                    {translateUi('Miễn phí theo chuẩn')}
+                    {translateUi('Miễn phí')}
                   </span>
                 )}
               </label>
@@ -540,8 +540,8 @@ export function CourseInfoForm({
               </div>
               <small style={{ fontSize: 13, color: '#475569', marginTop: 5, display: 'block' }}>
                 {free
-                  ? translateUi('Cấp độ Cơ bản luôn miễn phí đào tạo toàn hệ thống.')
-                  : translateUi('Mức giá áp dụng khi phiên bản này được công bố chính thức.')}
+                  ? translateUi('Khóa Cơ bản luôn miễn phí.')
+                  : translateUi('Giá áp dụng khi phiên bản này được công bố.')}
               </small>
             </div>
 
@@ -561,7 +561,7 @@ export function CourseInfoForm({
                   <span className="pa-cb-status-card-dot is-open" aria-hidden="true" />
                   <div>
                     <div className="pa-cb-status-card-title">{translateUi('Đang mở bán')}</div>
-                    <div className="pa-cb-status-card-desc">{translateUi('Mở đăng ký đào tạo')}</div>
+                    <div className="pa-cb-status-card-desc">{translateUi('Tổ chức có thể mua')}</div>
                   </div>
                 </button>
 
@@ -575,7 +575,7 @@ export function CourseInfoForm({
                   <span className="pa-cb-status-card-dot is-paused" aria-hidden="true" />
                   <div>
                     <div className="pa-cb-status-card-title">{translateUi('Tạm ngưng bán')}</div>
-                    <div className="pa-cb-status-card-desc">{translateUi('Tạm dừng tiếp nhận')}</div>
+                    <div className="pa-cb-status-card-desc">{translateUi('Tổ chức đã mua vẫn học bình thường')}</div>
                   </div>
                 </button>
               </div>
@@ -602,7 +602,7 @@ export function CourseInfoForm({
             onClick={onNext}
             disabled={dirty}
           >
-            <span>{translateUi('Tiếp: soạn mô đun 01')}</span>
+            <span>{translateUi('Tiếp: Mô đun 01')}</span>
             <ArrowRight size={14} />
           </button>
         ) : (

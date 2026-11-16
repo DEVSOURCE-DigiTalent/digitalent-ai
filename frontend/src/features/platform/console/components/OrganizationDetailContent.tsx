@@ -39,6 +39,11 @@ interface OrganizationDetailContentProps {
   isDrawer?: boolean;
 }
 
+/** Mã nội bộ dạng TRIAL-<32 ký tự> không có ích khi đọc: chỉ hiện mã ngắn như DIGITALENT. */
+function readableOrgCode(code: string | null | undefined): string | null {
+  return code && code.length <= 20 ? code : null;
+}
+
 export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetailContentProps) {
   useUiLanguage();
   const { data, isLoading, error } = usePlatformOrganization(orgId);
@@ -67,7 +72,10 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
   if (!o) return <LoadError error={new Error('Không tìm thấy dữ liệu tổ chức')} />;
 
   const suspended = o.status === 'SUSPENDED';
-  const paidCourses = (courses.data ?? []).filter((c) => !c.isFree);
+  // Cấp suất cho khóa của phiên bản mới nhất; API còn trả khóa phiên bản cũ có cùng tên nên danh sách bị trùng.
+  const allCourses = courses.data ?? [];
+  const latestVersion = allCourses.reduce((max, c) => Math.max(max, c.versionNo), 0);
+  const paidCourses = allCourses.filter((c) => !c.isFree && c.versionNo === latestVersion);
   const selectedCourse = courseCode || paidCourses[0]?.code || '';
   const actionAllowed = kind === 'grant' ? Boolean(selectedCourse) : kind === 'suspend' ? !suspended : suspended;
   const peopleList = raw.people ?? [];
@@ -124,7 +132,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                 ) : o.stage === 'PAID' ? (
                   <span className="pa-tr-pill is-ok">
                     <span className="pa-tr-pill-dot" aria-hidden="true" />
-                    <span>Đã mua gói</span>
+                    <span>Đã mua khóa</span>
                   </span>
                 ) : (
                   <span className="pa-tr-pill is-warn">
@@ -134,7 +142,8 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                 )}
               </div>
               <div className="pa-org-detail-sub">
-                {o.ownerEmail ? `Chủ sở hữu: ${o.ownerEmail}` : 'Chưa có email chủ sở hữu'} · Mã: {o.code || o.id.slice(0, 8).toUpperCase()}
+                {o.ownerEmail ? `Chủ doanh nghiệp: ${o.ownerEmail}` : 'Chưa có chủ doanh nghiệp'}
+                {readableOrgCode(o.code) ? ` · Mã: ${readableOrgCode(o.code)}` : ''}
               </div>
             </div>
           </div>
@@ -144,22 +153,22 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
       {/* 3 Quick Executive Stat Chips */}
       <div className="pa-org-detail-strip">
         <div className="pa-org-detail-chip is-hero">
-          <span className="pa-org-detail-chip-label">Suất bản quyền</span>
+          <span className="pa-org-detail-chip-label">Suất học</span>
           <span className="pa-org-detail-chip-val">
-            {totalSeats > 0 ? `${totalSeats} suất` : 'Dùng thử'}
+            {totalSeats > 0 ? `${totalSeats} suất` : '0 suất'}
           </span>
           <span className="pa-org-detail-chip-sub">
-            {o.seatsPurchased > 0 ? `${o.seatsPurchased} đã mua` : 'Chưa mua suất'}
+            {o.seatsPurchased > 0 ? `${o.seatsPurchased} đã mua` : 'Chưa mua suất nào'}
           </span>
         </div>
 
         <div className="pa-org-detail-chip">
-          <span className="pa-org-detail-chip-label">Nhân sự tham gia</span>
+          <span className="pa-org-detail-chip-label">Nhân viên đang học</span>
           <span className="pa-org-detail-chip-val">
             {participantCount} / {employeeCount}
           </span>
           <span className="pa-org-detail-chip-sub">
-            {pctActivated}% kích hoạt ({departmentCount} phòng ban)
+            {pctActivated}% đang học · {departmentCount} phòng ban
           </span>
         </div>
 
@@ -169,13 +178,13 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
             {coursesInUseList.length} khóa
           </span>
           <span className="pa-org-detail-chip-sub">
-            {(o.coursesInUseByLevel ?? []).filter(Boolean).length} cấp độ kích hoạt
+            {(o.coursesInUseByLevel ?? []).filter(Boolean).length} cấp độ
           </span>
         </div>
       </div>
 
       {/* Segmented Navigation Tabs */}
-      <div className="pa-org-detail-tabs" role="tablist" aria-label="Phân mục hồ sơ tổ chức">
+      <div className="pa-org-detail-tabs" role="tablist" aria-label="Các mục của hồ sơ tổ chức">
         <button
           type="button"
           role="tab"
@@ -195,7 +204,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
           onClick={() => setActiveTab('people')}
         >
           <Users size={14} aria-hidden="true" />
-          <span>Nhân sự</span>
+          <span>Nhân viên</span>
           <span className="pa-org-detail-tab-badge">{peopleList.length}</span>
         </button>
 
@@ -207,7 +216,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
           onClick={() => setActiveTab('orders')}
         >
           <CreditCard size={14} aria-hidden="true" />
-          <span>Suất học & Đơn hàng</span>
+          <span>Suất học</span>
           <span className="pa-org-detail-tab-badge">{ordersList.length}</span>
         </button>
 
@@ -220,7 +229,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
             onClick={() => setActiveTab('support')}
           >
             <ShieldAlert size={14} aria-hidden="true" />
-            <span>Thao tác quản trị</span>
+            <span>Hỗ trợ</span>
           </button>
         )}
       </div>
@@ -247,7 +256,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                   {suspended ? 'Đang tạm ngưng' : o.stage === 'PAID' ? 'Đã mua khóa' : 'Đang dùng thử'}
                 </strong>
                 <span style={{ fontSize: 12, color: 'var(--pa-ink-3)' }}>
-                  {suspended ? 'Nhân viên không đăng nhập được' : `Mã tổ chức: ${o.code || o.id.slice(0, 8).toUpperCase()}`}
+                  {suspended ? 'Nhân viên không đăng nhập được' : (readableOrgCode(o.code) ? `Mã tổ chức: ${readableOrgCode(o.code)}` : '')}
                 </span>
               </div>
 
@@ -304,7 +313,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <GraduationCap size={14} />
                 </span>
-                Khóa học đang học theo cấp độ
+                Khóa đang học
               </span>
               <div className="pa-org-level-wrap">
                 {(o.coursesInUseByLevel ?? [0, 0, 0]).map((n: number, i: number) => (
@@ -327,8 +336,8 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
             </div>
 
             {coursesInUseList.length === 0 ? (
-              <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '16px 0', margin: 0 }}>
-                Nhân viên chưa ghi danh khóa học nào trong đợt này.
+              <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', padding: '16px 0', margin: 0 }}>
+                Chưa nhân viên nào ghi danh khóa học.
               </p>
             ) : (
               <table className="data-table" style={{ width: '100%', fontSize: 13 }}>
@@ -336,7 +345,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                   <tr>
                     <th>Khóa học</th>
                     <th>Cấp độ</th>
-                    <th className="num">Tham gia</th>
+                    <th className="num">Đang học</th>
                     <th className="num">Hoàn thành</th>
                   </tr>
                 </thead>
@@ -345,7 +354,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                     <tr key={c.courseCode}>
                       <td>
                         <strong style={{ color: '#0f172a' }}>{c.courseTitle}</strong>
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Mã: {c.courseCode}</div>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Mã: {c.courseCode}</div>
                       </td>
                       <td>
                         <span
@@ -378,12 +387,12 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <Users size={14} />
                 </span>
-                Danh sách thành viên tổ chức ({peopleList.length})
+                Nhân viên ({peopleList.length})
               </span>
             </div>
 
             {peopleList.length === 0 ? (
-              <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '16px 0', margin: 0 }}>
+              <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', padding: '16px 0', margin: 0 }}>
                 Chưa có nhân viên nào được mời vào tổ chức này.
               </p>
             ) : (
@@ -430,7 +439,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                             p.fullName
                           )}
                         </div>
-                        <div style={{ fontSize: 11, color: '#64748b' }}>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>
                           {p.email ?? 'Chưa có email'} · {[p.departmentName, p.positionName].filter(Boolean).join(' / ') || ROLE_LABELS[p.role]}
                         </div>
                       </div>
@@ -440,7 +449,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                       <span
                         className="pa-org-level-pill"
                         style={{
-                          fontSize: 11,
+                          fontSize: 12,
                           background: p.role === 'OWNER' ? 'var(--pa-accent-soft)' : '#f1f5f9',
                           color: p.role === 'OWNER' ? 'var(--pa-accent-solid)' : '#475569',
                           border: p.role === 'OWNER' ? '1px solid var(--pa-accent-border)' : '1px solid #cbd5e1',
@@ -449,7 +458,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                         {ROLE_LABELS[p.role] ?? p.role}
                       </span>
                       {p.status !== 'ACTIVE' && (
-                        <span className="pa-tr-pill is-neutral" style={{ fontSize: 11 }}>
+                        <span className="pa-tr-pill is-neutral" style={{ fontSize: 12 }}>
                           {USER_STATUS[p.status]?.label ?? p.status}
                         </span>
                       )}
@@ -472,13 +481,13 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <Layers size={14} />
                 </span>
-                Phân bổ suất học theo khóa
+                Suất học theo khóa
               </span>
             </div>
 
             {seatsList.length === 0 ? (
-              <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '12px 0', margin: 0 }}>
-                Doanh nghiệp hiện chưa có suất khóa học trả phí nào.
+              <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', padding: '12px 0', margin: 0 }}>
+                Tổ chức chưa mua suất học nào.
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -497,8 +506,8 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                   >
                     <div>
                       <strong style={{ fontSize: 13, color: '#0f172a' }}>{s.courseTitle}</strong>
-                      <div style={{ fontSize: 11, color: '#64748b' }}>
-                        {s.seatsPurchased} đã mua · {s.seatsGranted} quản trị cấp đặc cách
+                      <div style={{ fontSize: 12, color: '#64748b' }}>
+                        {s.seatsPurchased} đã mua · {s.seatsGranted} được cấp
                       </div>
                     </div>
                     <span className="pa-org-tab-count" style={{ fontSize: 12, padding: '2px 8px', minWidth: 28, height: 22 }}>
@@ -517,13 +526,13 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <CreditCard size={14} />
                 </span>
-                Lịch sử đơn hàng & Cấp quyền ({ordersList.length})
+                Đơn hàng ({ordersList.length})
               </span>
             </div>
 
             {ordersList.length === 0 ? (
-              <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '12px 0', margin: 0 }}>
-                Chưa có đơn hàng hoặc cấp quyền nào được ghi nhận.
+              <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', padding: '12px 0', margin: 0 }}>
+                Chưa có đơn hàng hoặc lần cấp suất nào.
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
@@ -542,7 +551,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                   >
                     <div>
                       <strong style={{ fontSize: 13, color: '#0f172a' }}>{order.courseTitle}</strong>
-                      <div style={{ fontSize: 11, color: '#64748b' }}>
+                      <div style={{ fontSize: 12, color: '#64748b' }}>
                         {ORDER_KIND[order.kind]?.label} · {formatDateTime(order.createdAt)}
                         {order.reason && ` · Lý do: ${order.reason}`}
                       </div>
@@ -553,7 +562,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                         {order.seats} suất
                       </div>
                       {order.totalAmount > 0 && (
-                        <div style={{ fontSize: 11, color: '#15803d', fontWeight: 600 }}>
+                        <div style={{ fontSize: 12, color: '#15803d', fontWeight: 600 }}>
                           {formatMoney(order.totalAmount)}
                         </div>
                       )}
@@ -580,10 +589,10 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
               </span>
               <div>
                 <strong style={{ fontSize: 13.5, color: '#0f172a' }}>
-                  Thao tác vận hành & Hỗ trợ (Kiểm toán bảo mật)
+                  Thao tác hỗ trợ
                 </strong>
                 <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>
-                  Mọi thay đổi trạng thái hoặc cấp suất đều được lưu vết kiểm toán và đối soát hệ thống.
+                  Mọi thao tác ở đây được ghi vào Nhật ký hoạt động.
                 </p>
               </div>
             </div>
@@ -598,15 +607,15 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                     className="pa-tr-select"
                     style={{ width: '100%' }}
                   >
-                    <option value="grant">Cấp 1 suất khóa nâng cao (Đặc cách)</option>
-                    <option value="suspend">Tạm ngưng quyền truy cập tổ chức</option>
-                    <option value="restore">Khôi phục quyền truy cập bình thường</option>
+                    <option value="grant">Cấp 1 suất học</option>
+                    <option value="suspend">Tạm ngưng tổ chức</option>
+                    <option value="restore">Mở lại tổ chức</option>
                   </select>
                 </label>
 
                 {kind === 'grant' && (
                   <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: '#334155' }}>
-                    Khóa có phí để cấp suất
+                    Khóa học
                     <select
                       value={selectedCourse}
                       onChange={(e) => setCourseCode(e.target.value)}
@@ -615,7 +624,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                     >
                       {paidCourses.map((c) => (
                         <option key={c.code} value={c.code}>
-                          {translateUi(c.domainName)} · {c.levelName}
+                          {c.code} · {translateUi(c.domainName)} · {c.levelName}
                         </option>
                       ))}
                     </select>
@@ -629,13 +638,13 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
 
               {kind === 'suspend' && (
                 <p style={{ fontSize: 11.5, color: '#dc2626', margin: '4px 0 10px', fontWeight: 500 }}>
-                  Chú ý: Khi tạm ngưng, toàn bộ tài khoản nhân viên của tổ chức sẽ bị chặn đăng nhập và ngắt phiên làm việc ngay lập tức.
+                  Khi tạm ngưng, mọi nhân viên của tổ chức không đăng nhập được và phiên đang mở bị ngắt ngay.
                 </p>
               )}
 
               {!actionAllowed && kind !== 'grant' && (
                 <p style={{ fontSize: 11.5, color: '#dc2626', margin: '4px 0 10px', fontWeight: 500 }}>
-                  {suspended ? 'Tổ chức đã ở trạng thái tạm ngưng.' : 'Tổ chức đang hoạt động bình thường, không cần khôi phục.'}
+                  {suspended ? 'Tổ chức đang tạm ngưng.' : 'Tổ chức đang hoạt động, không cần mở lại.'}
                 </p>
               )}
 
@@ -649,7 +658,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                   borderColor: 'var(--pa-accent-solid)',
                 }}
               >
-                <span>{action.isPending ? 'Đang ghi nhận…' : 'Xác nhận thao tác hỗ trợ'}</span>
+                <span>{action.isPending ? 'Đang ghi nhận…' : kind === 'grant' ? 'Cấp suất' : kind === 'suspend' ? 'Tạm ngưng tổ chức' : 'Mở lại tổ chức'}</span>
                 <ArrowRight size={13} aria-hidden="true" />
               </button>
             </form>

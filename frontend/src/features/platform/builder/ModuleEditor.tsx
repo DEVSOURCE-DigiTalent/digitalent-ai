@@ -86,7 +86,7 @@ export function ModuleEditor({
           type="button"
           onClick={() => setAddAt(position)}
           aria-label={translateUi(`Thêm khối ở vị trí ${position + 1}`)}
-          title={translateUi('Thêm khối học liệu vào đây')}
+          title={translateUi('Thêm khối vào đây')}
         >
           +
         </button>
@@ -107,7 +107,7 @@ export function ModuleEditor({
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Tên gọi hiển thị trong cấu trúc khóa học và danh mục bài giảng.')}
+              {translateUi('Hiển thị trong cấu trúc khóa học.')}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -170,11 +170,11 @@ export function ModuleEditor({
             <div className="pa-cb-panel-title">
               <BookOpen size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
               <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {translateUi('Khối học liệu mô đun')}
+                {translateUi('Các khối nội dung')}
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Học viên học tuần tự từng khối từ trên xuống. Bấm vào khối để mở chỉnh sửa.')}
+              {translateUi('Nhân viên học lần lượt từng khối từ trên xuống. Bấm vào khối để sửa.')}
             </div>
           </div>
           <span
@@ -187,7 +187,7 @@ export function ModuleEditor({
               fontWeight: 600,
             }}
           >
-            {translateUi(`${module.blocks.length} khối học liệu`)}
+            {translateUi(`${module.blocks.length} khối`)}
           </span>
         </div>
 
@@ -217,15 +217,15 @@ export function ModuleEditor({
                       onClick={() => setAddAt(0)}
                     >
                       <Plus size={15} />
-                      <span>{translateUi('Thêm khối học liệu đầu tiên')}</span>
+                      <span>{translateUi('Thêm khối đầu tiên')}</span>
                     </button>
                     <span style={{ fontSize: 13, color: '#475569', marginTop: 10 }}>
-                      {translateUi('Hỗ trợ văn bản, slide trình chiếu, hình ảnh minh họa hoặc video bài giảng.')}
+                      {translateUi('Có thể thêm văn bản, slide, hình ảnh, video hoặc PDF.')}
                     </span>
                   </>
                 ) : (
                   <span style={{ fontSize: 13, color: '#64748b' }}>
-                    {translateUi('Mô đun chưa có khối học liệu.')}
+                    {translateUi('Mô đun chưa có khối nào.')}
                   </span>
                 )}
               </div>
@@ -265,7 +265,7 @@ export function ModuleEditor({
           onClick={() => onNavigate(module.index === 0 ? 'info' : module.index - 1)}
         >
           <ArrowLeft size={14} />
-          <span>{module.index === 0 ? translateUi('Thông tin tổng quan') : translateUi('Mô đun trước')}</span>
+          <span>{module.index === 0 ? translateUi('Thông tin khóa học') : translateUi('Mô đun trước')}</span>
         </button>
         <button
           type="button"
@@ -323,7 +323,7 @@ export function ModuleEditor({
                     {translateUi('Xác nhận xóa mô đun')}
                   </h3>
                   <p style={{ margin: '3px 0 0', fontSize: 13, color: '#64748b' }}>
-                    {translateUi('Mô đun sẽ bị xóa hoàn toàn khỏi chương trình học.')}
+                    {translateUi('Mô đun sẽ bị xóa hoàn toàn khỏi khóa học.')}
                   </p>
                 </div>
               </div>
@@ -388,7 +388,7 @@ export function ModuleEditor({
                       fontWeight: 500,
                     }}
                   >
-                    {module.blocks.length} {translateUi('khối học liệu')}
+                    {module.blocks.length} {translateUi('khối')}
                   </span>
                   <span
                     style={{
@@ -452,7 +452,7 @@ export function ModuleEditor({
                   borderRadius: 8,
                 }}
               >
-                {translateUi('Hủy bỏ')}
+                {translateUi('Hủy')}
               </button>
               <button
                 type="button"
@@ -487,7 +487,7 @@ function TypeMenu({ onPick, onClose }: { onPick: (type: BlockType) => void; onCl
   useUiLanguage();
   return (
     <div className="pa-type-menu-wrap">
-      <div className="pa-type-menu" role="group" aria-label={translateUi('Chọn loại khối học liệu')}>
+      <div className="pa-type-menu" role="group" aria-label={translateUi('Chọn loại khối')}>
         {(Object.keys(BLOCK_TYPES) as BlockType[]).map((type, i) => (
           <button key={type} type="button" onClick={() => onPick(type)} autoFocus={i === 0}>
             <span className={`pa-type pa-type-${type.toLowerCase()}`} aria-hidden="true">

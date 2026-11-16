@@ -5,7 +5,7 @@ import { platformCatalogService, type CatalogCourseDetail } from '@/services/pla
 import { errorMessage } from '../components/pulse-format';
 import type { CourseEdit } from './builder-types';
 import { RichTextEditor } from './RichTextEditor';
-import { GraduationCap, FileText, CheckSquare, Plus, CheckCircle2 } from 'lucide-react';
+import { GraduationCap, FileText, CheckSquare, Plus, CheckCircle2, X } from 'lucide-react';
 
 const MAX_CRITERIA = 10;
 
@@ -44,11 +44,11 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
             <div className="pa-cb-panel-title">
               <GraduationCap size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
               <h2 id="final-title" style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {translateUi('Cấu hình bài đánh giá cuối khóa')}
+                {translateUi('Bài cuối khóa')}
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Hình thức đánh giá năng lực thực hành và quy trình phê duyệt kết quả.')}
+              {translateUi('Bài thực hành nhân viên nộp sau khi học hết các mô đun.')}
             </div>
           </div>
           <span
@@ -69,7 +69,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
         <div className="pa-cb-panel-body">
           <div>
             <label className="pa-cb-field-label" htmlFor="field-final-title">
-              <span>{translateUi('Tên bài đánh giá')} {editable && <span style={{ color: '#ef4444' }}>*</span>}</span>
+              <span>{translateUi('Tên bài')} {editable && <span style={{ color: '#ef4444' }}>*</span>}</span>
             </label>
             <input
               id="field-final-title"
@@ -79,7 +79,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
               maxLength={250}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               style={{ fontWeight: 600, fontSize: 14.5 }}
-              placeholder={translateUi('Nhập tên bài đánh giá cuối khóa...')}
+              placeholder={translateUi('Nhập tên bài cuối khóa...')}
             />
           </div>
         </div>
@@ -92,11 +92,11 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
             <div className="pa-cb-panel-title">
               <FileText size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
               <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {translateUi('Đề bài & Hướng dẫn thực hành')}
+                {translateUi('Đề bài')}
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Nội dung yêu cầu chi tiết, ngữ cảnh bài tập thực tế để học viên thực hiện và nộp bài.')}
+              {translateUi('Tình huống và yêu cầu để nhân viên làm và nộp bài.')}
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
             <div className="pa-rich pa-rich-box" dangerouslySetInnerHTML={{ __html: form.promptHtml }} />
           ) : (
             <p style={{ margin: 0, padding: '16px 0', fontSize: 13, color: '#64748b' }}>
-              {translateUi('Chưa cập nhật đề bài.')}
+              {translateUi('Chưa có đề bài.')}
             </p>
           )}
         </div>
@@ -125,7 +125,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
             <div className="pa-cb-panel-title">
               <CheckSquare size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
               <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {translateUi('Tiêu chí chấm điểm (Rubric)')}
+                {translateUi('Tiêu chí chấm')}
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
@@ -168,7 +168,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
                     disabled={form.criteria.length <= 1}
                     onClick={() => setForm((f) => ({ ...f, criteria: f.criteria.filter((_, i) => i !== index) }))}
                   >
-                    ✕
+                    <X size={14} aria-hidden="true" />
                   </button>
                 )}
               </div>
@@ -191,7 +191,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
 
           <div className="pa-cb-notice-box">
             {translateUi(
-              'Học viên nộp bài sau khi hoàn thành mọi mô đun của khóa học. Lần 1 chưa đạt thì chỉnh sửa và nộp lại; lần 2 chưa đạt sẽ chuyển trạng thái yêu cầu giảng viên hoặc quản lý hỗ trợ.',
+              'Nhân viên nộp bài sau khi hoàn thành mọi mô đun của khóa học. Lần 1 chưa đạt thì chỉnh sửa và nộp lại; lần 2 chưa đạt sẽ chuyển trạng thái yêu cầu giảng viên hoặc quản lý hỗ trợ.',
             )}
           </div>
         </div>

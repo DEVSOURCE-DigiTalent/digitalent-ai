@@ -1118,7 +1118,7 @@ function TrialDetailDrawer({
       { organizationId: trial.organizationId, mentorUserId: selectedMentorId },
       {
         onSuccess: () => {
-          toast.success(`Đã phân công Mentor cho ${trial.organizationName}`);
+          toast.success(`Đã phân công mentor cho ${trial.organizationName}`);
           onClose();
         },
         onError: (err) => toast.error(errorMessage(err)),
@@ -1170,7 +1170,7 @@ function TrialDetailDrawer({
             <div className="pa-tr-drawer-heading" style={{ color: 'var(--pa-accent-solid)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <FileText size={15} aria-hidden="true" />
-                Ghi chú từ doanh nghiệp
+                Ghi chú từ tổ chức
               </span>
             </div>
             <p style={{ margin: 0, lineHeight: 1.55 }}>{trial.requestNote}</p>
@@ -1180,7 +1180,7 @@ function TrialDetailDrawer({
         {/* Metrics */}
         <div className="pa-tr-drawer-metrics">
           <div className="pa-tr-metric-box">
-            <span>Người tham gia</span>
+            <span>Nhân viên</span>
             <strong>{trial.participants}</strong>
           </div>
           <div className="pa-tr-metric-box">
@@ -1188,20 +1188,20 @@ function TrialDetailDrawer({
             <strong style={{ color: 'var(--pa-accent-solid)' }}>{trial.submitted}</strong>
           </div>
           <div className="pa-tr-metric-box">
-            <span>Đã chấm điểm</span>
+            <span>Đã chấm</span>
             <strong style={{ color: 'var(--pa-live)' }}>{trial.reviewed}</strong>
           </div>
         </div>
 
         {/* Timeline */}
         <div className="pa-tr-drawer-box">
-          <div className="pa-tr-drawer-heading">Lịch trình và thời hạn</div>
+          <div className="pa-tr-drawer-heading">Thời gian</div>
           <div className="pa-tr-drawer-row">
             <span style={{ color: 'var(--pa-ink-2)' }}>Bắt đầu dùng thử:</span>
             <strong>{formatDateTimePlain(trial.startedAt)}</strong>
           </div>
           <div className="pa-tr-drawer-row">
-            <span style={{ color: 'var(--pa-ink-2)' }}>Hạn làm bài thi:</span>
+            <span style={{ color: 'var(--pa-ink-2)' }}>Hạn nộp bài:</span>
             <strong style={{ color: 'var(--pa-danger)' }}>
               {formatDateTimePlain(trial.testDeadline)}
             </strong>
@@ -1231,12 +1231,12 @@ function TrialDetailDrawer({
           {!canAssign ? (
             <p style={{ margin: 0, color: 'var(--pa-ink-2)', lineHeight: 1.5 }}>
               {trial.stage === 'REPORTED'
-                ? 'Báo cáo năng lực đã công bố cho doanh nghiệp nên không thể thay đổi Mentor phụ trách.'
-                : 'Doanh nghiệp đang thiết lập danh sách và chưa gửi yêu cầu thẩm định.'}
+                ? 'Báo cáo đã công bố cho tổ chức nên không đổi được mentor.'
+                : 'Tổ chức đang thiết lập danh sách và chưa gửi yêu cầu chấm bài.'}
             </p>
           ) : activeMentors.length === 0 ? (
             <p style={{ margin: 0, color: 'var(--pa-ink-2)', lineHeight: 1.5 }}>
-              Chưa có Mentor đang hoạt động. Tạo tài khoản Mentor trước khi phân công.
+              Chưa có mentor nào đang hoạt động. Thêm mentor trước khi phân công.
             </p>
           ) : (
             <>
@@ -1318,7 +1318,7 @@ function CreateMentorDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () 
       { fullName: form.fullName.trim(), email: form.email.trim(), password: form.password },
       {
         onSuccess: (m) => {
-          toast.success(`Đã tạo tài khoản Mentor: ${m.email}`);
+          toast.success(`Đã tạo tài khoản mentor: ${m.email}`);
           setForm({ fullName: '', email: '', password: '' });
           onClose();
         },
@@ -1333,7 +1333,7 @@ function CreateMentorDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () 
       onClose={onClose}
       title="Thêm mentor mới"
       icon={UserPlus}
-      subtitle="Tạo tài khoản chuyên gia chấm thi bài làm tự luận"
+      subtitle="Tạo tài khoản mentor để chấm bài tự luận"
       width={480}
       footer={
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, width: '100%' }}>

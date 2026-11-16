@@ -130,7 +130,7 @@ export function LearnerPreview({
                 }}
               >
                 <Eye size={13} aria-hidden="true" />
-                <span>{translateUi('Xem như nhân viên')}</span>
+                <span>{translateUi('Xem thử như nhân viên')}</span>
               </span>
 
               <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -281,7 +281,7 @@ export function LearnerPreview({
                       </span>
                       <span style={{ color: '#cbd5e1' }}>•</span>
                       <span style={{ fontSize: 12.5, color: '#64748b' }}>
-                        {currModule.blocks.length} {translateUi('khối học liệu')}
+                        {currModule.blocks.length} {translateUi('khối')}
                       </span>
                       <span style={{ color: '#cbd5e1' }}>•</span>
                       <span style={{ fontSize: 12.5, color: '#64748b' }}>
@@ -530,7 +530,7 @@ export function LearnerPreview({
                           letterSpacing: '0.04em',
                         }}
                       >
-                        {translateUi('Đánh giá kết thúc')}
+                        {translateUi('Cuối khóa')}
                       </span>
                       <span style={{ color: '#cbd5e1' }}>•</span>
                       <span style={{ fontSize: 12.5, color: '#64748b' }}>
@@ -545,7 +545,7 @@ export function LearnerPreview({
                     {/* Đề bài */}
                     <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
                       <h4 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                        {translateUi('Đề bài & Hướng dẫn thực hành')}
+                        {translateUi('Đề bài')}
                       </h4>
                       {course.final.promptHtml ? (
                         <div
@@ -555,7 +555,7 @@ export function LearnerPreview({
                         />
                       ) : (
                         <p style={{ margin: 0, fontSize: 13, color: '#64748b', fontStyle: 'italic' }}>
-                          {translateUi('Chưa cập nhật đề bài.')}
+                          {translateUi('Chưa có đề bài.')}
                         </p>
                       )}
                     </div>
@@ -563,7 +563,7 @@ export function LearnerPreview({
                     {/* Tiêu chí chấm điểm (Rubric) */}
                     <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
                       <h4 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                        {translateUi('Tiêu chí chấm điểm của Quản lý')} ({course.final.criteria.length})
+                        {translateUi('Tiêu chí chấm của quản lý')} ({course.final.criteria.length})
                       </h4>
                       <div style={{ display: 'grid', gap: 8 }}>
                         {course.final.criteria.map((criterion, idx) => (

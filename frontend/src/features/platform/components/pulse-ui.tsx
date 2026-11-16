@@ -107,7 +107,7 @@ export function ReasonField({ value, onChange, placeholder }: { value: string; o
   return (
     <>
       <label className="field">
-        Lý do ghi nhật ký
+        Lý do
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -118,7 +118,7 @@ export function ReasonField({ value, onChange, placeholder }: { value: string; o
         />
       </label>
       <p className={`field-hint ${short ? 'pa-error' : ''}`}>
-        {short ? translateUi(`Lý do cần ít nhất ${REASON_MIN} ký tự.`) : translateUi(`Bắt buộc, tối thiểu ${REASON_MIN} ký tự.`)}
+        {short ? translateUi(`Lý do cần ít nhất ${REASON_MIN} ký tự.`) : translateUi(`Bắt buộc, tối thiểu ${REASON_MIN} ký tự. Được ghi vào Nhật ký hoạt động.`)}
       </p>
     </>
   );

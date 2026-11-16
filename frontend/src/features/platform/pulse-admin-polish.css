@@ -346,3 +346,33 @@
 .pulse-ui.pa-console .pa-fb-table td:last-child button {
   white-space: nowrap;
 }
+
+/* Ngăn kéo tổ chức và người dùng: nhãn thẻ đầu chữ thường */
+.pulse-ui.pa-console .pa-org-detail-chip-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+
+/* ---------- Trình soạn khóa học: nhãn cột trái chữ thường, đủ tương phản ---------- */
+
+.pulse-ui.pa-console .pa-ol-label,
+.pulse-ui .pa-ol-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--pa-ink-3);
+}
+
+.pulse-ui.pa-console .pa-ol-header-title,
+.pulse-ui.pa-console .pa-ol-header-count {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pulse-ui.pa-console .pa-cb-meta-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}

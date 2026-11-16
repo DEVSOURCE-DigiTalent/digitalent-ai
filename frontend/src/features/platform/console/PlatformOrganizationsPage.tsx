@@ -383,7 +383,7 @@ export function PlatformOrganizationsPage() {
         title={selectedOrg?.name ?? translateUi('Chi tiết tổ chức')}
         subtitle={
           selectedOrg
-            ? `${selectedOrg.ownerEmail || translateUi('Chưa có email chủ sở hữu')} · Mã: ${selectedOrg.code || selectedOrg.id.slice(0, 8).toUpperCase()}`
+            ? `${selectedOrg.ownerEmail || translateUi('Chưa có chủ doanh nghiệp')}${selectedOrg.code && selectedOrg.code.length <= 20 ? ` · Mã: ${selectedOrg.code}` : ''}`
             : translateUi('Chi tiết doanh nghiệp')
         }
         avatar={selectedOrg ? <CompanyAvatar name={selectedOrg.name} size={40} /> : undefined}

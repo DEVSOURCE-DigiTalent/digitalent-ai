@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { platformCatalogService, type CatalogModule, type CatalogQuestion } from '@/services/platform-catalog.service';
 import { QUESTIONS_MIN, QUESTIONS_RECOMMENDED, errorMessage } from '../components/pulse-format';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
-import { HelpCircle, Plus } from 'lucide-react';
+import { HelpCircle, Plus, X } from 'lucide-react';
 
 const letter = (index: number) => String.fromCharCode(65 + index);
 const MAX_OPTIONS = 5;
@@ -48,7 +48,7 @@ export function QuizEditor({ module, editable, edit }: { module: CatalogModule; 
           </div>
           <div className="pa-cb-panel-desc">
             {translateUi(
-              `Ngân hàng hiện có ${count} câu hỏi. Mỗi lượt ôn tập rút ${Math.min(QUESTIONS_MIN, count)} câu; học viên trả lời sai cần ôn lại khối học liệu tương ứng.`,
+              `Ngân hàng hiện có ${count} câu hỏi. Mỗi lượt ôn tập rút ${Math.min(QUESTIONS_MIN, count)} câu; nhân viên trả lời sai cần ôn lại khối học liệu tương ứng.`,
             )}
           </div>
         </div>
@@ -118,7 +118,7 @@ export function QuizEditor({ module, editable, edit }: { module: CatalogModule; 
             </button>
             {module.blocks.length === 0 && (
               <span style={{ fontSize: 12.5, color: '#64748b' }}>
-                {translateUi('Cần thêm khối học liệu trước để gắn câu hỏi liên kết.')}
+                {translateUi('Cần thêm khối nội dung trước để gắn câu hỏi.')}
               </span>
             )}
           </div>
@@ -257,7 +257,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
               disabled={options.length <= MIN_OPTIONS}
               aria-label={translateUi(`Xóa phương án ${letter(index)}`)}
             >
-              ✕
+              <X size={14} aria-hidden="true" />
             </button>
           </div>
         ))}
@@ -276,7 +276,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
       <div className="inline-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <label className="pa-cb-field-label" htmlFor={`link-block-${question.questionId}`}>
-            <span>{translateUi('Gắn với khối học liệu')}</span>
+            <span>{translateUi('Gắn với khối')}</span>
           </label>
           <select
             id={`link-block-${question.questionId}`}
@@ -296,7 +296,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
             })}
           </select>
           <small style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
-            {translateUi('Học viên trả lời sai câu này sẽ được điều hướng ôn lại khối học liệu.')}
+            {translateUi('Nhân viên trả lời sai câu này sẽ được chuyển về ôn lại khối đó.')}
           </small>
         </div>
 

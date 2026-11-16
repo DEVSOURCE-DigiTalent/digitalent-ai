@@ -1236,4 +1236,56 @@ Công bố khóa học|Publish course
 Cấp suất học|Grant seats
 Chấm bài cuối khóa|Grade course final
 Gửi liên kết đặt lại mật khẩu|Send password reset link
+Suất học theo khóa|Seats by course
+Tổ chức chưa mua suất học nào.|This organization has not bought any seats.
+Chưa có đơn hàng hoặc lần cấp suất nào.|No orders or seat grants yet.
+Thao tác hỗ trợ|Support actions
+Mọi thao tác ở đây được ghi vào Nhật ký hoạt động.|Every action here is written to the activity log.
+Cấp 1 suất học|Grant 1 seat
+Tạm ngưng tổ chức|Suspend organization
+Mở lại tổ chức|Reopen organization
+Cấp suất|Grant seat
+Tổ chức đang tạm ngưng.|This organization is suspended.
+Thông tin tài khoản|Account details
+Ngày tạo tài khoản|Account created
+Suất học và hợp đồng|Seats and contract
+Xem ở hồ sơ tổ chức|See the organization profile
+Mở trang Tổ chức|Open Organizations
+Phòng ban phụ trách|Department in charge
+Trạng thái tài khoản|Account status
+Khóa hoặc mở khóa tài khoản|Lock or unlock account
+Mở khóa tài khoản|Unlock account
+Khóa tài khoản|Lock account
+Chưa ghi danh khóa học nào.|Not enrolled in any course.
+Điểm|Score
+Khung năng lực|Competency framework
+Không đổi được sau lần công bố đầu|Cannot change after the first release
+Tên và mục tiêu|Name and goals
+Giá và mở bán|Price and sales
+Giá mỗi suất (₫)|Price per seat (₫)
+Tổ chức có thể mua|Organizations can buy it
+Tổ chức đã mua vẫn học bình thường|Organizations that already bought keep learning
+Đặt được giá|Price can be set
+Khóa học chưa có mô đun nào.|This course has no modules yet.
+Nhập tên khóa học...|Enter the course name...
+Tiếp: Mô đun 01|Next: Module 01
+Các khối nội dung|Content blocks
+Thêm khối đầu tiên|Add the first block
+Mô đun chưa có khối nào.|This module has no blocks yet.
+Thêm khối vào đây|Add a block here
+Chọn loại khối|Choose a block type
+Khối và mô đun tự lưu|Blocks and modules save automatically
+Xem thử như nhân viên|Preview as an employee
+Cuối khóa|Course final
+Bài cuối khóa|Course final
+Tên bài|Assignment name
+Nhập tên bài cuối khóa...|Enter the final assignment name...
+Đề bài|Assignment brief
+Tiêu chí chấm|Grading criteria
+Chưa có đề bài.|No brief yet.
+Gắn với khối|Link to block
+Tiêu chí chấm của quản lý|Manager's grading criteria
+Sau khóa học, nhân viên làm được gì|After the course, what employees can do
+Chưa có mô tả kết quả.|No outcome description yet.
+Khóa Cơ bản luôn miễn phí.|Basic courses are always free.
 `.trim().split('\n').map(line => { const separator = line.indexOf('|'); return [line.slice(0, separator), line.slice(separator + 1)]; })) };

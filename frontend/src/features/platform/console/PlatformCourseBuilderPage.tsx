@@ -127,18 +127,18 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
               </span>
             ) : (
               <span className="pa-cb-version-current-badge">
-                <span>{translateUi(`v${course.versionNo} (Chính thức)`)}</span>
+                <span>{translateUi(`v${course.versionNo} (đang dùng)`)}</span>
               </span>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 4 }}>
             <p className="pa-ov-subtitle" style={{ margin: 0 }}>
-              {translateUi('Khung chuẩn năng lực số doanh nghiệp')} · {translateUi(course.domainName)} · {course.modules.length} {translateUi('mô đun')} · {totalQuestions} {translateUi('câu hỏi ôn tập')}
+              {translateUi('Khung năng lực số')} · {translateUi(course.domainName)} · {course.modules.length} {translateUi('mô đun')} · {totalQuestions} {translateUi('câu hỏi ôn tập')}
             </p>
             {editable && (
-              <div className="pa-cb-autosave-indicator" title="Mọi thay đổi được lưu tự động">
+              <div className="pa-cb-autosave-indicator" title="Khối và mô đun tự lưu sau mỗi thay đổi. Thông tin khóa học cần bấm Lưu thay đổi.">
                 <span className="pa-cb-pulse-dot" aria-hidden="true" />
-                <span>{courseEdit.isPending ? translateUi('Đang lưu thay đổi…') : translateUi('Tự động lưu')}</span>
+                <span>{courseEdit.isPending ? translateUi('Đang lưu thay đổi…') : translateUi('Khối và mô đun tự lưu')}</span>
               </div>
             )}
           </div>
@@ -150,7 +150,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
             to={`/platform/versions/${course.versionNo}`}
           >
             <ArrowLeft size={14} />
-            <span>{translateUi('Danh mục phiên bản')}</span>
+            <span>{translateUi('Phiên bản khóa học')}</span>
           </Link>
           <button
             type="button"
@@ -159,7 +159,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
             disabled={course.modules.length === 0}
           >
             <Eye size={14} />
-            <span>{translateUi('Xem như nhân viên')}</span>
+            <span>{translateUi('Xem thử như nhân viên')}</span>
           </button>
         </div>
       </header>
@@ -170,7 +170,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
           <div className="pa-ol-header">
             <div className="pa-ol-header-title">
               <Layers size={13} aria-hidden="true" />
-              <span>{translateUi("Cấu trúc học phần")}</span>
+              <span>{translateUi("Nội dung khóa học")}</span>
             </div>
             <span className="pa-ol-header-count">{course.modules.length} {translateUi("mô đun")}</span>
           </div>
@@ -185,14 +185,14 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
               <SlidersHorizontal size={14} aria-hidden="true" />
             </b>
             <span className="pa-ol-text">
-              <strong>{translateUi("Thông tin tổng quan")}</strong>
+              <strong>{translateUi("Thông tin khóa học")}</strong>
               <small>
                 {translateUi(LEVEL_NAMES[course.level])} · {course.pricePerSeat ? formatMoney(course.pricePerSeat) : translateUi('Miễn phí')}
               </small>
             </span>
           </button>
 
-          <div className="pa-ol-label">{translateUi("Mô đun bài học")}</div>
+          <div className="pa-ol-label">{translateUi("Mô đun")}</div>
 
           {course.modules.map((m) => (
             <button
@@ -206,7 +206,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
               <span className="pa-ol-text">
                 <strong>{translateUi(m.title) || translateUi('Mô đun chưa đặt tên')}</strong>
                 <small>
-                  {m.blocks.length} {translateUi('khối học')} · {m.questions.length} {translateUi('câu hỏi')}
+                  {m.blocks.length} {translateUi('khối')} · {m.questions.length} {translateUi('câu hỏi')}
                 </small>
               </span>
             </button>
@@ -228,7 +228,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
             <small className="pa-hint pa-ol-pad">{translateUi("Chưa có mô đun nào.")}</small>
           )}
 
-          <div className="pa-ol-label">{translateUi("Đánh giá kết thúc")}</div>
+          <div className="pa-ol-label">{translateUi("Cuối khóa")}</div>
           <button
             type="button"
             className="pa-ol-item"
