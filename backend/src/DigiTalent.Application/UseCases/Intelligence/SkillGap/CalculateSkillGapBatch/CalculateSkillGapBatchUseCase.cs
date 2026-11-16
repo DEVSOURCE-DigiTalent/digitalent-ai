@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.Services.Intelligence.SkillGap;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,17 +44,18 @@ public class CalculateSkillGapBatchUseCase : IUseCase<CalculateSkillGapBatchUseC
             query = query.Where(e => e.DepartmentId == input.DepartmentId.Value);
         }
 
+        var placements = EffectiveJobPositions.Resolve(_context, query.AsNoTracking());
         if (input.JobPositionId.HasValue)
         {
-            query = query.Where(e => e.JobPositionId == input.JobPositionId.Value);
+            placements = placements.Where(row => row.PositionId == input.JobPositionId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(input.JobGrade))
         {
-            query = query.Where(e => _context.JobPositions.Any(p => p.Id == e.JobPositionId && p.JobGrade == input.JobGrade));
+            placements = placements.Where(row => _context.JobPositions.Any(p => p.Id == row.PositionId && p.JobGrade == input.JobGrade));
         }
 
-        if (await query.CountAsync() > MaxEmployeesPerBatch)
+        if (await placements.CountAsync() > MaxEmployeesPerBatch)
         {
             throw new BadRequestException(
                 $"Too many employees for one batch (max {MaxEmployeesPerBatch}). Filter by department or job position.",
@@ -61,7 +63,7 @@ public class CalculateSkillGapBatchUseCase : IUseCase<CalculateSkillGapBatchUseC
                 "BATCH_TOO_LARGE");
         }
 
-        var employees = await query.AsNoTracking().OrderBy(e => e.EmployeeCode).ToListAsync();
+        var employees = await placements.Select(row => row.Employee).OrderBy(e => e.EmployeeCode).ToListAsync();
         var outcomes = await _runService.StageRunsAsync(employees, organizationId, Statuses.SkillGapGeneratedBy.UserRequest);
         await _context.SaveChangesAsync();
 

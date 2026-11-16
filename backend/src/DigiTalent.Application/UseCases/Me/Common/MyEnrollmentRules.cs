@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Services.Intelligence.Recommendation;
 using DigiTalent.Application.UseCases.TrialProgram;
@@ -86,12 +87,13 @@ public class MyEnrollmentRules
             return new EnrollCheck(false, "Khóa học đã có phiên bản mới hơn.", prerequisites);
         }
 
+        var courseCodes = CourseCodes.Aliases(course.Code);
         var existing = await (
                 from enrollment in _context.Enrollments.AsNoTracking()
                 join c in _context.Courses.AsNoTracking() on enrollment.CourseId equals c.Id
                 where enrollment.EmployeeId == employee.Id
                       && c.OrganizationId == course.OrganizationId
-                      && c.Code == course.Code
+                      && courseCodes.Contains(c.Code)
                       && enrollment.Status != Statuses.Enrollment.Cancelled
                 select enrollment.Status)
             .ToListAsync();
@@ -112,12 +114,15 @@ public class MyEnrollmentRules
             var purchasedSeats = await (
                 from o in _context.CourseSeatOrders.AsNoTracking()
                 join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-                where o.OrganizationId == employee.OrganizationId && pc.Code == course.Code
+                where o.OrganizationId == employee.OrganizationId && courseCodes.Contains(pc.Code)
                 select (int?)o.Seats
             ).SumAsync() ?? 0;
 
             var usedSeats = await _context.CourseAssignments.AsNoTracking()
-                .CountAsync(ca => ca.CourseId == course.Id && ca.Status == "ACTIVE");
+                .Where(ca => _context.Courses.Any(version => version.Id == ca.CourseId
+                    && version.OrganizationId == course.OrganizationId && courseCodes.Contains(version.Code))
+                    && ca.Status == Statuses.CourseAssignment.Active)
+                .Select(ca => ca.EmployeeId).Distinct().CountAsync();
 
             if (purchasedSeats <= usedSeats)
             {

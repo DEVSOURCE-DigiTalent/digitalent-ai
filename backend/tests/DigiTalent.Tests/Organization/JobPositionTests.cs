@@ -31,17 +31,40 @@ public class JobPositionTests
         var useCase = new CreateJobPositionUseCase(context, currentUser.Object, Mock.Of<IAuditService>());
         var input = new CreateJobPositionUseCaseInput
         {
-            Code = "SWE",
+            Code = "ACCOUNTANT",
             Name = "Software Engineer",
-            Description = "Designs and develops software"
+            Description = "Designs and develops software",
         };
+
+        await FluentActions.Invoking(() => useCase.ExecuteAsync(input)).Should().ThrowAsync<BadRequestException>();
+        var department = new Department { OrganizationId = orgId, Code = "ENG", Name = "Engineering" };
+        context.Departments.Add(department);
+        var template = new JobPosition { OrganizationId = orgId, Code = "ACCOUNTANT", Name = "Kế toán" };
+        context.JobPositions.Add(template);
+        await context.SaveChangesAsync();
+        input.DepartmentId = department.Id;
 
         var result = await useCase.ExecuteAsync(input);
 
         var created = await context.JobPositions.FindAsync(result.Id);
         created.Should().NotBeNull();
+        result.Id.Should().Be(template.Id);
         created!.OrganizationId.Should().Be(orgId);
-        created.Code.Should().Be("SWE");
+        created.DepartmentId.Should().Be(department.Id);
+        await FluentActions.Invoking(() => useCase.ExecuteAsync(new CreateJobPositionUseCaseInput
+        {
+            Code = "CEO", Name = "CEO", DepartmentId = department.Id,
+        })).Should().ThrowAsync<ConflictException>();
+
+        var otherDepartment = new Department { OrganizationId = orgId, Code = "FIN", Name = "Finance" };
+        context.Departments.Add(otherDepartment);
+        await context.SaveChangesAsync();
+        await FluentActions.Invoking(() => useCase.ExecuteAsync(new CreateJobPositionUseCaseInput
+        {
+            Code = "SWE2", Name = "software engineer", DepartmentId = otherDepartment.Id,
+        })).Should().ThrowAsync<BadRequestException>();
+
+        created.Code.Should().Be("ACCOUNTANT");
         created.Status.Should().Be(Statuses.MasterData.Active);
     }
 
@@ -56,8 +79,9 @@ public class JobPositionTests
         {
             Id = Guid.NewGuid(),
             OrganizationId = orgId,
-            Code = "SWE",
-            Name = "Software Engineer",
+            Code = "ACCOUNTANT",
+            Name = "Kế toán",
+            DepartmentId = Guid.NewGuid(),
             Status = Statuses.MasterData.Active
         });
         await context.SaveChangesAsync();
@@ -68,7 +92,7 @@ public class JobPositionTests
         var useCase = new CreateJobPositionUseCase(context, currentUser.Object, Mock.Of<IAuditService>());
         var input = new CreateJobPositionUseCaseInput
         {
-            Code = "swe", // Lowercase should be normalized and detected as duplicate
+            Code = "accountant", // Lowercase should be normalized and detected as duplicate
             Name = "Software Engineer II"
         };
 
@@ -89,10 +113,14 @@ public class JobPositionTests
         {
             Id = Guid.NewGuid(),
             OrganizationId = orgA,
-            Code = "DEV",
+            Code = "HR",
             Name = "Developer Org A",
             Status = Statuses.MasterData.Active
         });
+        await context.SaveChangesAsync();
+
+        var department = new Department { OrganizationId = orgB, Code = "ENG", Name = "Engineering" };
+        context.Departments.Add(department);
         await context.SaveChangesAsync();
 
         var currentUserB = new Mock<ICurrentUser>();
@@ -101,8 +129,8 @@ public class JobPositionTests
         var useCase = new CreateJobPositionUseCase(context, currentUserB.Object, Mock.Of<IAuditService>());
         var input = new CreateJobPositionUseCaseInput
         {
-            Code = "DEV",
-            Name = "Developer Org B"
+            Code = "HR",
+            Name = "Developer Org B", DepartmentId = department.Id
         };
 
         var result = await useCase.ExecuteAsync(input);
@@ -111,7 +139,7 @@ public class JobPositionTests
         var created = await context.JobPositions.FindAsync(result.Id);
         created.Should().NotBeNull();
         created!.OrganizationId.Should().Be(orgB);
-        created.Code.Should().Be("DEV");
+        created.Code.Should().Be("HR");
     }
 
     [Fact]

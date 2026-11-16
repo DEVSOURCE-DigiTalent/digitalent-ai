@@ -89,6 +89,20 @@ public class GetPositionRequirementsUseCase : IUseCase<GetPositionRequirementsUs
                                Note = item.Note
                            }).ToListAsync();
 
+        if (!input.VersionNo.HasValue && set.Status == Statuses.PositionRequirementSet.Active)
+        {
+            var targets = (await new PositionTargetsReader(_context).LoadAsync(orgId, [position.Id])).GetValueOrDefault(position.Id);
+            if (targets?.UsesSystemReference == true)
+            {
+                foreach (var item in items)
+                {
+                    item.RequiredLevel = targets.Levels.GetValueOrDefault(item.CategoryId, item.RequiredLevel);
+                    if (item.Note == DigiTalent.Application.UseCases.Platform.References.ReferencePositionMatrixService.SeedItemNote)
+                        item.Note = null;
+                }
+            }
+        }
+
         return new GetPositionRequirementsUseCaseOutput
         {
             Id = set.Id,

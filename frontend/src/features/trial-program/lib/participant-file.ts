@@ -1,7 +1,8 @@
 import type { TrialParticipantRow } from '@/services/trial-program.service';
 
-/** Cột của file mẫu (thứ tự dùng khi file không có dòng tiêu đề). */
-export const TEMPLATE_COLUMNS = ['Họ tên', 'Email', 'Phòng ban', 'Vị trí'] as const;
+import { EMPLOYEE_IMPORT_COLUMNS, parseEmployeeImportRole } from '@/features/members/utils/employee-import-helper';
+
+export const TEMPLATE_COLUMNS = EMPLOYEE_IMPORT_COLUMNS;
 
 const FIELD_OF: Record<string, keyof TrialParticipantRow> = {
   'ho ten': 'fullName',
@@ -19,6 +20,9 @@ const FIELD_OF: Record<string, keyof TrialParticipantRow> = {
   'chuc danh': 'position',
   'chuc vu': 'position',
   position: 'position',
+  'vi tri cong viec': 'position',
+  'vai tro': 'role',
+  role: 'role',
 };
 
 const fold = (value: unknown) =>
@@ -36,11 +40,14 @@ export function rowsFromCells(cells: unknown[][]): TrialParticipantRow[] {
   if (rows.length === 0) return [];
   const header = rows[0]!.map((cell) => FIELD_OF[fold(cell)]);
   const hasHeader = header.filter(Boolean).length >= 2;
-  const order: (keyof TrialParticipantRow | undefined)[] = hasHeader ? header : ['fullName', 'email', 'department', 'position'];
+  const order: (keyof TrialParticipantRow | undefined)[] = hasHeader ? header : ['fullName', 'email', 'department', 'position', 'role'];
   return rows.slice(hasHeader ? 1 : 0).map((row) => {
     const item: TrialParticipantRow = { fullName: '', email: '', department: '', position: '' };
     order.forEach((field, index) => {
-      if (field) item[field] = String(row[index] ?? '').trim();
+      const value = String(row[index] ?? '').trim();
+      if (field === 'role') {
+        if (value) item.role = parseEmployeeImportRole(value) ?? value;
+      } else if (field) item[field] = value;
     });
     return item;
   });
@@ -92,7 +99,7 @@ export async function readParticipantFile(file: File): Promise<TrialParticipantR
 
 /** Tải file mẫu (CSV có BOM để Excel mở đúng tiếng Việt). */
 export function downloadTemplate() {
-  const sample = [TEMPLATE_COLUMNS.join(','), 'Nguyễn Văn An,an.nguyen@congty.vn,Kế toán,Kế toán viên', 'Trần Thị Bình,binh.tran@congty.vn,Kinh doanh,Nhân viên bán hàng'];
+  const sample = [TEMPLATE_COLUMNS.join(','), 'Nguyễn Văn An,an.nguyen@congty.vn,Kế toán,Kế toán viên,Trưởng phòng', 'Trần Thị Bình,binh.tran@congty.vn,Kinh doanh,Nhân viên bán hàng,Trưởng phòng'];
   const blob = new Blob(['﻿' + sample.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

@@ -74,12 +74,18 @@ public class FoundationSmokeTests
         var caller = new Mock<ICurrentUser>();
         caller.Setup(c => c.GetRequiredOrganizationId()).Returns(tenantOrgId);
 
+        var managerRole = new Role { Code = "MANAGER", Name = "Manager" };
+        var manager = new Employee { OrganizationId = tenantOrgId, UserId = Guid.NewGuid(), EmployeeCode = "MGR", FullName = "Manager" };
+        context.Roles.AddRange(managerRole, new Role { Code = "EMPLOYEE", Name = "Employee" });
+        context.Employees.Add(manager);
+        await context.SaveChangesAsync();
+
         var createUseCase = new CreateDepartmentUseCase(context, caller.Object, Mock.Of<IAuditService>());
         var output = await createUseCase.ExecuteAsync(new CreateDepartmentUseCaseInput
         {
             Code = "FIN",
             Name = "Finance",
-            Description = "Finance department"
+            Description = "Finance department", ManagerEmployeeId = manager.Id
         });
 
         var created = await context.Departments.FirstOrDefaultAsync(d => d.Id == output.Id);

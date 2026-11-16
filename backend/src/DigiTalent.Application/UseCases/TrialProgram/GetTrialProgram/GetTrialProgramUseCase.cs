@@ -24,6 +24,14 @@ public class GetTrialProgramUseCase : IUseCase<GetTrialProgramUseCaseInput, GetT
         var domains = await _reader.LoadDomainsAsync(trial.OrganizationId);
         var stage = TrialProgramRules.StageOf(trial);
 
+        var departments = await _context.Departments.AsNoTracking()
+            .Where(d => d.OrganizationId == trial.OrganizationId && d.Status == Statuses.MasterData.Active)
+            .OrderBy(d => d.Name).Select(d => new { d.Id, d.Name }).ToListAsync();
+        var positions = await _context.JobPositions.AsNoTracking()
+            .Where(p => p.OrganizationId == trial.OrganizationId && p.Status == Statuses.MasterData.Active)
+            .OrderBy(p => p.Name).Select(p => new { p.DepartmentId, p.Name }).ToListAsync();
+        var positionsByDepartment = positions.ToLookup(p => p.DepartmentId, p => p.Name);
+
         return new GetTrialProgramUseCaseOutput
         {
             OrganizationId = trial.OrganizationId,
@@ -39,12 +47,10 @@ public class GetTrialProgramUseCase : IUseCase<GetTrialProgramUseCaseInput, GetT
             ChoiceCount = domains.Count * 3 * TrialProgramRules.ChoicePerCell,
             EssayCount = 0,
             Participants = await _reader.LoadParticipantsAsync(trial),
-            Departments = await _context.Departments.AsNoTracking()
-                .Where(d => d.OrganizationId == trial.OrganizationId && d.Status == Statuses.MasterData.Active)
-                .OrderBy(d => d.Name).Select(d => d.Name).ToListAsync(),
-            Positions = await _context.JobPositions.AsNoTracking()
-                .Where(p => p.OrganizationId == trial.OrganizationId && p.Status == Statuses.MasterData.Active)
-                .OrderBy(p => p.Name).Select(p => p.Name).ToListAsync(),
+            Departments = departments.Select(d => d.Name).ToList(),
+            Positions = positions.Select(p => p.Name).ToList(),
+            PositionsByDepartment = departments.GroupBy(d => d.Name).ToDictionary(
+                group => group.Key, group => group.SelectMany(d => positionsByDepartment[d.Id]).Distinct().ToList()),
             Report = trial.RequestedAt != null ? await _reader.BuildReportAsync(trial) : null,
         };
     }

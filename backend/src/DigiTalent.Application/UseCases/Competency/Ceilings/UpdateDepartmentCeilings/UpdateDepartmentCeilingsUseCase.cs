@@ -61,10 +61,12 @@ public class UpdateDepartmentCeilingsUseCase : IUseCase<UpdateDepartmentCeilings
         }
         else
         {
-            // 3. Quy tắc: phạm vi phòng ban ≤ phạm vi doanh nghiệp, xét riêng từng lĩnh vực
+            // The matrix returns the saved organization ceiling capped by current course access.
+            var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(organizationId);
+            var organizationLevels = matrix.Domains.ToDictionary(domain => domain.CategoryId, domain => domain.OrganizationCeiling);
             foreach (var item in input.Ceilings)
             {
-                if (!orgCeilings.TryGetValue(item.CategoryId, out var orgLevel))
+                if (!orgCeilings.ContainsKey(item.CategoryId) || !organizationLevels.TryGetValue(item.CategoryId, out var orgLevel))
                 {
                     throw new BadRequestException("A competency domain is not part of the ceiling matrix.", "ceilings", "CATEGORY_NOT_IN_MATRIX");
                 }

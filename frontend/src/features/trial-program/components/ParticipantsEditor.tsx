@@ -1,3 +1,4 @@
+import { departmentRoleError, downloadEmployeeTemplate } from '@/features/members/utils/employee-import-helper';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import {
@@ -16,7 +17,7 @@ import type { TrialParticipantRow } from '@/services/trial-program.service';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
-import { readParticipantFile, rowsFromCells, TEMPLATE_COLUMNS } from '../lib/participant-file';
+import { readParticipantFile, rowsFromCells } from '../lib/participant-file';
 import { EMPTY_ROW as EMPTY, isRowEmpty, rowError } from '../lib/participant-rows';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,7 +26,6 @@ interface ParticipantsEditorProps {
   rows: TrialParticipantRow[];
   onChange: (rows: TrialParticipantRow[]) => void;
   departments: string[];
-  positions: string[];
 }
 
 /**
@@ -39,7 +39,6 @@ export function ParticipantsEditor({
   rows,
   onChange,
   departments,
-  positions,
 }: ParticipantsEditorProps) {
   useUiLanguage();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -60,13 +59,12 @@ export function ParticipantsEditor({
     ]),
   );
 
-  const allPositions = Array.from(
-    new Set([
-      ...positions,
-      ...(posData?.items?.map((p) => p.name) ?? []),
-      ...rows.map((r) => r.position.trim()).filter(Boolean),
-    ]),
-  );
+  const departmentKey = (name: string) => name.trim().toLocaleLowerCase('vi');
+  const positionsFor = (name: string) => {
+    const key = departmentKey(name);
+    const department = deptData?.items.find((item) => [item.name, item.code].some((value) => departmentKey(value) === key));
+    return department ? (posData?.items ?? []).filter((item) => item.departmentId === department.id) : [];
+  };
 
   // Tabs: 'excel' | 'manual'
   const [tab, setTab] = useState<'excel' | 'manual'>('excel');
@@ -88,7 +86,7 @@ export function ParticipantsEditor({
     fullName: '',
     email: '',
     department: allDepartments[0] || '',
-    position: allPositions[0] || '',
+    position: positionsFor(allDepartments[0] ?? '').length === 1 ? positionsFor(allDepartments[0] ?? '')[0].name : '',
   });
   const [manualError, setManualError] = useState<string | null>(null);
 
@@ -155,29 +153,8 @@ export function ParticipantsEditor({
   };
 
   // Download template with current enterprise departments
-  const handleDownloadTemplate = () => {
-    const d1 = allDepartments[0] || 'Kinh doanh';
-    const d2 = allDepartments[1] || 'Kỹ thuật';
-    const p1 = allPositions[0] || 'Chuyên viên kinh doanh';
-    const p2 = allPositions[1] || 'Kỹ sư phần mềm';
-    const sample = [
-      TEMPLATE_COLUMNS.join(','),
-      `"Nguyễn Văn An","an.nguyen@congty.vn","${d1}","${p1}"`,
-      `"Trần Thị Bình","binh.tran@congty.vn","${d2}","${p2}"`,
-      `"Lê Hoàng Long","long.le@congty.vn","${d1}","${p1}"`,
-    ];
-    const blob = new Blob(['\uFEFF' + sample.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'mau_nhan_vien_danh_gia_digitalent.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
+  const handleDownloadTemplate = () => downloadEmployeeTemplate();
 
-  // Import file
   const importFile = async (file?: File | null) => {
     if (!file) return;
     setFileError(null);
@@ -252,8 +229,24 @@ export function ParticipantsEditor({
       return;
     }
 
+    const newRow: TrialParticipantRow = { fullName, email, department, position, role: manualDraft.role ?? 'EMPLOYEE' };
+
+    const normalizedDepartment = department.toLocaleLowerCase('vi');
+    const existingDepartment = deptData?.items.find((item) =>
+      [item.name, item.code].some((name) => name.toLocaleLowerCase('vi') === normalizedDepartment));
+    const hasManager = Boolean(existingDepartment?.managerEmployeeId || existingDepartment?.hasPendingManagerInvitation)
+      || filledRows.some((row) => row.department.trim().toLocaleLowerCase('vi') === normalizedDepartment
+        && row.role === 'MANAGER' && !rowError(row));
+    const allowedPositions = positionsFor(department);
+    const allowed = allowedPositions.length === 0 || allowedPositions.some((item) =>
+      [item.name, item.code].some((name) => departmentKey(name) === departmentKey(position)));
+    const problem = rowError(newRow) ?? departmentRoleError(newRow.role ?? 'EMPLOYEE', hasManager)
+      ?? (allowed ? null : 'Chọn vị trí công việc của phòng ban này.');
+    if (problem) {
+      setManualError(problem);
+      return;
+    }
     setManualError(null);
-    const newRow: TrialParticipantRow = { fullName, email, department, position };
 
     // If first row is empty, replace it; otherwise append
     const updated = isRowEmpty(rows[0] ?? EMPTY) && rows.length === 1
@@ -270,6 +263,7 @@ export function ParticipantsEditor({
       fullName: '',
       email: '',
       position: '',
+      role: 'EMPLOYEE',
     }));
   };
 
@@ -310,7 +304,7 @@ export function ParticipantsEditor({
             type="button"
             onClick={handleDownloadTemplate}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition-all cursor-pointer"
-            title={translateUi("Tải về file CSV mẫu 4 cột: Họ tên, Email, Phòng ban, Vị trí")}
+            title={translateUi("Tải về file CSV mẫu: Họ tên, Email, Phòng ban, Vị trí, Vai trò")}
           >
             <Download className="size-3.5 text-[#137b84]" />{translateUi("Tải mẫu .csv")}</button>
         </div>
@@ -452,7 +446,11 @@ export function ParticipantsEditor({
                 list={`${listId}-d`}
                 placeholder="VD: Kinh doanh, Kỹ thuật..."
                 value={manualDraft.department}
-                onChange={(e) => setManualDraft((c) => ({ ...c, department: e.target.value }))}
+                onChange={(e) => {
+                  const department = e.target.value;
+                  const options = positionsFor(department);
+                  setManualDraft((draft) => ({ ...draft, department, position: options.length === 1 ? options[0].name : '' }));
+                }}
                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#137b84] focus:ring-2 focus:ring-[#137b84]/20"
               />
             </div>
@@ -461,7 +459,7 @@ export function ParticipantsEditor({
               <label htmlFor={`${listId}-pos`} className="text-xs font-semibold text-slate-700">{translateUi("Vị trí công việc")}</label>
               <input
                 id={`${listId}-pos`}
-                list={`${listId}-p`}
+                list={`${listId}-p-manual`}
                 placeholder={translateUi("VD: Chuyên viên kinh doanh, Trưởng nhóm...")}
                 value={manualDraft.position}
                 onChange={(e) => setManualDraft((c) => ({ ...c, position: e.target.value }))}
@@ -469,6 +467,10 @@ export function ParticipantsEditor({
               />
             </div>
           </div>
+
+          <OwnerFilterSelect label={translateUi('Vai trò')} value={manualDraft.role ?? 'EMPLOYEE'}
+            onChange={(role) => setManualDraft((draft) => ({ ...draft, role }))}
+            options={[{ value: 'EMPLOYEE', label: 'Nhân viên' }, { value: 'MANAGER', label: 'Trưởng phòng' }]} />
 
           {manualError && (
             <p className="text-xs font-medium text-red-600 flex items-center gap-1.5">
@@ -534,6 +536,7 @@ export function ParticipantsEditor({
                 <th className="py-2.5 px-3">{translateUi("Email ")}<span className="text-red-500">*</span></th>
                 <th className="py-2.5 px-3">{translateUi("Phòng ban")}</th>
                 <th className="py-2.5 px-3">{translateUi("Vị trí công việc")}</th>
+                <th className="py-2.5 px-3">{translateUi("Vai trò")}</th>
                 <th className="py-2.5 px-3 text-center w-24">{translateUi("Trạng thái")}</th>
                 <th className="py-2.5 px-3 text-center w-10">{translateUi("Xóa")}</th>
               </tr>
@@ -579,18 +582,31 @@ export function ParticipantsEditor({
                         list={`${listId}-d`}
                         placeholder={translateUi("Phòng ban...")}
                         value={row.department}
-                        onChange={(e) => updateRow(idx, { department: e.target.value })}
+                        onChange={(e) => {
+                          const department = e.target.value;
+                          const options = positionsFor(department);
+                          updateRow(idx, { department, position: options.length === 1 ? options[0].name : '' });
+                        }}
                         className="tp-participant-input"
                       />
                     </td>
                     <td className="py-1.5 px-2.5">
                       <input
-                        list={`${listId}-p`}
+                        list={`${listId}-p-${idx}`}
                         placeholder="Vị trí..."
                         value={row.position}
                         onChange={(e) => updateRow(idx, { position: e.target.value })}
                         className="tp-participant-input"
                       />
+                    </td>
+                    <td className="py-1.5 px-2.5">
+                      <select aria-label={translateUi(`Vai trò dòng ${idx + 1}`)} value={row.role ?? 'EMPLOYEE'}
+                        onChange={(event) => updateRow(idx, { role: event.target.value })}
+                        className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm">
+                        {rowError(row)?.startsWith('Vai trò') && <option value={row.role}>{row.role}</option>}
+                        <option value="EMPLOYEE">{translateUi('Nhân viên')}</option>
+                        <option value="MANAGER">{translateUi('Trưởng phòng')}</option>
+                      </select>
                     </td>
                     <td className="py-2 px-3 text-center">
                       {empty ? (
@@ -655,11 +671,14 @@ export function ParticipantsEditor({
           <option key={d} value={d} />
         ))}
       </datalist>
-      <datalist id={`${listId}-p`}>
-        {allPositions.map((p) => (
-          <option key={p} value={p} />
-        ))}
+      <datalist id={`${listId}-p-manual`}>
+        {positionsFor(manualDraft.department).map((item) => <option key={item.id} value={item.name} />)}
       </datalist>
+      {rows.slice(start, start + pageSize).map((row, index) => (
+        <datalist key={start + index} id={`${listId}-p-${start + index}`}>
+          {positionsFor(row.department).map((item) => <option key={item.id} value={item.name} />)}
+        </datalist>
+      ))}
     </div>
   );
 }

@@ -30,7 +30,7 @@ export function DepartmentDetailPage() {
   });
   const { data: positionsData, isLoading: positionsLoading } = useJobPositions({
     departmentId: id,
-    includeAssignedPositions: true,
+    status: 'ACTIVE',
     pageSize: 50,
   });
 

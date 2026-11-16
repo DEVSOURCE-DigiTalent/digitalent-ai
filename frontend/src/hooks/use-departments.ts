@@ -5,7 +5,7 @@ import { departmentService, type CreateDepartmentRequest, type UpdateDepartmentR
  * Data a department change shows up in: department lists and details, member rows (department name, manager scope)
  * and the overview setup steps.
  */
-const DEPARTMENT_DEPENDENT_KEYS = [['departments'], ['members'], ['organization', 'overview']];
+const DEPARTMENT_DEPENDENT_KEYS = [['departments'], ['members'], ['employees'], ['job-positions'], ['workforce'], ['skill-gaps', 'learning-needs'], ['organization', 'overview']];
 
 function useInvalidateDepartments() {
   const qc = useQueryClient();

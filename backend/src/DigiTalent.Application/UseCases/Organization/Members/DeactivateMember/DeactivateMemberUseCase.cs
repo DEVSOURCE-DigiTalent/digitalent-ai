@@ -46,6 +46,10 @@ public class DeactivateMemberUseCase : IUseCase<DeactivateMemberUseCaseInput, De
             throw new ConflictException("The member is already deactivated.");
         }
 
+        if (member.EmployeeId.HasValue && await _context.Departments.AnyAsync(d =>
+            d.OrganizationId == organizationId && d.ManagerEmployeeId == member.EmployeeId && d.Status != Statuses.MasterData.Archived))
+            throw new ConflictException("Không thể ngừng tài khoản trưởng phòng đang phụ trách.");
+
         await MemberRules.EnsureAnotherOwnerRemainsAsync(_directory, organizationId, member);
 
         // 2. Account and employee profile become INACTIVE

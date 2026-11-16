@@ -192,6 +192,7 @@ export function PositionListPage() {
           <Link to="/enterprise/setup?tab=positions" className="positions-back"><ArrowLeft className="size-4" />{translateUi(" Khung năng lực số")}</Link>
           <div className="positions-eyebrow"><BriefcaseBusiness className="size-4" />{translateUi(" CẤU TRÚC TỔ CHỨC")}</div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.04em] heading-gradient">{translateUi("Quản lý vị trí công việc")}</h1>
+          <p className="mt-1 text-sm text-slate-600">{translateUi("Mỗi phòng ban có một vị trí công việc. Nhân sự dùng vị trí của phòng ban mình.")}</p>
         </div>
         {canManagePositions && (
           <button

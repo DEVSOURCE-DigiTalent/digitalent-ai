@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Departments;
@@ -41,6 +42,7 @@ public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInp
         // 3. Đếm tổng số dòng (để frontend tính số trang)
         var totalItems = await query.CountAsync();
 
+        var now = DateTimeOffset.UtcNow;
         // 4. Lấy dữ liệu của trang hiện tại
         var items = await query
             .OrderBy(d => d.Code)
@@ -57,6 +59,9 @@ public class GetPagedDepartmentsUseCase : IUseCase<GetPagedDepartmentsUseCaseInp
                     .Select(p => p.Name)
                     .FirstOrDefault(),
                 ManagerEmployeeId = d.ManagerEmployeeId,
+                HasPendingManagerInvitation = _context.MemberInvitations.Any(i => i.DepartmentId == d.Id
+                    && i.Status == Statuses.MemberInvitation.Pending && i.ExpiresAt > now
+                    && _context.Roles.Any(r => r.Id == i.RoleId && r.Code == Roles.Manager)),
                 ManagerName = _context.Employees
                     .Where(e => e.Id == d.ManagerEmployeeId)
                     .Select(e => e.FullName)

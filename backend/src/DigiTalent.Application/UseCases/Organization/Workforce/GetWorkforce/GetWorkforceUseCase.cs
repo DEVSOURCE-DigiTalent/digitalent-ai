@@ -40,11 +40,6 @@ public class GetWorkforceUseCase : IUseCase<GetWorkforceUseCaseInput, GetWorkfor
             employees = employees.Where(e => e.DepartmentId == input.DepartmentId.Value);
         }
 
-        if (input.JobPositionId.HasValue)
-        {
-            employees = employees.Where(e => e.JobPositionId == input.JobPositionId.Value);
-        }
-
         if (!string.IsNullOrWhiteSpace(input.Search))
         {
             var keyword = input.Search.Trim().ToLower();
@@ -52,7 +47,8 @@ public class GetWorkforceUseCase : IUseCase<GetWorkforceUseCaseInput, GetWorkfor
         }
 
         var rows = (await _reader.LoadRowsAsync(employees))
-            .Where(row => MatchesGap(row, input.Gap) && MatchesLearning(row, input.Learning))
+            .Where(row => (!input.JobPositionId.HasValue || row.JobPositionId == input.JobPositionId)
+                && MatchesGap(row, input.Gap) && MatchesLearning(row, input.Learning))
             .OrderByDescending(row => row.HighCount ?? -1)
             .ThenByDescending(row => row.GapCount ?? -1)
             .ThenBy(row => row.FullName, NameOrder.Vietnamese)

@@ -26,7 +26,20 @@ public class WorkforceTests
     {
         var context = PostgresTestDatabase.CreateContext();
         await PostgresTestDatabase.MigrateAsync(context);
-        return await SkillGapTestWorld.CreateAsync(context);
+        var world = await SkillGapTestWorld.CreateAsync(context);
+        world.DataAnalyst.DepartmentId = world.DepartmentA.Id;
+        var noSet = await context.JobPositions.FindAsync(world.NoActiveSetEmployee.JobPositionId!.Value);
+        noSet!.DepartmentId = world.DepartmentB.Id;
+        var unassignedDepartment = new Department
+        {
+            OrganizationId = world.Unassigned.OrganizationId,
+            Code = $"OPEN_{Guid.NewGuid():N}"[..15],
+            Name = "Chưa đặt vị trí",
+        };
+        context.Departments.Add(unassignedDepartment);
+        world.Unassigned.DepartmentId = unassignedDepartment.Id;
+        await context.SaveChangesAsync();
+        return world;
     }
 
     private static async Task CalculateAsync(SkillGapTestWorld world, params Employee[] employees)

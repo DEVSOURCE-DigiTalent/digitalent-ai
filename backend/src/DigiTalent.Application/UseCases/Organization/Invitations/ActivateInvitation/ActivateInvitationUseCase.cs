@@ -1,8 +1,10 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Departments;
 using DigiTalent.Application.UseCases.Organization.Members;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +27,16 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
     }
 
     public async Task<ActivateInvitationUseCaseOutput> ExecuteAsync(ActivateInvitationUseCaseInput input)
+    {
+        ActivateInvitationUseCaseOutput? result = null;
+        await _context.ExecuteInSerializableTransactionAsync(async () =>
+        {
+            result = await ExecuteCoreAsync(input);
+        });
+        return result!;
+    }
+
+    private async Task<ActivateInvitationUseCaseOutput> ExecuteCoreAsync(ActivateInvitationUseCaseInput input)
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -68,7 +80,30 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
         });
 
         // 4. Employee profile, placed as invited (falls back to the first active department)
-        var employee = await CreateEmployeeAsync(invitation, user, fullName);
+        var roleCode = await _context.Roles.Where(r => r.Id == invitation.RoleId).Select(r => r.Code).SingleAsync();
+        var employee = await CreateEmployeeAsync(invitation, user, fullName, roleCode);
+
+        var isManager = roleCode == Roles.Manager;
+        if (isManager && employee != null)
+        {
+            var department = await _context.Departments.SingleAsync(d => d.Id == employee.DepartmentId && d.OrganizationId == invitation.OrganizationId);
+            if (department.ManagerEmployeeId.HasValue && department.ManagerEmployeeId != employee.Id)
+                throw new ConflictException("Phòng ban đã có trưởng phòng. Hãy nhờ doanh nghiệp kiểm tra lại lời mời.");
+            department.ManagerEmployeeId = employee.Id;
+            employee.DirectManagerId = null;
+            var colleagues = await _context.Employees.Where(e => e.DepartmentId == department.Id
+                && e.Id != employee.Id && e.Status != Statuses.Employee.Archived).ToListAsync();
+            foreach (var colleague in colleagues)
+                colleague.DirectManagerId = employee.Id;
+
+            var employeeRoleId = await _context.Roles.Where(r => r.Code == Roles.Employee).Select(r => (Guid?)r.Id).SingleOrDefaultAsync();
+            if (employeeRoleId.HasValue)
+                _context.UserRoles.Add(new UserRole
+                {
+                    UserId = user.Id, RoleId = employeeRoleId.Value,
+                    AssignedByUserId = invitation.InvitedByUserId, AssignedAt = now,
+                });
+        }
 
         // 5. Close the invitation and log the activation in the organization's audit trail
         invitation.Status = Statuses.MemberInvitation.Accepted;
@@ -97,7 +132,7 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
     }
 
     /// <returns>The linked or new profile, or null when the organization has no active department yet.</returns>
-    private async Task<Employee?> CreateEmployeeAsync(MemberInvitation invitation, User user, string fullName)
+    private async Task<Employee?> CreateEmployeeAsync(MemberInvitation invitation, User user, string fullName, string roleCode)
     {
         // HR may already have created a profile without account for this person (employees API): link it
         // instead of creating a duplicate (work e-mail is unique per organization)
@@ -113,8 +148,6 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
                 throw new ConflictException("Hồ sơ nhân viên đang ở phòng ban khác lời mời. Hãy nhờ doanh nghiệp kiểm tra lại.");
             if (invitation.JobPositionId.HasValue && existing.JobPositionId != invitation.JobPositionId.Value)
                 throw new ConflictException("Vị trí trên hồ sơ nhân viên khác lời mời. Hãy nhờ doanh nghiệp kiểm tra lại.");
-            existing.UserId = user.Id;
-            return existing;
         }
 
         var activeDepartments = _context.Departments
@@ -122,8 +155,10 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
 
         var department = invitation.DepartmentId.HasValue
             ? await activeDepartments.FirstOrDefaultAsync(d => d.Id == invitation.DepartmentId.Value)
-            : await activeDepartments.OrderBy(d => d.Code).FirstOrDefaultAsync();
-        if (invitation.DepartmentId.HasValue && department == null)
+            : existing != null
+                ? await activeDepartments.FirstOrDefaultAsync(d => d.Id == existing.DepartmentId)
+                : await activeDepartments.OrderBy(d => d.Code).FirstOrDefaultAsync();
+        if ((invitation.DepartmentId.HasValue || existing != null) && department == null)
             throw new ConflictException("Phòng ban trong lời mời không còn hoạt động. Hãy nhờ doanh nghiệp gửi lại lời mời.");
         if (department == null)
         {
@@ -131,16 +166,31 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
             return null;
         }
 
-        var positionIsActive = invitation.JobPositionId.HasValue && await _context.JobPositions.AnyAsync(p =>
-            p.Id == invitation.JobPositionId.Value && p.OrganizationId == invitation.OrganizationId && p.Status == Statuses.MasterData.Active);
+        if (invitation.JobPositionId.HasValue && !await _context.JobPositions.AnyAsync(p =>
+            p.Id == invitation.JobPositionId.Value && p.OrganizationId == invitation.OrganizationId
+            && (p.DepartmentId == null || p.DepartmentId == department.Id) && p.Status == Statuses.MasterData.Active))
+            throw new ConflictException("Vị trí trong lời mời không còn hợp lệ cho phòng ban. Hãy nhờ doanh nghiệp kiểm tra lại lời mời.");
+
+        var directManagerId = roleCode == Roles.Manager
+            ? null
+            : await DepartmentRules.ResolveDirectManagerAsync(_context, department.Id, null);
+        if (roleCode == Roles.Employee && invitation.DepartmentId.HasValue && !directManagerId.HasValue)
+            throw new ConflictException("Trưởng phòng cần kích hoạt tài khoản trước. Bạn có thể dùng lại liên kết này sau.");
+
+        if (existing != null)
+        {
+            existing.UserId = user.Id;
+            existing.DirectManagerId = directManagerId == existing.Id ? null : directManagerId;
+            return existing;
+        }
 
         var employee = new Employee
         {
             OrganizationId = invitation.OrganizationId,
             UserId = user.Id,
             DepartmentId = department.Id,
-            JobPositionId = positionIsActive ? invitation.JobPositionId : null,
-            DirectManagerId = department.ManagerEmployeeId,
+            JobPositionId = invitation.JobPositionId,
+            DirectManagerId = directManagerId,
             EmployeeCode = await EmployeeCodeGenerator.NextAsync(_context, invitation.OrganizationId, invitation.EmployeeCode),
             FullName = fullName,
             WorkEmail = invitation.Email,

@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using System.Text.Json;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
@@ -32,8 +33,9 @@ public class CreatePlatformCatalogCourseUseCase : IUseCase<CreatePlatformCatalog
     public async Task<PlatformCatalogCourseDetail> ExecuteAsync(CreatePlatformCatalogCourseUseCaseInput input)
     {
         var draft = await _editor.DraftAsync(input.VersionNo);
-        var code = input.Code.Trim().ToUpperInvariant();
-        if (await _context.PlatformCourses.AnyAsync(c => c.Code == code))
+        var code = CourseCodes.Canonical(input.Code.Trim().ToUpperInvariant());
+        var aliases = CourseCodes.Aliases(code);
+        if (await _context.PlatformCourses.AnyAsync(c => aliases.Contains(c.Code)))
         {
             throw new ConflictException($"Mã khóa học '{code}' đã được dùng.");
         }

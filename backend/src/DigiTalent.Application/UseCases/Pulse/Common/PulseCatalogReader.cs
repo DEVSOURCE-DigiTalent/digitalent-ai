@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,8 @@ public class PulseCatalogReader
             .Where(course => course.OrganizationId == organizationId && course.Status == Statuses.Course.Published);
         if (trialCourseCodes != null)
         {
-            publishedCourses = publishedCourses.Where(course => trialCourseCodes.Contains(course.Code));
+            var trialAliases = trialCourseCodes.SelectMany(CourseCodes.Aliases).Distinct().ToArray();
+            publishedCourses = publishedCourses.Where(course => trialAliases.Contains(course.Code));
         }
 
         var rows = await (

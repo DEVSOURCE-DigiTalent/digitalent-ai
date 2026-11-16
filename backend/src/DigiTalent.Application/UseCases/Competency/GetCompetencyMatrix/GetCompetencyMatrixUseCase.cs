@@ -4,6 +4,7 @@ using DigiTalent.Application.Common.Models;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Competency.Common;
 using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,7 +45,9 @@ public class GetCompetencyMatrixUseCase : IUseCase<GetCompetencyMatrixUseCaseInp
 
         var employees = await LoadEmployeesAsync(input);
         var employeeIds = employees.Select(e => e.EmployeeId).ToList();
-        var required = await LoadRequiredLevelsAsync(employees.Where(e => e.JobPositionId != null).Select(e => e.JobPositionId!.Value).Distinct().ToList());
+        var positionIds = employees.Where(e => e.JobPositionId.HasValue).Select(e => e.JobPositionId!.Value).Distinct().ToArray();
+        var targets = await new PositionTargetsReader(_context).LoadAsync(_currentUser.GetRequiredOrganizationId(), positionIds);
+        var required = await LoadRequiredLevelsAsync(positionIds.Where(id => targets.GetValueOrDefault(id)?.UsesSystemReference != true).ToList());
         var held = await LoadConfirmedLevelsAsync(employeeIds);
         var runs = await _latestRuns.LoadAsync(employeeIds);
 
@@ -53,8 +56,14 @@ public class GetCompetencyMatrixUseCase : IUseCase<GetCompetencyMatrixUseCaseInp
             employee.CoveragePercent = runs.TryGetValue(employee.EmployeeId, out var run) ? run.Summary?.CoveragePercent : null;
             foreach (var competency in competencies)
             {
-                var requiredLevel = employee.JobPositionId != null
-                    && required.TryGetValue((employee.JobPositionId.Value, competency.Id), out var level) ? level : 0;
+                var requiredLevel = 0;
+                if (employee.JobPositionId is Guid positionId)
+                {
+                    var standard = targets.GetValueOrDefault(positionId);
+                    requiredLevel = standard?.UsesSystemReference == true
+                        ? standard.Levels.GetValueOrDefault(competency.CategoryId)
+                        : required.GetValueOrDefault((positionId, competency.Id));
+                }
                 held.TryGetValue((employee.EmployeeId, competency.Id), out var confirmed);
                 var cell = new MatrixCell
                 {
@@ -112,11 +121,6 @@ public class GetCompetencyMatrixUseCase : IUseCase<GetCompetencyMatrixUseCaseInp
             employees = employees.Where(e => e.DepartmentId == input.DepartmentId.Value);
         }
 
-        if (input.JobPositionId.HasValue)
-        {
-            employees = employees.Where(e => e.JobPositionId == input.JobPositionId.Value);
-        }
-
         if (!string.IsNullOrWhiteSpace(input.Search))
         {
             var keyword = input.Search.Trim().ToLower();
@@ -125,11 +129,13 @@ public class GetCompetencyMatrixUseCase : IUseCase<GetCompetencyMatrixUseCaseInp
 
         var grade = input.JobGrade?.Trim().ToUpperInvariant();
         var rows = await (
-                from employee in employees.AsNoTracking()
+                from placement in EffectiveJobPositions.Resolve(_context, employees.AsNoTracking())
+                let employee = placement.Employee
                 join department in _context.Departments.AsNoTracking() on employee.DepartmentId equals department.Id
-                join position in _context.JobPositions.AsNoTracking() on employee.JobPositionId equals position.Id into positions
+                join position in _context.JobPositions.AsNoTracking() on placement.PositionId equals position.Id into positions
                 from position in positions.DefaultIfEmpty()
-                where grade == null || (position != null && position.JobGrade == grade)
+                where (!input.JobPositionId.HasValue || placement.PositionId == input.JobPositionId)
+                    && (grade == null || (position != null && position.JobGrade == grade))
                 select new MatrixEmployee
                 {
                     EmployeeId = employee.Id,
@@ -137,7 +143,7 @@ public class GetCompetencyMatrixUseCase : IUseCase<GetCompetencyMatrixUseCaseInp
                     FullName = employee.FullName,
                     DepartmentId = employee.DepartmentId,
                     DepartmentName = department.Name,
-                    JobPositionId = employee.JobPositionId,
+                    JobPositionId = placement.PositionId,
                     JobPositionName = position != null ? position.Name : null,
                     JobGrade = position != null ? position.JobGrade : null,
                 })

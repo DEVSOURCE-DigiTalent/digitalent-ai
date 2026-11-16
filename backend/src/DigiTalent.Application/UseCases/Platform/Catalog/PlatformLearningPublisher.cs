@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -26,15 +27,14 @@ public sealed class PlatformLearningPublisher(IApplicationDbContext context)
         foreach (var item in published)
         {
             var code = item.Code;
-            // Legacy organizations use M1; map only the known historical alias, without adding duplicate A1 courses.
-            var alias = code.StartsWith("A1-", StringComparison.Ordinal) ? code.Replace("A1-", "M1-") : code;
+            var aliases = CourseCodes.Aliases(code);
             var targets = await context.Courses.AsNoTracking()
-                .Where(c => (c.Code == code || c.Code == alias) && c.Status == Statuses.Course.Published && (organizationId == null || c.OrganizationId == organizationId))
+                .Where(c => aliases.Contains(c.Code) && c.Status == Statuses.Course.Published && (organizationId == null || c.OrganizationId == organizationId))
                 .ToListAsync();
             // A newly added course inherits the existing domain mapping in each provisioned organization.
             var siblingCodes = await context.PlatformCourses.AsNoTracking().Where(c => c.DomainId == item.Row.DomainId)
                 .Select(c => c.Code).ToListAsync();
-            siblingCodes.AddRange(siblingCodes.Where(c => c.StartsWith("A1-", StringComparison.Ordinal)).Select(c => c.Replace("A1-", "M1-")).ToList());
+            siblingCodes = siblingCodes.SelectMany(CourseCodes.Aliases).Distinct().ToList();
             var mappedOrganizations = targets.Select(c => c.OrganizationId).ToList();
             var siblings = await context.Courses.AsNoTracking()
                 .Where(c => siblingCodes.Contains(c.Code) && c.Status == Statuses.Course.Published && !mappedOrganizations.Contains(c.OrganizationId) && (organizationId == null || c.OrganizationId == organizationId)).ToListAsync();
@@ -52,8 +52,8 @@ public sealed class PlatformLearningPublisher(IApplicationDbContext context)
             foreach (var group in targets.GroupBy(c => (c.OrganizationId, c.Code)))
             {
                 var previous = group.OrderByDescending(c => c.VersionNo).First();
-                var isNew = previous.Code != code && previous.Code != alias;
-                var targetCode = isNew ? code : previous.Code;
+                var isNew = !aliases.Contains(previous.Code);
+                var targetCode = isNew ? CourseCodes.Canonical(code) : previous.Code;
                 var id = Id($"catalog-learning:{item.Row.Id}:{previous.OrganizationId}:{targetCode}");
                 if (await context.Courses.AnyAsync(c => c.Id == id)) continue;
                 var course = new Course

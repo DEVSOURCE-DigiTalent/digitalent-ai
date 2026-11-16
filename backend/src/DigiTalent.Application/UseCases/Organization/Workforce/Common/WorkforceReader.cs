@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Services.Intelligence.SkillGap;
 using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -25,9 +26,10 @@ public class WorkforceReader
     public async Task<List<WorkforceRow>> LoadRowsAsync(IQueryable<Employee> employees)
     {
         var people = await (
-                from employee in employees.AsNoTracking()
+                from placement in EffectiveJobPositions.Resolve(_context, employees.AsNoTracking())
+                let employee = placement.Employee
                 join department in _context.Departments.AsNoTracking() on employee.DepartmentId equals department.Id
-                join position in _context.JobPositions.AsNoTracking() on employee.JobPositionId equals position.Id into positions
+                join position in _context.JobPositions.AsNoTracking() on placement.PositionId equals position.Id into positions
                 from position in positions.DefaultIfEmpty()
                 join manager in _context.Employees.AsNoTracking() on employee.DirectManagerId equals manager.Id into managers
                 from manager in managers.DefaultIfEmpty()
@@ -40,7 +42,7 @@ public class WorkforceReader
                         UserId = employee.UserId,
                         DepartmentId = employee.DepartmentId,
                         DepartmentName = department.Name,
-                        JobPositionId = employee.JobPositionId,
+                        JobPositionId = placement.PositionId,
                         PositionName = position != null ? position.Name : null,
                         DirectManagerId = employee.DirectManagerId,
                         DirectManagerName = manager != null ? manager.FullName : null,
@@ -54,7 +56,7 @@ public class WorkforceReader
                         UpdatedAt = employee.UpdatedAt,
                     },
                     HasActiveRequirementSet = _context.PositionRequirementSets.Any(set =>
-                        set.JobPositionId == employee.JobPositionId && set.Status == Statuses.PositionRequirementSet.Active),
+                        set.JobPositionId == placement.PositionId && set.Status == Statuses.PositionRequirementSet.Active),
                 })
             .ToListAsync();
         if (people.Count == 0)

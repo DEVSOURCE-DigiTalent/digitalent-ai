@@ -10,9 +10,9 @@ const QUERY_KEY = ['job-positions'];
 
 /**
  * Data a position change shows up in: position lists and details, member rows (position, grade), department and
- * grade counts, and the overview setup steps.
+ * grade counts, the overview setup steps, and live skill-gap comparisons.
  */
-const POSITION_DEPENDENT_KEYS = [QUERY_KEY, ['members'], ['departments'], ['job-grades'], ['organization', 'overview']];
+const POSITION_DEPENDENT_KEYS = [QUERY_KEY, ['members'], ['employees'], ['workforce'], ['departments'], ['job-grades'], ['organization', 'overview'], ['skill-gaps', 'learning-needs']];
 
 function useInvalidatePositions() {
   const queryClient = useQueryClient();

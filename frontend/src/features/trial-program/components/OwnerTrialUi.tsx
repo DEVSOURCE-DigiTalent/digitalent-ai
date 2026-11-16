@@ -175,9 +175,16 @@ export function Steps({ steps, current, label = 'Các bước dùng thử' }: { 
 
 const nextCourseSuffix = ['F', 'I', 'A'];
 
-function courseSuggestion(domain: TrialReport['summary'][number]) {
-  const level = domain.counts.findIndex((count, index) => index < 3 && count > 0) + 1;
-  return level > 0 ? { level, code: `M${domain.number}-${nextCourseSuffix[level - 1]}` } : null;
+function summarizeDomain(domain: TrialReport['summary'][number], employees: TrialReport['employees']) {
+  const comparisons = employees.flatMap((employee) => (employee.domainDetails ?? []).flatMap((detail) =>
+    detail.categoryId === domain.categoryId && detail.targetLevel
+      ? [{ level: detail.level, target: detail.targetLevel }]
+      : []));
+  const targets = [...new Set(comparisons.map(({ target }) => target))].sort((a, b) => a - b);
+  const gaps = comparisons.filter(({ level, target }) => level < target);
+  const level = gaps.reduce((lowest, detail) => Math.min(lowest, detail.level + 1), 3);
+  const course = gaps.length ? { level, code: `M${domain.number}-${nextCourseSuffix[level - 1]}` } : null;
+  return { ...domain, targets, comparedCount: comparisons.length, gapCount: gaps.length, course };
 }
 
 /** Bảng năng lực của doanh nghiệp: phân bố mức theo lĩnh vực và mức của từng nhân viên. */
@@ -208,10 +215,10 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
   const employeePageCount = Math.max(1, Math.ceil(filteredEmployees.length / employeePageSize));
   const activeEmployeePage = Math.min(employeePage, employeePageCount);
   const visibleEmployees = filteredEmployees.slice((activeEmployeePage - 1) * employeePageSize, activeEmployeePage * employeePageSize);
-  const sortedByPriority = [...report.summary].sort((a, b) =>
-    (b.counts[0] ?? 0) - (a.counts[0] ?? 0) || a.average - b.average || a.number - b.number);
-  const topFocusDomain = sortedByPriority.find((domain) => courseSuggestion(domain));
-  const focusCourse = topFocusDomain ? courseSuggestion(topFocusDomain) : null;
+  const sortedByPriority = report.summary.map((domain) => summarizeDomain(domain, report.employees)).sort((a, b) =>
+    b.gapCount - a.gapCount || (b.averageGap ?? 0) - (a.averageGap ?? 0) || a.average - b.average || a.number - b.number);
+  const topFocusDomain = sortedByPriority.find((domain) => domain.course);
+  const focusCourse = topFocusDomain?.course;
   const scores = report.employees.reduce(({ correct, total }, employee) =>
     employee.choiceScore != null && employee.choiceTotal != null && employee.choiceTotal > 0
       ? { correct: correct + employee.choiceScore, total: total + employee.choiceTotal }
@@ -256,9 +263,7 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-teal-800">{translateUi('Cần ưu tiên')}</p>
                 <p className="mt-2 text-base font-bold leading-snug text-slate-900">{translateUi(topFocusDomain.name)}</p>
-                {topFocusDomain.counts[0] > 0 && (
-                  <p className="mt-1 text-sm text-slate-700">{topFocusDomain.counts[0]} {translateUi('người chưa đạt Cơ bản')}</p>
-                )}
+                <p className="mt-1 text-sm text-slate-700">{topFocusDomain.gapCount} {translateUi('người cần bổ sung theo chuẩn vị trí')}</p>
               </div>
               <Link to={`/enterprise/courses?focus=${focusCourse.code}&level=${focusCourse.level}`} className="inline-flex items-center gap-2 rounded-xl border border-transparent bg-[#125c61] px-3 py-2 text-sm font-semibold text-white hover:bg-[#164957] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 motion-safe:transition-colors">
                 <BookOpen size={15} aria-hidden="true" />{translateUi('Xem khóa')} {focusCourse.code}
@@ -281,7 +286,8 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="py-3 px-4">{translateUi("Lĩnh vực")}</th>
-                <th className="py-3 px-3 text-center">{translateUi("Mức tham khảo")}</th>
+                <th className="py-3 px-3 text-center">{translateUi('Mức đạt trung bình')}</th>
+                <th className="py-3 px-3 text-center">{translateUi('Chuẩn vị trí')}</th>
                 <th className="py-3 px-4 min-w-[220px]">{translateUi("Phân bổ (")}{report.assessed} người)</th>
                 <th className="py-3 px-4 min-w-[180px]">{translateUi("Khóa học đề xuất")}</th>
               </tr>
@@ -291,7 +297,7 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
                 const theme = DOMAIN_THEMES[row.number - 1] || DOMAIN_THEMES[0];
                 const Icon = theme.icon;
 
-                const course = courseSuggestion(row);
+                const course = row.course;
 
                 return (
                   <tr key={row.categoryId} className="hover:bg-slate-50/70 transition-colors group">
@@ -315,6 +321,18 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
 
                     <td className="py-3.5 px-3 text-center">
                       <LevelBadge level={row.level} />
+                    </td>
+                    <td className="py-3.5 px-3 text-center">
+                      {row.targets.length ? (
+                        <>
+                          <div className="flex flex-wrap justify-center gap-1.5">
+                            {row.targets.map((target) => <LevelBadge key={target} level={target} size="sm" />)}
+                          </div>
+                          <p className="mt-1.5 text-slate-600">
+                            {row.comparedCount - row.gapCount}/{row.comparedCount} {translateUi('đạt chuẩn')}
+                          </p>
+                        </>
+                      ) : <span className="text-slate-600">{translateUi('Chưa có chuẩn')}</span>}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -635,6 +653,9 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
                       advancedTotal: 0,
                       mentorLevel: null,
                       recommendedCourse: '',
+                      targetLevel: 0,
+                      usesSystemReference: false,
+                      skillGap: 0,
                     }))
                 ).map((detail) => {
                   const theme = DOMAIN_THEMES[detail.number - 1] || DOMAIN_THEMES[0];
@@ -667,6 +688,13 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
                           {detail.mentorLevel != null && <p className="mt-1 text-right text-[11px] text-slate-600">{translateUi('Mentor xác nhận')}</p>}
                         </div>
                       </div>
+
+                      {detail.targetLevel ? (
+                        <p className="text-xs text-slate-700">
+                          {translateUi(detail.usesSystemReference ? 'Chuẩn hệ thống' : 'Chuẩn doanh nghiệp')} · {translateUi(LEVEL_LABELS[detail.targetLevel])}
+                          {' · '}{detail.skillGap ? translateUi(`Thiếu ${detail.skillGap} cấp`) : translateUi('Đạt chuẩn')}
+                        </p>
+                      ) : null}
 
                       {/* Middle: Thông tin Trắc nghiệm lý thuyết */}
                       {totals.total > 0 && <div className="rounded-xl bg-slate-50 border border-slate-100 p-2.5 space-y-1.5">

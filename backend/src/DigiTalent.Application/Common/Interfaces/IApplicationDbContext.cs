@@ -157,6 +157,7 @@ public interface IApplicationDbContext
     /// Domain event vẫn được xử lý; tác vụ sau commit chạy khi transaction này commit. Không lồng nhau.
     /// </summary>
     Task ExecuteInTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default);
+    Task ExecuteInSerializableTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

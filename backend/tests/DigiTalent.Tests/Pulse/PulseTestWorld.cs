@@ -11,6 +11,7 @@ using DigiTalent.Infrastructure.Auth;
 using DigiTalent.Infrastructure.Content;
 using DigiTalent.Infrastructure.Persistence;
 using DigiTalent.Infrastructure.Persistence.Seed;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -275,7 +276,13 @@ internal sealed class PulseTestWorld : IDisposable
         var course = await uc.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = courseId });
         foreach (var module in course.Modules)
         {
-            await PassModuleAsync(uc, courseId, module.ModuleId);
+            if (module.HasQuiz)
+                await PassModuleAsync(uc, courseId, module.ModuleId);
+            else
+            {
+                await uc.MarkViewed.ExecuteAsync(new MarkPulseModuleViewedUseCaseInput { CourseId = courseId, ModuleId = module.ModuleId });
+                Context.ChangeTracker.Clear();
+            }
         }
     }
 
@@ -285,6 +292,7 @@ internal sealed class PulseTestWorld : IDisposable
         Context.ChangeTracker.Clear();
         var module = await uc.GetModule.ExecuteAsync(new GetPulseModuleUseCaseInput { CourseId = courseId, ModuleId = moduleId });
         var answers = new List<PulseAnswerInput>();
+        module.Quiz.Should().NotBeNull($"module {moduleId} must have an available quiz; block reason: {module.QuizBlockReason}");
         foreach (var question in module.Quiz!.Questions)
         {
             answers.Add(new PulseAnswerInput { QuestionId = question.QuestionId, OptionId = await CorrectOptionAsync(question.QuestionId) });

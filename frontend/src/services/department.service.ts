@@ -33,6 +33,7 @@ export interface DepartmentListItem {
   parentDepartmentId?: string;
   parentDepartmentName?: string;
   managerEmployeeId?: string;
+  hasPendingManagerInvitation?: boolean;
   managerName?: string;
   headcount?: number;
   gradeDistribution?: Record<string, number>;

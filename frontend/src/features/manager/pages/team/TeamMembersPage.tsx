@@ -47,7 +47,7 @@ function DepartmentDirectory({ departmentId }: { departmentId: string }) {
     departmentId, search: search.trim() || undefined, positionId: positionId || undefined,
     status: status || undefined, pageIndex: page, pageSize,
   });
-  const positions = useJobPositions({ departmentId, includeAssignedPositions: true, pageIndex: 1, pageSize: 100 });
+  const positions = useJobPositions({ departmentId, status: 'ACTIVE', pageIndex: 1, pageSize: 100 });
   const total = employees.data?.totalItems ?? previousTotal;
   const lastPage = Math.max(1, Math.ceil(total / pageSize));
   const outOfRange = employees.data != null && page > lastPage;

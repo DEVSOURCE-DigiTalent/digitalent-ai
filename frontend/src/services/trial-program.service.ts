@@ -60,6 +60,7 @@ export interface TrialEmployeeDomainDetail {
   level: number;
   targetLevel?: number;
   skillGap?: number;
+  usesSystemReference?: boolean;
   levelLabel: string;
   statusText: string;
   gapText: string;
@@ -117,10 +118,12 @@ export interface TrialProgram {
   participants: TrialParticipant[];
   departments: string[];
   positions: string[];
+  positionsByDepartment?: Record<string, string[]>;
   report?: TrialReport | null;
 }
 
 export interface TrialParticipantRow {
+  role?: string;
   fullName: string;
   email: string;
   department: string;

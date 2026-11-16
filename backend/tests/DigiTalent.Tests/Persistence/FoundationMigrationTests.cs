@@ -82,10 +82,11 @@ public class FoundationMigrationTests
 
         hasher.Verify(h => h.Hash("test-only-password"), Times.Once);
         var seededEmails = await context.Users.Select(user => user.Email).ToListAsync();
-        seededEmails.Should().HaveCount(8);
+        seededEmails.Should().HaveCount(9);
         seededEmails.Should().Contain(new[]
         {
             "platform@digitalent.ai",
+            "admin@digitalent.ai",
             "mentor@digitalent.ai",
             "owner@digitalent.ai",
             "manager@digitalent.ai",

@@ -1,5 +1,7 @@
 using System.Text.Json;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.Competency.Common;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +13,7 @@ public sealed record SkillGapStageOutcome(Employee Employee, SkillGapRun? Run, S
 
 /// <summary>
 /// Dựng snapshot skill gap (skill_gap_runs + skill_gap_items) và ADD vào DbContext — KHÔNG SaveChanges,
-/// để use case / domain event handler quyết định transaction. Nạp dữ liệu theo lô (3 truy vấn cho cả danh sách).
+/// để use case / domain event handler quyết định transaction. Nạp dữ liệu theo lô cho cả danh sách.
 /// Snapshot chỉ thêm mới, không ghi đè (spec D-S3-07).
 /// </summary>
 public class SkillGapRunService
@@ -40,21 +42,48 @@ public class SkillGapRunService
         }
 
         var settings = await _settingsProvider.GetAsync(organizationId);
-        var setsByPosition = await LoadActiveSetsAsync(employees, requirementSetOverride);
+        var employeeIds = employees.Select(e => e.Id).ToList();
+        var positions = requirementSetOverride == null
+            ? await EffectiveJobPositions.Resolve(_context, _context.Employees.AsNoTracking()
+                    .Where(e => e.OrganizationId == organizationId && employeeIds.Contains(e.Id)))
+                .ToDictionaryAsync(row => row.Employee.Id, row => row.PositionId)
+            : new Dictionary<Guid, Guid?>();
+        var setsByPosition = await LoadActiveSetsAsync(positions.Values.Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList());
         var setIds = requirementSetOverride != null
             ? new List<Guid> { requirementSetOverride.Id }
             : setsByPosition.Values.Select(s => s.Id).Distinct().ToList();
         var requirementsBySet = await LoadRequirementsAsync(setIds);
-        var levelsByEmployee = await LoadConfirmedLevelsAsync(employees.Select(e => e.Id).ToList());
+        if (requirementSetOverride == null)
+        {
+            var targets = await new PositionTargetsReader(_context).LoadAsync(organizationId, setsByPosition.Keys.ToArray());
+            var systemSets = setsByPosition.Values.Where(set =>
+                targets.GetValueOrDefault(set.JobPositionId)?.UsesSystemReference == true).ToList();
+            if (systemSets.Count > 0)
+            {
+                var competencyIds = requirementsBySet.Values.SelectMany(lines => lines.Select(line => line.CompetencyId)).Distinct().ToArray();
+                var categories = await _context.Competencies.AsNoTracking().Where(c => competencyIds.Contains(c.Id))
+                    .ToDictionaryAsync(c => c.Id, c => c.CategoryId);
+                foreach (var set in systemSets)
+                {
+                    if (requirementsBySet.TryGetValue(set.Id, out var lines))
+                        requirementsBySet[set.Id] = lines.Select(line => line with
+                        {
+                            RequiredLevel = targets[set.JobPositionId].Levels.GetValueOrDefault(categories[line.CompetencyId], line.RequiredLevel),
+                        }).ToList();
+                }
+            }
+        }
+        var levelsByEmployee = await LoadConfirmedLevelsAsync(employeeIds);
         var generatedAt = DateTimeOffset.UtcNow;
 
         return employees
-            .Select(employee => Stage(employee, requirementSetOverride, setsByPosition, requirementsBySet, levelsByEmployee, settings, generatedBy, generatedAt))
+            .Select(employee => Stage(employee, positions.GetValueOrDefault(employee.Id), requirementSetOverride, setsByPosition, requirementsBySet, levelsByEmployee, settings, generatedBy, generatedAt))
             .ToList();
     }
 
     private SkillGapStageOutcome Stage(
         Employee employee,
+        Guid? positionId,
         PositionRequirementSet? requirementSetOverride,
         IReadOnlyDictionary<Guid, PositionRequirementSet> setsByPosition,
         IReadOnlyDictionary<Guid, List<SkillGapRequirementLine>> requirementsBySet,
@@ -71,12 +100,12 @@ public class SkillGapRunService
         var set = requirementSetOverride;
         if (set == null)
         {
-            if (employee.JobPositionId == null)
+            if (positionId == null)
             {
                 return Skip(employee, SkillGapSkipReasons.NoJobPosition);
             }
 
-            if (!setsByPosition.TryGetValue(employee.JobPositionId.Value, out set))
+            if (!setsByPosition.TryGetValue(positionId.Value, out set))
             {
                 return Skip(employee, SkillGapSkipReasons.NoActiveRequirementSet);
             }
@@ -143,18 +172,10 @@ public class SkillGapRunService
     };
 
     private async Task<Dictionary<Guid, PositionRequirementSet>> LoadActiveSetsAsync(
-        IReadOnlyList<Employee> employees, PositionRequirementSet? requirementSetOverride)
+        List<Guid> positionIds)
     {
-        if (requirementSetOverride != null)
-        {
+        if (positionIds.Count == 0)
             return new Dictionary<Guid, PositionRequirementSet>();
-        }
-
-        var positionIds = employees
-            .Where(e => e.JobPositionId.HasValue)
-            .Select(e => e.JobPositionId!.Value)
-            .Distinct()
-            .ToList();
 
         var sets = await _context.PositionRequirementSets
             .AsNoTracking()

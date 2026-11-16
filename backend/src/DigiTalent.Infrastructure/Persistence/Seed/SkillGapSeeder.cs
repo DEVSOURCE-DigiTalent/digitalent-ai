@@ -27,9 +27,7 @@ public static class SkillGapSeeder
     private const string DemoEmployeeEmail = "employee@digitalent.ai";
     private const string DemoEmployeePosition = "ACCOUNTANT";
 
-    /// <summary>manager@ trưởng phòng Operations: chọn Sales / CRM (gần nghiệp vụ vận hành, khách hàng nhất).</summary>
     private const string DemoManagerEmail = "manager@digitalent.ai";
-    private const string DemoManagerPosition = "SALES_CRM";
 
     public static async Task SeedReferenceAsync(AppDbContext db)
     {
@@ -94,8 +92,21 @@ public static class SkillGapSeeder
 
         var competencies = SeedFramework(db, organizationId);
         var positions = SeedPositions(db, organizationId, ownerUserId, competencies);
-        await AssignDemoEmployeeAsync(db, organizationId, DemoEmployeeEmail, positions[DemoEmployeePosition].Id);
-        await AssignDemoEmployeeAsync(db, organizationId, DemoManagerEmail, positions[DemoManagerPosition].Id);
+        await BindSeedPositionsAsync(db, organizationId, positions);
+        var demoPosition = positions[DemoEmployeePosition];
+        if (!demoPosition.DepartmentId.HasValue)
+        {
+            var opsId = await db.Departments.Where(d => d.OrganizationId == organizationId && d.Code == "OPS")
+                .Select(d => (Guid?)d.Id).FirstOrDefaultAsync();
+            if (opsId.HasValue && !await db.JobPositions.AnyAsync(p => p.DepartmentId == opsId && p.Status != Statuses.MasterData.Archived))
+                demoPosition.DepartmentId = opsId;
+        }
+        var demoDepartmentId = demoPosition.DepartmentId;
+        if (demoDepartmentId is Guid departmentId)
+        {
+            await AssignDemoEmployeeAsync(db, organizationId, departmentId, DemoEmployeeEmail, demoPosition.Id);
+            await AssignDemoEmployeeAsync(db, organizationId, departmentId, DemoManagerEmail, demoPosition.Id);
+        }
         await SeedEmployeeProfileAsync(db, organizationId, ownerUserId, competencies);
         SeedCourses(db, organizationId, authorUserId, competencies);
 
@@ -116,6 +127,7 @@ public static class SkillGapSeeder
 
         if (hasCategories && hasCourses)
         {
+            await EnsurePositionTemplatesAsync(db, organizationId, authorUserId);
             return;
         }
 
@@ -156,6 +168,71 @@ public static class SkillGapSeeder
                     .PublishAsync(versionId, effectiveAuthorId, DateTimeOffset.UtcNow, organizationId, includeUnchanged: true);
                 await db.SaveChangesAsync();
             }
+        }
+
+        await EnsurePositionTemplatesAsync(db, organizationId, effectiveAuthorId);
+    }
+
+    private static async Task EnsurePositionTemplatesAsync(AppDbContext db, Guid organizationId, Guid? authorUserId)
+    {
+        var codes = JobPositionCatalog.Positions.Keys.ToArray();
+        if (await db.JobPositions.CountAsync(p => p.OrganizationId == organizationId && codes.Contains(p.Code)
+            && db.PositionRequirementSets.Any(s => s.JobPositionId == p.Id)) == codes.Length
+            && !await db.Departments.AnyAsync(d => d.OrganizationId == organizationId && d.Status == Statuses.MasterData.Active
+                && codes.Contains(d.Code)
+                && db.JobPositions.Any(p => p.OrganizationId == organizationId && p.Code == d.Code
+                    && p.DepartmentId == null && p.Status == Statuses.MasterData.Active)
+                && !db.JobPositions.Any(p => p.DepartmentId == d.Id && p.Status != Statuses.MasterData.Archived)))
+            return;
+
+        await db.ExecuteInSerializableTransactionAsync(async () =>
+        {
+            var positions = await db.JobPositions.Where(p => p.OrganizationId == organizationId && codes.Contains(p.Code))
+                .ToDictionaryAsync(p => p.Code);
+            var competencyIds = await (
+                from competency in db.Competencies
+                join category in db.CompetencyCategories on competency.CategoryId equals category.Id
+                where category.OrganizationId == organizationId && competency.Code.StartsWith("TT02-")
+                select competency).ToListAsync();
+            var competencies = competencyIds.GroupBy(c => c.Code["TT02-".Length..])
+                .ToDictionary(g => g.Key, g => g.First());
+            var author = authorUserId ?? await db.Users.Where(u => u.OrganizationId == organizationId)
+                .Select(u => (Guid?)u.Id).FirstOrDefaultAsync();
+            if (author == null)
+                return;
+
+            foreach (var definition in Tt02Catalog.Positions)
+            {
+                var lines = Tt02Catalog.RequirementsFor(definition);
+                if (lines.Any(line => !competencies.ContainsKey(line.SourceCode)))
+                    continue;
+                if (!positions.TryGetValue(definition.Code, out var position))
+                {
+                    position = new JobPosition { OrganizationId = organizationId, Code = definition.Code, Name = definition.Name };
+                    db.JobPositions.Add(position);
+                    positions.Add(position.Code, position);
+                }
+                if (position.Status != Statuses.MasterData.Archived
+                    && !await db.PositionRequirementSets.AnyAsync(s => s.JobPositionId == position.Id))
+                    AddPositionStandard(db, position, author.Value, competencies, lines);
+            }
+
+            await BindSeedPositionsAsync(db, organizationId, positions);
+            await db.SaveChangesAsync();
+        });
+    }
+
+    private static async Task BindSeedPositionsAsync(AppDbContext db, Guid organizationId, Dictionary<string, JobPosition> positions)
+    {
+        var departments = await db.Departments.Where(d => d.OrganizationId == organizationId && d.Status == Statuses.MasterData.Active)
+            .ToListAsync();
+        var occupied = await db.JobPositions.Where(p => p.OrganizationId == organizationId && p.DepartmentId != null
+            && p.Status != Statuses.MasterData.Archived).Select(p => p.DepartmentId!.Value).ToListAsync();
+        foreach (var department in departments)
+        {
+            if (!occupied.Contains(department.Id) && positions.TryGetValue(department.Code, out var position)
+                && position.DepartmentId == null && position.Status == Statuses.MasterData.Active)
+                position.DepartmentId = department.Id;
         }
     }
 
@@ -250,7 +327,6 @@ public static class SkillGapSeeder
         var family = new JobFamily { OrganizationId = organizationId, Code = "OFFICE", Name = "Khối văn phòng" };
         db.JobFamilies.Add(family);
 
-        var now = DateTimeOffset.UtcNow;
         var result = new Dictionary<string, JobPosition>();
         foreach (var definition in Tt02Catalog.Positions)
         {
@@ -263,38 +339,46 @@ public static class SkillGapSeeder
             };
             db.JobPositions.Add(position);
 
-            var set = new PositionRequirementSet
-            {
-                JobPositionId = position.Id,
-                VersionNo = 1,
-                Status = Statuses.PositionRequirementSet.Active,
-                EffectiveFrom = DateOnly.FromDateTime(now.UtcDateTime),
-                CreatedByUserId = hrUserId,
-                ActivatedByUserId = hrUserId,
-                ActivatedAt = now,
-            };
-            foreach (var line in Tt02Catalog.RequirementsFor(definition))
-            {
-                set.Items.Add(new PositionRequirementItem
-                {
-                    RequirementSetId = set.Id,
-                    CompetencyId = competencies[line.SourceCode].Id,
-                    RequiredLevel = line.RequiredLevel,
-                    WeightPercent = line.WeightPercent,
-                    IsMandatory = line.Mandatory,
-                });
-            }
-            db.PositionRequirementSets.Add(set);
+            AddPositionStandard(db, position, hrUserId, competencies, Tt02Catalog.RequirementsFor(definition));
             result[definition.Code] = position;
         }
 
         return result;
     }
 
-    private static async Task AssignDemoEmployeeAsync(AppDbContext db, Guid organizationId, string email, Guid positionId)
+    private static void AddPositionStandard(AppDbContext db, JobPosition position, Guid hrUserId,
+        IReadOnlyDictionary<string, Competency> competencies, IEnumerable<Tt02Catalog.RequirementLine> lines)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var set = new PositionRequirementSet
+        {
+            JobPositionId = position.Id,
+            VersionNo = 1,
+            Status = Statuses.PositionRequirementSet.Active,
+            EffectiveFrom = DateOnly.FromDateTime(now.UtcDateTime),
+            CreatedByUserId = hrUserId,
+            ActivatedByUserId = hrUserId,
+            ActivatedAt = now,
+        };
+        foreach (var line in lines)
+        {
+            set.Items.Add(new PositionRequirementItem
+            {
+                RequirementSetId = set.Id,
+                CompetencyId = competencies[line.SourceCode].Id,
+                RequiredLevel = line.RequiredLevel,
+                WeightPercent = line.WeightPercent,
+                IsMandatory = line.Mandatory,
+                Note = DigiTalent.Application.UseCases.Platform.References.ReferencePositionMatrixService.SeedItemNote,
+            });
+        }
+        db.PositionRequirementSets.Add(set);
+    }
+
+    private static async Task AssignDemoEmployeeAsync(AppDbContext db, Guid organizationId, Guid departmentId, string email, Guid positionId)
     {
         var employee = await db.Employees
-            .FirstOrDefaultAsync(e => e.OrganizationId == organizationId && e.JobPositionId == null && e.WorkEmail == email);
+            .FirstOrDefaultAsync(e => e.OrganizationId == organizationId && e.DepartmentId == departmentId && e.JobPositionId == null && e.WorkEmail == email);
         if (employee != null)
         {
             employee.JobPositionId = positionId;

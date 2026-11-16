@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -63,10 +64,11 @@ public class GetLessonUseCase : IUseCase<GetLessonInput, LessonContentOutput>
                            result.CourseCode.EndsWith("-A", StringComparison.OrdinalIgnoreCase);
         if (isPaidCourse)
         {
+            var codes = CourseCodes.Aliases(result.CourseCode);
             var hasLicense = await (
                 from o in _context.CourseSeatOrders.AsNoTracking()
                 join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-                where o.OrganizationId == organizationId && pc.Code == result.CourseCode && o.Seats > 0
+                where o.OrganizationId == organizationId && codes.Contains(pc.Code) && o.Seats > 0
                 select o.Id
             ).AnyAsync();
             if (!hasLicense)
