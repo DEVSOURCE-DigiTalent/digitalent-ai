@@ -39,7 +39,7 @@ describe('owner assessment interactions', () => {
     expect(screen.getByText('8 người cần bổ sung theo chuẩn vị trí')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /M4-/ })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Chi tiết từng nhân viên', exact: true })).toBeInTheDocument();
-    expect(screen.getByText('Mức năng lực trung bình')).toBeInTheDocument();
+    expect(screen.getByText('Mức năng lực trung bình', { selector: 'p' })).toBeInTheDocument();
     expect(screen.getByText('Đạt mức Trung cấp')).toBeInTheDocument();
     expect(screen.getByText('67% câu đúng trên tổng số bài đã chấm')).toBeInTheDocument();
     expect(screen.queryByText('Đạt Cơ bản ở mọi lĩnh vực')).not.toBeInTheDocument();
@@ -51,12 +51,11 @@ describe('owner assessment interactions', () => {
       employees: [{ ...report.employees[0], domainDetails: [comparedDomain('communication', 2, target)] }],
     });
     const view = render(<MemoryRouter><CompetencyReport report={result(2)} /></MemoryRouter>);
-    expect(screen.getByRole('columnheader', { name: 'Chuẩn vị trí' })).toBeInTheDocument();
-    expect(screen.getByText('1/1 đạt chuẩn')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Mức năng lực trung bình' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Đạt chuẩn vị trí' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /M2-A/ })).not.toBeInTheDocument();
 
     view.rerender(<MemoryRouter><CompetencyReport report={result(3)} /></MemoryRouter>);
-    expect(screen.getByText('0/1 đạt chuẩn')).toBeInTheDocument();
     expect(within(screen.getByRole('table')).getByRole('link', { name: /M2-A/ }))
       .toHaveAttribute('href', '/enterprise/courses?focus=M2-A&level=3');
   });
