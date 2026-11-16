@@ -329,7 +329,10 @@ public class PulseEmployeeFlowTests
         var enrollment = await world.Context.Enrollments.SingleAsync(e => e.CourseId == course.CourseId);
         enrollment.Status.Should().Be(Statuses.Enrollment.InProgress, "khóa Cơ bản tự mở lượt học khi bắt đầu");
         enrollment.ProgressPercent.Should().BeGreaterThan(0);
-        (await world.Context.AssessmentAttempts.CountAsync(a => a.EnrollmentId == enrollment.Id)).Should().Be(2, "mỗi lần làm đều được lưu");
+        // Lượt kiểm tra đầu vào (OpenForLearningAsync) cũng gắn vào lượt học này: chỉ đếm các lần làm bài ôn tập mô-đun.
+        (await world.Context.AssessmentAttempts.CountAsync(a => a.EnrollmentId == enrollment.Id
+                && world.Context.Assessments.Any(t => t.Id == a.AssessmentId && t.Code != PulseRules.SkipTestCode)))
+            .Should().Be(2, "mỗi lần làm đều được lưu");
         (await world.CourseAsync(uc, "M1-F")).ProgressPercent.Should().BeGreaterThan(0).And.BeLessThan(100);
     }
 

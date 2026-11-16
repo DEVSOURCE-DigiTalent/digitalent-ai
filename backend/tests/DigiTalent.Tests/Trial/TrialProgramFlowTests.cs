@@ -199,7 +199,7 @@ public class TrialProgramFlowTests
         var mentorUser = await world.UserAsync("mentor@digitalent.ai");
         var baselineHistory = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { IncludeReviewed = true });
 
-        // Nhân viên nộp bài cuối cấp M1-F (Cơ bản), bài cuối cấp M3-F (Cơ bản, miền khác), và bài đánh giá trước khi học M5-F.
+        // Nhân viên nộp bài cuối cấp M1-F (Cơ bản), bài cuối cấp M3-F (Cơ bản, miền khác), và làm bài kiểm tra đầu vào M5-F.
         var m1f = await world.OpenForLearningAsync(employee, "M1-F");
         await world.PassAllModulesAsync(employee, m1f.CourseId);
         var finalM1f = await world.SubmitFinalAsync(employee, m1f.CourseId);
@@ -208,21 +208,21 @@ public class TrialProgramFlowTests
         await world.PassAllModulesAsync(employee, m3f.CourseId);
         var finalM3f = await world.SubmitFinalAsync(employee, m3f.CourseId);
 
-        await world.SubmitPreAssessmentAsync(employee, "M5-F");
+        await world.OpenForLearningAsync(employee, "M5-F");
 
         var opsManager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
         var managerQueue = await opsManager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
-        managerQueue.Items.Should().Contain(
-            i => i.CourseCode == "M5-F" && i.Kind == Statuses.ProctoringKind.PreAssessment,
-            "quản lý vẫn nhận bài đánh giá trước khi học trong hàng chờ của phòng ban");
+        managerQueue.Items.Should().NotContain(
+            i => i.Kind == Statuses.ProctoringKind.PreAssessment,
+            "bài kiểm tra đầu vào trắc nghiệm tự chấm, không vào hàng chờ của người chấm");
 
         (await world.Context.Notifications.AnyAsync(n =>
             n.RecipientUserId == mentorUser.Id && n.Type == SubmitPulseFinalUseCase.NotificationType))
             .Should().BeTrue("mentor nhận thông báo khi nhân viên doanh nghiệp chính thức nộp bài cuối cấp");
 
         var activeQueue = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput());
-        activeQueue.PendingCount.Should().Be(3);
-        activeQueue.PreAssessmentCount.Should().Be(1);
+        activeQueue.PendingCount.Should().Be(2);
+        activeQueue.PreAssessmentCount.Should().Be(0);
         activeQueue.ReviewedCount.Should().Be(0);
         activeQueue.Items.Where(i => i.Kind == Statuses.ProctoringKind.Final).Select(i => i.CourseCode).Should().BeEquivalentTo(new[] { "M1-F", "M3-F" });
         activeQueue.Items.Should().OnlyContain(i =>
@@ -231,10 +231,9 @@ public class TrialProgramFlowTests
             && i.Tier == 1);
 
         var withHistory = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { IncludeReviewed = true });
-        withHistory.ReviewedCount.Should().Be(baselineHistory.ReviewedCount + 2);
-        withHistory.PendingCount.Should().Be(3);
-        withHistory.PreAssessmentCount.Should().Be(1);
-        withHistory.Items.Should().Contain(i => i.Kind == Statuses.ProctoringKind.PreAssessment && i.CourseCode == "M5-F");
+        withHistory.ReviewedCount.Should().Be(baselineHistory.ReviewedCount, "bài kiểm tra đầu vào không có kết luận của người chấm");
+        withHistory.PendingCount.Should().Be(2);
+        withHistory.PreAssessmentCount.Should().Be(0);
 
         // Mentor chấm đạt M1-F (cuối cấp -> mở khóa M1-I) và đạt M3-F.
         await mentor.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
@@ -263,9 +262,9 @@ public class TrialProgramFlowTests
         itemM1i.Kind.Should().Be(Statuses.ProctoringKind.Final);
 
         var fullHistory = await mentor.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput { IncludeReviewed = true });
-        fullHistory.PendingCount.Should().Be(2);
-        fullHistory.PreAssessmentCount.Should().Be(1);
-        fullHistory.ReviewedCount.Should().Be(baselineHistory.ReviewedCount + 5);
+        fullHistory.PendingCount.Should().Be(1);
+        fullHistory.PreAssessmentCount.Should().Be(0);
+        fullHistory.ReviewedCount.Should().Be(baselineHistory.ReviewedCount + 2, "mentor đã chấm đạt M1-F và M3-F");
         fullHistory.Items.Should().Contain(i => i.SubmissionId == finalM1f.SubmissionId && i.Status == PulseFinalStatus.Approved);
         fullHistory.Items.Should().Contain(i => i.SubmissionId == finalM3f.SubmissionId && i.Status == PulseFinalStatus.Approved);
     }
