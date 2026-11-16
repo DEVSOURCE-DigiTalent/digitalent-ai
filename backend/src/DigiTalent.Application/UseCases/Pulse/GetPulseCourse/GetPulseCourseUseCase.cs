@@ -13,11 +13,13 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
 {
     private readonly IApplicationDbContext _context;
     private readonly PulseCourseWorkspace _workspace;
+    private readonly PulseSkipTest _skip;
 
-    public GetPulseCourseUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace)
+    public GetPulseCourseUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace, PulseSkipTest skip)
     {
         _context = context;
         _workspace = workspace;
+        _skip = skip;
     }
 
     public async Task<GetPulseCourseUseCaseOutput> ExecuteAsync(GetPulseCourseUseCaseInput input)
@@ -67,6 +69,8 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
         var assignment = (await new LearningContentReader(_context).FinalsAsync(new[] { state.Course.CourseId }))
             .GetValueOrDefault(state.Course.CourseId);
         var finalRubric = PulseEssayRubric.Build(state.Domain.Number, state.Domain.Name, state.Course.Tier, assignment?.Criteria, state.Course.Code);
+        var skipTest = await _skip.ReadAsync<PulseSkipTestDto>(snapshot, state, _workspace.Now);
+        skipTest.Attempt?.Questions.Clear();
 
         return new GetPulseCourseUseCaseOutput
         {
@@ -81,6 +85,7 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
             Modules = modules,
             FinalCriteria = finalRubric,
             NextAction = nextAction,
+            SkipTest = skipTest,
             NextModuleId = nextAction == "PREVIEW" ? modules.FirstOrDefault()?.ModuleId
                 : nextAction == "MODULE" ? (firstOpen ?? modules.FirstOrDefault())?.ModuleId
                 : null,

@@ -15,6 +15,8 @@ public class GetPulseCourseUseCaseOutput
     /// <summary>Bước tiếp theo trên trang khóa: PRE_ASSESSMENT | PRE_REVIEW | MODULE | FINAL | PREVIEW | LOCKED | DONE.</summary>
     public string NextAction { get; set; } = string.Empty;
     public Guid? NextModuleId { get; set; }
+    /// <summary>Bài kiểm tra vượt học của khóa (không kèm đề): đạt thì mọi mô-đun tính là đã qua và bài cuối khóa mở.</summary>
+    public PulseSkipTestDto? SkipTest { get; set; }
 }
 
 public class PulseCourseModuleDto

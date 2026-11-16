@@ -122,6 +122,7 @@ internal sealed class PulseTestWorld : IDisposable
         var workspace = new PulseCourseWorkspace(Context, learner);
         var quiz = new PulseQuizReader(Context);
         var paper = new PulseExamPaper(Context, quiz);
+        var skip = new PulseSkipTest(Context);
         var final = new PulseFinalReader(Context, paper);
         var outcomes = new PulseOutcomeReader(Context);
         var scope = new PulseReviewScope(Context, new EmployeeScope(Context, current.Object), current.Object);
@@ -132,7 +133,7 @@ internal sealed class PulseTestWorld : IDisposable
 
         return new UseCases(
             new GetPulseOverviewUseCase(learner),
-            new GetPulseCourseUseCase(Context, workspace),
+            new GetPulseCourseUseCase(Context, workspace, skip),
             new GetPulseModuleUseCase(workspace, quiz),
             new MarkPulseModuleViewedUseCase(Context, workspace),
             new MarkPulsePageViewedUseCase(Context, workspace, quiz),
