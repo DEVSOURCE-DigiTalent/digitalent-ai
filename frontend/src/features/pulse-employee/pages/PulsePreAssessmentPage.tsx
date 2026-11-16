@@ -1,6 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { PULSE_KEYS, usePulsePreAssessment } from '@/hooks/use-pulse';
 import { pulseService, type PulsePreAssessment } from '@/services/pulse.service';
@@ -27,8 +27,8 @@ export function PulsePreAssessmentPage() {
   // Giữ trang làm bài sau khi nộp (dữ liệu tải lại sẽ không còn "làm được" nữa) để nhân viên thấy màn hình đã nộp.
   const [keepExam, setKeepExam] = useState(false);
   useEffect(() => {
-    if (data?.canStart) setKeepExam(true);
-  }, [data?.canStart]);
+    if (data?.canStart && data.status !== 'REQUIRED') setKeepExam(true);
+  }, [data?.canStart, data?.status]);
 
   const backTo = courseId ? PULSE_PATHS.course(courseId) : PULSE_PATHS.today;
   if (isLoading) {
@@ -40,6 +40,11 @@ export function PulsePreAssessmentPage() {
         <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được bài đánh giá.'))} onRetry={() => refetch()} />
       </ExamShell>
     );
+  }
+
+  // Bài đầu vào nay là bài kiểm tra trắc nghiệm tự chấm (EM-15): trang này chỉ còn để xem bài đánh giá cũ đã nộp.
+  if (data.status === 'REQUIRED' && courseId) {
+    return <Navigate to={PULSE_PATHS.skipTest(courseId)} replace />;
   }
 
   if (data.canStart || keepExam) {
