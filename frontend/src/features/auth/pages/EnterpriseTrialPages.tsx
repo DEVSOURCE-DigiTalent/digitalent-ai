@@ -80,7 +80,7 @@ export function EnterpriseTrialRegisterPage() {
           <Field label={translateUi("Email")} htmlFor="email">
             <input id="email" type="email" className={DARK_INPUT_CLASS} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
           </Field>
-          <Field label={translateUi("Mật khẩu")} htmlFor="password" hint="Tối thiểu 12 ký tự.">
+          <Field label={translateUi("Mật khẩu")} htmlFor="password" hint="Tối thiểu 8 ký tự.">
             <PasswordField id="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           </Field>
           <label className="flex items-start gap-3 text-xs text-stone-300">

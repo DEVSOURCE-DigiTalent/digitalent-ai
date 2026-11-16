@@ -10,6 +10,6 @@ public class CreateMentorUseCaseValidator : AbstractValidator<CreateMentorUseCas
         RuleFor(x => x.Email).NotEmpty().EmailAddress().WithMessage("Email không hợp lệ.").MaximumLength(255);
         RuleFor(x => x.Password)
             .NotEmpty()
-            .Length(12, 128).WithMessage("Mật khẩu cần 12–128 ký tự.");
+            .Length(8, 128).WithMessage("Mật khẩu cần 8–128 ký tự.");
     }
 }

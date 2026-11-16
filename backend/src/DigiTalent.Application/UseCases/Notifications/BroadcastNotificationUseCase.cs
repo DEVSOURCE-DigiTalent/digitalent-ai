@@ -1,4 +1,5 @@
 using DigiTalent.Application.Common.Authorization;
+using DigiTalent.Application.Common.Email;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -17,23 +18,23 @@ public class BroadcastNotificationUseCase : IUseCase<BroadcastNotificationInput,
     private readonly ICurrentUser _currentUser;
     private readonly INotificationSender _notificationSender;
     private readonly IAppEmailSender _emailSender;
+    private readonly IAppUrlResolver _urlResolver;
     private readonly ILogger<BroadcastNotificationUseCase> _logger;
-    private readonly string _appUrl;
 
     public BroadcastNotificationUseCase(
         IApplicationDbContext context,
         ICurrentUser currentUser,
         INotificationSender notificationSender,
         IAppEmailSender emailSender,
-        ILogger<BroadcastNotificationUseCase> logger,
-        IOptions<IndividualCommerceOptions> options)
+        IAppUrlResolver urlResolver,
+        ILogger<BroadcastNotificationUseCase> logger)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationSender = notificationSender;
         _emailSender = emailSender;
+        _urlResolver = urlResolver;
         _logger = logger;
-        _appUrl = options.Value.Security.PublicAppUrl.TrimEnd('/');
     }
 
     public async Task<BroadcastNotificationOutput> ExecuteAsync(BroadcastNotificationInput input)
@@ -146,9 +147,10 @@ public class BroadcastNotificationUseCase : IUseCase<BroadcastNotificationInput,
         if (input.SendEmail)
         {
             var emailTasks = new List<Task>();
+            var baseUrl = _urlResolver.GetFrontendBaseUrl();
             // A relative link ("/enterprise/...") becomes absolute so it opens from the mailbox.
-            var actionUrl = string.IsNullOrWhiteSpace(input.ActionUrl) ? _appUrl + "/enterprise"
-                : input.ActionUrl.StartsWith('/') ? _appUrl + input.ActionUrl
+            var actionUrl = string.IsNullOrWhiteSpace(input.ActionUrl) ? baseUrl + "/enterprise"
+                : input.ActionUrl.StartsWith('/') ? baseUrl + input.ActionUrl
                 : input.ActionUrl;
 
             foreach (var emp in employees)
@@ -160,50 +162,13 @@ public class BroadcastNotificationUseCase : IUseCase<BroadcastNotificationInput,
                 if (string.IsNullOrWhiteSpace(email))
                     continue;
 
-                var deadlineBadgeHtml = parsedDueDate.HasValue
-                    ? $@"<div style='background: #fff7ed; border-left: 4px solid #f97316; padding: 12px 16px; margin: 20px 0; border-radius: 6px;'>
-                            <strong style='color: #9a3412; font-size: 14px;'>Thời hạn hoàn thành:</strong>
-                            <span style='color: #c2410c; font-weight: bold; font-size: 15px; margin-left: 8px;'>{parsedDueDate.Value:dd/MM/yyyy}</span>
-                        </div>"
-                    : "";
-
-                var htmlBody = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8'>
-    <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f7f9fd; margin: 0; padding: 24px; color: #172442; }}
-        .card {{ max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 32px; border: 1px solid #dfe6f3; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }}
-        .header {{ border-bottom: 1px solid #eef2ff; padding-bottom: 20px; margin-bottom: 24px; text-align: center; }}
-        .brand {{ font-size: 20px; font-weight: bold; color: #304bdf; }}
-        .org-tag {{ display: inline-block; background: #edf1ff; color: #304bdf; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; margin-top: 6px; }}
-        .title {{ font-size: 18px; font-weight: bold; color: #172442; margin-bottom: 16px; }}
-        .content {{ font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap; }}
-        .btn {{ display: inline-block; background: #304bdf; color: #ffffff !important; padding: 12px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; margin: 24px 0 16px; text-align: center; }}
-        .footer {{ font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 28px; }}
-    </style>
-</head>
-<body>
-    <div class='card'>
-        <div class='header'>
-            <div class='brand'>DigiTalent AI</div>
-            <div class='org-tag'>{orgName}</div>
-        </div>
-        <div class='title'>{input.Title.Trim()}</div>
-        <p style='font-size: 14px; color: #64748b; margin-top: 0;'>Kính gửi <strong>{emp.FullName}</strong>,</p>
-        <div class='content'>{input.Message.Trim()}</div>
-        {deadlineBadgeHtml}
-        <div style='text-align: center;'>
-            <a href='{actionUrl}' class='btn'>Vào hệ thống xem chi tiết</a>
-        </div>
-        <div class='footer'>
-            Email này được gửi tự động từ Ban Quản trị {orgName} qua hệ thống DigiTalent AI.<br>
-            Vui lòng đăng nhập hệ thống để xem và hoàn thành nhiệm vụ đúng thời hạn.
-        </div>
-    </div>
-</body>
-</html>";
+                var htmlBody = EmailTemplateBuilder.BuildBroadcastNotificationEmail(
+                    emp.FullName,
+                    orgName,
+                    input.Title.Trim(),
+                    input.Message.Trim(),
+                    parsedDueDate,
+                    actionUrl);
 
                 emailTasks.Add(_emailSender.SendEmailAsync(
                     email,
