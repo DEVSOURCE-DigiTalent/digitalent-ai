@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { platformAdminService, type PageQuery, type TrialFilter } from '@/services/platform-admin.service';
+import { feedbackService } from '@/services/feedback.service';
 
 /** React Query hooks of the Platform Admin console (Pulse). Every mutation refreshes the whole console cache. */
 export const PLATFORM_ADMIN_KEY = ['platform-admin'] as const;
@@ -12,6 +13,26 @@ function useInvalidateConsole() {
 
 export const usePlatformOverview = () =>
   useQuery({ queryKey: [...KEY, 'overview'], queryFn: platformAdminService.getOverview });
+
+/**
+ * Số góp ý hoặc báo lỗi đang chờ xử lý (status OPEN). Dùng chung cho huy hiệu sidebar và "Việc cần xử lý" ở Tổng quan,
+ * nên cả hai đọc cùng một bộ đệm. Lỗi mạng trả 0 để không chặn giao diện.
+ */
+export const usePlatformOpenTicketCount = (type: 'FEEDBACK' | 'BUG') =>
+  useQuery({
+    queryKey: ['platform', 'sidebar-badge', type === 'BUG' ? 'bugs' : 'feedbacks'],
+    retry: false,
+    staleTime: 60_000,
+    queryFn: async () => {
+      try {
+        if (typeof feedbackService.getAll !== 'function') return 0;
+        const res = await feedbackService.getAll({ pageIndex: 1, pageSize: 1, type, status: 'OPEN' });
+        return res?.data?.totalItems ?? 0;
+      } catch {
+        return 0;
+      }
+    },
+  });
 
 /** Published courses with prices and seat totals (frameworks and versions: use-platform-catalog). */
 export const usePlatformCourses = () =>

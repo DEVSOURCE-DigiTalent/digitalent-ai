@@ -127,6 +127,28 @@ public class PlatformCatalogEditor
     }
 
     /// <summary>
+    /// Discards the open draft version, removing its content and any new courses created in it.
+    /// </summary>
+    public async Task DiscardDraftAsync(int versionNo)
+    {
+        var draft = await DraftAsync(versionNo);
+        var courses = await _context.PlatformCatalogCourses.Where(c => c.VersionId == draft.Id).ToListAsync();
+        var courseIds = courses.Select(c => c.Id).ToList();
+        var modules = await _context.PlatformCourseModules.Where(m => courseIds.Contains(m.CatalogCourseId)).ToListAsync();
+        var moduleIds = modules.Select(m => m.Id).ToList();
+        await RemoveModulesAsync(moduleIds);
+
+        var newCourseIds = courses.Where(c => c.ChangeKind == PlatformCatalog.ChangeKind.New).Select(c => c.CourseId).ToList();
+        _context.PlatformCatalogCourses.RemoveRange(courses);
+        if (newCourseIds.Count > 0)
+        {
+            var identityCourses = await _context.PlatformCourses.Where(c => newCourseIds.Contains(c.Id)).ToListAsync();
+            _context.PlatformCourses.RemoveRange(identityCourses);
+        }
+        _context.PlatformCatalogVersions.Remove(draft);
+    }
+
+    /// <summary>
     /// Creates the draft version as a deep copy of the version in use: every course, module, block, slide item,
     /// question and option gets a new row (assets are shared — files never change). All courses start UNCHANGED.
     /// </summary>

@@ -10,17 +10,23 @@ namespace DigiTalent.Infrastructure.Invitations;
 public class LoggingInvitationSender : IInvitationSender
 {
     private readonly InvitationSettings _settings;
+    private readonly IAppUrlResolver _urlResolver;
     private readonly ILogger<LoggingInvitationSender> _logger;
 
-    public LoggingInvitationSender(InvitationSettings settings, ILogger<LoggingInvitationSender> logger)
+    public LoggingInvitationSender(
+        InvitationSettings settings,
+        IAppUrlResolver urlResolver,
+        ILogger<LoggingInvitationSender> logger)
     {
         _settings = settings;
+        _urlResolver = urlResolver;
         _logger = logger;
     }
 
     public Task<string?> SendAsync(InvitationMessage message, CancellationToken cancellationToken = default)
     {
-        var link = $"{_settings.FrontendBaseUrl.TrimEnd('/')}/activate/{Uri.EscapeDataString(message.Token)}";
+        var baseUrl = _urlResolver.GetFrontendBaseUrl();
+        var link = $"{baseUrl}/activate/{Uri.EscapeDataString(message.Token)}";
 
         // The link grants account creation, so it is only logged where debug links are allowed
         if (_settings.ExposeDebugLink)

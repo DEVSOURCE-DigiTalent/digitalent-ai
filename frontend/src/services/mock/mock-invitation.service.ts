@@ -9,7 +9,25 @@ import { updateOrgData } from './server/org-store';
 const INVALID = 'Liên kết mời không hợp lệ hoặc đã hết hạn.';
 
 function findInvitation(token: string) {
-  return getDb().invitations.find((invitation) => invitation.token === token);
+  const existing = getDb().invitations.find((invitation) => invitation.token === token);
+  if (existing) return existing;
+
+  // Demo invitation fallback for local testing & design inspection
+  if (token === 'demo-invite' || token === 'test' || token === 'inv-seed-01' || token === 'inv-seed-02') {
+    return {
+      token,
+      organizationId: 'org-demo',
+      email: 'nhanvien.demo@acme.vn',
+      fullName: 'Nguyễn Văn Minh',
+      departmentName: 'Phòng Phát triển Công nghệ',
+      positionName: 'Kỹ sư AI & Dữ liệu',
+      role: 'EMPLOYEE',
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  return undefined;
 }
 
 export const mockInvitationService = {
@@ -18,11 +36,13 @@ export const mockInvitationService = {
     if (!invitation) return mockFail(404, INVALID);
     const organization = getDb().organizations.find((org) => org.id === invitation.organizationId);
     return mockOk<InvitationDetail>({
-      organizationName: organization?.name ?? '',
+      organizationName: organization?.name || 'Tập đoàn Công nghệ Acme',
       email: invitation.email,
       fullName: invitation.fullName,
       role: invitation.role as MemberRole,
       status: invitation.status,
+      departmentName: invitation.departmentName,
+      positionName: invitation.positionName,
     });
   },
 

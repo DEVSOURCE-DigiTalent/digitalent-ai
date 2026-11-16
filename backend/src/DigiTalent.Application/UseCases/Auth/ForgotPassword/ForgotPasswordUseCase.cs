@@ -12,16 +12,16 @@ public class ForgotPasswordUseCase : IUseCase<ForgotPasswordInput, ForgotPasswor
 {
     private readonly IApplicationDbContext _context;
     private readonly IIndividualEmailSender _emailSender;
-    private readonly IConfiguration _configuration;
+    private readonly IAppUrlResolver _urlResolver;
 
     public ForgotPasswordUseCase(
         IApplicationDbContext context,
         IIndividualEmailSender emailSender,
-        IConfiguration configuration)
+        IAppUrlResolver urlResolver)
     {
         _context = context;
         _emailSender = emailSender;
-        _configuration = configuration;
+        _urlResolver = urlResolver;
     }
 
     public async Task<ForgotPasswordOutput> ExecuteAsync(ForgotPasswordInput input)
@@ -54,7 +54,7 @@ public class ForgotPasswordUseCase : IUseCase<ForgotPasswordInput, ForgotPasswor
         _context.PasswordResetTokens.Add(resetToken);
         await _context.SaveChangesAsync();
 
-        var frontendBaseUrl = _configuration["IndividualCommerce:Security:PublicAppUrl"] ?? "http://localhost:5173";
+        var frontendBaseUrl = _urlResolver.GetFrontendBaseUrl();
         var resetLink = $"{frontendBaseUrl.TrimEnd('/')}/reset-password/{rawToken}";
 
         try

@@ -72,12 +72,12 @@ describe('Platform Admin sidebar navigation (Pulse)', () => {
     expect(await screen.findByText(/Không có tổ chức nào khớp bộ lọc/)).toBeInTheDocument();
   });
 
-  it('opens Khung chuẩn and Nhật ký kiểm tra from the sidebar', async () => {
+  it('opens Khung năng lực số and Nhật ký hoạt động from the sidebar', async () => {
     renderAt();
-    fireEvent.click(within(sidebar()).getByRole('link', { name: /Khung chuẩn/ }));
+    fireEvent.click(within(sidebar()).getByRole('link', { name: /Khung năng lực số/ }));
     expect(await screen.findByText('Chưa có khung chuẩn.')).toBeInTheDocument();
 
-    fireEvent.click(within(sidebar()).getByRole('link', { name: /Nhật ký kiểm tra/ }));
+    fireEvent.click(within(sidebar()).getByRole('link', { name: /Nhật ký hoạt động/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Mỗi thao tác nhạy cảm đều có lý do.' })).toBeInTheDocument();
   });
 });

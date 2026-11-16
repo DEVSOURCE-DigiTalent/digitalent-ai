@@ -22,6 +22,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Send,
+  Copy,
+  Layers,
+  Award,
 } from 'lucide-react';
 
 interface UserDetailContentProps {
@@ -66,6 +69,11 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
   const lockable = locked || (u.role !== 'PLATFORM_ADMIN' && u.email !== me?.email && u.status !== 'INACTIVE');
   const enrolledCourses = rawData.enrolledCourses ?? [];
 
+  const isSuperAdmin = u.role === 'PLATFORM_ADMIN';
+  const isOwner = u.role === 'OWNER';
+  const isManager = u.role === 'MANAGER';
+  const isMentor = u.role === 'MENTOR';
+
   const handlePasswordReset = () => {
     setResetPending(true);
     setTimeout(() => {
@@ -89,32 +97,46 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
   };
 
   const roleLabel = translateUi(ROLE_LABELS[u.role]) ?? u.role;
-  const workspaceLabel =
-    u.workspace === 'enterprise'
-      ? 'Không gian Doanh nghiệp'
-      : u.workspace === 'personal'
-        ? 'Học viên Cá nhân'
-        : 'Quản trị Nền tảng';
 
-  const orgOrScope = u.organizationName ?? (u.role === 'PLATFORM_ADMIN' ? 'DigiTalent Platform' : 'Tài khoản cá nhân');
-  const deptOrPosition = [u.departmentName, u.positionName].filter(Boolean).join(' · ') || 'Chưa gán phòng ban';
+  // Accurate contextual permission description without awkward fallback
+  const permissionSubLabel = (() => {
+    switch (u.role) {
+      case 'PLATFORM_ADMIN':
+        return 'Toàn quyền quản trị hệ thống';
+      case 'MENTOR':
+        return 'Chấm bài dùng thử';
+      case 'OWNER':
+        return 'Quản lý tổ chức';
+      case 'MANAGER':
+        return 'Quản lý đào tạo phòng ban';
+      case 'EMPLOYEE':
+      default:
+        return u.organizationName
+          ? `Nhân viên của ${u.organizationName}`
+          : 'Nhân viên của tổ chức';
+    }
+  })();
+
+  const isPlatformStaff = u.role === 'PLATFORM_ADMIN' || u.role === 'MENTOR';
+  const orgOrScope = u.organizationName ?? (isPlatformStaff ? 'Nền tảng DigiTalent' : 'Tài khoản cá nhân');
+  const deptOrPosition = [u.departmentName, u.positionName].filter(Boolean).join(' · ') || (isPlatformStaff ? 'Nhân sự nền tảng' : 'Chưa gán phòng ban');
 
   return (
     <div className="pa-org-detail-wrap">
       {/* 3 Quick Executive Stat Chips */}
       <div className="pa-org-detail-strip">
         <div className="pa-org-detail-chip is-hero">
-          <span className="pa-org-detail-chip-label">Vai trò & Phân quyền</span>
+          <span className="pa-org-detail-chip-label">Vai trò</span>
           <span className="pa-org-detail-chip-val" style={{ fontSize: 15 }}>
             {roleLabel}
           </span>
           <span className="pa-org-detail-chip-sub">
-            {workspaceLabel}
+            {permissionSubLabel}
           </span>
         </div>
 
         <div className="pa-org-detail-chip">
-          <span className="pa-org-detail-chip-label">Đơn vị trực thuộc</span>
+          <span className="pa-org-detail-chip-label">Tổ chức</span>
           <span className="pa-org-detail-chip-val" style={{ fontSize: 14 }}>
             {orgOrScope}
           </span>
@@ -129,13 +151,13 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
             {u.lastLoginAt ? formatDateTime(u.lastLoginAt) : 'Chưa đăng nhập'}
           </span>
           <span className="pa-org-detail-chip-sub">
-            Gia nhập: {formatDate(u.createdAt)}
+            Tạo ngày: {formatDate(u.createdAt)}
           </span>
         </div>
       </div>
 
       {/* Segmented Navigation Tabs */}
-      <div className="pa-org-detail-tabs" role="tablist" aria-label="Phân mục chi tiết người dùng">
+      <div className="pa-org-detail-tabs" role="tablist" aria-label="Các mục của hồ sơ người dùng">
         <button
           type="button"
           role="tab"
@@ -144,22 +166,43 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
           onClick={() => setActiveTab('profile')}
         >
           <User size={14} aria-hidden="true" />
-          <span>Hồ sơ & Đơn vị</span>
+          <span>Hồ sơ</span>
         </button>
 
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'courses'}
-          className="pa-org-detail-tab-btn"
-          onClick={() => setActiveTab('courses')}
-        >
-          <GraduationCap size={14} aria-hidden="true" />
-          <span>Khóa học & Tiến độ</span>
-          {enrolledCourses.length > 0 && (
-            <span className="pa-org-detail-tab-badge">{enrolledCourses.length}</span>
-          )}
-        </button>
+        {!isSuperAdmin && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'courses'}
+            className="pa-org-detail-tab-btn"
+            onClick={() => setActiveTab('courses')}
+          >
+            {isOwner ? (
+              <>
+                <Building2 size={14} aria-hidden="true" />
+                <span>Tổ chức</span>
+              </>
+            ) : isManager ? (
+              <>
+                <Layers size={14} aria-hidden="true" />
+                <span>Phòng ban</span>
+              </>
+            ) : isMentor ? (
+              <>
+                <Award size={14} aria-hidden="true" />
+                <span>Mentor</span>
+              </>
+            ) : (
+              <>
+                <GraduationCap size={14} aria-hidden="true" />
+                <span>Khóa học</span>
+                {enrolledCourses.length > 0 && (
+                  <span className="pa-org-detail-tab-badge">{enrolledCourses.length}</span>
+                )}
+              </>
+            )}
+          </button>
+        )}
 
         <button
           type="button"
@@ -169,7 +212,7 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
           onClick={() => setActiveTab('security')}
         >
           <ShieldAlert size={14} aria-hidden="true" />
-          <span>Bảo mật & Quản trị</span>
+          <span>Bảo mật</span>
         </button>
       </div>
 
@@ -183,38 +226,71 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <User size={14} />
                 </span>
-                Thông tin định danh & Liên hệ
+                Thông tin tài khoản
               </span>
-              <span style={{ fontSize: 12, color: '#64748b' }}>
-                ID: {u.id}
-              </span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                <span
+                  style={{
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                    fontSize: 12,
+                    color: '#475569',
+                    background: '#f1f5f9',
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    border: '1px solid #e2e8f0',
+                    letterSpacing: '0.02em',
+                  }}
+                  title={`Mã tài khoản đầy đủ: ${u.id}`}
+                >
+                  ID: {u.id.length > 16 ? `${u.id.slice(0, 8)}...${u.id.slice(-4)}` : u.id}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(u.id);
+                    toast.success('Đã sao chép mã tài khoản vào bộ nhớ tạm');
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '3px 5px',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 4,
+                  }}
+                  title="Sao chép toàn bộ ID"
+                  aria-label="Sao chép toàn bộ mã tài khoản"
+                >
+                  <Copy size={13} />
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Họ và tên</span>
-                <strong style={{ color: '#0f172a', display: 'block' }}>{u.displayName || u.email}</strong>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>Tên hiển thị trên hệ thống</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Họ và tên</span>
+                <strong style={{ color: '#0f172a', display: 'block' }}>{u.displayName || u.email}</strong>
               </div>
 
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Email đăng nhập</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Email đăng nhập</span>
                 <strong style={{ color: '#0f172a', display: 'block' }}>{u.email}</strong>
-                <span style={{ fontSize: 11, color: '#15803d', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ fontSize: 12, color: '#15803d', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                   <CheckCircle2 size={11} /> Đã xác thực email
                 </span>
               </div>
 
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Số điện thoại</span>
-                <strong style={{ color: '#0f172a', display: 'block' }}>{u.phone || 'Chưa cập nhật'}</strong>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>Dùng cho bảo mật SMS & Liên hệ</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Số điện thoại</span>
+                <strong style={{ color: '#0f172a', display: 'block' }}>{u.phone || 'Chưa cập nhật'}</strong>
               </div>
 
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Ngày khởi tạo tài khoản</span>
-                <strong style={{ color: '#0f172a', display: 'block' }}>{formatDateTime(u.createdAt)}</strong>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>Thời gian gia nhập nền tảng</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Ngày tạo tài khoản</span>
+                <strong style={{ color: '#0f172a', display: 'block' }}>{formatDateTime(u.createdAt)}</strong>
               </div>
             </div>
           </div>
@@ -226,13 +302,13 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <Building2 size={14} />
                 </span>
-                Tổ chức & Gói dịch vụ
+                Tổ chức
               </span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Đơn vị công tác</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Tổ chức</span>
                 {u.organizationId ? (
                   <Link
                     to={`/platform/organizations/${u.organizationId}`}
@@ -243,18 +319,18 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                 ) : (
                   <strong style={{ color: '#0f172a' }}>{orgOrScope}</strong>
                 )}
-                <span style={{ fontSize: 11, color: '#94a3b8', display: 'block' }}>Phòng ban: {deptOrPosition}</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block' }}>Phòng ban: {deptOrPosition}</span>
               </div>
 
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Gói dịch vụ</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Suất học</span>
                 <strong style={{ color: '#0f172a', display: 'block' }}>
-                  {u.workspace === 'enterprise'
-                    ? 'Bản quyền theo doanh nghiệp'
+                  {u.workspace === 'enterprise' || u.organizationId
+                    ? 'Theo tổ chức'
                     : PERSONAL_PLANS[u.planCode ?? ''] ?? 'Tài khoản tiêu chuẩn'}
                 </strong>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>
-                  {u.workspace === 'enterprise' ? 'Sử dụng suất học của tổ chức' : 'Dùng thử liên tục'}
+                <span style={{ fontSize: 12, color: '#64748b' }}>
+                  {u.workspace === 'enterprise' || u.organizationId ? 'Sử dụng suất học của tổ chức' : 'Gói cá nhân'}
                 </span>
               </div>
             </div>
@@ -262,67 +338,146 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
         </div>
       )}
 
-      {/* TAB 2: KHÓA HỌC & TIẾN ĐỘ */}
-      {activeTab === 'courses' && (
+      {/* TAB 2: KHÓA HỌC / GÓI BẢN QUYỀN / NHIỆM VỤ THEO ROLE */}
+      {activeTab === 'courses' && !isSuperAdmin && (
         <div className="pa-org-detail-panel">
-          <div className="pa-org-detail-card">
-            <div className="pa-org-detail-card-head">
-              <span className="pa-org-detail-card-title">
-                <span className="pa-org-detail-icon-box" aria-hidden="true">
-                  <GraduationCap size={14} />
+          {isOwner ? (
+            /* OWNER: Gói dịch vụ & Bản quyền tổ chức */
+            <div className="pa-org-detail-card">
+              <div className="pa-org-detail-card-head">
+                <span className="pa-org-detail-card-title">
+                  <span className="pa-org-detail-icon-box" aria-hidden="true">
+                    <Building2 size={14} />
+                  </span>
+                  Chủ doanh nghiệp
                 </span>
-                Khóa học đã ghi danh ({enrolledCourses.length})
-              </span>
-            </div>
+              </div>
 
-            {enrolledCourses.length === 0 ? (
-              <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '24px 0', margin: 0 }}>
-                Học viên chưa ghi danh khóa học nào trong giai đoạn này.
-              </p>
-            ) : (
-              <table className="data-table" style={{ width: '100%', fontSize: 13 }}>
-                <thead>
-                  <tr>
-                    <th>Khóa học</th>
-                    <th>Cấp độ</th>
-                    <th className="num">Tiến độ</th>
-                    <th className="num">Điểm đánh giá</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {enrolledCourses.map((c) => (
-                    <tr key={c.courseCode}>
-                      <td>
-                        <strong style={{ color: '#0f172a' }}>{c.courseTitle}</strong>
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Mã: {c.courseCode}</div>
-                      </td>
-                      <td>
-                        <span
-                          className={`pa-org-level-pill ${
-                            c.level === 1 ? 'is-basic' : c.level === 2 ? 'is-inter' : 'is-adv'
-                          }`}
-                        >
-                          {c.levelName}
-                        </span>
-                      </td>
-                      <td className="num" style={{ fontWeight: 600 }}>
-                        <span style={{ color: c.progress === 100 ? '#15803d' : '#0284c7' }}>
-                          {c.progress}%
-                        </span>
-                      </td>
-                      <td className="num">
-                        {c.score !== null ? (
-                          <strong style={{ color: '#15803d' }}>{c.score} / 10</strong>
-                        ) : (
-                          <span style={{ color: '#94a3b8' }}>Chưa thi</span>
-                        )}
-                      </td>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13, marginBottom: 12 }}>
+                <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Tổ chức</span>
+                  <strong style={{ color: '#0f172a', display: 'block' }}>{u.organizationName || 'Chưa gán'}</strong>
+                  <span style={{ fontSize: 12, color: '#15803d' }}>Chủ doanh nghiệp</span>
+                </div>
+
+                <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Suất học và hợp đồng</span>
+                  <strong style={{ color: '#0f172a', display: 'block' }}>Xem ở hồ sơ tổ chức</strong>
+                  <span style={{ fontSize: 12, color: '#0369a1' }}>Mở trang Tổ chức</span>
+                </div>
+              </div>
+
+              <div style={{ padding: '12px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', fontSize: 12.5, color: '#166534' }}>
+                Chủ doanh nghiệp quản lý suất học, nhân viên và hợp đồng của tổ chức.
+              </div>
+            </div>
+          ) : isManager ? (
+            /* MANAGER: Nhiệm vụ điều phối phòng ban */
+            <div className="pa-org-detail-card">
+              <div className="pa-org-detail-card-head">
+                <span className="pa-org-detail-card-title">
+                  <span className="pa-org-detail-icon-box" aria-hidden="true">
+                    <Layers size={14} />
+                  </span>
+                  Phòng ban phụ trách
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13, marginBottom: 12 }}>
+                <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Phòng ban</span>
+                  <strong style={{ color: '#0f172a', display: 'block' }}>{u.departmentName || 'Chưa gán phòng ban'}</strong>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>Trực thuộc: {u.organizationName}</span>
+                </div>
+
+                <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Vai trò</span>
+                  <strong style={{ color: '#0f172a', display: 'block' }}>Quản lý phòng ban</strong>
+                  <span style={{ fontSize: 12, color: '#15803d' }}>Theo dõi tiến độ học của nhân viên</span>
+                </div>
+              </div>
+
+              <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#334155' }}>
+                Quản lý phòng ban theo dõi tiến độ học và chấm bài cuối khóa của nhân viên trong phòng.
+              </div>
+            </div>
+          ) : isMentor ? (
+            /* MENTOR: Nhiệm vụ thẩm định & chấm bài */
+            <div className="pa-org-detail-card">
+              <div className="pa-org-detail-card-head">
+                <span className="pa-org-detail-card-title">
+                  <span className="pa-org-detail-icon-box" aria-hidden="true">
+                    <Award size={14} />
+                  </span>
+                  Mentor
+                </span>
+              </div>
+
+
+              <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#334155' }}>
+                Mentor chấm bài tự luận của tổ chức dùng thử. Xem tổ chức đang phụ trách ở trang Đánh giá dùng thử.
+              </div>
+            </div>
+          ) : (
+            /* EMPLOYEE: Khóa học đã ghi danh */
+            <div className="pa-org-detail-card">
+              <div className="pa-org-detail-card-head">
+                <span className="pa-org-detail-card-title">
+                  <span className="pa-org-detail-icon-box" aria-hidden="true">
+                    <GraduationCap size={14} />
+                  </span>
+                  Khóa học đã ghi danh ({enrolledCourses.length})
+                </span>
+              </div>
+
+              {enrolledCourses.length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', padding: '24px 0', margin: 0 }}>
+                  Chưa ghi danh khóa học nào.
+                </p>
+              ) : (
+                <table className="data-table" style={{ width: '100%', fontSize: 13 }}>
+                  <thead>
+                    <tr>
+                      <th>Khóa học</th>
+                      <th>Cấp độ</th>
+                      <th className="num">Tiến độ</th>
+                      <th className="num">Điểm</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                  </thead>
+                  <tbody>
+                    {enrolledCourses.map((c) => (
+                      <tr key={c.courseCode}>
+                        <td>
+                          <strong style={{ color: '#0f172a' }}>{c.courseTitle}</strong>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>Mã: {c.courseCode}</div>
+                        </td>
+                        <td>
+                          <span
+                            className={`pa-org-level-pill ${c.level === 1 ? 'is-basic' : c.level === 2 ? 'is-inter' : 'is-adv'
+                              }`}
+                          >
+                            {c.levelName}
+                          </span>
+                        </td>
+                        <td className="num" style={{ fontWeight: 600 }}>
+                          <span style={{ color: c.progress === 100 ? '#15803d' : '#0284c7' }}>
+                            {c.progress}%
+                          </span>
+                        </td>
+                        <td className="num">
+                          {c.score !== null ? (
+                            <strong style={{ color: '#15803d' }}>{c.score} / 10</strong>
+                          ) : (
+                            <span style={{ color: '#64748b' }}>Chưa thi</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -336,23 +491,23 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <ShieldCheck size={14} />
                 </span>
-                Tình trạng bảo mật & Phiên làm việc
+                Trạng thái tài khoản
               </span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Trạng thái tài khoản</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Trạng thái tài khoản</span>
                 <strong style={{ color: locked ? '#dc2626' : '#15803d', display: 'block' }}>
-                  {locked ? 'Tài khoản đang bị khóa' : 'Đang hoạt động bình thường'}
+                  {locked ? 'Tài khoản đang bị khóa' : 'Đang hoạt động'}
                 </strong>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>
-                  {u.isManuallyLocked ? 'Khóa thủ công bởi quản trị viên' : 'Hệ thống tự động kiểm soát'}
+                <span style={{ fontSize: 12, color: '#64748b' }}>
+                  {u.isManuallyLocked ? 'Khóa thủ công bởi quản trị viên' : 'Không bị khóa'}
                 </span>
               </div>
 
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Hỗ trợ mật khẩu</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Mật khẩu</span>
                 <button
                   type="button"
                   className="btn btn-outline btn-small inline-flex items-center gap-1.5"
@@ -366,7 +521,7 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                   }}
                 >
                   <Send size={12} aria-hidden="true" />
-                  <span>{resetPending ? 'Đang gửi...' : 'Gửi liên kết đặt lại'}</span>
+                  <span>{resetPending ? 'Đang gửi...' : 'Gửi liên kết đặt lại mật khẩu'}</span>
                 </button>
               </div>
             </div>
@@ -383,7 +538,7 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                   <ShieldAlert size={14} />
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
-                  Thao tác bảo mật tài khoản (Ghi rõ lý do kiểm toán)
+                  Khóa hoặc mở khóa tài khoản
                 </span>
               </div>
 
@@ -395,11 +550,11 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                 <form onSubmit={onSubmit} style={{ marginTop: 10 }}>
                   <div style={{ marginBottom: 10 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
-                      Thao tác thực hiện:{' '}
+                      Thao tác:{' '}
                       {locked ? (
-                        <span style={{ color: '#15803d' }}>Mở khóa truy cập tài khoản</span>
+                        <span style={{ color: '#15803d' }}>Mở khóa tài khoản</span>
                       ) : (
-                        <span style={{ color: '#dc2626' }}>Khóa quyền đăng nhập tài khoản</span>
+                        <span style={{ color: '#dc2626' }}>Khóa tài khoản</span>
                       )}
                     </span>
                     <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 10px' }}>
@@ -425,8 +580,8 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                       {lockAction.isPending
                         ? 'Đang ghi nhận…'
                         : locked
-                          ? 'Xác nhận mở khóa tài khoản'
-                          : 'Xác nhận khóa tài khoản'}
+                          ? 'Mở khóa tài khoản'
+                          : 'Khóa tài khoản'}
                     </span>
                     <ArrowRight size={13} aria-hidden="true" />
                   </button>

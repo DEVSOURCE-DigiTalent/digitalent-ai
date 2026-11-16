@@ -236,6 +236,7 @@ export const platformCatalogService = {
 
   getVersions: () => unwrap<CatalogVersionsOutput>(apiClient.get('/platform/catalog/versions')),
   createDraft: () => unwrap<CatalogVersionDetail>(apiClient.post('/platform/catalog/versions')),
+  discardDraft: (versionNo: number) => unwrap<CatalogVersionsOutput>(apiClient.delete(`/platform/catalog/versions/${versionNo}`)),
   getVersion: (versionNo: number) => unwrap<CatalogVersionDetail>(apiClient.get(`/platform/catalog/versions/${versionNo}`)),
   getPublishCheck: (versionNo: number) => unwrap<PublishCheck>(apiClient.get(`/platform/catalog/versions/${versionNo}/publish-check`)),
   publishVersion: (versionNo: number, releaseNote?: string) =>

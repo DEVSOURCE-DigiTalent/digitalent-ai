@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common.Email;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.IndividualCommerce;
 using DigiTalent.Domain.Entities;
@@ -18,16 +19,13 @@ public class DeadlineReminderBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DeadlineReminderBackgroundService> _logger;
-    private readonly string _appUrl;
 
     public DeadlineReminderBackgroundService(
         IServiceProvider serviceProvider,
-        ILogger<DeadlineReminderBackgroundService> logger,
-        IOptions<IndividualCommerceOptions> options)
+        ILogger<DeadlineReminderBackgroundService> logger)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
-        _appUrl = options.Value.Security.PublicAppUrl.TrimEnd('/');
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -75,6 +73,7 @@ public class DeadlineReminderBackgroundService : BackgroundService
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var emailSender = scope.ServiceProvider.GetRequiredService<IAppEmailSender>();
         var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
+        var urlResolver = scope.ServiceProvider.GetRequiredService<IAppUrlResolver>();
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var tomorrow = today.AddDays(1);
@@ -146,26 +145,15 @@ public class DeadlineReminderBackgroundService : BackgroundService
 
                         if (!string.IsNullOrWhiteSpace(emp.WorkEmail))
                         {
-                            var htmlBody = $@"
-<!DOCTYPE html>
-<html>
-<head><meta charset='utf-8'></head>
-<body style='font-family: sans-serif; background-color: #f7f9fd; padding: 24px; color: #172442;'>
-    <div style='max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #dfe6f3;'>
-        <div style='font-size: 13px; font-weight: bold; color: #ea580c; background: #fff7ed; padding: 6px 12px; border-radius: 20px; display: inline-block;'>SẮP HẾT HẠN HOÀN THÀNH</div>
-        <h3 style='color: #172442; margin-top: 16px;'>Nhắc nhở thời hạn học tập</h3>
-        <p>Kính gửi <strong>{emp.FullName}</strong>,</p>
-        <p>Hệ thống DigiTalent AI xin nhắc bạn khóa học sau sắp đến thời hạn hoàn thành:</p>
-        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;'>
-            <div style='font-weight: bold; color: #1e293b; font-size: 15px;'>{course.Code} · {course.Title}</div>
-            <div style='color: #ea580c; font-weight: 600; margin-top: 6px;'>Hạn hoàn thành: {dueDateStr}</div>
-        </div>
-        <p style='text-align: center; margin-top: 24px;'>
-            <a href='{_appUrl}/enterprise/my-learning' style='background: #304bdf; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Tiếp tục học ngay</a>
-        </p>
-    </div>
-</body>
-</html>";
+                            var appUrl = urlResolver.GetFrontendBaseUrl();
+                            var actionUrl = $"{appUrl}/enterprise/my-learning";
+                            var htmlBody = EmailTemplateBuilder.BuildDeadlineReminderEmail(
+                                emp.FullName,
+                                course.Code,
+                                course.Title,
+                                dueDateStr,
+                                actionUrl);
+
                             await emailSender.SendEmailAsync(emp.WorkEmail, emp.FullName, title, htmlBody, ct);
                         }
                     }

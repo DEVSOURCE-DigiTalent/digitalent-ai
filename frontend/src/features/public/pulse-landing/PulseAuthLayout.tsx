@@ -112,6 +112,26 @@ export function PulseAuthLayout({
                       {asideText}
                     </p>
                   )}
+
+                  {parsedPoints.length > 0 && (
+                    <ul className="pulse-auth-aside-highlights pulse-auth-aside-highlights--light">
+                      {parsedPoints.map((item) => (
+                        <li key={item.text} className="pulse-auth-aside-highlight-item pulse-auth-aside-highlight-item--light">
+                          <span className="pulse-auth-aside-check pulse-auth-aside-check--light" aria-hidden="true">
+                            <Check size={13} strokeWidth={2.6} />
+                          </span>
+                          <span>{item.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="pulse-auth-aside-trust pulse-auth-aside-trust--light">
+                  <div className="pulse-auth-aside-trust-item pulse-auth-aside-trust-item--light">
+                    <LockKeyhole size={13} aria-hidden="true" />
+                    <span>{complianceText || 'Dữ liệu phân quyền riêng theo doanh nghiệp'}</span>
+                  </div>
                 </div>
               </aside>
             ) : (

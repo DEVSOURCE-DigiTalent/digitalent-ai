@@ -41,7 +41,7 @@ import {
 const DESCRIPTION_MIN = 10;
 
 const DOMAIN_THEMES = [
-  { icon: Database, color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', name: 'Dữ liệu và Thông tin' },
+  { icon: Database, color: '#0369a1', bg: '#f0f9ff', border: '#bae6fd', name: 'Dữ liệu và Thông tin' },
   { icon: MessageSquare, color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe', name: 'Giao tiếp và Hợp tác' },
   { icon: Palette, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', name: 'Sáng tạo nội dung số' },
   { icon: ShieldCheck, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', name: 'An toàn số' },
@@ -123,14 +123,16 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
 
   // Synced with Backend overview data & catalog version
   const currentCatalogVersion = ov?.currentVersionNo ?? f.currentCatalogVersionNo ?? f.currentVersionNo;
-  const totalCourses = ov?.courseCount ?? f.courseCount;
+  // f.courseCount chỉ đếm khóa của phiên bản đang dùng; ov.courseCount còn tính khóa phiên bản cũ.
+  const totalCourses = f.courseCount ?? ov?.courseCount ?? 0;
+  const draftEditedCourseCount = ov?.draftEditedCourseCount ?? 0;
   const publishedDate = ov?.currentVersionPublishedAt;
   const draftCatalogVersion = ov?.draftVersionNo ?? f.draftCatalogVersionNo;
   const draftNewCourseCount = ov?.draftNewCourseCount ?? f.draftCourseCount ?? 0;
 
   // Clean framework title without regulatory noise
   const displayTitle = f.name.includes('Thông tư 02/2025')
-    ? 'Khung chuẩn năng lực số'
+    ? 'Khung năng lực số'
     : f.name;
 
   const onPublish = () =>
@@ -191,7 +193,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
         <div>
           <h1>{displayTitle}</h1>
           <p className="pa-ov-subtitle">
-            {translateUi('Hệ thống 6 lĩnh vực năng lực số cốt lõi và lộ trình đào tạo chuẩn hóa cho doanh nghiệp.')}
+            {translateUi('6 lĩnh vực năng lực số và các khóa học thuộc từng lĩnh vực.')}
           </p>
         </div>
 
@@ -250,7 +252,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
                 to={`/platform/versions/${draftCatalogVersion}`}
                 className="pa-ov-version-link"
               >
-                <span>{translateUi('Mở biên soạn phiên bản nháp')}</span>
+                <span>{translateUi('Mở bản nháp')}</span>
                 <ArrowRight size={13} aria-hidden="true" />
               </Link>
             </>
@@ -273,64 +275,62 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
         {/* KPI 1: Lĩnh vực trụ cột */}
         <div className="pa-ov-kpi-card is-tone-sky">
           <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">{translateUi('LĨNH VỰC TRỤ CỘT')}</span>
+            <span className="pa-ov-kpi-label">{translateUi('Lĩnh vực')}</span>
             <div className="pa-kpi-icon-box" aria-hidden="true">
               <Layers size={18} />
             </div>
           </div>
-          <div className="pa-ov-kpi-val">{f.domainCount} {translateUi('Lĩnh vực')}</div>
+          <div className="pa-ov-kpi-val">{f.domainCount}</div>
           <div className="pa-ov-kpi-sub">
-            {translateUi('Khung kỹ năng số chuẩn hóa doanh nghiệp')}
+            {drafted.length > 0 ? `${drafted.length} lĩnh vực sửa mô tả, chưa công bố` : translateUi('Mô tả đã công bố')}
           </div>
         </div>
 
         {/* KPI 2: Danh mục khóa học */}
         <div className="pa-ov-kpi-card is-tone-orange">
           <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">{translateUi('DANH MỤC KHÓA HỌC')}</span>
+            <span className="pa-ov-kpi-label">{translateUi('Khóa học')}</span>
             <div className="pa-kpi-icon-box" aria-hidden="true">
               <BookOpen size={18} />
             </div>
           </div>
-          <div className="pa-ov-kpi-val">{totalCourses} {translateUi('Khóa học')}</div>
+          <div className="pa-ov-kpi-val">{totalCourses}</div>
           <div className="pa-ov-kpi-sub">
-            {translateUi(`Phiên bản v${currentCatalogVersion} đang áp dụng`)}
+            {`${byLevel1} Cơ bản · ${byLevel2} Trung cấp · ${byLevel3} Nâng cao (v${currentCatalogVersion})`}
           </div>
         </div>
 
-        {/* KPI 3: Phân tầng đào tạo */}
-        <div className="pa-ov-kpi-card is-tone-purple">
+        {/* KPI 3: Mô tả lĩnh vực chờ công bố (điều kiện để công bố khung) */}
+        <div className={`pa-ov-kpi-card ${drafted.length > 0 ? 'is-tone-amber' : 'is-tone-green'}`}>
           <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">{translateUi('PHÂN TẦNG ĐÀO TẠO')}</span>
+            <span className="pa-ov-kpi-label">{translateUi('Mô tả chờ công bố')}</span>
             <div className="pa-kpi-icon-box" aria-hidden="true">
               <GraduationCap size={18} />
             </div>
           </div>
-          <div className="pa-ov-kpi-val">3 {translateUi('Cấp độ')}</div>
+          <div className="pa-ov-kpi-val">{drafted.length}</div>
           <div className="pa-ov-kpi-sub">
-            {translateUi('Cơ bản · Trung cấp · Nâng cao')}
+            {tooShort.length > 0
+              ? `${tooShort.length} mô tả dưới ${DESCRIPTION_MIN} ký tự`
+              : translateUi('Mô tả các lĩnh vực đủ độ dài')}
           </div>
         </div>
 
         {/* KPI 4: Trạng thái biên soạn & công bố */}
         <div className={`pa-ov-kpi-card ${draftCatalogVersion !== null ? 'is-tone-amber' : 'is-tone-green'}`}>
           <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">{translateUi('TÌNH TRẠNG ÁP DỤNG')}</span>
+            <span className="pa-ov-kpi-label">{translateUi(draftCatalogVersion !== null ? 'Bản nháp khóa học' : 'Phiên bản khóa học')}</span>
             <div className="pa-kpi-icon-box" aria-hidden="true">
               {draftCatalogVersion !== null ? <Sparkles size={18} /> : <ShieldCheck size={18} />}
             </div>
           </div>
           <div className="pa-ov-kpi-val">
-            {draftCatalogVersion !== null ? (
-              <span style={{ fontSize: 24, color: 'var(--pa-amber)' }}>Bản nháp v{draftCatalogVersion}</span>
-            ) : (
-              <span style={{ fontSize: 24, color: 'var(--pa-live)' }}>Phiên bản v{currentCatalogVersion}</span>
-            )}
+            {draftCatalogVersion !== null ? `v${draftCatalogVersion}` : `v${currentCatalogVersion}`}
           </div>
           <div className="pa-ov-kpi-sub">
             {draftCatalogVersion !== null
-              ? (draftNewCourseCount > 0 ? `+${draftNewCourseCount} khóa mới đang biên soạn` : translateUi('Đang cập nhật nội dung'))
-              : translateUi('Đồng bộ trên toàn bộ hệ thống')}
+              ? `Bản nháp: ${draftNewCourseCount} khóa mới, ${draftEditedCourseCount} khóa đã sửa`
+              : translateUi('Không có bản nháp, đang dùng bản đã công bố')}
           </div>
         </div>
       </div>
@@ -340,7 +340,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
         <div className="pa-ov-panel-head" style={{ marginBottom: 14 }}>
           <div>
             <h2 id="domains-title" className="pa-ov-panel-title">
-              Danh mục {f.domains.length} lĩnh vực năng lực số
+              {f.domains.length} lĩnh vực
             </h2>
           </div>
         </div>
@@ -375,7 +375,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
               className={`pa-fw-filter-pill${selectedLevel === 'ALL' ? ' is-active' : ''}`}
               onClick={() => setSelectedLevel('ALL')}
             >
-              {translateUi('Tất cả khóa')} ({f.courseCount})
+              {translateUi('Tất cả')} ({f.courseCount})
             </button>
             <button
               type="button"
@@ -459,7 +459,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
                         )
                       : unpublished
                         ? translateUi(`${drafted.length} lĩnh vực có mô tả mới trong bản nháp sẵn sàng công bố.`)
-                        : translateUi('Toàn bộ mô tả lĩnh vực hiện đang đồng bộ với phiên bản công bố.')}
+                        : translateUi('Chưa có thay đổi nào cần công bố.')}
                   </div>
                 </div>
               </div>
@@ -485,7 +485,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 maxLength={1000}
-                placeholder="Ghi chú công bố (tùy chọn: lý do thay đổi, căn cứ quyết định)..."
+                placeholder="Ghi chú công bố (không bắt buộc)"
                 className="pa-fw-publish-input"
                 aria-label="Ghi chú công bố khung chuẩn"
               />
@@ -502,7 +502,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
               <History size={18} style={{ color: '#64748b' }} aria-hidden="true" />
               <div>
                 <h2 id="releases-title" className="pa-ov-panel-title">
-                  {translateUi('Lịch sử các lần công bố khung chuẩn')}
+                  {translateUi('Lịch sử công bố')}
                 </h2>
                 <p className="pa-ov-panel-sub">
                   Các mốc phiên bản đã được công bố chính thức và áp dụng cho toàn hệ thống.
@@ -606,7 +606,6 @@ function DomainRow({
             <div>
               <div
                 className="pa-fw-domain-tag"
-                style={{ color: theme.color }}
               >
                 {translateUi(label)}
               </div>
@@ -703,7 +702,7 @@ function DomainRow({
       <div className="pa-fw-domain-right">
         <div className="pa-fw-courses-header">
           <span>
-            {d.courses.length} Khóa trong v{currentNo ?? ''}
+            {d.courses.length} khóa trong v{currentNo ?? ''}
             {d.draftNewCourses.length ? translateUi(` · +${d.draftNewCourses.length} khóa mới (nháp)`) : ''}
           </span>
         </div>
@@ -743,7 +742,7 @@ function DomainRow({
                         {c.levelName}
                       </span>
                     )}
-                    <ArrowRight size={14} style={{ color: '#94a3b8' }} aria-hidden="true" />
+                    <ArrowRight size={14} style={{ color: '#64748b' }} aria-hidden="true" />
                   </div>
                 </Link>
               );

@@ -135,8 +135,8 @@ public class ChangePasswordUseCase : IUseCase<ChangePasswordInput, bool>
     public async Task<bool> ExecuteAsync(ChangePasswordInput input)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedException("Chưa đăng nhập.");
-        if (string.IsNullOrEmpty(input.NewPassword) || input.NewPassword.Length < 12 || input.NewPassword.Length > 128)
-            throw new BadRequestException("Mật khẩu mới phải từ 12 đến 128 ký tự.", "newPassword", "PASSWORD_LENGTH");
+        if (string.IsNullOrEmpty(input.NewPassword) || input.NewPassword.Length < 8 || input.NewPassword.Length > 128)
+            throw new BadRequestException("Mật khẩu mới phải từ 8 đến 128 ký tự.", "newPassword", "PASSWORD_LENGTH");
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new NotFoundException("Không tìm thấy tài khoản.");

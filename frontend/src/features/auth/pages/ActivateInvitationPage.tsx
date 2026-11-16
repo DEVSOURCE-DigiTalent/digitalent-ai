@@ -40,12 +40,20 @@ export function ActivateInvitationPage() {
 
   return (
     <PulseAuthLayout
+      mode="register"
+      asideVariant="visual-light"
+      asideImage="/images/trial/trial-sidebar-light.jpg"
       eyebrow="Lời mời từ doanh nghiệp"
       title="Tham gia không gian làm việc."
       subtitle="Xác nhận email nhận lời mời, tự đặt mật khẩu và vào đúng phòng ban, vị trí của bạn."
-      asideTitle="Lộ trình học bắt đầu từ đúng vị trí."
-      asideText="Doanh nghiệp đã chọn vai trò, phòng ban và vị trí. Sau khi kích hoạt, bạn sẽ thấy mục tiêu năng lực dành cho mình."
-      asidePoints={['Email mời chỉ dùng một lần', 'Bạn tự đặt mật khẩu, doanh nghiệp không biết mật khẩu của bạn']}
+      asideTitle="Không gian làm việc & Học tập"
+      asideText="Doanh nghiệp đã chọn vai trò và vị trí của bạn. Bạn tự đặt mật khẩu riêng để bắt đầu làm bài và học tập."
+      asidePoints={[
+        'Mật khẩu tối thiểu 8 ký tự, do bạn tự đặt',
+        'Doanh nghiệp không lưu hoặc xem được mật khẩu của bạn',
+        'Liên kết kích hoạt an toàn và sử dụng một lần duy nhất',
+      ]}
+      complianceText="Không gian bảo mật riêng theo doanh nghiệp"
     >
 
       {invitation.isLoading && <p role="status" className="pulse-auth-info">Đang kiểm tra lời mời…</p>}
@@ -149,7 +157,7 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel, d
               id="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
-              placeholder="Tối thiểu 12 ký tự"
+              placeholder="Tối thiểu 8 ký tự"
               aria-invalid={!!errors.password}
               {...register('password')}
             />
@@ -163,7 +171,7 @@ function ActivationForm({ token, email, fullName, organizationName, roleLabel, d
               {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
             </button>
           </div>
-          <span className="pulse-auth-field-hint">Từ 12 đến 128 ký tự.</span>
+          <span className="pulse-auth-field-hint">Từ 8 đến 128 ký tự.</span>
           {errors.password && <p role="alert" className="pulse-auth-inline-error">{translateUi(errors.password.message)}</p>}
         </div>
         <div className="pulse-auth-field">

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { platformCatalogService, type CatalogModule, type CatalogQuestion } from '@/services/platform-catalog.service';
 import { QUESTIONS_MIN, QUESTIONS_RECOMMENDED, errorMessage } from '../components/pulse-format';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
+import { HelpCircle, Plus, X } from 'lucide-react';
 
 const letter = (index: number) => String.fromCharCode(65 + index);
 const MAX_OPTIONS = 5;
@@ -18,7 +19,6 @@ export function QuizEditor({ module, editable, edit }: { module: CatalogModule; 
   const [openId, setOpenId] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState(module.quizTitle);
   const count = module.questions.length;
-  const tone = count >= QUESTIONS_RECOMMENDED ? 'green' : count >= QUESTIONS_MIN ? '' : 'coral';
 
   const addQuestion = () =>
     edit((v, c) => platformCatalogService.addQuestion(v, c, module.moduleId))
@@ -37,53 +37,94 @@ export function QuizEditor({ module, editable, edit }: { module: CatalogModule; 
   };
 
   return (
-    <section className="surface pad pa-quiz" aria-labelledby={`quiz-${module.moduleId}`}>
-      <div className="pa-card-head">
+    <div className="pa-cb-panel" aria-labelledby={`quiz-${module.moduleId}`}>
+      <div className="pa-cb-panel-head">
         <div>
-          <h2 id={`quiz-${module.moduleId}`} className="panel-title">Ngân hàng câu hỏi ôn tập của mô đun</h2>
-          <p className="panel-desc">
-            Ngân hàng hiện có {count} câu. Mỗi lượt nhân viên làm {Math.min(QUESTIONS_MIN, count)} câu được rút từ ngân hàng;
-            sai thì phải xem lại nội dung liên quan. Nên có ít nhất {QUESTIONS_RECOMMENDED} câu để thay đổi bộ câu giữa các lượt.
-          </p>
+          <div className="pa-cb-panel-title">
+            <HelpCircle size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
+            <h2 id={`quiz-${module.moduleId}`} style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+              {translateUi('Ngân hàng câu hỏi ôn tập')}
+            </h2>
+          </div>
+          <div className="pa-cb-panel-desc">
+            {translateUi(
+              `Ngân hàng hiện có ${count} câu hỏi. Mỗi lượt ôn tập rút ${Math.min(QUESTIONS_MIN, count)} câu; nhân viên trả lời sai cần ôn lại khối học liệu tương ứng.`,
+            )}
+          </div>
         </div>
-        <span className={`pill ${tone}`}>
-          {count} câu trong ngân hàng
+        <span
+          style={{
+            fontSize: 12.5,
+            padding: '4px 10px',
+            borderRadius: 6,
+            fontWeight: 600,
+            background: count >= QUESTIONS_RECOMMENDED ? '#f0fdf4' : count >= QUESTIONS_MIN ? '#f8fafc' : '#fff7ed',
+            color: count >= QUESTIONS_RECOMMENDED ? '#16a34a' : count >= QUESTIONS_MIN ? '#475569' : '#c2410c',
+            border: `1px solid ${count >= QUESTIONS_RECOMMENDED ? '#bbf7d0' : count >= QUESTIONS_MIN ? '#e2e8f0' : '#fed7aa'}`,
+          }}
+        >
+          {translateUi(`${count} câu trong ngân hàng`)}
         </span>
       </div>
-      <label className="field">
-        Tên bài kiểm tra
-        <input
-          value={quizTitle}
-          readOnly={!editable}
-          maxLength={250}
-          onChange={(e) => setQuizTitle(e.target.value)}
-          onBlur={saveTitle}
-        />
-      </label>
-      <div className="pa-questions">
-        {module.questions.map((question) => (
-          <QuestionRow
-            key={question.questionId}
-            question={question}
-            module={module}
-            open={editable && openId === question.questionId}
-            editable={editable}
-            onOpen={() => setOpenId(openId === question.questionId ? null : question.questionId)}
-            onClose={() => setOpenId(null)}
-            edit={edit}
+
+      <div className="pa-cb-panel-body">
+        <div style={{ marginBottom: 14 }}>
+          <label className="pa-cb-field-label" htmlFor={`quiz-title-${module.moduleId}`}>
+            <span>{translateUi('Tên bài kiểm tra ôn tập')}</span>
+          </label>
+          <input
+            id={`quiz-title-${module.moduleId}`}
+            className="pa-cb-input"
+            value={quizTitle}
+            readOnly={!editable}
+            maxLength={250}
+            onChange={(e) => setQuizTitle(e.target.value)}
+            onBlur={saveTitle}
+            style={{ fontWeight: 600, fontSize: 14 }}
+            placeholder={translateUi('Nhập tên bài kiểm tra ôn tập...')}
           />
-        ))}
-        {count === 0 && <p className="pa-empty">Chưa có câu hỏi.</p>}
-      </div>
-      {editable && (
-        <div className="button-row pa-gap-top">
-          <button type="button" className="btn btn-light" onClick={addQuestion} disabled={module.blocks.length === 0}>
-            + Thêm câu hỏi
-          </button>
-          {module.blocks.length === 0 && <small className="pa-hint">Thêm nội dung trước để gắn câu hỏi.</small>}
         </div>
-      )}
-    </section>
+
+        <div className="pa-questions">
+          {module.questions.map((question) => (
+            <QuestionRow
+              key={question.questionId}
+              question={question}
+              module={module}
+              open={editable && openId === question.questionId}
+              editable={editable}
+              onOpen={() => setOpenId(openId === question.questionId ? null : question.questionId)}
+              onClose={() => setOpenId(null)}
+              edit={edit}
+            />
+          ))}
+          {count === 0 && (
+            <p style={{ margin: 0, padding: '16px 0', fontSize: 13, color: '#64748b', textAlign: 'center' }}>
+              {translateUi('Chưa có câu hỏi ôn tập nào trong ngân hàng.')}
+            </p>
+          )}
+        </div>
+
+        {editable && (
+          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              className="btn btn-outline btn-small inline-flex items-center gap-1.5"
+              onClick={addQuestion}
+              disabled={module.blocks.length === 0}
+            >
+              <Plus size={14} />
+              <span>{translateUi('Thêm câu hỏi')}</span>
+            </button>
+            {module.blocks.length === 0 && (
+              <span style={{ fontSize: 12.5, color: '#64748b' }}>
+                {translateUi('Cần thêm khối nội dung trước để gắn câu hỏi.')}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -113,10 +154,10 @@ function QuestionRow({
     <div className={`pa-question${open ? ' open' : ''}`}>
       <button type="button" className="pa-question-head" onClick={onOpen} disabled={!editable} aria-expanded={editable ? open : undefined}>
         <span className="qn">{question.index + 1}</span>
-        <span className="qt">{question.text.trim() || 'Câu hỏi mới — chưa có nội dung'}</span>
+        <span className="qt">{question.text.trim() || translateUi('Câu hỏi mới: chưa có nội dung')}</span>
         <small>
-          {incomplete && <span className="pa-error">Chưa đủ · </span>}
-          Đúng: {correct >= 0 ? letter(correct) : '—'} · {block ? translateUi(`khối ${block.index + 1}`) : 'chưa gắn khối'}
+          {incomplete && <span className="pa-error">{translateUi('Chưa đủ')} · </span>}
+          {translateUi('Đúng:')} {correct >= 0 ? letter(correct) : translateUi('Chưa chọn')} · {block ? translateUi(`khối ${block.index + 1}`) : translateUi('chưa gắn khối')}
         </small>
       </button>
       {open && <QuestionForm question={question} module={module} onClose={onClose} edit={edit} />}
@@ -171,14 +212,28 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
 
   return (
     <div className="pa-question-body">
-      <label className="field">
-        Nội dung câu hỏi
-        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} autoFocus={!question.text} />
-      </label>
-      <fieldset className="pa-options">
-        <legend className="mini-label">Phương án · chọn đáp án đúng</legend>
+      <div>
+        <label className="pa-cb-field-label" htmlFor={`question-text-${question.questionId}`}>
+          <span>{translateUi('Nội dung câu hỏi')} <span style={{ color: '#dc2626' }}>*</span></span>
+        </label>
+        <textarea
+          id={`question-text-${question.questionId}`}
+          className="pa-cb-textarea"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          maxLength={1000}
+          autoFocus={!question.text}
+          rows={3}
+          placeholder={translateUi('Nhập nội dung câu hỏi trắc nghiệm...')}
+        />
+      </div>
+
+      <fieldset className="pa-options" style={{ border: 'none', padding: 0, margin: '8px 0' }}>
+        <legend className="pa-cb-field-label" style={{ marginBottom: 6 }}>
+          <span>{translateUi('Phương án trả lời (chọn 1 đáp án đúng)')}</span>
+        </legend>
         {options.map((option, index) => (
-          <div className="pa-option" key={index}>
+          <div className="pa-option" key={index} style={{ marginBottom: 8 }}>
             <input
               type="radio"
               name={`correct-${question.questionId}`}
@@ -187,12 +242,13 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
               aria-label={translateUi(`Phương án ${letter(index)} là đáp án đúng`)}
             />
             <input
-              className="pa-input"
+              className="pa-cb-input"
               value={option.text}
               onChange={(e) => setOption(index, { text: e.target.value })}
               placeholder={translateUi(`Phương án ${letter(index)}`)}
               aria-label={translateUi(`Phương án ${letter(index)}`)}
               maxLength={500}
+              style={{ fontSize: 13.5 }}
             />
             <button
               type="button"
@@ -201,7 +257,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
               disabled={options.length <= MIN_OPTIONS}
               aria-label={translateUi(`Xóa phương án ${letter(index)}`)}
             >
-              ✕
+              <X size={14} aria-hidden="true" />
             </button>
           </div>
         ))}
@@ -212,50 +268,81 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
             onClick={() => setOptions((list) => [...list, { text: '', isCorrect: false }])}
             disabled={options.length >= MAX_OPTIONS}
           >
-            + Phương án
+            + {translateUi('Phương án')}
           </button>
         </div>
       </fieldset>
-      <div className="inline-fields">
-        <label className="field">
-          Gắn với khối nội dung
-          <select value={blockId} onChange={(e) => setBlockId(e.target.value)}>
-            <option value="">Chưa gắn khối</option>
+
+      <div className="inline-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div>
+          <label className="pa-cb-field-label" htmlFor={`link-block-${question.questionId}`}>
+            <span>{translateUi('Gắn với khối')}</span>
+          </label>
+          <select
+            id={`link-block-${question.questionId}`}
+            className="pa-cb-select"
+            value={blockId}
+            onChange={(e) => setBlockId(e.target.value)}
+          >
+            <option value="">{translateUi('Chưa gắn khối')}</option>
             {module.blocks.map((b) => {
               const bType = ((b.type || 'TEXT').toUpperCase() as keyof typeof BLOCK_TYPES);
               const label = BLOCK_TYPES[bType]?.label ?? 'Chữ';
               return (
                 <option key={b.blockId} value={b.blockId}>
-                  Khối {b.index + 1} · {translateUi(label)}
+                  {translateUi(`Khối ${b.index + 1}`)} · {translateUi(label)}
                 </option>
               );
             })}
           </select>
-          <small className="field-hint">Sai câu này thì nhân viên phải mở lại khối đó.</small>
-        </label>
-        <label className="field">
-          Giải thích (hiện sau khi trả lời)
-          <input value={explanation} onChange={(e) => setExplanation(e.target.value)} maxLength={1000} />
-        </label>
+          <small style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
+            {translateUi('Nhân viên trả lời sai câu này sẽ được chuyển về ôn lại khối đó.')}
+          </small>
+        </div>
+
+        <div>
+          <label className="pa-cb-field-label" htmlFor={`explanation-${question.questionId}`}>
+            <span>{translateUi('Giải thích (hiện sau khi trả lời)')}</span>
+          </label>
+          <input
+            id={`explanation-${question.questionId}`}
+            className="pa-cb-input"
+            value={explanation}
+            onChange={(e) => setExplanation(e.target.value)}
+            maxLength={1000}
+            style={{ fontSize: 13.5 }}
+            placeholder={translateUi('Giải thích lý do phương án đúng...')}
+          />
+        </div>
       </div>
-      {!complete && <p className="field-hint">Có thể lưu khi chưa đủ; muốn công bố thì câu hỏi và mọi phương án đều cần nội dung.</p>}
-      <div className="pa-row-between">
+
+      {!complete && (
+        <p style={{ margin: '6px 0 0', fontSize: 12.5, color: '#b45309' }}>
+          {translateUi('Có thể lưu nháp; khi công bố chính thức, câu hỏi và mọi phương án đều cần nội dung.')}
+        </p>
+      )}
+
+      <div className="pa-row-between" style={{ marginTop: 12 }}>
         {confirmDelete ? (
           <div className="button-row">
             <button type="button" className="btn btn-small pa-danger" onClick={remove}>
-              Xóa câu hỏi này
+              {translateUi('Xóa câu hỏi này')}
             </button>
-            <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>{translateUi("Giữ lại")}</button>
+            <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>
+              {translateUi('Giữ lại')}
+            </button>
           </div>
         ) : (
           <button type="button" className="btn btn-ghost btn-small pa-danger-text" onClick={() => setConfirmDelete(true)}>
-            Xóa câu hỏi
+            {translateUi('Xóa câu hỏi')}
           </button>
         )}
-        <div className="button-row">
-          <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>{translateUi("Hủy")}</button>
+        <div className="button-row" style={{ display: 'flex', gap: 8 }}>
+          <button type="button" className="btn btn-ghost btn-small" onClick={onClose}>
+            {translateUi('Hủy')}
+          </button>
           <button type="button" className="btn btn-primary btn-small" onClick={save} disabled={!valid || saving}>
-            {saving ? translateUi('Đang lưu…') : 'Lưu câu hỏi'}
+            {saving ? translateUi('Đang lưu…') : translateUi('Lưu câu hỏi')}
           </button>
         </div>
       </div>

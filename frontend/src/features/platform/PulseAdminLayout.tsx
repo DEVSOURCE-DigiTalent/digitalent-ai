@@ -14,7 +14,7 @@ import {
   useMarkAllNotificationsRead,
 } from '@/hooks/use-platform';
 import { platformAdminService } from '@/services/platform-admin.service';
-import { feedbackService } from '@/services/feedback.service';
+import { usePlatformOpenTicketCount } from '@/hooks/use-platform-admin';
 import type { NotificationDto } from '@/services/platform.service';
 import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import { initials } from './components/pulse-format';
@@ -50,6 +50,7 @@ import './pulse-mock.css';
 import './pulse-admin.css';
 import './pulse-catalog.css';
 import './pulse-admin-shell.css';
+import './pulse-admin-polish.css';
 
 const SIDEBAR_STORAGE_KEY = 'dt-pa-sidebar-collapsed';
 
@@ -63,20 +64,20 @@ interface QuickSearchRouteItem {
 }
 
 const PLATFORM_ROUTE_ITEMS: readonly QuickSearchRouteItem[] = [
-  { id: 'r-dash', title: 'Tổng quan', subtitle: 'Bảng điều phối hoạt động toàn nền tảng', category: 'Quản trị', path: '/platform/dashboard', icon: LayoutDashboard },
-  { id: 'r-trials', title: 'Đánh giá dùng thử', subtitle: 'Phân công mentor và xét duyệt báo cáo thử nghiệm', category: 'Quản trị', path: '/platform/trials', icon: FlaskConical },
-  { id: 'r-orgs', title: 'Tổ chức doanh nghiệp', subtitle: 'Danh sách công ty, trạng thái gói và cấp suất học', category: 'Quản trị', path: '/platform/organizations', icon: Building2 },
-  { id: 'r-users', title: 'Tài khoản người dùng', subtitle: 'Tra cứu tài khoản, khóa hoặc mở quyền đăng nhập', category: 'Quản trị', path: '/platform/users', icon: Users },
-  { id: 'r-fw', title: 'Khung chuẩn năng lực', subtitle: 'Lĩnh vực năng lực theo chuẩn TT02', category: 'Nội dung', path: '/platform/frameworks', icon: Gem },
-  { id: 'r-pos', title: 'Mẫu vị trí chuẩn', subtitle: 'Bộ vị trí công việc và mức năng lực tham chiếu', category: 'Nội dung', path: '/platform/reference-positions', icon: BriefcaseBusiness },
-  { id: 'r-ver', title: 'Phiên bản khóa học', subtitle: 'Biên tập khóa học, bản nháp và phát hành', category: 'Nội dung', path: '/platform/versions', icon: Anchor },
-  { id: 'r-com', title: 'Đơn giá & Suất học', subtitle: 'Bảng giá theo khóa học và lịch sử mua suất', category: 'Thương mại', path: '/platform/commerce', icon: ReceiptText },
-  { id: 'r-aud', title: 'Nhật ký kiểm tra', subtitle: 'Lịch sử thao tác hệ thống và kiểm toán', category: 'Hệ thống', path: '/platform/audit-log', icon: ScrollText },
-  { id: 'r-fb', title: 'Ý kiến phản hồi', subtitle: 'Góp ý cải thiện sản phẩm từ doanh nghiệp và học viên', category: 'Hệ thống', path: '/platform/feedbacks', icon: MessageSquare },
-  { id: 'r-bug', title: 'Báo lỗi kỹ thuật', subtitle: 'Sự cố kỹ thuật cần xác minh và xử lý', category: 'Hệ thống', path: '/platform/bug-reports', icon: Bug },
-  { id: 'r-notif', title: 'Trung tâm thông báo', subtitle: 'Danh sách đầy đủ thông báo của tài khoản', category: 'Tài khoản', path: '/platform/notifications', icon: Bell },
-  { id: 'r-prof', title: 'Hồ sơ cá nhân', subtitle: 'Thông tin hiển thị và tùy chọn cá nhân', category: 'Tài khoản', path: '/platform/account', icon: UserIcon },
-  { id: 'r-sec', title: 'Bảo mật tài khoản', subtitle: 'Đổi mật khẩu và lịch sử đăng nhập', category: 'Tài khoản', path: '/platform/account/security', icon: ShieldCheck },
+  { id: 'r-dash', title: 'Tổng quan', subtitle: 'Số liệu chính và việc cần xử lý', category: 'Khách hàng', path: '/platform/dashboard', icon: LayoutDashboard },
+  { id: 'r-trials', title: 'Đánh giá dùng thử', subtitle: 'Phân công mentor và theo dõi tiến độ chấm bài', category: 'Khách hàng', path: '/platform/trials', icon: FlaskConical },
+  { id: 'r-orgs', title: 'Tổ chức', subtitle: 'Trạng thái, suất học và nhân viên của từng tổ chức', category: 'Khách hàng', path: '/platform/organizations', icon: Building2 },
+  { id: 'r-users', title: 'Người dùng', subtitle: 'Tra cứu, khóa và mở khóa tài khoản', category: 'Khách hàng', path: '/platform/users', icon: Users },
+  { id: 'r-fw', title: 'Khung năng lực số', subtitle: '6 lĩnh vực năng lực số và các khóa học', category: 'Nội dung', path: '/platform/frameworks', icon: Gem },
+  { id: 'r-pos', title: 'Vị trí tham chiếu', subtitle: 'Mức năng lực yêu cầu của 5 vị trí mẫu', category: 'Nội dung', path: '/platform/reference-positions', icon: BriefcaseBusiness },
+  { id: 'r-ver', title: 'Phiên bản khóa học', subtitle: 'Sửa khóa học trong bản nháp và công bố', category: 'Nội dung', path: '/platform/versions', icon: Anchor },
+  { id: 'r-com', title: 'Giá và đơn hàng', subtitle: 'Giá mỗi suất và lịch sử mua suất', category: 'Doanh thu', path: '/platform/commerce', icon: ReceiptText },
+  { id: 'r-aud', title: 'Nhật ký hoạt động', subtitle: 'Ai đã làm gì, lúc nào và vì sao', category: 'Hệ thống', path: '/platform/audit-log', icon: ScrollText },
+  { id: 'r-fb', title: 'Góp ý', subtitle: 'Góp ý và điểm hài lòng từ người dùng', category: 'Hệ thống', path: '/platform/feedbacks', icon: MessageSquare },
+  { id: 'r-bug', title: 'Báo lỗi', subtitle: 'Lỗi người dùng báo từ trong ứng dụng', category: 'Hệ thống', path: '/platform/bug-reports', icon: Bug },
+  { id: 'r-notif', title: 'Thông báo', subtitle: 'Việc mới cần admin xử lý', category: 'Tài khoản', path: '/platform/notifications', icon: Bell },
+  { id: 'r-prof', title: 'Hồ sơ của tôi', subtitle: 'Thông tin tài khoản quản trị của bạn', category: 'Tài khoản', path: '/platform/account', icon: UserIcon },
+  { id: 'r-sec', title: 'Bảo mật', subtitle: 'Đổi mật khẩu và xem các lần đăng nhập gần đây', category: 'Tài khoản', path: '/platform/account/security', icon: ShieldCheck },
 ];
 
 interface BreadcrumbInfo {
@@ -87,57 +88,57 @@ interface BreadcrumbInfo {
 
 function getPlatformBreadcrumb(pathname: string): BreadcrumbInfo {
   if (pathname.startsWith('/platform/trials')) {
-    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/dashboard', current: 'Đánh giá dùng thử' };
+    return { groupLabel: 'Khách hàng', groupPath: '/platform/dashboard', current: 'Đánh giá dùng thử' };
   }
   if (pathname.startsWith('/platform/organizations/')) {
-    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/organizations', current: 'Chi tiết tổ chức' };
+    return { groupLabel: 'Khách hàng', groupPath: '/platform/organizations', current: 'Hồ sơ tổ chức' };
   }
   if (pathname.startsWith('/platform/organizations')) {
-    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/dashboard', current: 'Tổ chức doanh nghiệp' };
+    return { groupLabel: 'Khách hàng', groupPath: '/platform/dashboard', current: 'Tổ chức' };
   }
   if (pathname.startsWith('/platform/users/')) {
-    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/users', current: 'Hồ sơ người dùng' };
+    return { groupLabel: 'Khách hàng', groupPath: '/platform/users', current: 'Hồ sơ người dùng' };
   }
   if (pathname.startsWith('/platform/users')) {
-    return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/dashboard', current: 'Tài khoản người dùng' };
+    return { groupLabel: 'Khách hàng', groupPath: '/platform/dashboard', current: 'Người dùng' };
   }
   if (pathname.startsWith('/platform/frameworks')) {
-    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/frameworks', current: 'Khung chuẩn năng lực' };
+    return { groupLabel: 'Nội dung', groupPath: '/platform/frameworks', current: 'Khung năng lực số' };
   }
   if (pathname.startsWith('/platform/reference-positions')) {
-    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/frameworks', current: 'Mẫu vị trí chuẩn' };
+    return { groupLabel: 'Nội dung', groupPath: '/platform/frameworks', current: 'Vị trí tham chiếu' };
   }
   if (/^\/platform\/versions\/[^/]+\/courses\//.test(pathname)) {
-    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/versions', current: 'Biên tập khóa học' };
+    return { groupLabel: 'Nội dung', groupPath: '/platform/versions', current: 'Sửa khóa học' };
   }
   if (/^\/platform\/versions\/[^/]+/.test(pathname)) {
-    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/versions', current: 'Chi tiết phiên bản' };
+    return { groupLabel: 'Nội dung', groupPath: '/platform/versions', current: 'Phiên bản khóa học' };
   }
   if (pathname.startsWith('/platform/versions')) {
-    return { groupLabel: 'Nội dung & Chuẩn năng lực', groupPath: '/platform/frameworks', current: 'Phiên bản khóa học' };
+    return { groupLabel: 'Nội dung', groupPath: '/platform/frameworks', current: 'Phiên bản khóa học' };
   }
   if (pathname.startsWith('/platform/commerce')) {
-    return { groupLabel: 'Thương mại & Tài chính', groupPath: '/platform/commerce', current: 'Đơn giá & Suất học' };
+    return { groupLabel: 'Doanh thu', groupPath: '/platform/commerce', current: 'Giá và đơn hàng' };
   }
   if (pathname.startsWith('/platform/audit-log')) {
-    return { groupLabel: 'Quản trị & Hỗ trợ', groupPath: '/platform/audit-log', current: 'Nhật ký kiểm tra' };
+    return { groupLabel: 'Hệ thống', groupPath: '/platform/audit-log', current: 'Nhật ký hoạt động' };
   }
   if (pathname.startsWith('/platform/feedbacks')) {
-    return { groupLabel: 'Quản trị & Hỗ trợ', groupPath: '/platform/audit-log', current: 'Ý kiến phản hồi' };
+    return { groupLabel: 'Hệ thống', groupPath: '/platform/audit-log', current: 'Góp ý' };
   }
   if (pathname.startsWith('/platform/bug-reports')) {
-    return { groupLabel: 'Quản trị & Hỗ trợ', groupPath: '/platform/audit-log', current: 'Báo lỗi kỹ thuật' };
+    return { groupLabel: 'Hệ thống', groupPath: '/platform/audit-log', current: 'Báo lỗi' };
   }
   if (pathname.startsWith('/platform/account/security')) {
-    return { groupLabel: 'Tài khoản', groupPath: '/platform/account', current: 'Bảo mật tài khoản' };
+    return { groupLabel: 'Tài khoản', groupPath: '/platform/account', current: 'Bảo mật' };
   }
   if (pathname.startsWith('/platform/account')) {
-    return { groupLabel: 'Tài khoản', groupPath: '/platform/dashboard', current: 'Hồ sơ cá nhân' };
+    return { groupLabel: 'Tài khoản', groupPath: '/platform/dashboard', current: 'Hồ sơ của tôi' };
   }
   if (pathname.startsWith('/platform/notifications')) {
-    return { groupLabel: 'Tài khoản', groupPath: '/platform/dashboard', current: 'Trung tâm thông báo' };
+    return { groupLabel: 'Tài khoản', groupPath: '/platform/dashboard', current: 'Thông báo' };
   }
-  return { groupLabel: 'Vận hành & Khách hàng', groupPath: '/platform/dashboard', current: 'Tổng quan' };
+  return { groupLabel: 'Khách hàng', groupPath: '/platform/dashboard', current: 'Tổng quan' };
 }
 
 function readStoredSidebarState(): boolean {
@@ -701,35 +702,8 @@ function PulseAdminShell() {
     [trials],
   );
 
-  const { data: pendingFeedbacksCount = 0 } = useQuery({
-    queryKey: ['platform', 'sidebar-badge', 'feedbacks'],
-    retry: false,
-    staleTime: 60_000,
-    queryFn: async () => {
-      try {
-        if (typeof feedbackService.getAll !== 'function') return 0;
-        const res = await feedbackService.getAll({ pageIndex: 1, pageSize: 1, type: 'FEEDBACK', status: 'OPEN' });
-        return res?.data?.totalItems ?? 0;
-      } catch {
-        return 0;
-      }
-    },
-  });
-
-  const { data: pendingBugsCount = 0 } = useQuery({
-    queryKey: ['platform', 'sidebar-badge', 'bugs'],
-    retry: false,
-    staleTime: 60_000,
-    queryFn: async () => {
-      try {
-        if (typeof feedbackService.getAll !== 'function') return 0;
-        const res = await feedbackService.getAll({ pageIndex: 1, pageSize: 1, type: 'BUG', status: 'OPEN' });
-        return res?.data?.totalItems ?? 0;
-      } catch {
-        return 0;
-      }
-    },
-  });
+  const { data: pendingFeedbacksCount = 0 } = usePlatformOpenTicketCount('FEEDBACK');
+  const { data: pendingBugsCount = 0 } = usePlatformOpenTicketCount('BUG');
 
   const badgeCounts = useMemo(
     () => ({

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DigiTalent AI — Đề xuất Bộ nhận diện Thương hiệu & Logo</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --bg-slate: #0b0f19;
+      --card-bg: #111827;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #3446C8;
+      --primary-light: #5266E5;
+      --cyan: #0ea5e9;
+      --coral: #E27A68;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-slate);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 40px 24px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+    .badge-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(52, 70, 200, 0.2);
+      border: 1px solid rgba(82, 102, 229, 0.4);
+      color: #818CF8;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 32px;
+      margin-bottom: 60px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #3446C8, #0ea5e9, #E27A68);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .card-tag {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cyan);
+      background: rgba(14, 165, 233, 0.12);
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+    .preview-box {
+      border-radius: 14px;
+      padding: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .preview-light {
+      background: #FFFFFF;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+    }
+    .preview-dark {
+      background: #020617;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .preview-box img {
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
+    }
+    .card p {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      flex-grow: 1;
+    }
+    .meta-list {
+      list-style: none;
+      font-size: 13.5px;
+      margin-bottom: 20px;
+      background: rgba(255,255,255,0.02);
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .meta-list li {
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .meta-list li:last-child { margin-bottom: 0; }
+    .meta-list span.label { color: #64748B; }
+    .meta-list span.val { color: #E2E8F0; font-weight: 500; }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      flex: 1;
+      text-align: center;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: #3446C8;
+      color: #FFF;
+    }
+    .btn-primary:hover {
+      background: #4355D6;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color: #E2E8F0;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 22px;
+      background: var(--cyan);
+      border-radius: 2px;
+    }
+
+    .mockup-bar {
+      background: #FFFFFF;
+      padding: 14px 24px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .mockup-bar-dark {
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .mockup-nav {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #475569;
+    }
+    .mockup-bar-dark .mockup-nav {
+      color: #94A3B8;
+    }
+    .mockup-nav span.active {
+      color: #3446C8;
+      font-weight: 600;
+    }
+    .mockup-bar-dark .mockup-nav span.active {
+      color: #818CF8;
+    }
+
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 50px;
+    }
+    .color-swatch {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .swatch-fill {
+      height: 70px;
+      width: 100%;
+    }
+    .swatch-info {
+      padding: 12px;
+    }
+    .swatch-name { font-size: 14px; font-weight: 700; }
+    .swatch-hex { font-size: 12.5px; color: var(--text-muted); font-family: monospace; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-top">DigiTalent AI · Brand Identity System</div>
+      <h1>Đề Xuất Bộ Nhận Diện Logo DigiTalent AI</h1>
+      <p class="subtitle">
+        Thiết kế đồng bộ dựa trên Thông tư 02/2025/TT-BGDĐT, chuẩn DigComp Châu Âu, kết hợp trí tuệ nhân tạo Gemini AI và phân tích khoảng thiếu năng lực nhân sự.
+      </p>
+    </header>
+
+    <!-- COMPARISON: FRAMED VS UNFRAMED -->
+    <h2 class="section-title">So Sánh: Có Nên Bọc Khung (Squircle Frame) Như Logo Cũ?</h2>
+    <div style="background: rgba(52, 70, 200, 0.08); border: 1px solid rgba(82, 102, 229, 0.25); border-radius: 16px; padding: 24px; margin-bottom: 40px;">
+      <p style="font-size: 15.5px; color: #E2E8F0; margin-bottom: 16px;">
+        💡 <strong>Khuyến nghị của đội ngũ thiết kế:</strong> 
+        Rất <strong>NÊN BỌC TRONG KHUNG BO GÓC (Squircle Frame)</strong> giống logo cũ vì 4 lý do quan trọng:
+      </p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; font-size: 14px; color: #CBD5E1;">
+        <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border-left: 3px solid #10B981;">
+          <strong style="color: #F8FAFC;">1. Nhận diện đồng nhất trên mọi nền:</strong> Khi có khung, logo không bao giờ bị chìm kể cả đặt trên thanh navbar tối, ảnh nền hero banner hay nền trắng.
+        </div>
+        <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border-left: 3px solid #38BDF8;">
+          <strong style="color: #F8FAFC;">2. Chuẩn App Icon / Phần mềm SaaS:</strong> Form bo góc Squircle (tỉ lệ bo 26% chuẩn iOS/macOS) tạo cảm giác sản phẩm công nghệ cao cấp, chuyên nghiệp và vững chắc.
+        </div>
+        <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border-left: 3px solid #F59E0B;">
+          <strong style="color: #F8FAFC;">3. Bảo vệ chi tiết & điểm nhấn:</strong> Các nét mảnh của sóng nhịp tim và điểm sáng cam Coral Spark được bảo toàn trọn vẹn, không bị mất tiêu cự khi thu nhỏ thành Favicon 16px.
+        </div>
+        <div style="background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border-left: 3px solid #A855F7;">
+          <strong style="color: #F8FAFC;">4. Tính kế thừa:</strong> Giữ được phom dáng khung đặc trưng của thương hiệu DigiTalent từ phiên bản trước mà không làm xáo trộn bố cục UI hiện tại.
+        </div>
+      </div>
+
+      <!-- Live Comparison Display: Concept 1 JPG inside frames -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        
+        <!-- OPTION 1: CLEAN SQUIRCLE FRAME -->
+        <div style="background: #1E293B; border-radius: 14px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.15);">
+          <div style="display: inline-block; background: #64748B; color: #FFF; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 6px; margin-bottom: 12px;">
+            PHONG CÁCH 1: KHUNG SQUIRCLE TINH TẾ
+          </div>
+          <div style="display: flex; justify-content: center; gap: 24px; align-items: center; padding: 20px 0; background: #0F172A; border-radius: 10px; margin-bottom: 12px;">
+            <div>
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 6px;">Trên nền tối (Navbar Dark)</div>
+              <img src="/images/brand/digitalent_concept1_in_frame_clean.png" alt="Framed Clean on dark" style="width: 58px; height: 58px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));">
+            </div>
+            <div style="background: #FFFFFF; padding: 8px 16px; border-radius: 8px;">
+              <div style="font-size: 11px; color: #64748B; margin-bottom: 6px;">Trên nền sáng (Navbar Light)</div>
+              <img src="/images/brand/digitalent_concept1_in_frame_clean.png" alt="Framed Clean on light" style="width: 58px; height: 58px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.1));">
+            </div>
+          </div>
+          <p style="font-size: 13px; color: #CBD5E1; text-align: left;">
+            Bọc trọn vẹn bức ảnh gốc <strong>digitalent_concept1_monogram.jpg</strong> vào khung squircle bo góc tròn (tỷ lệ 26%) với viền hairline mỏng công nghệ.
+          </p>
+          <div style="margin-top: 10px; text-align: left;">
+            <a href="/images/brand/digitalent_concept1_in_frame_clean.png" target="_blank" style="color: #38BDF8; font-size: 12px; font-weight: 600; text-decoration: none;">🔍 Xem file ảnh PNG chất lượng cao →</a>
+          </div>
+        </div>
+
+        <!-- OPTION 2: BLUE GRADIENT FRAME (ACTIVE OFFICIAL LOGO) -->
+        <div style="background: #1E293B; border-radius: 14px; padding: 20px; text-align: center; border: 2px solid #10B981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);">
+          <div style="display: inline-block; background: #10B981; color: #FFF; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 6px; margin-bottom: 12px;">
+            ★ ĐANG ÁP DỤNG: KHUNG GRADIENT XANH ĐẬM (CHUẨN LOGO CŨ)
+          </div>
+          <div style="display: flex; justify-content: center; gap: 24px; align-items: center; padding: 20px 0; background: #0F172A; border-radius: 10px; margin-bottom: 12px;">
+            <div>
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 6px;">Trên nền tối</div>
+              <img src="/images/brand/digitalent_concept1_in_frame_blue.png" alt="Framed Blue on dark" style="width: 58px; height: 58px; filter: drop-shadow(0 4px 10px rgba(52,70,200,0.35));">
+            </div>
+            <div style="background: #FFFFFF; padding: 8px 16px; border-radius: 8px;">
+              <div style="font-size: 11px; color: #64748B; margin-bottom: 6px;">Trên nền sáng</div>
+              <img src="/images/brand/digitalent_concept1_in_frame_blue.png" alt="Framed Blue on light" style="width: 58px; height: 58px; filter: drop-shadow(0 4px 10px rgba(52,70,200,0.3));">
+            </div>
+          </div>
+          <p style="font-size: 13px; color: #CBD5E1; text-align: left;">
+            Khung ngoài chuyển sắc xanh Tech Indigo & Royal Blue giống hệt <strong>pulse-mark.svg</strong> cũ, bên trong lồng huy hiệu chứa ảnh gốc <strong>digitalent_concept1_monogram.jpg</strong>.
+          </p>
+          <div style="margin-top: 10px; text-align: left;">
+            <a href="/images/brand/digitalent_concept1_in_frame_blue.png" target="_blank" style="color: #38BDF8; font-size: 12px; font-weight: 600; text-decoration: none;">🔍 Xem file ảnh PNG chất lượng cao →</a>
+          </div>
+        </div>
+
+        <!-- OPTION 3: 3D APP ICON WITH SOFT SHADOW -->
+        <div style="background: #1E293B; border-radius: 14px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="display: inline-block; background: #64748B; color: #FFF; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 6px; margin-bottom: 12px;">
+            PHONG CÁCH 3: KHUNG APP ICON ĐỔ BÓNG 3D
+          </div>
+          <div style="display: flex; justify-content: center; gap: 24px; align-items: center; padding: 20px 0; background: #0F172A; border-radius: 10px; margin-bottom: 12px;">
+            <div>
+              <div style="font-size: 11px; color: #94A3B8; margin-bottom: 6px;">Trên nền tối</div>
+              <img src="/images/brand/digitalent_concept1_in_frame_app_icon.png" alt="App Icon on dark" style="width: 58px; height: 58px;">
+            </div>
+            <div style="background: #FFFFFF; padding: 8px 16px; border-radius: 8px;">
+              <div style="font-size: 11px; color: #64748B; margin-bottom: 6px;">Trên nền sáng</div>
+              <img src="/images/brand/digitalent_concept1_in_frame_app_icon.png" alt="App Icon on light" style="width: 58px; height: 58px;">
+            </div>
+          </div>
+          <p style="font-size: 13px; color: #CBD5E1; text-align: left;">
+            Khung squircle mang hiệu ứng viền kim loại kép (dual rim) kết hợp bóng đổ mềm mại, tạo chiều sâu 3D như một biểu tượng phần mềm trên máy tính bảng hoặc Desktop.
+          </p>
+          <div style="margin-top: 10px; text-align: left;">
+            <a href="/images/brand/digitalent_concept1_in_frame_app_icon.png" target="_blank" style="color: #38BDF8; font-size: 12px; font-weight: 600; text-decoration: none;">🔍 Xem file ảnh PNG chất lượng cao →</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PALETTE -->
+    <h2 class="section-title">Hệ Màu Thương Hiệu (Brand Palette)</h2>
+    <div class="palette-grid">
+      <div class="color-swatch">
+        <div class="swatch-fill" style="background: linear-gradient(135deg, #182663, #3446C8);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Tech Indigo / Royal Blue</div>
+          <div class="swatch-hex">#182663 · #3446C8</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-fill" style="background: linear-gradient(135deg, #0284c7, #38bdf8);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">AI Electric Cyan</div>
+          <div class="swatch-hex">#0EA5E9 · #38BDF8</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-fill" style="background: linear-gradient(135deg, #f97316, #E27A68);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Pulse Energy Coral</div>
+          <div class="swatch-hex">#E27A68 · #F97316</div>
+        </div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch-fill" style="background: linear-gradient(135deg, #FCD34D, #D97706);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Credential Gold Foil</div>
+          <div class="swatch-hex">#F59E0B · #FCD34D</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONCEPTS -->
+    <h2 class="section-title">4 Khái Niệm Logo Đề Xuất</h2>
+    <div class="grid">
+      
+      <!-- CONCEPT 1 -->
+      <div class="card" style="border: 2px solid #3446C8; box-shadow: 0 0 30px rgba(52,70,200,0.3);">
+        <div class="card-header">
+          <div class="card-title">Concept 1: Modern Tech Monogram</div>
+          <span class="card-tag" style="background: #10B981; color: #FFFFFF; font-weight: 700; padding: 4px 12px; border-radius: 6px;">✓ ĐÃ CHỌN LÀM LOGO CHÍNH THỨC</span>
+        </div>
+        <div class="preview-box preview-light">
+          <img src="/images/brand/logo-mark.svg" alt="Monogram Vector" style="width: 120px; height: 120px;">
+        </div>
+        <p>
+          Biểu tượng chữ <strong>D</strong> cách điệu lồng ghép sóng nhịp tim kỹ thuật số (Pulse Wave) và điểm sáng AI Coral Spark. Thể hiện sự đo lường liên tục và bứt phá năng lực nhân tài.
+        </p>
+        <ul class="meta-list">
+          <li><span class="label">Ý nghĩa biểu tượng:</span> <span class="val">Chữ D + T + Sóng Năng Lực + AI</span></li>
+          <li><span class="label">Định dạng có sẵn:</span> <span class="val">SVG Vector & Concept Render</span></li>
+          <li><span class="label">Vị trí tối ưu:</span> <span class="val">Favicon, App Icon, Header Portal</span></li>
+        </ul>
+        <div class="btn-group">
+          <a href="/images/brand/logo-mark.svg" target="_blank" class="btn btn-primary">Xem SVG</a>
+          <a href="/images/brand/digitalent_concept1_monogram.jpg" target="_blank" class="btn btn-secondary">Bản vẽ 3D Render</a>
+        </div>
+      </div>
+
+      <!-- CONCEPT 2 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Concept 2: Hexagonal Competency Core</div>
+          <span class="card-tag">Chuẩn Khung Năng Lực</span>
+        </div>
+        <div class="preview-box preview-dark">
+          <img src="/images/brand/logo-hexagon.svg" alt="Hexagon Core Vector" style="width: 140px; height: 140px;">
+        </div>
+        <p>
+          Hình khối lục giác 3D đại diện cho <strong>6 miền năng lực số cốt lõi</strong> theo Thông tư 02/2025/TT-BGDĐT. Trung tâm là nhân trí tuệ nhân tạo (AI Core) kết nối các mạch tri thức.
+        </p>
+        <ul class="meta-list">
+          <li><span class="label">Ý nghĩa biểu tượng:</span> <span class="val">6 Miền Năng Lực + Neural AI Core</span></li>
+          <li><span class="label">Định dạng có sẵn:</span> <span class="val">SVG Vector & 3D Neural Render</span></li>
+          <li><span class="label">Vị trí tối ưu:</span> <span class="val">Khung Đào Tạo, Báo Cáo Skill Gap</span></li>
+        </ul>
+        <div class="btn-group">
+          <a href="/images/brand/logo-hexagon.svg" target="_blank" class="btn btn-primary">Xem SVG</a>
+          <a href="/images/brand/digitalent_concept2_hexagon_symbol.jpg" target="_blank" class="btn btn-secondary">Bản vẽ 3D Neural</a>
+        </div>
+      </div>
+
+      <!-- CONCEPT 3 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Concept 3: Full Horizontal Brandmark</div>
+          <span class="card-tag">Logo Toàn Diện (Primary Wordmark)</span>
+        </div>
+        <div class="preview-box preview-light">
+          <img src="/images/brand/logo-horizontal.svg" alt="Horizontal Logo Light" style="max-width: 260px;">
+        </div>
+        <p>
+          Bản phối kết hợp hoàn chỉnh giữa Icon Mark bên trái cùng kiểu chữ hiện đại <strong>DigiTalent</strong> và huy hiệu <strong>AI</strong> viền điện quang. Cân đối, chuẩn xác cho nhận diện cấp doanh nghiệp.
+        </p>
+        <ul class="meta-list">
+          <li><span class="label">Cấu trúc:</span> <span class="val">Icon 38px + Wordmark + AI Badge Pill</span></li>
+          <li><span class="label">Phiên bản:</span> <span class="val">Light Theme & Dark Theme (SVG)</span></li>
+          <li><span class="label">Vị trí tối ưu:</span> <span class="val">Top Navigation, Trang Login, Hợp đồng L&D</span></li>
+        </ul>
+        <div class="btn-group">
+          <a href="/images/brand/logo-horizontal.svg" target="_blank" class="btn btn-primary">Bản Light SVG</a>
+          <a href="/images/brand/logo-horizontal-dark.svg" target="_blank" class="btn btn-secondary">Bản Dark SVG</a>
+        </div>
+      </div>
+
+      <!-- CONCEPT 4 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Concept 4: Certified Credential Seal</div>
+          <span class="card-tag">Chứng Chỉ & Kết Quả</span>
+        </div>
+        <div class="preview-box preview-dark">
+          <img src="/images/brand/certificate-seal.svg" alt="Seal Vector" style="width: 150px; height: 150px;">
+        </div>
+        <p>
+          Con dấu xác thực kỹ thuật số mạ vàng công nghệ (Gold Foil Crest). Vòng chữ khắc bảo an, 6 ngôi sao miền năng lực, cành nguyệt quế và chứng thực chuẩn Thông tư 02 / DigComp.
+        </p>
+        <ul class="meta-list">
+          <li><span class="label">Ý nghĩa biểu tượng:</span> <span class="val">Con dấu chất lượng, Bằng cấp xác thực</span></li>
+          <li><span class="label">Định dạng có sẵn:</span> <span class="val">Vector SVG đa độ phân giải</span></li>
+          <li><span class="label">Vị trí tối ưu:</span> <span class="val">Chứng chỉ tốt nghiệp (Outcomes), PDF Report</span></li>
+        </ul>
+        <div class="btn-group">
+          <a href="/images/brand/certificate-seal.svg" target="_blank" class="btn btn-primary">Xem SVG</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MOCKUPS IN CONTEXT -->
+    <h2 class="section-title">Mô Phỏng Trực Quan Trên Giao Diện (In-Context Mockups)</h2>
+    
+    <div style="margin-bottom: 12px; font-size: 14px; color: #94A3B8;">Thanh Menu Trên Nền Sáng (Light Navigation Bar):</div>
+    <div class="mockup-bar">
+      <img src="/images/brand/logo-horizontal.svg" alt="Nav Brand" style="height: 36px;">
+      <div class="mockup-nav">
+        <span class="active">Bàn làm việc</span>
+        <span>Lộ trình năng lực</span>
+        <span>Đánh giá</span>
+        <span>Chứng nhận</span>
+      </div>
+      <div style="font-size: 13px; font-weight: 600; color: #1E293B; background: #F1F5F9; padding: 6px 14px; border-radius: 8px;">
+        Doanh nghiệp Demo
+      </div>
+    </div>
+
+    <div style="margin-bottom: 12px; font-size: 14px; color: #94A3B8;">Thanh Menu Trên Nền Tối (Dark Navigation Bar):</div>
+    <div class="mockup-bar mockup-bar-dark">
+      <img src="/images/brand/logo-horizontal-dark.svg" alt="Nav Brand Dark" style="height: 36px;">
+      <div class="mockup-nav">
+        <span class="active">Tổng quan học tập</span>
+        <span>Lộ trình AI</span>
+        <span>Phòng thi có Proctor</span>
+        <span>Hồ sơ năng lực</span>
+      </div>
+      <div style="font-size: 13px; font-weight: 600; color: #E2E8F0; background: rgba(255,255,255,0.08); padding: 6px 14px; border-radius: 8px;">
+        Nguyễn Văn A (Nhân viên)
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

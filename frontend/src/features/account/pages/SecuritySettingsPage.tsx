@@ -26,6 +26,16 @@ import { toast } from 'sonner';
  * Thiết kế chuẩn Enterprise: 2 cột cân xứng, thanh đo độ mạnh mật khẩu,
  * khắc phục hoàn toàn lỗi autofill nền đen, bảng lịch sử phiên đăng nhập chuyên nghiệp.
  */
+/** Trình duyệt và hệ điều hành của phiên hiện tại, đọc từ userAgent (không gửi đi đâu). */
+function describeCurrentDevice(): string {
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+  const browser = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox'
+    : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Trình duyệt khác';
+  const os = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS'
+    : /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'HĐH khác';
+  return `${browser} trên ${os}`;
+}
+
 export function SecuritySettingsPage() {
   const { pathname } = useLocation();
   const isOwner = useCurrentUser((s) => s.user?.roles.includes('OWNER'));
@@ -64,7 +74,7 @@ function SharedSecuritySettings() {
 
   const strengthLabel = useMemo(() => {
     if (!newPassword) return null;
-    if (strength <= 1) return { text: 'Yếu', color: '#ef4444', percent: 25 };
+    if (strength <= 1) return { text: 'Yếu', color: '#dc2626', percent: 25 };
     if (strength === 2) return { text: 'Trung bình', color: '#f59e0b', percent: 50 };
     if (strength === 3) return { text: 'Tốt', color: '#3b82f6', percent: 75 };
     return { text: 'Rất mạnh', color: '#10b981', percent: 100 };
@@ -113,11 +123,11 @@ function SharedSecuritySettings() {
               <span className="pa-eyebrow-dot" />
               {isMentor ? 'KHÔNG GIAN MENTOR / AN NINH & BẢO MẬT TÀI KHOẢN' : 'QUẢN TRỊ NỀN TẢNG / AN NINH & BẢO MẬT TÀI KHOẢN'}
             </div>
-            <h1 className="pa-header-title">Bảo mật tài khoản & Phiên đăng nhập</h1>
+            <h1 className="pa-header-title">Bảo mật</h1>
             <p className="pa-header-subtitle">
               {isMentor
                 ? 'Quản lý mật khẩu truy cập cổng Mentor, giám sát các phiên hoạt động và thiết lập an toàn tài khoản.'
-                : 'Quản lý mật khẩu truy cập tài khoản quản trị nền tảng, giám sát các phiên hoạt động và áp dụng các tiêu chuẩn an toàn thông tin.'}
+                : 'Đổi mật khẩu và xem các lần đăng nhập gần đây.'}
             </p>
           </div>
         </div>
@@ -125,7 +135,7 @@ function SharedSecuritySettings() {
 
       {successMsg && (
         <div style={{ padding: '12px 16px', borderRadius: 10, background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-          <CheckCircle2 size={18} style={{ color: '#059669', flexShrink: 0 }} />
+          <CheckCircle2 size={18} style={{ color: '#047857', flexShrink: 0 }} />
           <span>{successMsg}</span>
         </div>
       )}
@@ -146,7 +156,7 @@ function SharedSecuritySettings() {
               <KeyRound size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Đổi mật khẩu tài khoản</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Đổi mật khẩu</h2>
               <span style={{ fontSize: 12, color: '#64748b' }}>{isMentor ? 'Đặt mật khẩu mạnh để bảo vệ tài khoản chấm bài' : 'Yêu cầu mật khẩu mạnh để bảo vệ quyền quản trị nền tảng'}</span>
             </div>
           </div>
@@ -158,7 +168,7 @@ function SharedSecuritySettings() {
                 Mật khẩu hiện tại
               </label>
               <div style={{ position: 'relative' }}>
-                <Lock size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+                <Lock size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#64748b', pointerEvents: 'none' }} />
                 <input
                   id="curr-pass"
                   type={showCurrent ? 'text' : 'password'}
@@ -181,7 +191,7 @@ function SharedSecuritySettings() {
                 <button
                   type="button"
                   onClick={() => setShowCurrent(!showCurrent)}
-                  style={{ position: 'absolute', right: 10, top: 10, background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 2 }}
+                  style={{ position: 'absolute', right: 10, top: 10, background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 2 }}
                   title={showCurrent ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -196,7 +206,7 @@ function SharedSecuritySettings() {
                   Mật khẩu mới
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <Lock size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+                  <Lock size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#64748b', pointerEvents: 'none' }} />
                   <input
                     id="new-pass"
                     type={showNew ? 'text' : 'password'}
@@ -219,7 +229,7 @@ function SharedSecuritySettings() {
                   <button
                     type="button"
                     onClick={() => setShowNew(!showNew)}
-                    style={{ position: 'absolute', right: 10, top: 10, background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 2 }}
+                    style={{ position: 'absolute', right: 10, top: 10, background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 2 }}
                     title={showNew ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   >
                     {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -232,7 +242,7 @@ function SharedSecuritySettings() {
                   Xác nhận mật khẩu mới
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <Lock size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+                  <Lock size={15} style={{ position: 'absolute', left: 12, top: 12, color: '#64748b', pointerEvents: 'none' }} />
                   <input
                     id="conf-pass"
                     type={showConfirm ? 'text' : 'password'}
@@ -255,7 +265,7 @@ function SharedSecuritySettings() {
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    style={{ position: 'absolute', right: 10, top: 10, background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 2 }}
+                    style={{ position: 'absolute', right: 10, top: 10, background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 2 }}
                     title={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   >
                     {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -274,7 +284,7 @@ function SharedSecuritySettings() {
                 <div style={{ height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
                   <div style={{ width: `${strengthLabel.percent}%`, height: '100%', background: strengthLabel.color, transition: 'all 0.2s ease' }} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginTop: 10, fontSize: 11, color: '#64748b' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginTop: 10, fontSize: 12, color: '#64748b' }}>
                   <div style={{ color: newPassword.length >= 8 ? '#059669' : '#94a3b8' }}>
                     ✓ Tối thiểu 8 ký tự
                   </div>
@@ -313,7 +323,7 @@ function SharedSecuritySettings() {
                 <Laptop size={17} color="#2563eb" />
                 Phiên làm việc hiện tại
               </h3>
-              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#ecfdf5', color: '#059669', fontWeight: 600 }}>
+              <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: '#ecfdf5', color: '#047857', fontWeight: 600 }}>
                 ● Đang trực tuyến
               </span>
             </div>
@@ -321,15 +331,7 @@ function SharedSecuritySettings() {
             <div style={{ padding: 12, borderRadius: 10, background: '#f8fafc', border: '1px solid #f1f5f9', fontSize: 12, color: '#334155', display: 'grid', gap: 6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#64748b' }}>Trình duyệt & HĐH:</span>
-                <strong>Chrome trên Windows</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Địa chỉ IP:</span>
-                <span style={{ fontFamily: 'monospace' }}>127.0.0.1 (Localhost)</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Khu vực:</span>
-                <span>Việt Nam (VN)</span>
+                <strong>{describeCurrentDevice()}</strong>
               </div>
             </div>
 
@@ -340,7 +342,7 @@ function SharedSecuritySettings() {
               style={{ marginTop: 14, width: '100%', justifyContent: 'center', color: '#dc2626', borderColor: '#fca5a5', display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               <LogOut size={13} />
-              Đăng xuất các thiết bị khác
+              Đăng xuất khỏi thiết bị khác
             </button>
           </div>
 
@@ -363,19 +365,19 @@ function SharedSecuritySettings() {
       <section className="surface pad" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ShieldCheck size={20} style={{ color: '#059669' }} />
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Lịch sử các phiên đăng nhập gần đây</h2>
+            <ShieldCheck size={20} style={{ color: '#047857' }} />
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Đăng nhập gần đây</h2>
           </div>
-          <span style={{ fontSize: 12, color: '#64748b' }}>Ghi nhận 15 phiên đăng nhập gần nhất</span>
+          <span style={{ fontSize: 12, color: '#64748b' }}>Các lần đăng nhập gần nhất</span>
         </div>
 
         <div className="table-scroll">
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ width: 220 }}>Thời gian đăng nhập</th>
+                <th style={{ width: 220 }}>Thời gian</th>
                 <th>Địa chỉ IP</th>
-                <th>Trình duyệt & Thiết bị</th>
+                <th>Trình duyệt</th>
                 <th style={{ width: 140 }}>Trạng thái</th>
               </tr>
             </thead>
@@ -404,8 +406,8 @@ function SharedSecuritySettings() {
                       </div>
                     </td>
                     <td>
-                      <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4 }}>
-                        {item.ip && item.ip !== '\u2014' && item.ip !== '-' ? item.ip : '127.0.0.1'}
+                      <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#475569', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4 }}>
+                        {item.ip && item.ip !== '\u2014' && item.ip !== '-' ? item.ip : 'Không rõ'}
                       </span>
                     </td>
                     <td>
@@ -420,12 +422,12 @@ function SharedSecuritySettings() {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 4,
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: 600,
                           padding: '2px 8px',
                           borderRadius: 999,
                           background: isSuccess ? '#ecfdf5' : '#fff1f2',
-                          color: isSuccess ? '#059669' : '#e11d48',
+                          color: isSuccess ? '#047857' : '#be123c',
                           border: `1px solid ${isSuccess ? '#a7f3d0' : '#fecdd3'}`,
                         }}
                       >

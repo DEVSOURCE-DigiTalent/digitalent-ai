@@ -1,0 +1,449 @@
+/*
+ * Platform Admin: thống nhất kiểu chữ, nhãn và bảng cho mọi trang /platform/*.
+ * Nạp sau pulse-admin-shell.css (PulseAdminLayout) nên các quy tắc ở đây thắng khi cùng độ ưu tiên.
+ * Thang chữ: 12 / 13 / 14 / 16 / 20 / 24px. Nhãn viết thường, không giãn chữ.
+ */
+
+/* Tiêu đề trang: một cỡ cho mọi trang */
+.pulse-ui.pa-console .pa-org-title,
+.pulse-ui.pa-console .pa-ov-header h1,
+.pulse-ui.pa-console .main-area > * h1:first-of-type {
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.pulse-ui.pa-console .pa-org-subtitle,
+.pulse-ui.pa-console .pa-ov-subtitle {
+  font-size: 14px;
+  color: var(--pa-ink-3);
+}
+
+/* Nhãn thẻ số liệu và nhãn nhóm: chữ thường, tối thiểu 12px */
+.pulse-ui.pa-console .pa-ov-kpi-label,
+.pulse-ui.pa-console .pa-org-kpi-label,
+.pulse-ui.pa-console .pa-audit-kpi-label,
+.pa-audit-kpi-label {
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--pa-ink-2);
+}
+
+.pulse-ui.pa-console .pa-ver-section-label {
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  color: var(--pa-ink-3);
+}
+
+/* Tiêu đề cột: chữ thường, 12px, đậm vừa */
+.pulse-ui.pa-console .pa-org-table th,
+.pulse-ui.pa-console .pa-ver-table th,
+.pulse-ui.pa-console .pa-tr-table thead th,
+.pulse-ui.pa-console .pa-tr-mentor-table th,
+.pulse-ui.pa-console .main-area .data-table th,
+.pa-diff-table th {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--pa-ink-2);
+}
+
+/* Số liệu căn cột */
+.pulse-ui.pa-console table td,
+.pulse-ui.pa-console .pa-ov-kpi-val,
+.pulse-ui.pa-console .pa-org-kpi-val,
+.pulse-ui.pa-console .pa-insight-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bảng rộng hơn khung: cuộn ngang trong khung bảng thay vì bị cắt */
+.pulse-ui.pa-console div:has(> table.pa-org-table),
+.pulse-ui.pa-console div:has(> table.pa-ver-table),
+.pulse-ui.pa-console div:has(> table.pa-tr-table) {
+  overflow-x: auto;
+}
+
+/* Chân trang: đủ tương phản (trước đây 2,4:1) */
+.pulse-ui.pa-console .utility-footer {
+  font-size: 12px;
+  color: var(--pa-ink-3);
+}
+
+/* Vòng focus bàn phím thống nhất */
+.pulse-ui.pa-console :is(a, button, [role='tab'], select, input, textarea):focus-visible {
+  outline: 2px solid var(--pa-accent);
+  outline-offset: 2px;
+}
+
+/* Liên kết nhỏ trong thẻ: vùng bấm tối thiểu 32px */
+.pulse-ui.pa-console .pa-box-link,
+.pulse-ui.pa-console .pa-ov-version-link {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ---------- Tổng quan: phễu dùng thử và tổ chức cần chú ý ---------- */
+
+.pulse-ui.pa-console .pa-insight-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.pulse-ui.pa-console .pa-funnel {
+  display: grid;
+  gap: 14px;
+  padding: 4px 0 8px;
+}
+
+.pulse-ui.pa-console .pa-funnel-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  align-items: baseline;
+}
+
+.pulse-ui.pa-console .pa-funnel-label {
+  font-size: 13px;
+  color: var(--pa-ink-2);
+}
+
+.pulse-ui.pa-console .pa-funnel-value {
+  font-size: 13px;
+  color: var(--pa-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.pulse-ui.pa-console .pa-funnel-value strong {
+  font-size: 16px;
+  color: var(--pa-ink);
+  margin-right: 6px;
+}
+
+.pulse-ui.pa-console .pa-funnel-track {
+  grid-column: 1 / -1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--pa-surface-tint);
+  overflow: hidden;
+}
+
+.pulse-ui.pa-console .pa-funnel-bar {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--pa-accent);
+  transform-origin: left center;
+}
+
+.pulse-ui.pa-console .pa-funnel-row.is-final .pa-funnel-bar {
+  background: var(--pa-live);
+}
+
+.pulse-ui.pa-console .pa-funnel-note {
+  font-size: 12px;
+  color: var(--pa-ink-3);
+  margin: 4px 0 0;
+}
+
+.pulse-ui.pa-console .pa-attention-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pulse-ui.pa-console .pa-attention-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--pa-border);
+}
+
+.pulse-ui.pa-console .pa-attention-item:first-child {
+  border-top: 0;
+}
+
+.pulse-ui.pa-console .pa-attention-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pa-ink);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.pulse-ui.pa-console .pa-attention-name:hover {
+  color: var(--pa-accent);
+}
+
+.pulse-ui.pa-console .pa-attention-reason {
+  font-size: 13px;
+  color: var(--pa-ink-3);
+  margin-top: 2px;
+}
+
+.pulse-ui.pa-console .pa-attention-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pa-ink-3);
+}
+
+.pulse-ui.pa-console .pa-attention-dot.is-danger {
+  background: var(--pa-danger);
+}
+
+.pulse-ui.pa-console .pa-attention-dot.is-warn {
+  background: var(--pa-amber);
+}
+
+.pulse-ui.pa-console .pa-attention-tag {
+  font-size: 12px;
+  color: var(--pa-ink-3);
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .pulse-ui.pa-console .pa-insight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pulse-ui.pa-console .pa-funnel-bar {
+    transition: transform 200ms ease-out;
+  }
+}
+
+/* ---------- Phiên bản khóa học: cột trái gọn, bảng không ngắt mã, cấp độ, giá ---------- */
+
+.pulse-ui.pa-console .pa-ver-layout {
+  grid-template-columns: 232px minmax(0, 1fr);
+}
+
+.pulse-ui.pa-console .pa-ver-code-badge,
+.pulse-ui.pa-console .pa-ver-level-badge,
+.pulse-ui.pa-console .pa-ver-table td.num,
+.pulse-ui.pa-console .pa-ver-table th {
+  white-space: nowrap;
+}
+
+.pulse-ui.pa-console .pa-ver-code-badge {
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .pulse-ui.pa-console .pa-ver-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.pulse-ui.pa-console .pa-ver-table td:not(:first-child) {
+  white-space: nowrap;
+}
+
+/* Vị trí tham chiếu: tiêu đề cột ma trận chữ thường */
+.pulse-ui.pa-console .pa-rp-table th {
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ---------- Hồ sơ tổ chức: danh sách hợp đồng điện tử ---------- */
+
+.pulse-ui.pa-console .pa-contract-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pulse-ui.pa-console .pa-contract-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--pa-border);
+}
+
+.pulse-ui.pa-console .pa-contract-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.pulse-ui.pa-console .pa-contract-code {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pa-ink);
+}
+
+.pulse-ui.pa-console .pa-contract-sub {
+  font-size: 12px;
+  color: var(--pa-ink-3);
+  margin-top: 2px;
+}
+
+.pulse-ui.pa-console .pa-contract-amount {
+  display: grid;
+  justify-items: end;
+  font-size: 12px;
+  color: var(--pa-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.pulse-ui.pa-console .pa-contract-amount strong {
+  font-size: 14px;
+  color: var(--pa-ink);
+}
+
+/* ---------- Bảng danh sách: cột chữ dài được xuống dòng thay vì làm bảng tràn ngang ---------- */
+
+.pulse-ui.pa-console .pa-org-table td,
+.pulse-ui.pa-console .pa-tr-table td {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* Cột đầu (tên tổ chức, người dùng) không bị ép quá hẹp khi khung nhỏ */
+.pulse-ui.pa-console .pa-org-table td:first-child,
+.pulse-ui.pa-console .pa-tr-table td:first-child {
+  min-width: 200px;
+}
+
+.pulse-ui.pa-console .pa-org-table td.num,
+.pulse-ui.pa-console .pa-org-table td:last-child,
+.pulse-ui.pa-console .pa-org-table td .pa-pill,
+.pulse-ui.pa-console .pa-org-table td .pa-org-level-pill {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+/* Nút mở chi tiết chỉ còn biểu tượng */
+.pulse-ui.pa-console .pa-org-btn-view {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 6px;
+  justify-content: center;
+}
+
+/* Góp ý và Báo lỗi: cố định chiều rộng cột, nội dung và người gửi tự cắt bằng dấu ba chấm */
+.pulse-ui.pa-console .pa-fb-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.pulse-ui.pa-console .pa-fb-table td:last-child .btn,
+.pulse-ui.pa-console .pa-fb-table td:last-child button {
+  white-space: nowrap;
+}
+
+/* Ngăn kéo tổ chức và người dùng: nhãn thẻ đầu chữ thường */
+.pulse-ui.pa-console .pa-org-detail-chip-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+
+/* ---------- Trình soạn khóa học: nhãn cột trái chữ thường, đủ tương phản ---------- */
+
+.pulse-ui.pa-console .pa-ol-label,
+.pulse-ui .pa-ol-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--pa-ink-3);
+}
+
+.pulse-ui.pa-console .pa-ol-header-title,
+.pulse-ui.pa-console .pa-ol-header-count {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pulse-ui.pa-console .pa-cb-meta-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+
+/* ---------- Khung năng lực: nhãn lĩnh vực chữ thường, đủ tương phản ---------- */
+
+.pulse-ui.pa-console .pa-fw-domain-tag,
+.pulse-ui.pa-console .pa-fw-courses-header {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--pa-ink-3);
+}
+
+/* ---------- Vị trí tham chiếu: nút chọn mức đủ lớn để bấm ---------- */
+
+.pulse-ui.pa-console .pa-rp-seg-btn {
+  width: 36px;
+  height: 32px;
+}
+
+/* ---------- Phiên bản khóa học: thẻ lọc cấp độ đủ tương phản, bảng không tràn ---------- */
+
+.pulse-ui.pa-console .pa-ver-level-tab {
+  color: var(--pa-ink-2);
+}
+
+.pulse-ui.pa-console .pa-ver-table th,
+.pulse-ui.pa-console .pa-ver-table td {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* ---------- Thông báo (dùng chung cổng doanh nghiệp): bỏ dòng nhỏ in hoa, chữ phụ đủ lớn ---------- */
+
+.pulse-ui.pa-console .owner-operations__eyebrow {
+  display: none;
+}
+
+.pulse-ui.pa-console .owner-operations__tabs span,
+.pulse-ui.pa-console .owner-operations__activity-new {
+  font-size: 12px;
+}
+
+.pulse-ui.pa-console .owner-operations__activity-new {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.pulse-ui.pa-console .owner-operations__tabs span {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+/* ---------- Bảo mật: nút và liên kết nhỏ đủ vùng bấm ---------- */
+
+.pulse-ui.pa-console .btn-small {
+  min-height: 32px;
+}
+
+/* Liên kết tên tổ chức trong danh sách: vùng bấm tối thiểu 32px */
+.pulse-ui.pa-console .pa-attention-name,
+.pulse-ui.pa-console .pa-recent-org-link {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pulse-ui.pa-console .pa-ver-context-title {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+}

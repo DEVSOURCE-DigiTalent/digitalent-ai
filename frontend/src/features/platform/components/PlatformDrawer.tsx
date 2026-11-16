@@ -77,7 +77,7 @@ export function PlatformDrawer({
                   <h3 className="pa-drawer-title">{translateUi(title)}</h3>
                   {badge}
                 </div>
-                {subtitle && <p className="pa-drawer-sub">{translateUi(subtitle)}</p>}
+                {subtitle && <div className="pa-drawer-sub">{translateUi(subtitle)}</div>}
               </div>
             </div>
 

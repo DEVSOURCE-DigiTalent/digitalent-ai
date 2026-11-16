@@ -1,4 +1,5 @@
 using DigiTalent.Application.Common;
+using DigiTalent.Application.Common.Email;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
@@ -18,23 +19,23 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
     private readonly ICurrentUser _currentUser;
     private readonly INotificationSender _notificationSender;
     private readonly IAppEmailSender _emailSender;
+    private readonly IAppUrlResolver _urlResolver;
     private readonly ILogger<CreateCourseAssignmentUseCase> _logger;
-    private readonly string _appUrl;
 
     public CreateCourseAssignmentUseCase(
         IApplicationDbContext context,
         ICurrentUser currentUser,
         INotificationSender notificationSender,
         IAppEmailSender emailSender,
-        ILogger<CreateCourseAssignmentUseCase> logger,
-        IOptions<IndividualCommerceOptions> options)
+        IAppUrlResolver urlResolver,
+        ILogger<CreateCourseAssignmentUseCase> logger)
     {
         _context = context;
         _currentUser = currentUser;
         _notificationSender = notificationSender;
         _emailSender = emailSender;
+        _urlResolver = urlResolver;
         _logger = logger;
-        _appUrl = options.Value.Security.PublicAppUrl.TrimEnd('/');
     }
 
     public async Task<CreateCourseAssignmentOutput> ExecuteAsync(CreateCourseAssignmentInput input)
@@ -215,23 +216,15 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
 
                         if (!string.IsNullOrWhiteSpace(emp.WorkEmail))
                         {
-                            var htmlBody = $@"
-<!DOCTYPE html>
-<html>
-<head><meta charset='utf-8'></head>
-<body style='font-family: sans-serif; background-color: #f7f9fd; padding: 24px; color: #172442;'>
-    <div style='max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #dfe6f3;'>
-        <h2 style='color: #304bdf; margin-top: 0;'>DigiTalent AI</h2>
-        <h3 style='color: #172442;'>Thông báo phân công khóa học</h3>
-        <p>Kính gửi <strong>{emp.FullName}</strong>,</p>
-        <p>Bạn vừa được phân công tham gia khóa học: <strong>{course.Code} · {course.Title}</strong>.</p>
-        {(dueDate.HasValue ? $"<div style='background: #fff7ed; border-left: 4px solid #f97316; padding: 12px; margin: 16px 0;'><strong>Hạn hoàn thành:</strong> {dueDate.Value:dd/MM/yyyy}</div>" : "")}
-        <p style='text-align: center; margin-top: 24px;'>
-            <a href='{_appUrl}/enterprise/my-learning' style='background: #304bdf; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Bắt đầu học ngay</a>
-        </p>
-    </div>
-</body>
-</html>";
+                            var appUrl = _urlResolver.GetFrontendBaseUrl();
+                            var actionUrl = $"{appUrl}/enterprise/my-learning";
+                            var htmlBody = EmailTemplateBuilder.BuildCourseAssignmentEmail(
+                                emp.FullName,
+                                course.Code,
+                                course.Title,
+                                dueDate,
+                                actionUrl);
+
                             await _emailSender.SendEmailAsync(
                                 emp.WorkEmail,
                                 emp.FullName,

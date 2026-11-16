@@ -71,7 +71,7 @@
   gap: 6px;
   background: #fef3c7;
   color: #b45309;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -92,7 +92,7 @@
 .pulse-ui .pa-header-search-icon {
   position: absolute;
   left: 12px;
-  color: #94a3b8;
+  color: #64748b;
   pointer-events: none;
 }
 
@@ -200,7 +200,7 @@
 
 .pulse-ui .pa-profile-role {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: #b45309;
   font-weight: 600;
 }
@@ -239,7 +239,7 @@
 }
 
 .pulse-ui .pa-dropdown-heading {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -352,7 +352,7 @@
 
 .pulse-ui .pa-side-nav-group-title {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -462,7 +462,7 @@
 
 .pulse-ui .pa-sidebar-footer-sub {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: #64748b;
   margin-top: 4px;
 }
@@ -516,8 +516,8 @@
 }
 
 .pulse-ui .pa-breadcrumb-sep {
-  color: #94a3b8;
-  font-size: 11px;
+  color: #64748b;
+  font-size: 12px;
 }
 
 .pulse-ui .pa-breadcrumb-root {
@@ -601,6 +601,13 @@
 
 .pulse-ui .data-table tbody tr.pa-row-link:hover {
   background: #fffbeb;
+}
+
+.pulse-ui .data-table tbody tr.pa-row-link:hover .pa-row-chevron {
+  color: var(--pa-accent-solid, #b85c24) !important;
+  background: var(--pa-accent-soft, #fef3e7) !important;
+  border-color: var(--pa-accent-border, #fed7aa) !important;
+  transform: translateX(2px);
 }
 
 .pulse-ui .data-table .num {
@@ -821,7 +828,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--pa-ink-2, #3e524c);
 }
@@ -933,7 +940,7 @@
   align-items: center;
   justify-content: center;
   padding: 2px 9px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   border-radius: 999px;
@@ -1296,7 +1303,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--pa-danger, #e11d48);
   flex-shrink: 0;
@@ -1539,7 +1546,7 @@
 .pulse-ui .data-table th,
 .pulse-admin-layout .data-table th {
   padding: 12px 14px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #475569;
   text-transform: uppercase;
@@ -1575,9 +1582,156 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   flex-shrink: 0;
   border-width: 1px;
   border-style: solid;
+}
+
+/* Commerce Toolbar & Filter Selects */
+.pulse-ui .pa-select-filter {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+}
+
+.pulse-ui .pa-select-filter:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+/* Platform Modal Dialog System */
+.pulse-ui .pa-modal-overlay,
+.pa-modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.pulse-ui .pa-modal-dialog,
+.pa-modal-dialog {
+  width: 100%;
+  max-width: 520px;
+  max-height: min(90vh, 620px);
+  background-color: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: pa-dialog-enter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: auto;
+  position: relative;
+}
+
+@keyframes pa-dialog-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.pulse-ui .pa-modal-header,
+.pa-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  flex-shrink: 0;
+}
+
+.pulse-ui .pa-modal-title,
+.pa-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.pulse-ui .pa-modal-body,
+.pa-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.pulse-ui .pa-modal-footer,
+.pa-modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pulse-ui .pa-btn-danger-solid,
+.pa-btn-danger-solid {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: 1px solid #b91c1c;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.12s ease;
+}
+
+.pulse-ui .pa-btn-danger-solid:hover:not(:disabled),
+.pa-btn-danger-solid:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+.pulse-ui .pa-btn-danger-solid:disabled,
+.pa-btn-danger-solid:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pulse-ui .pa-badge-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  letter-spacing: 0.02em;
 }

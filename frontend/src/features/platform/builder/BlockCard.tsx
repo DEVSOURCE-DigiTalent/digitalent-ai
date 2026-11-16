@@ -1,3 +1,4 @@
+import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
@@ -56,15 +57,15 @@ export function BlockCard({ block, count, linkedQuestions, editable, editing, on
             <button type="button" className={`btn btn-small ${editing ? 'btn-primary' : 'btn-outline'}`} onClick={onToggle}>
               {editing ? 'Xong' : translateUi('Sửa')}
             </button>
-            <button type="button" className="btn btn-ghost btn-small" aria-label="Đưa khối lên" disabled={block.index === 0} onClick={() => move(-1)}>↑</button>
-            <button type="button" className="btn btn-ghost btn-small" aria-label="Đưa khối xuống" disabled={block.index === count - 1} onClick={() => move(1)}>↓</button>
+            <button type="button" className="btn btn-ghost btn-small" aria-label="Đưa khối lên" title="Đưa khối lên" disabled={block.index === 0} onClick={() => move(-1)}><ArrowUp size={14} aria-hidden="true" /></button>
+            <button type="button" className="btn btn-ghost btn-small" aria-label="Đưa khối xuống" title="Đưa khối xuống" disabled={block.index === count - 1} onClick={() => move(1)}><ArrowDown size={14} aria-hidden="true" /></button>
             {confirmDelete ? (
               <>
                 <button type="button" className="btn btn-small pa-danger" onClick={remove}>Xóa khối</button>
                 <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirmDelete(false)}>{translateUi("Giữ lại")}</button>
               </>
             ) : (
-              <button type="button" className="btn btn-ghost btn-small pa-danger-text" aria-label="Xóa khối" onClick={() => setConfirmDelete(true)}>✕</button>
+              <button type="button" className="btn btn-ghost btn-small pa-danger-text" aria-label="Xóa khối" title="Xóa khối" onClick={() => setConfirmDelete(true)}><Trash2 size={14} aria-hidden="true" /></button>
             )}
           </div>
         )}

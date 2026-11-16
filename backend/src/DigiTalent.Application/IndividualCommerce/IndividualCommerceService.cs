@@ -20,6 +20,7 @@ public class IndividualCommerceService
     private readonly IIndividualEmailSender _emailSender;
     private readonly IIndividualPlanCatalog _planCatalog;
     private readonly IPayOSService _payOSService;
+    private readonly IAppUrlResolver _urlResolver;
     private readonly IndividualCommerceOptions _options;
     private readonly ILogger<IndividualCommerceService> _logger;
 
@@ -31,6 +32,7 @@ public class IndividualCommerceService
         IIndividualEmailSender emailSender,
         IIndividualPlanCatalog planCatalog,
         IPayOSService payOSService,
+        IAppUrlResolver urlResolver,
         IOptions<IndividualCommerceOptions> options,
         ILogger<IndividualCommerceService> logger)
     {
@@ -41,6 +43,7 @@ public class IndividualCommerceService
         _emailSender = emailSender;
         _planCatalog = planCatalog;
         _payOSService = payOSService;
+        _urlResolver = urlResolver;
         _options = options.Value;
         _logger = logger;
     }
@@ -148,7 +151,7 @@ public class IndividualCommerceService
         await _context.SaveChangesAsync(cancellationToken);
 
         // 6. Gửi email xác thực
-        var verifyLink = $"{_options.Security.PublicAppUrl.TrimEnd('/')}/individual/register/verify?registrationId={registration.Id}&token={magicLinkToken}";
+        var verifyLink = $"{_urlResolver.GetFrontendBaseUrl()}/individual/register/verify?registrationId={registration.Id}&token={magicLinkToken}";
         await _emailSender.SendVerificationEmailAsync(normalizedEmail, registration.FullName, otp, verifyLink, cancellationToken);
 
         var maskedEmail = MaskEmail(normalizedEmail);
@@ -437,7 +440,7 @@ public class IndividualCommerceService
         _context.IndividualEmailVerificationChallenges.Add(newChallenge);
         await _context.SaveChangesAsync(cancellationToken);
 
-        var verifyLink = $"{_options.Security.PublicAppUrl.TrimEnd('/')}/individual/register/verify?registrationId={registration.Id}&token={magicLinkToken}";
+        var verifyLink = $"{_urlResolver.GetFrontendBaseUrl()}/individual/register/verify?registrationId={registration.Id}&token={magicLinkToken}";
         await _emailSender.SendVerificationEmailAsync(registration.Email, registration.FullName, otp, verifyLink, cancellationToken);
 
         return new ResendIndividualVerificationResponse(

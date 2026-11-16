@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Mail;
-using System.Text.Encodings.Web;
+using DigiTalent.Application.Common.Email;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.IndividualCommerce;
 using Microsoft.Extensions.Logging;
@@ -32,7 +32,6 @@ public sealed class EmailVerificationSender : IEmailVerificationSender
         CancellationToken cancellationToken = default)
     {
         var smtp = _options.Smtp;
-        var safeName = HtmlEncoder.Default.Encode(displayName);
         var isDev = _options.Security.IsDevelopment;
 
         if (string.IsNullOrWhiteSpace(smtp?.Host) ||
@@ -50,20 +49,14 @@ public sealed class EmailVerificationSender : IEmailVerificationSender
             return otp;
         }
 
+        var bodyHtml = EmailTemplateBuilder.BuildVerificationOtpEmail(displayName, otp, 10);
+
         using var email = new MailMessage
         {
-            From = new MailAddress(smtp.FromEmail, smtp.FromName ?? "DigiTalent"),
+            From = new MailAddress(smtp.FromEmail, string.IsNullOrWhiteSpace(smtp.FromName) ? "DigiTalent AI" : smtp.FromName),
             Subject = "Mã xác minh tài khoản DigiTalent AI",
             IsBodyHtml = true,
-            Body = $"""
-                    <p>Xin chào <strong>{safeName}</strong>,</p>
-                    <p>Mã xác minh email của bạn là:</p>
-                    <h2 style="letter-spacing:6px;font-size:36px;font-family:monospace">{otp}</h2>
-                    <p>Mã có hiệu lực trong <strong>10 phút</strong>. Không chia sẻ mã này với bất kỳ ai.</p>
-                    <p>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>
-                    <hr/>
-                    <p style="font-size:12px;color:#666">DigiTalent AI: Nền tảng phát triển năng lực đội ngũ</p>
-                    """
+            Body = bodyHtml
         };
         email.To.Add(toEmail);
 

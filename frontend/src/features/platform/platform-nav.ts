@@ -29,109 +29,109 @@ export interface PlatformNavGroup {
 
 /**
  * Phân nhóm 4 khối chức năng Sidebar Quản trị Nền tảng (Platform Admin v2 - Enterprise Standard):
- * 1. Vận hành & Khách hàng
- * 2. Nội dung & Chuẩn năng lực
- * 3. Thương mại & Tài chính
- * 4. Quản trị & Hỗ trợ
+ * 1. Khách hàng
+ * 2. Nội dung
+ * 3. Doanh thu
+ * 4. Hệ thống
  */
 export const PLATFORM_NAV_GROUPS: readonly PlatformNavGroup[] = [
   {
-    groupTitle: 'Vận hành & Khách hàng',
+    groupTitle: 'Khách hàng',
     items: [
       {
         to: '/platform/dashboard',
         label: 'Tổng quan',
         glyph: '',
         icon: LayoutDashboard,
-        description: 'Bảng điều khiển KPI & tác vụ vận hành nền tảng',
+        description: 'Số liệu chính và việc cần xử lý',
       },
       {
         to: '/platform/trials',
         label: 'Đánh giá dùng thử',
         glyph: '',
         icon: FlaskConical,
-        description: 'Yêu cầu thẩm định & phân công mentor',
+        description: 'Phân công mentor và theo dõi tiến độ chấm bài',
         badgeKey: 'pendingTrials',
       },
       {
         to: '/platform/organizations',
-        label: 'Tổ chức doanh nghiệp',
+        label: 'Tổ chức',
         glyph: '',
         icon: Building2,
-        description: 'Quản trị khách hàng doanh nghiệp B2B',
+        description: 'Trạng thái, suất học và nhân viên của từng tổ chức',
       },
       {
         to: '/platform/users',
-        label: 'Tài khoản người dùng',
+        label: 'Người dùng',
         glyph: '',
         icon: Users,
-        description: 'Quản lý tài khoản, người dùng thử & phân quyền',
+        description: 'Tra cứu, khóa và mở khóa tài khoản',
       },
     ],
   },
   {
-    groupTitle: 'Nội dung & Chuẩn năng lực',
+    groupTitle: 'Nội dung',
     items: [
       {
         to: '/platform/frameworks',
-        label: 'Khung chuẩn năng lực',
+        label: 'Khung năng lực số',
         glyph: '',
         icon: Gem,
-        description: 'Khung chuẩn năng lực số quốc gia',
+        description: '6 lĩnh vực năng lực số và các khóa học',
       },
       {
         to: '/platform/reference-positions',
-        label: 'Mẫu vị trí chuẩn',
+        label: 'Vị trí tham chiếu',
         glyph: '',
         icon: BriefcaseBusiness,
-        description: 'Thư viện chức danh mẫu tham chiếu',
+        description: 'Mức năng lực yêu cầu của 5 vị trí mẫu',
       },
       {
         to: '/platform/versions',
         label: 'Phiên bản khóa học',
         glyph: '',
         icon: Anchor,
-        description: 'Catalog neo đang phục vụ & bản nháp soạn thảo',
+        description: 'Bản đang dùng, bản nháp và công bố',
       },
     ],
   },
   {
-    groupTitle: 'Thương mại & Tài chính',
+    groupTitle: 'Doanh thu',
     items: [
       {
         to: '/platform/commerce',
-        label: 'Đơn giá & Suất học',
+        label: 'Giá và đơn hàng',
         glyph: '',
         icon: ReceiptText,
-        description: 'Gói cước, đơn giá theo suất & thương mại B2B',
+        description: 'Giá mỗi suất và lịch sử mua suất',
       },
     ],
   },
   {
-    groupTitle: 'Quản trị & Hỗ trợ',
+    groupTitle: 'Hệ thống',
     items: [
       {
         to: '/platform/audit-log',
-        label: 'Nhật ký kiểm tra',
+        label: 'Nhật ký hoạt động',
         glyph: '',
         icon: ScrollText,
-        description: 'Truy vết an ninh, thao tác hệ thống & kiểm toán',
+        description: 'Ai đã làm gì, lúc nào và vì sao',
       },
       {
         to: '/platform/feedbacks',
-        label: 'Ý kiến phản hồi',
+        label: 'Góp ý',
         glyph: '',
         icon: MessageSquare,
         badgeKey: 'pendingFeedbacks',
-        description: 'Ý kiến đóng góp và đề xuất từ người dùng',
+        description: 'Góp ý và điểm hài lòng từ người dùng',
       },
       {
         to: '/platform/bug-reports',
-        label: 'Báo lỗi kỹ thuật',
+        label: 'Báo lỗi',
         glyph: '',
         icon: Bug,
         badgeKey: 'pendingBugs',
-        description: 'Sự cố và lỗi người dùng gửi về hệ thống',
+        description: 'Lỗi người dùng báo từ trong ứng dụng',
       },
     ],
   },
@@ -140,14 +140,14 @@ export const PLATFORM_NAV_GROUPS: readonly PlatformNavGroup[] = [
 /** Danh sách tuần tự tương thích ngược với PLATFORM_SIDEBAR */
 export const PLATFORM_NAV: readonly PlatformNavItem[] = [
   { to: '/platform/dashboard', label: 'Tổng quan', glyph: '', icon: LayoutDashboard },
-  { to: '/platform/frameworks', label: 'Khung chuẩn', glyph: '', icon: Gem },
-  { to: '/platform/reference-positions', label: 'Mẫu vị trí', glyph: '', icon: BriefcaseBusiness },
+  { to: '/platform/frameworks', label: 'Khung năng lực số', glyph: '', icon: Gem },
+  { to: '/platform/reference-positions', label: 'Vị trí tham chiếu', glyph: '', icon: BriefcaseBusiness },
   { to: '/platform/versions', label: 'Phiên bản khóa học', glyph: '', icon: Anchor },
   { to: '/platform/organizations', label: 'Tổ chức', glyph: '', icon: Building2 },
   { to: '/platform/trials', label: 'Đánh giá dùng thử', glyph: '', icon: FlaskConical, badgeKey: 'pendingTrials' },
   { to: '/platform/users', label: 'Người dùng', glyph: '', icon: Users },
-  { to: '/platform/commerce', label: 'Đơn giá', glyph: '', icon: ReceiptText },
-  { to: '/platform/audit-log', label: 'Nhật ký kiểm tra', glyph: '', icon: ScrollText },
+  { to: '/platform/commerce', label: 'Giá và đơn hàng', glyph: '', icon: ReceiptText },
+  { to: '/platform/audit-log', label: 'Nhật ký hoạt động', glyph: '', icon: ScrollText },
   { to: '/platform/feedbacks', label: 'Góp ý', glyph: '', icon: MessageSquare },
   { to: '/platform/bug-reports', label: 'Báo lỗi', glyph: '', icon: Bug },
 ] as const;
@@ -156,7 +156,7 @@ export const PLATFORM_NAV: readonly PlatformNavItem[] = [
 export const PLATFORM_TOP_LINKS = [
   { to: '/platform/dashboard', label: 'Tổng quan' },
   { to: '/platform/trials', label: 'Đánh giá dùng thử' },
-  { to: '/platform/organizations', label: 'Khách hàng' },
+  { to: '/platform/organizations', label: 'Tổ chức' },
   { to: '/platform/versions', label: 'Phiên bản khóa học' },
-  { to: '/platform/audit-log', label: 'Kiểm toán' },
+  { to: '/platform/audit-log', label: 'Nhật ký hoạt động' },
 ] as const;

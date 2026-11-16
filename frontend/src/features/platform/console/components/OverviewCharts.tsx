@@ -183,9 +183,9 @@ export function RevenueColumnCard({
     <section className="pa-ov-panel" aria-label="Biểu đồ cột doanh thu suất học">
       <div className="pa-ov-panel-head">
         <div>
-          <h2 className="pa-ov-panel-title">Doanh thu suất học</h2>
+          <h2 className="pa-ov-panel-title">Doanh thu</h2>
           <p className="pa-ov-panel-sub">
-            {formatMoney(totalRevenue)} · {formatNumber(seatsPurchased)} suất bán
+            {formatMoney(totalRevenue)} · {formatNumber(seatsPurchased)} suất đã bán
           </p>
         </div>
 
@@ -204,7 +204,7 @@ export function RevenueColumnCard({
             className="pa-ov-tab"
             onClick={() => setSelectedTab('time')}
           >
-            {translateUi('Theo thời gian')}
+            {translateUi('Theo tháng')}
           </button>
           <button
             type="button"
@@ -359,7 +359,7 @@ export function RevenueColumnCard({
               </span>
             </div>
             <Link to="/platform/commerce" className="pa-box-link">
-              <span>Chi tiết giao dịch</span>
+              <span>Xem đơn hàng</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -383,7 +383,7 @@ export function OrganizationDonutCard({ data, trials }: OrganizationDonutCardPro
   const orgSlices = useMemo<DonutSliceDatum[]>(() => [
     {
       key: 'paid',
-      label: 'Đang trả phí',
+      label: 'Đã mua khóa',
       value: data.paidOrganizationCount,
       color: '#15803d',
       to: '/platform/organizations?stage=PAID',
@@ -411,9 +411,9 @@ export function OrganizationDonutCard({ data, trials }: OrganizationDonutCardPro
     const setup = trials.filter((t) => t.stage === 'SETUP').length;
     return [
       { key: 'requested', label: 'Chờ phân công mentor', value: requested, color: '#b45309', to: '/platform/trials' },
-      { key: 'assigned', label: 'Đang chấm thẩm định', value: assigned, color: '#b85c24', to: '/platform/trials' },
-      { key: 'reported', label: 'Đã công bố kết quả', value: reported, color: '#15803d', to: '/platform/trials' },
-      { key: 'setup', label: 'Đang thiết lập bài thử', value: setup, color: '#64748b', to: '/platform/trials' },
+      { key: 'assigned', label: 'Đang chấm', value: assigned, color: '#b85c24', to: '/platform/trials' },
+      { key: 'reported', label: 'Đã có báo cáo', value: reported, color: '#15803d', to: '/platform/trials' },
+      { key: 'setup', label: 'Chưa gửi yêu cầu', value: setup, color: '#64748b', to: '/platform/trials' },
     ];
   }, [trials]);
 
@@ -421,14 +421,14 @@ export function OrganizationDonutCard({ data, trials }: OrganizationDonutCardPro
   const nonZeroSlices = activeSlices.filter((s) => s.value > 0);
   const totalCount = activeTab === 'orgs' ? data.organizationCount : trials.length;
   const centerPrimary = activeTab === 'orgs' ? `${data.conversionRate}%` : formatNumber(trials.length);
-  const centerLabel = activeTab === 'orgs' ? 'Chuyển đổi' : 'Hồ sơ thử';
+  const centerLabel = activeTab === 'orgs' ? 'Đã mua khóa' : 'Tổ chức thử';
 
   return (
-    <section className="pa-ov-panel" aria-label="Cơ cấu tổ chức và tiến độ dùng thử">
+    <section className="pa-ov-panel" aria-label="Tổ chức theo trạng thái và tiến độ dùng thử">
       <div className="pa-ov-panel-head">
         <div>
           <h2 className="pa-ov-panel-title">
-            {activeTab === 'orgs' ? 'Cơ cấu tổ chức' : 'Tiến độ dùng thử'}
+            {activeTab === 'orgs' ? 'Tổ chức theo trạng thái' : 'Tiến độ dùng thử'}
           </h2>
           <p className="pa-ov-panel-sub">
             {activeTab === 'orgs'
@@ -452,7 +452,7 @@ export function OrganizationDonutCard({ data, trials }: OrganizationDonutCardPro
             className="pa-ov-tab"
             onClick={() => setActiveTab('orgs')}
           >
-            {translateUi('Tổ chức')}
+            {translateUi('Trạng thái')}
           </button>
           <button
             type="button"
@@ -543,9 +543,9 @@ export function OrganizationDonutCard({ data, trials }: OrganizationDonutCardPro
           </div>
 
           <div className="pa-ov-chart-foot">
-            <span className="pa-ov-foot-note">Chọn dòng để lọc nhanh</span>
+            <span className="pa-ov-foot-note">Bấm một dòng để mở danh sách đã lọc</span>
             <Link to={activeTab === 'orgs' ? '/platform/organizations' : '/platform/trials'} className="pa-box-link">
-              <span>{activeTab === 'orgs' ? 'Quản lý tổ chức' : 'Mở đánh giá dùng thử'}</span>
+              <span>{activeTab === 'orgs' ? 'Xem tổ chức' : 'Mở đánh giá dùng thử'}</span>
               <ArrowRight size={14} />
             </Link>
           </div>

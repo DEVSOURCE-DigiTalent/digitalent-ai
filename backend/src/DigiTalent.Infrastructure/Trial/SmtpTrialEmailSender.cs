@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Mail;
+using DigiTalent.Application.Common.Email;
+using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.IndividualCommerce;
 using DigiTalent.Application.Trial;
 using Microsoft.Extensions.Logging;
@@ -11,6 +13,7 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
 {
     private readonly SmtpOptions _smtpOptions;
     private readonly TrialOptions _trialOptions;
+    private readonly IAppUrlResolver _urlResolver;
     private readonly ILogger<SmtpTrialEmailSender> _logger;
 
     public bool IsReady => !string.IsNullOrWhiteSpace(_smtpOptions.Host) &&
@@ -23,10 +26,12 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
     public SmtpTrialEmailSender(
         IOptions<IndividualCommerceOptions> options,
         TrialOptions trialOptions,
+        IAppUrlResolver urlResolver,
         ILogger<SmtpTrialEmailSender> logger)
     {
         _smtpOptions = options.Value.Smtp;
         _trialOptions = trialOptions;
+        _urlResolver = urlResolver;
         _logger = logger;
     }
 
@@ -43,67 +48,17 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
             throw new InvalidOperationException("SMTP settings are not configured for trial emails.");
         }
 
-        var publicUrl = _trialOptions.PublicAppUrl.TrimEnd('/');
+        var publicUrl = _urlResolver.GetFrontendBaseUrl();
         var isVerify = string.Equals(kind, "verify", StringComparison.OrdinalIgnoreCase);
         var actionUrl = isVerify
             ? $"{publicUrl}/business/try/verify?token={Uri.EscapeDataString(token)}"
             : $"{publicUrl}/business/try/accept?token={Uri.EscapeDataString(token)}";
 
         var subject = isVerify
-            ? "Xác minh tài khoản dùng thử doanh nghiệp — DigiTalent AI"
-            : "Lời mời tham gia dùng thử doanh nghiệp — DigiTalent AI";
+            ? "Xác minh tài khoản dùng thử doanh nghiệp · DigiTalent AI"
+            : "Lời mời tham gia dùng thử doanh nghiệp · DigiTalent AI";
 
-        var heading = isVerify
-            ? "Xác minh tài khoản dùng thử doanh nghiệp"
-            : "Lời mời tham gia không gian doanh nghiệp";
-
-        var bodyContent = isVerify
-            ? "Cảm ơn bạn đã đăng ký trải nghiệm dùng thử DigiTalent AI cho doanh nghiệp. Nhập mã xác minh bên dưới hoặc nhấn vào nút để xác minh email:"
-            : "Bạn vừa nhận được lời mời tham gia vào không gian dùng thử DigiTalent AI của tổ chức. Nhấn vào nút bên dưới để chấp nhận lời mời và truy cập:";
-        var codeHtml = isVerify && code != null
-            ? $"<p style='text-align:center;font-size:28px;font-weight:700;letter-spacing:8px;color:#344bce'>{code}</p><p>Mã chỉ dùng một lần và hết hạn theo thời hạn đăng ký.</p>"
-            : "";
-
-        var buttonText = isVerify ? "Xác minh tài khoản ngay" : "Tham gia không gian dùng thử";
-
-        var bodyHtml = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8'>
-    <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }}
-        .card {{ max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
-        .header {{ text-align: center; margin-bottom: 24px; }}
-        .brand {{ font-size: 24px; font-weight: 700; color: #4338ca; }}
-        .btn {{ display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 20px; text-align: center; }}
-        .footer {{ font-size: 13px; color: #64748b; margin-top: 32px; text-align: center; line-height: 1.5; }}
-        .note {{ font-size: 13px; color: #64748b; background-color: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 20px; word-break: break-all; }}
-    </style>
-</head>
-<body>
-    <div class='card'>
-        <div class='header'>
-            <div class='brand'>DigiTalent AI</div>
-            <p style='color: #64748b; margin-top: 4px;'>Nền tảng Đào tạo & Đánh giá Năng lực Số Doanh nghiệp</p>
-        </div>
-        <h3>{heading}</h3>
-        <p>{bodyContent}</p>
-        {codeHtml}
-        <div style='text-align: center;'>
-            <a href='{actionUrl}' class='btn'>{buttonText}</a>
-        </div>
-        <div class='note'>
-            Nếu nút bấm không hoạt động, bạn có thể sao chép liên kết sau vào trình duyệt:<br>
-            <a href='{actionUrl}'>{actionUrl}</a>
-        </div>
-        <div class='footer'>
-            Email này được gửi tự động từ hệ thống DigiTalent AI.<br>
-            Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.
-        </div>
-    </div>
-</body>
-</html>";
+        var bodyHtml = EmailTemplateBuilder.BuildTrialEmail(email, actionUrl, isVerify, code);
 
         using var client = new SmtpClient(_smtpOptions.Host, _smtpOptions.Port)
         {
@@ -111,23 +66,27 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
             EnableSsl = _smtpOptions.EnableSsl
         };
 
-        using var message = new MailMessage
+        using var mail = new MailMessage
         {
-            From = new MailAddress(_smtpOptions.FromEmail, _smtpOptions.FromName),
+            From = new MailAddress(_smtpOptions.FromEmail, string.IsNullOrWhiteSpace(_smtpOptions.FromName) ? "DigiTalent AI" : _smtpOptions.FromName),
             Subject = subject,
             Body = bodyHtml,
             IsBodyHtml = true
         };
+        mail.To.Add(email);
 
-        message.To.Add(email);
         try
         {
-            await client.SendMailAsync(message, ct);
-            _logger.LogInformation("Sent trial {Kind} email to {Email}", kind, email);
+            await client.SendMailAsync(mail, ct);
+            _logger.LogInformation("[SmtpTrialEmailSender] Successfully sent trial {Kind} email to {Email}.", kind, email);
         }
-        catch (Exception ex) when (_trialOptions.DevelopmentEnvironment && _trialOptions.EnableDevelopmentCapture)
+        catch (Exception ex)
         {
             _logger.LogWarning(ex, "[SmtpTrialEmailSender] Failed to send trial {Kind} email to {Email} via SMTP. In Development mode, proceeding with fallback capture.", kind, email);
+            if (!IsDevelopmentCapture)
+            {
+                throw;
+            }
         }
     }
 }

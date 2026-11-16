@@ -35,15 +35,15 @@ type TabKey = TrialStage | 'ALL';
 const TABS: readonly { key: TabKey; label: string }[] = [
   { key: 'ALL', label: 'Tất cả' },
   { key: 'REQUESTED', label: 'Chờ phân công' },
-  { key: 'ASSIGNED', label: 'Đang chấm thi' },
-  { key: 'REPORTED', label: 'Đã có kết quả' },
+  { key: 'ASSIGNED', label: 'Đang chấm' },
+  { key: 'REPORTED', label: 'Đã có báo cáo' },
   { key: 'SETUP', label: 'Chưa gửi yêu cầu' },
 ];
 
 const ADMIN_STAGE: Record<TrialStage, { label: string; tone: 'neutral' | 'warn' | 'info' | 'ok' }> = {
   REQUESTED: { label: 'Chờ phân công', tone: 'warn' },
-  ASSIGNED: { label: 'Đang chấm thi', tone: 'info' },
-  REPORTED: { label: 'Đã có kết quả', tone: 'ok' },
+  ASSIGNED: { label: 'Đang chấm', tone: 'info' },
+  REPORTED: { label: 'Đã có báo cáo', tone: 'ok' },
   SETUP: { label: 'Chưa gửi yêu cầu', tone: 'neutral' },
 };
 
@@ -89,8 +89,8 @@ function getSlaStatus(trial: PlatformTrialItem) {
 }
 
 function getWorkloadLabel(activeTrials: number, status?: string) {
-  if (status && status !== 'ACTIVE') return { label: 'Tạm khóa', tone: 'is-locked' };
-  if (activeTrials === 0) return { label: 'Trống tải', tone: 'is-free' };
+  if (status && status !== 'ACTIVE') return { label: 'Đã khóa', tone: 'is-locked' };
+  if (activeTrials === 0) return { label: 'Đang rảnh', tone: 'is-free' };
   if (activeTrials >= 3) return { label: 'Tải cao', tone: 'is-high' };
   return { label: 'Đang phụ trách', tone: '' };
 }
@@ -347,7 +347,7 @@ export function PlatformTrialsPage() {
       {/* Tier 1: Clean Header without redundant paragraph */}
       <header className="pa-ov-header" style={{ marginBottom: 0 }}>
         <div>
-          <h1>Yêu cầu thẩm định &amp; Đánh giá dùng thử</h1>
+          <h1>Đánh giá dùng thử</h1>
         </div>
 
         <div className="pa-ov-actions">
@@ -366,7 +366,7 @@ export function PlatformTrialsPage() {
             onClick={() => setCreateMentorOpen(true)}
           >
             <UserPlus size={14} aria-hidden="true" />
-            <span>Thêm Mentor</span>
+            <span>Thêm mentor</span>
           </button>
         </div>
       </header>
@@ -393,7 +393,7 @@ export function PlatformTrialsPage() {
               <div className="pa-tr-kpi-val-row">
                 <span className="pa-ov-kpi-val">{requestedCount}</span>
                 {urgentRequestedCount > 0 ? (
-                  <span className="pa-tr-pill is-bad" style={{ fontSize: 11.5, padding: '2px 8px' }}>
+                  <span className="pa-tr-pill is-bad" style={{ fontSize: 12, padding: '2px 8px' }}>
                     {urgentRequestedCount} gấp &lt;48h
                   </span>
                 ) : (
@@ -409,14 +409,14 @@ export function PlatformTrialsPage() {
               onClick={() => toggleStageFromKpi('ASSIGNED')}
             >
               <div className="pa-ov-kpi-top">
-                <span className="pa-ov-kpi-label">Đang chấm thi</span>
+                <span className="pa-ov-kpi-label">Đang chấm</span>
                 <span className="pa-kpi-icon is-sky" aria-hidden="true">
                   <FlaskConical size={16} />
                 </span>
               </div>
               <div className="pa-tr-kpi-val-row">
                 <span className="pa-ov-kpi-val">{assignedCount}</span>
-                <span className="pa-tr-pill is-info" style={{ fontSize: 11.5, padding: '2px 8px' }}>
+                <span className="pa-tr-pill is-info" style={{ fontSize: 12, padding: '2px 8px' }}>
                   {totalEvaluatingSubs} bài
                 </span>
               </div>
@@ -436,7 +436,7 @@ export function PlatformTrialsPage() {
               </div>
               <div className="pa-tr-kpi-val-row">
                 <span className="pa-ov-kpi-val">{reportedCount}</span>
-                <span className="pa-tr-pill is-ok" style={{ fontSize: 11.5, padding: '2px 8px' }}>
+                <span className="pa-tr-pill is-ok" style={{ fontSize: 12, padding: '2px 8px' }}>
                   {totalParticipants} nhân sự
                 </span>
               </div>
@@ -451,7 +451,7 @@ export function PlatformTrialsPage() {
               }
             >
               <div className="pa-ov-kpi-top">
-                <span className="pa-ov-kpi-label">Mentor sẵn sàng</span>
+                <span className="pa-ov-kpi-label">Mentor</span>
                 <span className="pa-kpi-icon is-orange" aria-hidden="true">
                   <Users size={16} />
                 </span>
@@ -463,8 +463,8 @@ export function PlatformTrialsPage() {
                     {' '}/ {mentorsList.length}
                   </span>
                 </span>
-                <span className="pa-tr-pill is-ok" style={{ fontSize: 11.5, padding: '2px 8px' }}>
-                  {freeMentors.length} rảnh
+                <span className="pa-tr-pill is-ok" style={{ fontSize: 12, padding: '2px 8px' }}>
+                  {freeMentors.length} đang rảnh
                 </span>
               </div>
             </button>
@@ -473,7 +473,7 @@ export function PlatformTrialsPage() {
           {/* Tier 3: Unified Trials Worklist Table */}
           <section className="pa-ov-panel" aria-labelledby="trials-worklist-heading">
             <h2 id="trials-worklist-heading" className="sr-only">
-              Danh sách yêu cầu thẩm định doanh nghiệp
+              Tổ chức dùng thử
             </h2>
 
             <div className="pa-tr-toolbar">
@@ -539,8 +539,8 @@ export function PlatformTrialsPage() {
                     onChange={(e) => setSlaFilter(e.target.value as 'ALL' | 'URGENT')}
                     className="pa-tr-select"
                   >
-                    <option value="ALL">Tất cả tiến độ</option>
-                    <option value="URGENT">Cần gấp hoặc quá hạn</option>
+                    <option value="ALL">Mọi thời hạn</option>
+                    <option value="URGENT">Sắp hết hạn hoặc quá hạn</option>
                   </select>
 
                   {/* Mentor Filter Dropdown */}
@@ -559,7 +559,7 @@ export function PlatformTrialsPage() {
                     >
                       <Users size={15} aria-hidden="true" />
                       <span className="pa-tr-select-btn-text">
-                        {selectedMentorName ? selectedMentorName : `Mentor sẵn sàng (${freeMentors.length})`}
+                        {selectedMentorName ? selectedMentorName : `Mentor đang rảnh (${freeMentors.length})`}
                       </span>
                       <ChevronDown
                         size={14}
@@ -621,7 +621,7 @@ export function PlatformTrialsPage() {
                                   <div className="pa-tr-menu-item-email">{m.email}</div>
                                 </div>
                               </div>
-                              <span className="pa-tr-pill is-ok" style={{ fontSize: 11, padding: '2px 7px' }}>0 DN</span>
+                              <span className="pa-tr-pill is-ok" style={{ fontSize: 12, padding: '2px 7px' }}>0 DN</span>
                             </button>
                           );
                         })}
@@ -652,7 +652,7 @@ export function PlatformTrialsPage() {
                                       <div className="pa-tr-menu-item-email">{m.email}</div>
                                     </div>
                                   </div>
-                                  <span className="pa-tr-pill is-info" style={{ fontSize: 11, padding: '2px 7px' }}>{m.activeTrials} DN</span>
+                                  <span className="pa-tr-pill is-info" style={{ fontSize: 12, padding: '2px 7px' }}>{m.activeTrials} DN</span>
                                 </button>
                               );
                             })}
@@ -714,11 +714,11 @@ export function PlatformTrialsPage() {
                 <table className="pa-tr-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '28%' }}>Doanh nghiệp</th>
-                      <th style={{ width: '17%' }}>Tiến độ thi</th>
-                      <th style={{ width: '17%' }}>Thời hạn làm bài</th>
+                      <th style={{ width: '28%' }}>Tổ chức</th>
+                      <th style={{ width: '17%' }}>Đã nộp bài</th>
+                      <th style={{ width: '17%' }}>Hạn nộp</th>
                       <th style={{ width: '14%' }}>Trạng thái</th>
-                      <th style={{ width: '14%' }}>Mentor phụ trách</th>
+                      <th style={{ width: '14%' }}>Mentor</th>
                       <th style={{ width: '10%' }} className="is-right">
                         Thao tác
                       </th>
@@ -759,7 +759,7 @@ export function PlatformTrialsPage() {
                             <div className="pa-tr-progress-cell">
                               <div className="pa-tr-progress-top">
                                 <strong>
-                                  {t.submitted} / {t.participants} nhân sự
+                                  {t.submitted} / {t.participants} người
                                 </strong>
                                 <span>{pct}%</span>
                               </div>
@@ -793,7 +793,7 @@ export function PlatformTrialsPage() {
                                 <span>{stageMeta.label}</span>
                               </span>
                               {t.stage !== 'REPORTED' && (sla.tone === 'bad' || sla.tone === 'warn') && (
-                                <span className={`pa-tr-pill is-${sla.tone}`} style={{ fontSize: 11, padding: '1px 6px' }}>
+                                <span className={`pa-tr-pill is-${sla.tone}`} style={{ fontSize: 12, padding: '1px 6px' }}>
                                   {sla.label}
                                 </span>
                               )}
@@ -880,7 +880,7 @@ export function PlatformTrialsPage() {
             <div className="pa-ov-panel-head">
               <div>
                 <h2 id="mentor-team-heading" className="pa-ov-panel-title">
-                  Bảng theo dõi năng lực Mentor thẩm định
+                  Mentor
                 </h2>
                 <p className="pa-ov-panel-sub">
                   {activeMentors.length} chuyên gia sẵn sàng chấm bài tự luận. Đối chiếu khối lượng công việc và doanh nghiệp đang phụ trách.
@@ -901,7 +901,7 @@ export function PlatformTrialsPage() {
             {mentorsList.length === 0 ? (
               <div className="pa-ov-empty-state" style={{ minHeight: 160 }}>
                 <p className="pa-ov-empty-text">
-                  Chưa có tài khoản Mentor nào trong hệ thống. Bấm nút Thêm Mentor ở góc trên để tạo tài khoản chuyên gia đầu tiên.
+                  Chưa có tài khoản Mentor nào trong hệ thống. Bấm "Thêm mentor" ở góc trên để thêm mentor đầu tiên.
                 </p>
               </div>
             ) : (
@@ -909,14 +909,14 @@ export function PlatformTrialsPage() {
                 className="pa-tr-mentor-table-wrap"
                 tabIndex={0}
                 role="region"
-                aria-label="Bảng theo dõi năng lực đội ngũ Mentor"
+                aria-label="Danh sách mentor"
               >
                 <table className="pa-tr-mentor-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '28%' }}>Chuyên gia Mentor</th>
-                      <th style={{ width: '25%' }}>Tình trạng &amp; Khối lượng tải</th>
-                      <th style={{ width: '33%' }}>Doanh nghiệp đang thẩm định</th>
+                      <th style={{ width: '28%' }}>Mentor</th>
+                      <th style={{ width: '25%' }}>Trạng thái</th>
+                      <th style={{ width: '33%' }}>Tổ chức phụ trách</th>
                       <th style={{ width: '14%' }} className="is-right">
                         Thao tác
                       </th>
@@ -973,7 +973,7 @@ export function PlatformTrialsPage() {
                                   <span>
                                     {m.status === 'ACTIVE'
                                       ? m.activeTrials === 0
-                                        ? 'Sẵn sàng nhận việc'
+                                        ? 'Đang rảnh'
                                         : 'Đang chấm bài'
                                       : 'Đã khóa'}
                                   </span>
@@ -1047,7 +1047,7 @@ export function PlatformTrialsPage() {
                                 window.scrollTo({ top: 380, behavior: 'smooth' });
                               }}
                             >
-                              {isSelected ? 'Đang lọc' : 'Lọc bảng DN'}
+                              {isSelected ? 'Đang lọc' : 'Xem tổ chức'}
                             </button>
                           </td>
                         </tr>
@@ -1118,7 +1118,7 @@ function TrialDetailDrawer({
       { organizationId: trial.organizationId, mentorUserId: selectedMentorId },
       {
         onSuccess: () => {
-          toast.success(`Đã phân công Mentor cho ${trial.organizationName}`);
+          toast.success(`Đã phân công mentor cho ${trial.organizationName}`);
           onClose();
         },
         onError: (err) => toast.error(errorMessage(err)),
@@ -1144,7 +1144,7 @@ function TrialDetailDrawer({
             to={`/platform/organizations/${trial.organizationId}`}
             className="pa-btn-accent inline-flex items-center gap-1.5"
           >
-            <span>Hồ sơ tổ chức 360</span>
+            <span>Mở hồ sơ tổ chức</span>
             <ExternalLink size={14} aria-hidden="true" />
           </Link>
         </div>
@@ -1170,7 +1170,7 @@ function TrialDetailDrawer({
             <div className="pa-tr-drawer-heading" style={{ color: 'var(--pa-accent-solid)' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <FileText size={15} aria-hidden="true" />
-                Ghi chú từ doanh nghiệp
+                Ghi chú từ tổ chức
               </span>
             </div>
             <p style={{ margin: 0, lineHeight: 1.55 }}>{trial.requestNote}</p>
@@ -1180,7 +1180,7 @@ function TrialDetailDrawer({
         {/* Metrics */}
         <div className="pa-tr-drawer-metrics">
           <div className="pa-tr-metric-box">
-            <span>Người tham gia</span>
+            <span>Nhân viên</span>
             <strong>{trial.participants}</strong>
           </div>
           <div className="pa-tr-metric-box">
@@ -1188,20 +1188,20 @@ function TrialDetailDrawer({
             <strong style={{ color: 'var(--pa-accent-solid)' }}>{trial.submitted}</strong>
           </div>
           <div className="pa-tr-metric-box">
-            <span>Đã chấm điểm</span>
+            <span>Đã chấm</span>
             <strong style={{ color: 'var(--pa-live)' }}>{trial.reviewed}</strong>
           </div>
         </div>
 
         {/* Timeline */}
         <div className="pa-tr-drawer-box">
-          <div className="pa-tr-drawer-heading">Lịch trình và thời hạn</div>
+          <div className="pa-tr-drawer-heading">Thời gian</div>
           <div className="pa-tr-drawer-row">
             <span style={{ color: 'var(--pa-ink-2)' }}>Bắt đầu dùng thử:</span>
             <strong>{formatDateTimePlain(trial.startedAt)}</strong>
           </div>
           <div className="pa-tr-drawer-row">
-            <span style={{ color: 'var(--pa-ink-2)' }}>Hạn làm bài thi:</span>
+            <span style={{ color: 'var(--pa-ink-2)' }}>Hạn nộp bài:</span>
             <strong style={{ color: 'var(--pa-danger)' }}>
               {formatDateTimePlain(trial.testDeadline)}
             </strong>
@@ -1222,7 +1222,7 @@ function TrialDetailDrawer({
         {/* Mentor Assignment */}
         <div className="pa-tr-drawer-box">
           <div className="pa-tr-drawer-heading">
-            <span>Phân công Mentor thẩm định</span>
+            <span>Chọn mentor</span>
             {trial.mentorName && (
               <span style={{ color: 'var(--pa-live)' }}>Hiện tại: {trial.mentorName}</span>
             )}
@@ -1231,12 +1231,12 @@ function TrialDetailDrawer({
           {!canAssign ? (
             <p style={{ margin: 0, color: 'var(--pa-ink-2)', lineHeight: 1.5 }}>
               {trial.stage === 'REPORTED'
-                ? 'Báo cáo năng lực đã công bố cho doanh nghiệp nên không thể thay đổi Mentor phụ trách.'
-                : 'Doanh nghiệp đang thiết lập danh sách và chưa gửi yêu cầu thẩm định.'}
+                ? 'Báo cáo đã công bố cho tổ chức nên không đổi được mentor.'
+                : 'Tổ chức đang thiết lập danh sách và chưa gửi yêu cầu chấm bài.'}
             </p>
           ) : activeMentors.length === 0 ? (
             <p style={{ margin: 0, color: 'var(--pa-ink-2)', lineHeight: 1.5 }}>
-              Chưa có Mentor đang hoạt động. Tạo tài khoản Mentor trước khi phân công.
+              Chưa có mentor nào đang hoạt động. Thêm mentor trước khi phân công.
             </p>
           ) : (
             <>
@@ -1268,7 +1268,7 @@ function TrialDetailDrawer({
                           </div>
                         </div>
                         <span className={`pa-tr-pill ${isRecommended ? 'is-ok' : 'is-info'}`}>
-                          {isRecommended ? 'Khuyên chọn (0 DN)' : `${m.activeTrials} DN đang chấm`}
+                          {isRecommended ? 'Đang rảnh' : `Đang phụ trách ${m.activeTrials} tổ chức`}
                         </span>
                       </label>
                     );
@@ -1289,8 +1289,8 @@ function TrialDetailDrawer({
                 {assign.isPending
                   ? 'Đang phân công...'
                   : trial.mentorUserId
-                    ? 'Cập nhật Mentor phụ trách'
-                    : 'Xác nhận phân công Mentor'}
+                    ? 'Đổi mentor'
+                    : 'Xác nhận phân công'}
               </button>
             </>
           )}
@@ -1318,7 +1318,7 @@ function CreateMentorDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () 
       { fullName: form.fullName.trim(), email: form.email.trim(), password: form.password },
       {
         onSuccess: (m) => {
-          toast.success(`Đã tạo tài khoản Mentor: ${m.email}`);
+          toast.success(`Đã tạo tài khoản mentor: ${m.email}`);
           setForm({ fullName: '', email: '', password: '' });
           onClose();
         },
@@ -1331,9 +1331,9 @@ function CreateMentorDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () 
     <PlatformDrawer
       isOpen={isOpen}
       onClose={onClose}
-      title="Thêm Mentor mới"
+      title="Thêm mentor mới"
       icon={UserPlus}
-      subtitle="Tạo tài khoản chuyên gia chấm thi bài làm tự luận"
+      subtitle="Tạo tài khoản mentor để chấm bài tự luận"
       width={480}
       footer={
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, width: '100%' }}>
