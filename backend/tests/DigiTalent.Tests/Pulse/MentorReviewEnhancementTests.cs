@@ -186,7 +186,7 @@ public class MentorReviewEnhancementTests
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var overview = await employee.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
-        var targetCode = overview.Courses.First(c => c.CanStartPreAssessment).Code;
+        var targetCode = overview.Courses.First(c => c.PreStatus == PulsePreStatus.Required).Code;
         var course = await world.OpenForLearningAsync(employee, targetCode);
         await world.PassAllModulesAsync(employee, course.CourseId);
         var submitted = await world.SubmitFinalAsync(employee, course.CourseId);
@@ -271,7 +271,7 @@ public class MentorReviewEnhancementTests
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
         var overview = await employee.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
-        var targetCode = overview.Courses.First(c => c.CanStartPreAssessment).Code;
+        var targetCode = overview.Courses.First(c => c.PreStatus == PulsePreStatus.Required).Code;
         var course = await world.OpenForLearningAsync(employee, targetCode);
         await world.PassAllModulesAsync(employee, course.CourseId);
         var submitted = await world.SubmitFinalAsync(employee, course.CourseId);
