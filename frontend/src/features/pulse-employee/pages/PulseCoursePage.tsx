@@ -21,6 +21,7 @@ import type { PulseCourseDetail } from '@/services/pulse.service';
 import { LoadError, PageSkeleton } from '../components/ui';
 import { ACCESS_LABELS, levelName, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
+import '../pulse-skip-test.css';
 
 /**
  * Chuyển đổi tiêu đề viết in hoa toàn bộ (ALL-CAPS) thành Sentence case thanh lịch
@@ -75,6 +76,11 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
   const canPreAssess = course.preStatus === 'REQUIRED' || detail.nextAction === 'PRE_ASSESSMENT';
   const isPrePending = course.preStatus === 'PENDING' || detail.nextAction === 'PRE_REVIEW';
   const isFinalReady = detail.nextAction === 'FINAL' || (!approved && passed === modules.length && modules.length > 0);
+  // Bài kiểm tra vượt học: đạt thì mọi mô-đun tính là đã qua và bài cuối khóa mở.
+  const skip = detail.skipTest;
+  const skipPassed = skip?.status === 'PASSED';
+  const skipOpen = skip?.status === 'AVAILABLE' || skip?.status === 'IN_PROGRESS';
+  const skipPath = PULSE_PATHS.skipTest(course.courseId);
 
   return (
     <div className="pu-course-wrap">
@@ -234,26 +240,20 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
             ) : canPreAssess ? (
               <div className="pu-c-action-pretest">
                 <div className="pu-c-act-head">
-                  <span className="pu-c-act-kicker">Nhiệm vụ ưu tiên</span>
-                  <span className="pu-c-act-badge pretest">Được miễn học</span>
+                  <span className="pu-c-act-kicker">Bắt buộc trước khi học</span>
+                  <span className="pu-c-act-badge pretest">Kiểm tra đầu vào</span>
                 </div>
                 <p className="pu-c-action-text">
-                  Làm bài kiểm tra đánh giá năng lực đầu vào (~20 phút). Đạt kết quả sẽ được xét miễn học ngay toàn bộ khóa học này.
+                  {skip && skip.questionCount > 0
+                    ? `Làm bài kiểm tra đầu vào: ${skip.questionCount} câu trắc nghiệm trong ${skip.timeLimitMinutes} phút, tự chấm, chỉ một lần. Đúng từ ${skip.passMark} câu (${skip.passPercent}%) thì bỏ qua phần học và mở ngay bài đánh giá cuối khóa; chưa đạt thì học tuần tự từng mô-đun.`
+                    : 'Làm bài kiểm tra đầu vào trắc nghiệm (tự chấm, chỉ một lần). Đạt 80% thì bỏ qua phần học và mở ngay bài đánh giá cuối khóa; chưa đạt thì học tuần tự từng mô-đun.'}
                 </p>
                 <div className="pu-c-action-btns">
-                  <Link to={preAssessmentPath} className="pu-c-btn-primary">
+                  <Link to={skipPath} className="pu-c-btn-primary">
                     <Zap size={14} />
-                    <span>Đánh giá đầu vào ngay</span>
+                    <span>{skip?.status === 'IN_PROGRESS' ? 'Tiếp tục bài kiểm tra đầu vào' : 'Làm bài kiểm tra đầu vào'}</span>
                     <ChevronRight size={14} />
                   </Link>
-                  {detail.nextModuleId && (
-                    <Link
-                      to={PULSE_PATHS.module(course.courseId, detail.nextModuleId)}
-                      className="pu-c-btn-secondary"
-                    >
-                      <span>Học tuần tự Mô-đun 01</span>
-                    </Link>
-                  )}
                 </div>
               </div>
             ) : isPrePending ? (
@@ -278,7 +278,9 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                   <span className="pu-c-act-badge final">Sẵn sàng</span>
                 </div>
                 <p className="pu-c-action-text">
-                  Bạn đã hoàn thành toàn bộ bài kiểm tra của các mô-đun. Hãy thực hiện bài đánh giá cuối khóa có giám sát để hoàn tất khóa học.
+                  {skipPassed
+                    ? 'Bạn đã đạt bài kiểm tra đầu vào nên toàn bộ mô-đun được tính là hoàn thành. Hãy thực hiện bài đánh giá cuối khóa có giám sát để hoàn tất khóa học.'
+                    : 'Bạn đã hoàn thành toàn bộ bài kiểm tra của các mô-đun. Hãy thực hiện bài đánh giá cuối khóa có giám sát để hoàn tất khóa học.'}
                 </p>
                 <div className="pu-c-action-btns">
                   <Link to={PULSE_PATHS.final(course.courseId)} className="pu-c-btn-primary final">
@@ -308,6 +310,12 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                     <span>{passed > 0 ? 'Tiếp tục học ngay' : 'Bắt đầu Mô-đun 01'}</span>
                     <ChevronRight size={14} />
                   </Link>
+                  {skipOpen && (
+                    <Link to={skipPath} className="pu-c-btn-secondary">
+                      <Zap size={14} />
+                      <span>{skip?.status === 'IN_PROGRESS' ? 'Tiếp tục kiểm tra đầu vào' : 'Kiểm tra đầu vào'}</span>
+                    </Link>
+                  )}
                 </div>
               </div>
             ) : null}
@@ -330,6 +338,10 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
             <span>{passed}/{modules.length} mô-đun đạt chuẩn</span>
           </div>
         </div>
+
+        {skip && (skipOpen || skipPassed || skip.status === 'EXHAUSTED') && (
+          <SkipTestCard skipPath={skipPath} test={skip} />
+        )}
 
         <div className="pu-c-timeline-flow">
           {modules.map((module) => {
@@ -505,7 +517,11 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                     ) : (
                       <>
                         <Lock size={10} />
-                        <span>Mở sau khi xong {modules.length} mô-đun</span>
+                        <span>
+                          {skipOpen
+                            ? `Mở sau khi xong ${modules.length} mô-đun hoặc đạt kiểm tra đầu vào`
+                            : `Mở sau khi xong ${modules.length} mô-đun`}
+                        </span>
                       </>
                     )}
                   </span>
@@ -575,6 +591,73 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
           Khóa {course.code} · Phiên bản v{detail.versionNo} · Lĩnh vực {detail.domain.name} / Cấp độ {tier}
         </span>
       </footer>
+    </div>
+  );
+}
+
+/** Tỉ lệ phần trăm (0–100) cho thanh điểm. */
+function share(value: number, total: number): number {
+  return total > 0 ? Math.min(100, Math.max(0, (value / total) * 100)) : 0;
+}
+
+/** Thẻ "Kiểm tra vượt học" phía trên lộ trình mô-đun: làm bài trắc nghiệm tổng hợp để mở bài cuối khóa mà không học tuần tự. */
+function SkipTestCard({ test, skipPath }: { test: NonNullable<PulseCourseDetail['skipTest']>; skipPath: string }) {
+  const passed = test.status === 'PASSED';
+  const inProgress = test.status === 'IN_PROGRESS';
+  const exhausted = test.status === 'EXHAUSTED';
+  const best = test.results.reduce<number | null>((max, r) => (max == null || r.score > max ? r.score : max), null) ?? 0;
+  const failed = exhausted && !passed;
+  return (
+    <div className={`pu-c-skip-card${passed ? ' passed' : failed ? ' failed' : ''}`}>
+      <div className="pu-c-skip-icon">
+        {passed ? <Check size={20} strokeWidth={3} /> : failed ? <BookOpen size={20} /> : <Zap size={20} />}
+      </div>
+      <div className="pu-c-skip-body">
+        <h3>
+          {passed
+            ? 'Đã đạt kiểm tra đầu vào'
+            : failed
+            ? 'Chưa đạt kiểm tra đầu vào'
+            : 'Kiểm tra đầu vào — đạt để bỏ qua phần học'}
+        </h3>
+        <p>
+          {passed
+            ? 'Mọi mô-đun được tính là hoàn thành, bài đánh giá cuối khóa đã mở.'
+            : failed
+            ? `Học lần lượt ${test.moduleCount} mô-đun bên dưới để mở bài đánh giá cuối khóa.`
+            : `${test.questionCount} câu trắc nghiệm · ${test.timeLimitMinutes} phút · đúng từ ${test.passMark} câu (${test.passPercent}%) là mở ngay bài cuối khóa. ${
+                test.maxAttempts === 1 ? 'Chỉ làm 1 lần.' : `Còn ${test.attemptsLeft}/${test.maxAttempts} lượt.`
+              }`}
+        </p>
+      </div>
+      {failed && (
+        <div className="pu-c-skip-score">
+          <div className="pu-c-skip-score-value">
+            <strong>
+              {best}/{test.questionCount}
+            </strong>{' '}
+            câu đúng
+          </div>
+          <div className="pu-c-skip-score-bar" aria-hidden="true">
+            <span className="fill" style={{ width: `${share(best, test.questionCount)}%` }} />
+            <span className="mark" style={{ left: `${share(test.passMark, test.questionCount)}%` }} />
+          </div>
+          <div className="pu-c-skip-score-need">Cần {test.passMark} câu để đạt</div>
+        </div>
+      )}
+      {!exhausted && (
+        <Link to={skipPath} className={passed ? 'pu-c-btn-secondary' : 'pu-c-btn-primary'}>
+          {passed ? (
+            <span>Xem kết quả</span>
+          ) : (
+            <>
+              <Zap size={14} />
+              <span>{inProgress ? 'Tiếp tục làm bài' : 'Làm bài kiểm tra'}</span>
+              <ChevronRight size={14} />
+            </>
+          )}
+        </Link>
+      )}
     </div>
   );
 }
