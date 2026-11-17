@@ -13,6 +13,8 @@ export const formatMoney = (value: number) => `${new Intl.NumberFormat('vi-VN').
 export const formatNumber = (value: number) => new Intl.NumberFormat('vi-VN').format(value);
 export const formatDate = (value: string | null | undefined) =>
   value ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)) : '-';
+export const formatTime = (value: string | null | undefined) =>
+  value ? new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(value)) : '-';
 export const formatDateTime = (value: string | null | undefined) =>
   value
     ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
