@@ -576,10 +576,10 @@ function CourseDetail({
         {isLicensed ? (
           <>
             <Link
-              to={`/enterprise/training-batches/new?courseId=${course.id}`}
+              to={`/enterprise/assignments?courseId=${course.id}`}
               className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold transition-all hover:bg-slate-50"
               style={{ borderColor: '#cdd7f5', color: 'var(--po-accent)' }}
-            >{translateUi("Đưa vào đợt đào tạo")}</Link>
+            >{translateUi("Giao khóa học")}</Link>
             {level > 1 && (
               <Link
                 to={`/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`}

@@ -56,7 +56,6 @@ function QuickCreateMenu() {
 
   const actions = [
     { label: 'Mời thành viên', perm: PERMISSIONS.USER_CREATE, href: '/enterprise/members?invite=1' },
-    { label: 'Tạo đợt đào tạo', perm: PERMISSIONS.COURSE_ASSIGNMENT_CREATE, href: '/enterprise/training-batches/new' },
   ].filter((a) => hasPermission(a.perm));
 
   if (actions.length === 0) return null;

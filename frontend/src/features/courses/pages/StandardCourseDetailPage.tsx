@@ -166,12 +166,6 @@ export function StandardCourseDetailPage() {
               <>
                 <button
                   type="button"
-                  onClick={() => navigate(`/enterprise/training-batches/new?courseId=${course.id}`)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-sm"
-                >
-                  <Layers className="size-4 text-primary-600" />{translateUi("Thêm vào đợt đào tạo")}</button>
-                <button
-                  type="button"
                   onClick={() => navigate(`/enterprise/assignments?courseId=${course.id}`)}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 shadow-sm transition-colors"
                 >

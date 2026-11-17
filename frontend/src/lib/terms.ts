@@ -30,7 +30,6 @@ export const TERMS = {
   SEVERITY_LOW: 'Thấp',
 
   // Training Batch
-  TRAINING_BATCH: 'Đợt đào tạo',
 
   // System Role
   ROLE: 'Vai trò',

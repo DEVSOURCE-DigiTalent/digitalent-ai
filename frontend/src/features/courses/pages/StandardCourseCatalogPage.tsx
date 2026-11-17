@@ -82,14 +82,9 @@ export function StandardCourseCatalogPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
           title="Chương trình chuẩn (Standard Course Catalog)"
-          subtitle="Danh mục các khóa học số chuẩn hóa theo 6 miền của Khung chuẩn năng lực số. Dùng để bồi dưỡng nâng cấp năng lực cho nhân viên và đợt đào tạo doanh nghiệp."
+          subtitle="Danh mục các khóa học số chuẩn hóa theo 6 miền của Khung chuẩn năng lực số. Dùng để bồi dưỡng nâng cấp năng lực cho nhân viên."
         />
         <div className="flex items-center gap-2">
-          <Link
-            to="/enterprise/training-batches/new"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 shadow-sm"
-          >
-            <Layers className="size-4 text-primary-600" />{translateUi("Tạo đợt đào tạo")}</Link>
           <Link
             to="/enterprise/assignments"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 shadow-sm transition-colors"

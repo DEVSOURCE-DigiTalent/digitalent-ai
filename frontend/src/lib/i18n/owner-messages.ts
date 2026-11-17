@@ -170,6 +170,7 @@ Email hộp thư thật|Valid email address
 Giao bài tập thực hành|Assign practical task
 Giao bởi|Assigned by
 Giao dịch thành công · Bản quyền đã kích hoạt|Payment successful · Access unlocked
+Giao khóa học cho nhân sự →|Assign courses to employees →
 Giỏ suất học ·|Learning seat cart ·
 Giữ lại|Keep
 Gán phòng ban để bắt đầu theo dõi năng lực và học tập.|Assign a department to track competencies and learning.
@@ -520,7 +521,6 @@ Tính đầy đủ và chính xác của giải pháp|Completeness and accuracy 
 Tạm tính (|Subtotal (
 Tạo phòng ban đầu tiên để bắt đầu.|Create your first department to get started.
 Tạo vị trí công việc để thiết lập bộ yêu cầu năng lực cho tổ chức.|Create job positions to configure competency requirements.
-Tạo đợt đào tạo & Gán nhân sự →|Create program & assign employees →
 Tạo đợt đào tạo mới|Create training program
 Tất cả (24)|All (24)
 Tất cả chứng nhận|All certificates

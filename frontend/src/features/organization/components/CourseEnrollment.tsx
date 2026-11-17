@@ -1,6 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, Layers } from 'lucide-react';
+import { UserCheck } from 'lucide-react';
 import type { CourseDetailDto } from '@/services/assignment.service';
 
 interface CourseEnrollmentProps {
@@ -54,7 +54,7 @@ export function CourseEnrollment({
         {isBasic
           ? 'Không cần phân công. Tất cả nhân viên có thể truy cập nội dung khóa Cơ bản.'
           : hasLicense
-          ? translateUi(`Tổ chức đã trang bị ${totalSeats} suất (còn ${seatsAvailable} suất khả dụng). Quản lý có thể giao khóa hoặc tạo đợt đào tạo.`)
+          ? translateUi(`Tổ chức đã trang bị ${totalSeats} suất (còn ${seatsAvailable} suất khả dụng). Quản lý có thể giao khóa cho nhân viên.`)
           : 'Khóa học trả phí theo suất học. Cần trang bị suất trước khi giao cho nhân viên học.'}
       </p>
 
@@ -101,17 +101,6 @@ export function CourseEnrollment({
               }}
             >
               <UserCheck className="size-3.5" />{translateUi("Giao khóa học")}</button>
-            <button
-              type="button"
-              onClick={() => navigate(`/enterprise/training-batches/new?courseId=${course.id}`)}
-              className="inline-flex items-center gap-1.5 rounded-[11px] border px-3 py-2 text-xs font-bold transition-transform hover:-translate-y-0.5"
-              style={{
-                background: 'var(--po-surface)',
-                color: 'var(--po-accent)',
-                borderColor: '#cdd7f5',
-              }}
-            >
-              <Layers className="size-3.5" />{translateUi("Thêm vào đợt đào tạo")}</button>
             {!isBasic && onBuySeats && (
               <button
                 type="button"

@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Award, BookOpen, Building2, FlaskConical, GraduationCap, Layers3, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, Award, BookOpen, Building2, FlaskConical, Layers3, TrendingUp, Users } from 'lucide-react';
 import { useReportsOverview } from '@/hooks/use-analytics';
 import { useCertificates } from '@/hooks/use-learning';
 import { useOrganizationOverview } from '@/hooks/use-organization';
@@ -14,7 +14,6 @@ const branches = [
   { id: 'assessment', label: 'Đánh giá đội ngũ', icon: FlaskConical, path: '/enterprise/trial', tone: 'blue' },
   { id: 'standards', label: 'Khung năng lực số', icon: Layers3, path: '/enterprise/setup', tone: 'violet' },
   { id: 'courses', label: 'Khóa học', icon: BookOpen, path: '/enterprise/courses', tone: 'teal' },
-  { id: 'training', label: 'Đợt đào tạo', icon: GraduationCap, path: '/enterprise/training-batches', tone: 'teal' },
   { id: 'certificates', label: 'Chứng nhận', icon: Award, path: '/enterprise/certificates', tone: 'violet' },
   { id: 'gaps', label: 'Khoảng trống năng lực', icon: TrendingUp, path: '/enterprise/skill-gap', tone: 'amber' },
 ] as const;
@@ -24,7 +23,7 @@ type Metric = readonly [string, number | string | null | undefined];
 
 export function OwnerBusinessMap() {
   useUiLanguage();
-  const [selected, setSelected] = useState<BranchId>('training');
+  const [selected, setSelected] = useState<BranchId>('courses');
   const organization = useOrganizationOverview().data;
   const trial = useTrialProgram().data;
   const needs = useLearningNeeds({ pageIndex: 1, pageSize: 1 }).data?.overview;
@@ -47,14 +46,11 @@ export function OwnerBusinessMap() {
     assessment: [['Đã nộp', submitted], ['Nhân sự tham gia', trial?.participants.length], ['Đã có kết quả', trial?.report?.assessed]],
     standards: [['Chưa có chuẩn vị trí', needs?.noStandardEmployees], ['Nhân sự đã đối chiếu', needs?.assessedEmployees]],
     gaps: [['Lượt đối chiếu đạt chuẩn', coverage], ['Lĩnh vực cần bổ sung', needs?.domains.filter((domain) => domain.needsLearning > 0).length], ['Chờ đánh giá', needs?.waitingEmployees]],
-    courses: [['Khóa đã có lượt học', courses?.length], ['Lượt giao đang hiệu lực', training?.totalAssignments], ['Lượt đang học', training?.inProgressAssignments]],
-    training: [['Đợt đang chạy', organization?.runningBatches], ['Tỷ lệ hoàn thành', completion], ['Lượt đã hoàn thành', training?.completedAssignments], ['Lượt giao đang hiệu lực', training?.totalAssignments]],
+    courses: [['Khóa đã có lượt học', courses?.length], ['Lượt giao đang hiệu lực', training?.totalAssignments], ['Lượt đang học', training?.inProgressAssignments], ['Lượt đã hoàn thành', training?.completedAssignments]],
     certificates: [['Chứng nhận', certificates?.totalItems]],
   };
   const active = branches.find((branch) => branch.id === selected)!;
-  const detailMetrics = selected === 'people' ? metrics.people.slice(1)
-    : selected === 'training' ? metrics.training.filter(([label]) => label !== 'Tỷ lệ hoàn thành')
-    : metrics[selected];
+  const detailMetrics = selected === 'people' ? metrics.people.slice(1) : metrics[selected];
   const monitoredCourses = [...(courses ?? [])].sort((a, b) => a.averageProgress - b.averageProgress).slice(0, 4);
 
   return (
@@ -63,13 +59,13 @@ export function OwnerBusinessMap() {
         <h2 id="business-map-title">{translateUi('Bản đồ doanh nghiệp')}</h2>
       </header>
       <div className="business-map__canvas">
-        <div className="business-map__hub" data-tone={active.tone} data-bottom-active={selected === 'gaps'}>
+        <div className="business-map__hub" data-tone={active.tone}>
           <span><Building2 size={25} aria-hidden="true" /></span>
           <strong>{organization?.name || translateUi('Doanh nghiệp')}</strong>
         </div>
         {branches.map(({ id, label, icon: Icon, tone }, index) => {
           const [metric, value] = metrics[id][0];
-          const side = id === 'gaps' ? 'bottom' : index < 3 ? 'left' : 'right';
+          const side = index < 3 ? 'left' : 'right';
           const row = (index % 3) + 1;
           return (
             <div className="business-map__branch" key={id} data-side={side}
@@ -96,7 +92,7 @@ export function OwnerBusinessMap() {
             <Link className="owner-heatmap__link" to={active.path}>{translateUi('Xem chi tiết')}<ArrowRight size={15} aria-hidden="true" /></Link>
           </header>
           <div className="business-map__detail-grid">
-            {selected === 'training' && (
+            {selected === 'courses' && (
               <div className="business-map__completion">
                 <div className="business-map__completion-ring"
                   style={{ '--completion': completion ?? '0%' } as CSSProperties}>

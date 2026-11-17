@@ -82,6 +82,9 @@ export const legacyRedirectRoutes: RouteObject[] = [
   { path: '/enterprise/me/assessments/*', element: <RedirectWithQuery to="/enterprise/me" /> },
   { path: '/enterprise/me/tasks', element: <RedirectWithQuery to="/enterprise/me/practice" /> },
   { path: '/enterprise/me/tasks/*', element: <RedirectWithQuery to="/enterprise/me/practice" /> },
+  // Đợt đào tạo đã bỏ khỏi giao diện Chủ doanh nghiệp: khóa học được giao từ trang Khóa học.
+  { path: '/enterprise/training-batches', element: <Navigate to="/enterprise/courses" replace /> },
+  { path: '/enterprise/training-batches/*', element: <Navigate to="/enterprise/courses" replace /> },
   { path: '/enterprise/positions/grades', element: <RedirectWithQuery to="/enterprise/positions" /> },
   { path: '/enterprise/evidence/:id', element: <RedirectWithQuery to="/enterprise/reviews" /> },
   { path: '/enterprise/reviews/evidence/:id', element: <RedirectWithQuery to="/enterprise/reviews" /> },
