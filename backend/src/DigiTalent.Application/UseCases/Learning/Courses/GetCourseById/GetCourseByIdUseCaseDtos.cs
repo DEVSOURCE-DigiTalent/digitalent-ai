@@ -50,11 +50,12 @@ public class CourseDetailDto
     public Guid? PrerequisiteCourseId { get; set; }
     public string? PrerequisiteTitle { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
-    public int SeatsPurchased { get; set; }
-    public int SeatsGranted { get; set; }
-    public int TotalSeats => SeatsPurchased + SeatsGranted;
-    public int SeatsAvailable { get; set; }
-    public int SeatsUsed { get; set; }
+    /// <summary>Price of the course for the whole organization; 0 for Basic.</summary>
+    public long Price { get; set; }
+    /// <summary>The organization bought this paid course (once, for every employee).</summary>
+    public bool IsPurchased { get; set; }
+    /// <summary>Employees with an active assignment to the course.</summary>
+    public int AssignedCount { get; set; }
     public bool HasLicense { get; set; }
 
     public List<CourseModuleDto> Modules { get; set; } = new();

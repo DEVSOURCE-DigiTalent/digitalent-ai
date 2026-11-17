@@ -9,19 +9,23 @@ namespace DigiTalent.Application.UseCases.Platform.Common;
 public static class PlatformCatalogReader
 {
     /// <summary>
-    /// Published courses (those in the catalog version in use), by framework, domain then level, with content size,
-    /// draft price and seat totals (optionally limited to one organization's orders).
+    /// Published courses, by framework, domain then level, with content size, draft price, how many organizations
+    /// bought each course and the revenue. A historical A-code row and the M-code row of the same code are one course
+    /// (CourseCodes.Aliases): only the current row is listed and the orders of both count for it.
     /// </summary>
-    public static async Task<List<PlatformCourseItem>> ReadCoursesAsync(IApplicationDbContext context, Guid? organizationId = null)
+    public static async Task<List<PlatformCourseItem>> ReadCoursesAsync(IApplicationDbContext context)
     {
-        var courses = await (
+        var courses = (await (
                 from course in context.PlatformCourses.AsNoTracking()
                 join domain in context.PlatformFrameworkDomains on course.DomainId equals domain.Id
                 join framework in context.PlatformFrameworks on domain.FrameworkId equals framework.Id
                 where course.PublishedAt != null
                 orderby framework.SortOrder, domain.SortOrder, course.Level, course.Code
                 select new { Course = course, Domain = domain, Framework = framework })
-            .ToListAsync();
+            .ToListAsync())
+            .GroupBy(row => CourseCodes.Canonical(row.Course.Code))
+            .Select(g => g.OrderByDescending(row => row.Course.Code == g.Key).ThenByDescending(row => row.Course.VersionNo).First())
+            .ToList();
 
         var current = await context.PlatformCatalogVersions.AsNoTracking()
             .Where(v => v.Status == Statuses.PlatformCatalogVersion.Current).Select(v => (Guid?)v.Id).FirstOrDefaultAsync();
@@ -30,20 +34,21 @@ public static class PlatformCatalogReader
         var sizes = current is { } currentId ? await ContentSizesAsync(context, currentId) : new Dictionary<Guid, (int, int)>();
         var draftPrices = draft is { } draftId
             ? await context.PlatformCatalogCourses.AsNoTracking().Where(c => c.VersionId == draftId)
-                .ToDictionaryAsync(c => c.CourseId, c => (c.PricePerSeat, c.SalesStatus))
-            : new Dictionary<Guid, (long PricePerSeat, string SalesStatus)>();
+                .ToDictionaryAsync(c => c.CourseId, c => (c.Price, c.SalesStatus))
+            : new Dictionary<Guid, (long Price, string SalesStatus)>();
 
-        var orders = context.CourseSeatOrders.AsNoTracking();
-        if (organizationId.HasValue) orders = orders.Where(o => o.OrganizationId == organizationId.Value);
-        var seatTotals = await orders
-            .GroupBy(o => new { o.CourseId, o.Kind })
-            .Select(g => new { g.Key.CourseId, g.Key.Kind, Seats = g.Sum(o => o.Seats), Amount = g.Sum(o => o.TotalAmount) })
-            .ToListAsync();
+        var ordersByCode = (await (
+                from order in context.CourseOrders.AsNoTracking()
+                join course in context.PlatformCourses.AsNoTracking() on order.CourseId equals course.Id
+                select new { course.Code, order.OrganizationId, order.Amount })
+            .ToListAsync())
+            .GroupBy(o => CourseCodes.Canonical(o.Code))
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         return courses.Select(row =>
         {
             var c = row.Course;
-            var purchased = seatTotals.Where(s => s.CourseId == c.Id && s.Kind == PlatformCatalog.SeatOrderKind.Purchase).ToList();
+            var purchased = ordersByCode.GetValueOrDefault(CourseCodes.Canonical(c.Code)) ?? new();
             var size = sizes.GetValueOrDefault(c.Id);
             return new PlatformCourseItem
             {
@@ -58,16 +63,15 @@ public static class PlatformCatalogReader
                 VersionNo = c.VersionNo,
                 Title = c.Title,
                 Outcome = c.Outcome,
-                PricePerSeat = c.PricePerSeat,
+                Price = c.Price,
                 SalesStatus = c.SalesStatus,
-                DraftPricePerSeat = draftPrices.TryGetValue(c.Id, out var draftCourse) ? draftCourse.PricePerSeat : null,
+                DraftPrice = draftPrices.TryGetValue(c.Id, out var draftCourse) ? draftCourse.Price : null,
                 DraftSalesStatus = draftPrices.TryGetValue(c.Id, out var draftSales) ? draftSales.SalesStatus : null,
                 PublishedAt = c.PublishedAt,
                 ModuleCount = size.Item1,
                 QuestionCount = size.Item2,
-                SeatsPurchased = purchased.Sum(s => s.Seats),
-                SeatsGranted = seatTotals.Where(s => s.CourseId == c.Id && s.Kind == PlatformCatalog.SeatOrderKind.AdminGrant).Sum(s => s.Seats),
-                Revenue = purchased.Sum(s => s.Amount),
+                PurchaseCount = purchased.Select(o => o.OrganizationId).Distinct().Count(),
+                Revenue = purchased.Sum(o => o.Amount),
             };
         }).ToList();
     }
@@ -92,32 +96,29 @@ public static class PlatformCatalogReader
     }
 
     /// <summary>
-    /// Seat orders projected for display, newest first.
+    /// Course orders (an organization buying a course) projected for display, newest first.
     /// </summary>
-    public static IQueryable<PlatformSeatOrderItem> QueryOrders(IApplicationDbContext context) =>
-        from order in context.CourseSeatOrders.AsNoTracking()
+    public static IQueryable<PlatformCourseOrderItem> QueryOrders(IApplicationDbContext context) =>
+        from order in context.CourseOrders.AsNoTracking()
         join course in context.PlatformCourses on order.CourseId equals course.Id
         join organization in context.Organizations on order.OrganizationId equals organization.Id
         join creator in context.Users on order.CreatedByUserId equals creator.Id into creators
         from creator in creators.DefaultIfEmpty()
         orderby order.CreatedAt descending
-        select new PlatformSeatOrderItem
+        select new PlatformCourseOrderItem
         {
             Id = order.Id,
             OrganizationId = order.OrganizationId,
             OrganizationName = organization.Name,
             CourseCode = course.Code,
             CourseTitle = course.Title,
-            Seats = order.Seats,
-            Kind = order.Kind,
-            UnitPrice = order.UnitPrice,
-            TotalAmount = order.TotalAmount,
+            Amount = order.Amount,
             Reason = order.Reason,
             CreatedByEmail = creator == null ? null : creator.Email,
             CreatedAt = order.CreatedAt,
         };
 
-    /// <summary>A published course by code (seat grants only apply to courses in the version in use).</summary>
+    /// <summary>A published course by code (its current row: the M-code over a historical A-code alias).</summary>
     public static async Task<PlatformCourse> FindCourseAsync(IApplicationDbContext context, string code)
     {
         var requested = code.Trim().ToUpperInvariant();

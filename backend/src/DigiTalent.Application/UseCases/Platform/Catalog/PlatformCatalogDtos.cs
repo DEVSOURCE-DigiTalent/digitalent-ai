@@ -38,7 +38,7 @@ public class PlatformCatalogCourseRow
     public string LevelName { get; set; } = string.Empty;
     public int ModuleCount { get; set; }
     public int QuestionCount { get; set; }
-    public long PricePerSeat { get; set; }
+    public long Price { get; set; }
     public string SalesStatus { get; set; } = string.Empty;
     /// <summary>NEW, EDITED or UNCHANGED relative to the version it was copied from.</summary>
     public string ChangeKind { get; set; } = string.Empty;
@@ -92,7 +92,7 @@ public class PlatformCatalogCourseDetail
     public string LevelName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Outcome { get; set; } = string.Empty;
-    public long PricePerSeat { get; set; }
+    public long Price { get; set; }
     public string SalesStatus { get; set; } = string.Empty;
     public PlatformCourseFinalDto Final { get; set; } = new();
     public List<PlatformModuleDto> Modules { get; set; } = new();

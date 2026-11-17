@@ -60,23 +60,11 @@ public class GetLessonUseCase : IUseCase<GetLessonInput, LessonContentOutput>
             await new TrialLearningAccess(_context).EnsureCourseAccessAsync(employee, result.CourseId);
         }
 
-        var isPaidCourse = result.CourseCode.EndsWith("-I", StringComparison.OrdinalIgnoreCase) ||
-                           result.CourseCode.EndsWith("-A", StringComparison.OrdinalIgnoreCase);
-        if (isPaidCourse)
+        if (CourseOwnership.IsPaid(result.CourseCode)
+            && !await CourseOwnership.IsPurchasedAsync(_context, organizationId, result.CourseCode))
         {
-            var codes = CourseCodes.Aliases(result.CourseCode);
-            var hasLicense = await (
-                from o in _context.CourseSeatOrders.AsNoTracking()
-                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-                where o.OrganizationId == organizationId && codes.Contains(pc.Code) && o.Seats > 0
-                select o.Id
-            ).AnyAsync();
-            if (!hasLicense)
-            {
-                result.ContentLocked = true;
-                var price = result.CourseCode.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ? "699.000 ₫" : "399.000 ₫";
-                result.ContentBody = $"🔒 Nội dung bài học '{result.Title}' thuộc gói bản quyền có phí ({price}/suất).\n\nTài khoản dùng thử của doanh nghiệp chỉ xem trước mục tiêu và cấu trúc bài giảng. Vui lòng liên hệ mua suất học cho tổ chức để mở toàn bộ bài giảng, học liệu chi tiết và bài tập thực hành.";
-            }
+            result.ContentLocked = true;
+            result.ContentBody = $"🔒 Nội dung bài học '{result.Title}' thuộc khóa học có phí.\n\nDoanh nghiệp chưa mua khóa học này nên chỉ xem trước mục tiêu và cấu trúc bài giảng. Khi doanh nghiệp mua khóa học, mọi nhân viên đều mở được toàn bộ bài giảng, học liệu và bài tập thực hành.";
         }
 
         if (!result.ContentLocked)

@@ -9,6 +9,6 @@ public class UpdatePlatformCatalogPricesUseCaseInput
 public class PlatformCoursePriceInput
 {
     public Guid CourseId { get; set; }
-    public long PricePerSeat { get; set; }
+    public long Price { get; set; }
     public string SalesStatus { get; set; } = string.Empty;
 }

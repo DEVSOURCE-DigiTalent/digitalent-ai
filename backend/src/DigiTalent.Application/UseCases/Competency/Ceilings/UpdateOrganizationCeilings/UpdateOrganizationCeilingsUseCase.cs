@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
 /// <summary>
-/// Lưu phạm vi doanh nghiệp cho từng lĩnh vực. Cấp 2–3 chỉ được lưu khi tổ chức đã có suất học
+/// Lưu phạm vi doanh nghiệp cho từng lĩnh vực. Cấp 2–3 chỉ được lưu khi tổ chức đã mua khóa học
 /// tương ứng; thiết lập riêng của phòng ban cao hơn phạm vi mới được hạ xuống theo cùng quy tắc.
 /// </summary>
 public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeilingsUseCaseInput, UpdateOrganizationCeilingsUseCaseOutput>
@@ -58,7 +58,7 @@ public class UpdateOrganizationCeilingsUseCase : IUseCase<UpdateOrganizationCeil
             var code = domain.Courses.FirstOrDefault(course => course.Level == requestedLevel)?.Code;
             var target = code ?? $"cấp {requestedLevel}";
             throw new BadRequestException(
-                $"Lĩnh vực {domain.Name} chưa có suất học cho {target}. Hãy mua suất học trước khi nâng phạm vi doanh nghiệp.",
+                $"Lĩnh vực {domain.Name} chưa mua khóa {target}. Hãy mua khóa học trước khi nâng phạm vi doanh nghiệp.",
                 "ceilings",
                 "COURSE_LICENSE_REQUIRED");
         }

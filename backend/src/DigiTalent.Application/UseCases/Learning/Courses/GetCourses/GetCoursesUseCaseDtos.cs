@@ -28,11 +28,12 @@ public class CourseListItem
     public string Status { get; set; } = string.Empty;
     public int AssignedCount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
-    public int SeatsPurchased { get; set; }
-    public int SeatsGranted { get; set; }
-    public int TotalSeats => SeatsPurchased + SeatsGranted;
-    public int SeatsAvailable => Math.Max(0, TotalSeats - AssignedCount);
-    public bool HasLicense => TotalSeats > 0 || Code.EndsWith("-F");
+    /// <summary>Price of the course for the whole organization (current catalog version); 0 for Basic.</summary>
+    public long Price { get; set; }
+    /// <summary>The organization bought this paid course (once, for every employee).</summary>
+    public bool IsPurchased { get; set; }
+    /// <summary>Every employee may learn it: a free Basic course or a paid course the organization bought.</summary>
+    public bool HasLicense => IsPurchased || !DigiTalent.Application.Common.CourseOwnership.IsPaid(Code);
 }
 
 public class GetCoursesUseCaseOutput

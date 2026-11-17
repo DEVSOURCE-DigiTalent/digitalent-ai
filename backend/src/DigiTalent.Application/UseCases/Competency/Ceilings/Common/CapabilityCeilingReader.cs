@@ -130,13 +130,14 @@ public class CapabilityCeilingReader
 
         var allPositions = requirementByPosition.Keys.Concat(referenceByPosition.Keys).Concat(effectiveTargets.Keys).Distinct().ToList();
 
-        // Tải các đơn mua suất học của doanh nghiệp để xác định bản quyền đã mở
-        var seatOrders = await (
-            from o in _context.CourseSeatOrders.AsNoTracking()
-            join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-            where o.OrganizationId == organizationId
-            select new { pc.Code, pc.Level, o.Seats, pc.PricePerSeat }
-        ).ToListAsync();
+        // Khóa có phí doanh nghiệp đã mua (hoặc được cấp) và giá bán hiện tại của từng khóa chuẩn
+        var unlockedCodes = await CourseOwnership.PurchasedCodesAsync(_context, organizationId);
+        var prices = (await _context.PlatformCourses.AsNoTracking()
+                .Where(pc => pc.PublishedAt != null)
+                .Select(pc => new { pc.Code, pc.Price })
+                .ToListAsync())
+            .GroupBy(pc => CourseCodes.Canonical(pc.Code), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Max(pc => pc.Price), StringComparer.OrdinalIgnoreCase);
 
         var output = new T
         {
@@ -168,16 +169,11 @@ public class CapabilityCeilingReader
 
                 var expectedCanonical = CourseCodes.Canonical(displayCode);
 
-                // Cấp 1 (Cơ bản) luôn mở miễn phí 100%. Cấp 2 và Cấp 3 chỉ mở khi có suất học đã mua.
-                var seats = level == 1
-                    ? 999
-                    : seatOrders.Where(so => so.Level == level && (
-                        (expectedCanonical.Length > 0 && CourseCodes.Canonical(so.Code) == expectedCanonical) ||
-                        (rawCode != null && string.Equals(so.Code, rawCode, StringComparison.OrdinalIgnoreCase)) ||
-                        (displayCode != null && string.Equals(so.Code, displayCode, StringComparison.OrdinalIgnoreCase))
-                      )).Sum(so => so.Seats);
-                var isUnlocked = level == 1 || seats > 0;
-                var price = level == 3 ? 699000L : (level == 2 ? 399000L : 0L);
+                // Cấp 1 (Cơ bản) luôn mở miễn phí. Cấp 2 và Cấp 3 mở cho cả doanh nghiệp khi đã mua khóa.
+                var isUnlocked = level == 1 || unlockedCodes.Contains(expectedCanonical);
+                var price = level == 1 ? 0L
+                    : prices.TryGetValue(expectedCanonical, out var listed) && listed > 0 ? listed
+                    : PlatformCatalog.DefaultPrice(level);
 
                 return new CeilingCourseDto
                 {
@@ -188,8 +184,7 @@ public class CapabilityCeilingReader
                     Competencies = course != null && competenciesByCourse.TryGetValue(course.CourseId, out var taught)
                         ? taught : new List<CeilingCourseCompetencyDto>(),
                     IsUnlocked = isUnlocked,
-                    SeatsPurchased = seats == 999 ? 0 : seats,
-                    PricePerSeat = price
+                    Price = price
                 };
             }).ToList();
 

@@ -1908,6 +1908,61 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CourseOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("course_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_course_orders");
+
+                    b.HasIndex("CourseId")
+                        .HasDatabaseName("ix_course_orders_course");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_course_orders_created_by_user_id");
+
+                    b.HasIndex("OrganizationId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_course_orders_org_created");
+
+                    b.ToTable("course_orders", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_course_orders_amount", "amount >= 0");
+                        });
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.CoursePreAssessment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2033,81 +2088,6 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.ToTable("course_prerequisites", null, t =>
                         {
                             t.HasCheckConstraint("ck_course_prerequisite_not_self", "course_id <> prerequisite_course_id");
-                        });
-                });
-
-            modelBuilder.Entity("DigiTalent.Domain.Entities.CourseSeatOrder", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("CourseId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("course_id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by_user_id");
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("kind");
-
-                    b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("organization_id");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("reason");
-
-                    b.Property<int>("Seats")
-                        .HasColumnType("integer")
-                        .HasColumnName("seats");
-
-                    b.Property<long>("TotalAmount")
-                        .HasColumnType("bigint")
-                        .HasColumnName("total_amount");
-
-                    b.Property<long>("UnitPrice")
-                        .HasColumnType("bigint")
-                        .HasColumnName("unit_price");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_course_seat_orders");
-
-                    b.HasIndex("CourseId")
-                        .HasDatabaseName("ix_course_seat_orders_course");
-
-                    b.HasIndex("CreatedByUserId")
-                        .HasDatabaseName("ix_course_seat_orders_created_by_user_id");
-
-                    b.HasIndex("OrganizationId", "CreatedAt")
-                        .IsDescending(false, true)
-                        .HasDatabaseName("ix_course_seat_orders_org_created");
-
-                    b.ToTable("course_seat_orders", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_course_seat_orders_amount", "unit_price >= 0 AND total_amount >= 0");
-
-                            t.HasCheckConstraint("ck_course_seat_orders_grant_reason", "kind <> 'ADMIN_GRANT' OR reason IS NOT NULL");
-
-                            t.HasCheckConstraint("ck_course_seat_orders_kind", "kind IN ('PURCHASE','ADMIN_GRANT')");
-
-                            t.HasCheckConstraint("ck_course_seat_orders_seats", "seats > 0");
                         });
                 });
 
@@ -4064,9 +4044,9 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("outcome");
 
-                    b.Property<long>("PricePerSeat")
+                    b.Property<long>("Price")
                         .HasColumnType("bigint")
-                        .HasColumnName("price_per_seat");
+                        .HasColumnName("price");
 
                     b.Property<string>("SalesStatus")
                         .IsRequired()
@@ -4107,7 +4087,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_platform_catalog_courses_level", "level BETWEEN 1 AND 3");
 
-                            t.HasCheckConstraint("ck_platform_catalog_courses_price", "price_per_seat >= 0 AND (level > 1 OR price_per_seat = 0)");
+                            t.HasCheckConstraint("ck_platform_catalog_courses_price", "price >= 0 AND (level > 1 OR price = 0)");
 
                             t.HasCheckConstraint("ck_platform_catalog_courses_sales_status", "sales_status IN ('OPEN','PAUSED')");
                         });
@@ -4225,9 +4205,9 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("outcome");
 
-                    b.Property<long>("PricePerSeat")
+                    b.Property<long>("Price")
                         .HasColumnType("bigint")
-                        .HasColumnName("price_per_seat");
+                        .HasColumnName("price");
 
                     b.Property<DateTimeOffset?>("PublishedAt")
                         .HasColumnType("timestamp with time zone")
@@ -4267,7 +4247,7 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_platform_courses_level", "level BETWEEN 1 AND 3");
 
-                            t.HasCheckConstraint("ck_platform_courses_price", "price_per_seat >= 0 AND (level > 1 OR price_per_seat = 0)");
+                            t.HasCheckConstraint("ck_platform_courses_price", "price >= 0 AND (level > 1 OR price = 0)");
 
                             t.HasCheckConstraint("ck_platform_courses_sales_status", "sales_status IN ('OPEN','PAUSED')");
 
@@ -8216,6 +8196,29 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_course_modules_courses_course_id");
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CourseOrder", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformCourse", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_course_orders_platform_courses_course_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_course_orders_users_created_by_user_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_course_orders_organizations_organization_id");
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.CoursePreAssessment", b =>
                 {
                     b.HasOne("DigiTalent.Domain.Entities.Course", null)
@@ -8266,29 +8269,6 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_course_prerequisites_courses_prerequisite_course_id");
-                });
-
-            modelBuilder.Entity("DigiTalent.Domain.Entities.CourseSeatOrder", b =>
-                {
-                    b.HasOne("DigiTalent.Domain.Entities.PlatformCourse", null)
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_course_seat_orders_platform_courses_course_id");
-
-                    b.HasOne("DigiTalent.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_course_seat_orders_users_created_by_user_id");
-
-                    b.HasOne("DigiTalent.Domain.Entities.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_course_seat_orders_organizations_organization_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.Department", b =>

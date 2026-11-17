@@ -36,8 +36,8 @@ public class GetPlatformOverviewUseCaseOutput
     public int CourseCount { get; set; }
     public int PausedCourseCount { get; set; }
     public int QuestionCount { get; set; }
-    public int SeatsPurchased { get; set; }
-    public int SeatsGranted { get; set; }
+    /// <summary>Course purchases (one organization buying one course).</summary>
+    public int PurchaseCount { get; set; }
     public long Revenue { get; set; }
     public List<PlatformOrganizationItem> RecentOrganizations { get; set; } = new();
     public List<PlatformAuditLogItem> RecentActivity { get; set; } = new();

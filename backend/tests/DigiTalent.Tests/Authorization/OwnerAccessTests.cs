@@ -20,7 +20,7 @@ public class OwnerAccessTests
     [InlineData("PUT", "api/v1/capability-ceilings/departments/{departmentId:guid}")] // OW-05 trần phòng ban
     [InlineData("POST", "api/v1/position-requirements/{id:guid}/activate")] // OW-16 kích hoạt chuẩn năng lực
     [InlineData("POST", "api/v1/competency-evidences/manual")] // OW-22 xác nhận mức năng lực
-    [InlineData("POST", "api/v1/courses/{id:guid}/purchase-seats")] // OW-23 mua suất học
+    [InlineData("POST", "api/v1/courses/{id:guid}/purchase")] // OW-23 mua khóa học
     [InlineData("POST", "api/v1/course-assignments")] // OW-24 giao khóa học
     [InlineData("POST", "api/v1/training-batches")] // OW-25 tạo đợt đào tạo
     [InlineData("GET", "api/v1/trial")] // OW-T1 Dùng thử

@@ -18,7 +18,7 @@ public static class PulseSkipTestStatus
     public const string Exhausted = "EXHAUSTED";
     /// <summary>Không cần: khóa đã được công nhận hoặc đã qua mọi mô đun bằng cách học.</summary>
     public const string NotNeeded = "NOT_NEEDED";
-    /// <summary>Chưa mở: khóa chưa học được (chưa có suất, bài đánh giá trước khi học chưa xong, ngoài lộ trình…).</summary>
+    /// <summary>Chưa mở: khóa chưa học được (doanh nghiệp chưa mua khóa, bài đánh giá trước khi học chưa xong, ngoài lộ trình…).</summary>
     public const string Locked = "LOCKED";
     /// <summary>Ngân hàng ôn tập của khóa chưa đủ câu để ra đề.</summary>
     public const string Unavailable = "UNAVAILABLE";
@@ -240,7 +240,7 @@ public class PulseSkipTest
 
     /// <summary>
     /// Có thể làm bài lúc này: khóa học được, hoặc chỉ còn chờ chính bài đầu vào này (bắt buộc trước khi học), và đã có quyền
-    /// học đầy đủ (khóa có phí cần suất).
+    /// học đầy đủ (khóa có phí cần doanh nghiệp đã mua).
     /// </summary>
     public static bool CanTake(PulseCourseState state) =>
         (state.BlockReason is null or PulseBlockReason.PreAssessmentRequired)
@@ -292,7 +292,7 @@ public class PulseSkipTest
             : "Bạn đã hoàn thành mọi mô-đun nên không cần bài kiểm tra đầu vào.",
         PulseSkipTestStatus.Locked => state.BlockReason is { } reason and not PulseBlockReason.PreAssessmentRequired
             ? PulseCourseWorkspace.BlockMessage(reason)
-            : PulseCourseWorkspace.BlockMessage(PulseBlockReason.SeatRequired),
+            : PulseCourseWorkspace.BlockMessage(PulseBlockReason.PurchaseRequired),
         PulseSkipTestStatus.Unavailable => "Ngân hàng câu hỏi của khóa chưa đủ câu để ra bài kiểm tra đầu vào. Hãy học tuần tự từng mô-đun.",
         PulseSkipTestStatus.Exhausted => PulseRules.SkipTestMaxAttempts == 1
             ? "Bài kiểm tra đầu vào chỉ được làm một lần và bạn đã làm nhưng chưa đạt. Hãy học tuần tự từng mô-đun để mở bài đánh giá cuối khóa."

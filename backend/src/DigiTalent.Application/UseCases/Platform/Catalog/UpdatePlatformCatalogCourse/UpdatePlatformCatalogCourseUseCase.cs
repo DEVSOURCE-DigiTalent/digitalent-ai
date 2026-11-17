@@ -52,7 +52,7 @@ public class UpdatePlatformCatalogCourseUseCase : IUseCase<UpdatePlatformCatalog
         course.Outcome = input.Outcome?.Trim() ?? string.Empty;
         course.DomainId = input.DomainId;
         course.Level = (short)input.Level;
-        course.PricePerSeat = course.Level == PlatformCatalog.MinLevel ? 0 : input.PricePerSeat;
+        course.Price = course.Level == PlatformCatalog.MinLevel ? 0 : input.Price;
         course.SalesStatus = input.SalesStatus;
         if (identity.PublishedAt == null)
         {
@@ -60,7 +60,7 @@ public class UpdatePlatformCatalogCourseUseCase : IUseCase<UpdatePlatformCatalog
             identity.Title = course.Title;
             identity.DomainId = course.DomainId;
             identity.Level = course.Level;
-            identity.PricePerSeat = course.PricePerSeat;
+            identity.Price = course.Price;
         }
 
         PlatformCatalogEditor.MarkEdited(course);

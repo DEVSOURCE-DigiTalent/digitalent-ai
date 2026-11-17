@@ -5,7 +5,7 @@ public class GetPulseModuleUseCaseOutput
     public PulseCourseSummaryDto Course { get; set; } = new();
     public PulseModuleDetailDto Module { get; set; } = new();
     public List<PulseModuleNavDto> Modules { get; set; } = new();
-    /// <summary>true = trang mẫu (khóa có phí chưa có suất): chỉ trang đầu tiên của mô đun 1, không có câu hỏi.</summary>
+    /// <summary>true = trang mẫu (khóa có phí doanh nghiệp chưa mua): chỉ trang đầu tiên của mô đun 1, không có câu hỏi.</summary>
     public bool Sample { get; set; }
     public List<PulseSlideDto> Slides { get; set; } = new();
     public bool Viewed { get; set; }

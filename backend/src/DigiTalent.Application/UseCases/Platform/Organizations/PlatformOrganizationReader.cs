@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Platform.Common;
@@ -11,7 +12,7 @@ namespace DigiTalent.Application.UseCases.Platform.Organizations;
 public static class PlatformOrganizationReader
 {
     /// <summary>
-    /// Every organization with its owner, people counts and seat totals (in-memory aggregation:
+    /// Every organization with its owner, people counts and course orders (in-memory aggregation:
     /// the number of organizations is small).
     /// </summary>
     public static async Task<List<PlatformOrganizationItem>> ReadAllAsync(IApplicationDbContext context)
@@ -36,10 +37,13 @@ public static class PlatformOrganizationReader
             where user.OrganizationId != null
             select new { user.Id, user.OrganizationId, user.DisplayName, user.Email, user.CreatedAt, RoleCode = role == null ? null : role.Code })
             .ToListAsync();
-        var seatTotals = await context.CourseSeatOrders.AsNoTracking()
-            .GroupBy(o => new { o.OrganizationId, o.Kind })
-            .Select(g => new { g.Key.OrganizationId, g.Key.Kind, Seats = g.Sum(o => o.Seats), Amount = g.Sum(o => o.TotalAmount) })
-            .ToListAsync();
+        var orders = (await (
+                from order in context.CourseOrders.AsNoTracking()
+                join course in context.PlatformCourses.AsNoTracking() on order.CourseId equals course.Id
+                select new { order.OrganizationId, course.Code, order.Amount })
+            .ToListAsync())
+            .Select(o => new { o.OrganizationId, Code = CourseCodes.Canonical(o.Code), o.Amount })
+            .ToList();
         var subscriptions = (await context.Subscriptions.AsNoTracking().ToListAsync())
             .GroupBy(s => s.OrganizationId)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(s => s.CreatedAt).First());
@@ -49,7 +53,8 @@ public static class PlatformOrganizationReader
         {
             var members = userRoles.Where(u => u.OrganizationId == o.Id).ToList();
             var owner = members.Where(u => u.RoleCode == Roles.Owner).OrderBy(u => u.CreatedAt).FirstOrDefault();
-            var purchased = seatTotals.Where(s => s.OrganizationId == o.Id && s.Kind == PlatformCatalog.SeatOrderKind.Purchase).ToList();
+            var purchased = orders.Where(s => s.OrganizationId == o.Id).ToList();
+            var coursesPurchased = purchased.Select(s => s.Code).Distinct().Count();
             var subscription = subscriptions.GetValueOrDefault(o.Id);
             var used = usage.Where(u => u.OrganizationId == o.Id).ToList();
             return new PlatformOrganizationItem
@@ -58,15 +63,14 @@ public static class PlatformOrganizationReader
                 Code = o.Code,
                 Name = o.Name,
                 Status = o.Status,
-                Stage = purchased.Sum(s => s.Seats) > 0 ? PlatformOrganizationStages.Paid : PlatformOrganizationStages.Trial,
+                Stage = coursesPurchased > 0 ? PlatformOrganizationStages.Paid : PlatformOrganizationStages.Trial,
                 OwnerName = owner?.DisplayName,
                 OwnerEmail = owner?.Email,
                 DepartmentCount = departmentCounts.FirstOrDefault(d => d.OrganizationId == o.Id)?.Count ?? 0,
                 EmployeeCount = employeeCounts.FirstOrDefault(e => e.OrganizationId == o.Id)?.Count ?? 0,
                 ManagerCount = members.Where(u => u.RoleCode == Roles.Manager).Select(u => u.Id).Distinct().Count(),
                 UserCount = members.Select(u => u.Id).Distinct().Count(),
-                SeatsPurchased = purchased.Sum(s => s.Seats),
-                SeatsGranted = seatTotals.Where(s => s.OrganizationId == o.Id && s.Kind == PlatformCatalog.SeatOrderKind.AdminGrant).Sum(s => s.Seats),
+                CoursesPurchased = coursesPurchased,
                 Revenue = purchased.Sum(s => s.Amount),
                 SetupCompleted = o.SetupCompletedAt != null,
                 CreatedAt = o.CreatedAt,
@@ -102,7 +106,8 @@ public static class PlatformOrganizationReader
                       && (organizationId == null || employee.OrganizationId == organizationId)
                 select new { employee.OrganizationId, EmployeeId = employee.Id, platformCourse.Code, platformCourse.Title, platformCourse.Level, enrollment.Status })
             .ToListAsync();
-        return rows.Select(r => new CourseUsageRow(r.OrganizationId, r.EmployeeId, r.Code, r.Title, r.Level, r.Status)).ToList();
+        // A- and M-codes are the same course: usage is reported under the canonical code.
+        return rows.Select(r => new CourseUsageRow(r.OrganizationId, r.EmployeeId, CourseCodes.Canonical(r.Code), r.Title, r.Level, r.Status)).ToList();
     }
 
     public static async Task<PlatformOrganizationDetailOutput> ReadDetailAsync(IApplicationDbContext context, Guid organizationId)
@@ -163,15 +168,27 @@ public static class PlatformOrganizationReader
         .ThenBy(p => p.FullName)
         .ToList();
 
-        var seats = (await PlatformCatalogReader.ReadCoursesAsync(context, organizationId))
-            .Where(c => c.SeatsPurchased > 0 || c.SeatsGranted > 0)
-            .Select(c => new PlatformOrganizationSeatItem
+        // One row per course (A- and M-codes are the same course), with the date of its first order.
+        var purchasedCourses = (await (
+                from order in context.CourseOrders.AsNoTracking()
+                join course in context.PlatformCourses on order.CourseId equals course.Id
+                where order.OrganizationId == organizationId
+                select new { course.Code, course.Title, course.Level, order.CreatedAt })
+            .ToListAsync())
+            .GroupBy(o => CourseCodes.Canonical(o.Code))
+            .Select(g =>
             {
-                CourseCode = c.Code,
-                CourseTitle = c.Title,
-                SeatsPurchased = c.SeatsPurchased,
-                SeatsGranted = c.SeatsGranted,
-            }).ToList();
+                var first = g.OrderBy(o => o.CreatedAt).First();
+                return new PlatformOrganizationPurchasedCourseItem
+                {
+                    CourseCode = g.Key,
+                    CourseTitle = first.Title,
+                    LevelName = PlatformCatalog.LevelName(first.Level),
+                    PurchasedAt = first.CreatedAt,
+                };
+            })
+            .OrderBy(c => c.CourseCode)
+            .ToList();
 
         var orders = await PlatformCatalogReader.QueryOrders(context)
             .Where(o => o.OrganizationId == organizationId)
@@ -203,7 +220,7 @@ public static class PlatformOrganizationReader
                 EmployeeCount = employees.Count(e => e.DepartmentId == d.Id),
             }).ToList(),
             People = people,
-            Seats = seats,
+            PurchasedCourses = purchasedCourses,
             Orders = orders,
             CoursesInUse = coursesInUse,
         };

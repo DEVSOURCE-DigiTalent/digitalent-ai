@@ -107,28 +107,10 @@ public class MyEnrollmentRules
             return new EnrollCheck(false, "Bạn đã ghi danh khóa học này.", prerequisites);
         }
 
-        var isPaidCourse = course.Code.EndsWith("-I", StringComparison.OrdinalIgnoreCase) ||
-                           course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase);
-        if (isPaidCourse)
+        if (CourseOwnership.IsPaid(course.Code)
+            && !await CourseOwnership.IsPurchasedAsync(_context, employee.OrganizationId, course.Code))
         {
-            var purchasedSeats = await (
-                from o in _context.CourseSeatOrders.AsNoTracking()
-                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-                where o.OrganizationId == employee.OrganizationId && courseCodes.Contains(pc.Code)
-                select (int?)o.Seats
-            ).SumAsync() ?? 0;
-
-            var usedSeats = await _context.CourseAssignments.AsNoTracking()
-                .Where(ca => _context.Courses.Any(version => version.Id == ca.CourseId
-                    && version.OrganizationId == course.OrganizationId && courseCodes.Contains(version.Code))
-                    && ca.Status == Statuses.CourseAssignment.Active)
-                .Select(ca => ca.EmployeeId).Distinct().CountAsync();
-
-            if (purchasedSeats <= usedSeats)
-            {
-                var price = course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ? "699.000 ₫" : "399.000 ₫";
-                return new EnrollCheck(false, $"Khóa học này thuộc gói bản quyền có phí ({price}/suất). Doanh nghiệp cần trang bị suất học để nhân viên có thể tham gia.", prerequisites);
-            }
+            return new EnrollCheck(false, "Khóa học này có phí. Doanh nghiệp cần mua khóa học để nhân viên có thể tham gia.", prerequisites);
         }
 
         var eligibility = await EligibilityAsync(employee.Id, course.Id, prerequisites);

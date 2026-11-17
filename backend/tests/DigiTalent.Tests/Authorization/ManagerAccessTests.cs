@@ -35,7 +35,7 @@ public class ManagerAccessTests
     [InlineData("PUT", "api/v1/capability-ceilings/organization")] // đặt trần năng lực
     [InlineData("POST", "api/v1/position-requirements/{id:guid}/activate")] // kích hoạt chuẩn năng lực
     [InlineData("POST", "api/v1/course-assignments")] // giao khóa học
-    [InlineData("POST", "api/v1/courses/{id:guid}/purchase-seats")] // mua suất học
+    [InlineData("POST", "api/v1/courses/{id:guid}/purchase")] // mua khóa học
     [InlineData("GET", "api/v1/organization/overview")] // tổng quan doanh nghiệp
     [InlineData("GET", "api/v1/subscription")] // gói dịch vụ
     [InlineData("GET", "api/v1/trial")] // chương trình dùng thử
