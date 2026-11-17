@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Learning.Lessons;
 using DigiTalent.Application.UseCases.Me;
+using DigiTalent.Application.UseCases.Platform.References;
 using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Application.UseCases.TrialProgram;
 using DigiTalent.Domain.Constants;
@@ -321,6 +322,37 @@ public class OwnerSurveyFlowTests
         reference.UsesMilestone.Should().BeFalse();
         reference.TargetLevel.Should().Be(referenceTarget);
         report.Summary.Single(d => d.CategoryId == withoutMilestone).MilestoneLevel.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Report_keeps_the_reference_of_a_legacy_position_that_no_department_owns()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var asOwner = await TrialAsAsync(world, PulseTestWorld.OwnerEmail, Roles.Owner);
+        var initial = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
+        await asOwner.Request.ExecuteAsync(new SubmitTrialRequestUseCaseInput { TestDeadline = world.Clock.Now.AddHours(1) });
+        var employeeId = initial.Participants.First(p => p.EmployeeId.HasValue).EmployeeId!.Value;
+        // Older invitations created "VT01…" positions with the catalog label and no department.
+        var department = new Department { OrganizationId = initial.OrganizationId, Code = "BGD", Name = "Ban Giám đốc" };
+        var legacy = new JobPosition { OrganizationId = initial.OrganizationId, Code = "VT05", Name = "CEO / Giám đốc" };
+        world.Context.Departments.Add(department);
+        world.Context.JobPositions.Add(legacy);
+        var employee = await world.Context.Employees.SingleAsync(e => e.Id == employeeId);
+        employee.DepartmentId = department.Id;
+        employee.JobPositionId = legacy.Id;
+        world.Context.TrialAssessments.Add(new TrialAssessment { OrganizationId = initial.OrganizationId, EmployeeId = employeeId, SubmittedAt = world.Clock.Now, ReviewedAt = world.Clock.Now, ChoiceScore = 10, ChoiceTotal = 18 });
+        await world.Context.SaveChangesAsync();
+        var ceo = (await new ReferencePositionMatrixService(world.Context, Mock.Of<ICurrentUser>(), Mock.Of<IAuditService>()).GetAsync()).Levels["CEO"];
+
+        var report = (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Report!;
+
+        report.Employees.Single().DomainDetails.Should().OnlyContain(d => d.TargetLevel == ceo[d.Number - 1] && d.UsesSystemReference);
+
+        // A position owned by another department is still not taken as the employee's position.
+        legacy.DepartmentId = (await world.Context.Departments.FirstAsync(d => d.Id != department.Id && d.OrganizationId == initial.OrganizationId)).Id;
+        await world.Context.SaveChangesAsync();
+        (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Report!.Employees.Single().DomainDetails
+            .Should().OnlyContain(d => d.TargetLevel == 0);
     }
 
     private static async Task<List<PulseAnswerInput>> AnswersAsync(PulseTestWorld world, IReadOnlyList<TrialExamQuestionDto> questions, int correctTiers)

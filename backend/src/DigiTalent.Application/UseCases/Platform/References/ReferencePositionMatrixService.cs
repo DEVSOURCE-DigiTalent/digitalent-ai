@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -84,23 +85,17 @@ public sealed class ReferencePositionMatrixService
 
     private static Dictionary<string, int[]> CopyDefaults() => Codes.ToDictionary(code => code, code => Defaults[code].ToArray());
 
-    /// <summary>Match only the five supported sample roles; a department name is never treated as a position.</summary>
+    /// <summary>
+    /// Match only the five supported sample roles; a department name is never treated as a position. The catalog's own
+    /// codes and labels ("CEO / Giám đốc", "Nhân sự (HR)", "Sales / CRM"…) match first, then the common aliases.
+    /// </summary>
     public static string? MatchPosition(string code, string name)
     {
-        static string Normalize(string value)
-        {
-            var result = new StringBuilder();
-            foreach (var c in value.Normalize(NormalizationForm.FormD))
-            {
-                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark && char.IsLetterOrDigit(c))
-                    result.Append(char.ToUpperInvariant(c == 'đ' || c == 'Đ' ? 'D' : c));
-            }
-            return result.ToString();
-        }
         var codeKey = Normalize(code);
         var nameKey = Normalize(name);
         foreach (var key in new[] { codeKey, nameKey })
         {
+            if (CatalogKeys.TryGetValue(key, out var catalogCode)) return catalogCode;
             if (key is "CEO" or "GIAMDOC" or "GIAMDOCDIEUHANH") return "CEO";
             if (key is "HR" or "NHANSU") return "HR";
             if (key is "MARKETING" or "TIEPTHI") return "MARKETING";
@@ -108,6 +103,23 @@ public sealed class ReferencePositionMatrixService
             if (key is "ACCOUNTANT" or "ACCOUNTING" or "KETOAN" or "KETOANVIEN") return "ACCOUNTANT";
         }
         return null;
+    }
+
+    private static readonly Dictionary<string, string> CatalogKeys = JobPositionCatalog.Positions
+        .SelectMany(p => new[] { (Key: Normalize(p.Key), Code: p.Key), (Key: Normalize(p.Value), Code: p.Key) })
+        .DistinctBy(p => p.Key)
+        .ToDictionary(p => p.Key, p => p.Code);
+
+    /// <summary>Letters and digits only, upper case, without Vietnamese marks ("Nhân sự (HR)" → "NHANSUHR").</summary>
+    private static string Normalize(string value)
+    {
+        var result = new StringBuilder();
+        foreach (var c in value.Normalize(NormalizationForm.FormD))
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark && char.IsLetterOrDigit(c))
+                result.Append(char.ToUpperInvariant(c == 'đ' || c == 'Đ' ? 'D' : c));
+        }
+        return result.ToString();
     }
 }
 

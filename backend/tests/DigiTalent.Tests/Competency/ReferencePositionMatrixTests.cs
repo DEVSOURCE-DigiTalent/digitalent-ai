@@ -71,6 +71,10 @@ public sealed class ReferencePositionMatrixTests : IDisposable
     [InlineData("CEO", "Giám đốc", "CEO")]
     [InlineData("SALES", "Sales", "SALES_CRM")]
     [InlineData("KT", "Kế toán", "ACCOUNTANT")]
+    // Positions created by older invitations kept the catalog label under a generated code.
+    [InlineData("VT05", "CEO / Giám đốc", "CEO")]
+    [InlineData("VT04", "Nhân sự (HR)", "HR")]
+    [InlineData("VT01", "Sales / CRM", "SALES_CRM")]
     [InlineData("NEW", "Chuyên viên mới", null)]
     public void OnlyFiveSupportedSamplesAreMatched(string code, string name, string? expected) =>
         ReferencePositionMatrixService.MatchPosition(code, name).Should().Be(expected);
