@@ -759,6 +759,16 @@ Dữ liệu|Data
 Giao tiếp|Communication
 Sáng tạo nội dung|Content creation
 Ứng dụng AI|Applied AI
+Chưa đặt thời hạn|No deadline set
+Còn {count} ngày|{count} days left
+Còn {count} giờ|{count} hours left
+Còn {count} phút|{count} minutes left
+Chưa có nhân sự nào được mời.|No one has been invited yet.
+{count} người đã nộp bài|{count} people submitted
+đã nộp bài|submitted
+bạn|you
+Nộp lúc|Submitted at
+Lưu thời hạn|Save deadline
 Mốc doanh nghiệp|Company milestone
 Mức tham chiếu|Reference level
 Mức tham chiếu vị trí|Position reference
