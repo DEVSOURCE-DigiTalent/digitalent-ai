@@ -301,6 +301,7 @@ public sealed class IndividualCommerceServiceTests
                 CapturingEmail,
                 PlanCatalog,
                 MockPayOS.Object,
+                Mock.Of<IAppUrlResolver>(x => x.GetFrontendBaseUrl() == "http://localhost:5173"),
                 options,
                 NullLogger<IndividualCommerceService>.Instance
             );

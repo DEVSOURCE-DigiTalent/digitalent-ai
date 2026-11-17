@@ -4,7 +4,6 @@ using DigiTalent.Application.UseCases.Auth;
 using DigiTalent.Domain.Entities;
 using DigiTalent.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Moq;
 using Xunit;
 
@@ -27,7 +26,7 @@ public sealed class PasswordResetEmailTests
         sender.Setup(x => x.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("SMTP unavailable"));
 
-        var result = await new ForgotPasswordUseCase(db, sender.Object, Configuration()).ExecuteAsync(new() { Email = user.Email });
+        var result = await new ForgotPasswordUseCase(db, sender.Object, Urls()).ExecuteAsync(new() { Email = user.Email });
 
         Assert.Null(result.DebugLink);
         Assert.Single(await db.PasswordResetTokens.ToListAsync());
@@ -52,7 +51,7 @@ public sealed class PasswordResetEmailTests
             .Callback<string, string, string, CancellationToken>((_, _, link, _) => deliveredLink = link)
             .Returns(Task.CompletedTask);
 
-        await new ForgotPasswordUseCase(db, sender.Object, Configuration()).ExecuteAsync(new() { Email = user.Email });
+        await new ForgotPasswordUseCase(db, sender.Object, Urls()).ExecuteAsync(new() { Email = user.Email });
 
         var rawToken = deliveredLink!.Split('/').Last();
         var current = await db.PasswordResetTokens.SingleAsync(x => x.Id != previous.Id);
@@ -73,7 +72,5 @@ public sealed class PasswordResetEmailTests
     private static AppDbContext CreateDatabase() => new(new DbContextOptionsBuilder<AppDbContext>()
         .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
-    private static IConfiguration Configuration() => new ConfigurationBuilder()
-        .AddInMemoryCollection(new Dictionary<string, string?> { ["IndividualCommerce:Security:PublicAppUrl"] = "http://localhost:5173" })
-        .Build();
+    private static IAppUrlResolver Urls() => Mock.Of<IAppUrlResolver>(x => x.GetFrontendBaseUrl() == "http://localhost:5173");
 }
