@@ -748,7 +748,31 @@ DigiTalent Pulse — Tổng quan|DigiTalent Pulse — Overview
 {hours} giờ {minutes} phút|{hours} hours {minutes} minutes
 Không có lĩnh vực hoặc khóa học nào khớp “{query}”.|No domains or courses match “{query}”.
 Xem thêm khóa học khác bên dưới.|Explore other courses below.
+Chú giải|Legend
+Trung bình đội ngũ|Team average
+{count} người cần bổ sung|{count} people need development
+Phân bổ|Spread
+Bỏ ghim|Unpin
+Xem khóa|View course
+Đội ngũ đã đạt chuẩn ở lĩnh vực này|The team meets the standard in this domain
+Dữ liệu|Data
+Giao tiếp|Communication
+Sáng tạo nội dung|Content creation
+Ứng dụng AI|Applied AI
 Mốc doanh nghiệp|Company milestone
+Mức tham chiếu|Reference level
+Mức tham chiếu vị trí|Position reference
+Mốc so sánh|Benchmark
+Đạt mốc|Meets the milestone
+Cả đội đạt mốc|The whole team meets the milestone
+Chưa có mốc|No milestone
+{count} người dưới mốc|{count} people below the milestone
+{count} người dưới mức tham chiếu|{count} people below the reference level
+Cả đội đạt mức tham chiếu|The whole team meets the reference level
+Đạt mức tham chiếu|Meets the reference level
+người dưới mốc doanh nghiệp|people below the company milestone
+người dưới mức tham chiếu vị trí|people below the position reference
+Sửa mốc|Edit milestones
 Đặt mốc|Set milestones
 Mốc năng lực doanh nghiệp|Company competency milestone
 Chọn để đặt mốc|Select to set a milestone

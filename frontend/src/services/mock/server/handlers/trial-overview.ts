@@ -84,7 +84,7 @@ function survey(data: OrgData) {
     state.program.report = { publishedAt: state.program.reportPublishedAt, assessed: employees.length, employees, domains: CATEGORIES.map((category) => ({categoryId:category.id,number:category.sortOrder,code:category.code,name:category.name})), summary: CATEGORIES.map((category,index) => {
       const levels = employees.map((employee) => employee.levels[index] ?? 0);
       const average = levels.reduce((sum,level) => sum + level,0) / levels.length;
-      return { categoryId:category.id,number:category.sortOrder,name:category.name,average,level:Math.round(average),counts:[0,1,2,3].map((level) => levels.filter((value) => value===level).length) };
+      return { categoryId:category.id,number:category.sortOrder,name:category.name,average,level:Math.round(average),milestoneLevel:data.competencyMilestones?.[category.id] ?? 0,counts:[0,1,2,3].map((level) => levels.filter((value) => value===level).length) };
     }) };
   }
   return state;

@@ -47,6 +47,8 @@ export interface TrialReportDomainSummary {
   average: number;
   level: number;
   targetLevel?: number;
+  /** Organization competency milestone of the domain (0 = not set: targets come from the position reference). */
+  milestoneLevel?: number;
   targetMetRate?: number;
   averageGap?: number;
   statusText?: string;
@@ -61,6 +63,8 @@ export interface TrialEmployeeDomainDetail {
   targetLevel?: number;
   skillGap?: number;
   usesSystemReference?: boolean;
+  /** true = target is the organization milestone; false = the position reference level. */
+  usesMilestone?: boolean;
   levelLabel: string;
   statusText: string;
   gapText: string;

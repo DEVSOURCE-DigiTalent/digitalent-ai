@@ -36,7 +36,9 @@ describe('owner assessment interactions', () => {
     render(<MemoryRouter><CompetencyReport report={priorityReport} /></MemoryRouter>);
     expect(screen.getByRole('heading', { name: 'Năng lực theo lĩnh vực' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /Xem khóa/ })[0]).toHaveAttribute('href', '/enterprise/courses?focus=M2-F&level=1');
-    expect(screen.getByText('8 người cần bổ sung theo chuẩn vị trí')).toBeInTheDocument();
+    expect(screen.getByText('8 người dưới mức tham chiếu vị trí')).toBeInTheDocument();
+    fireEvent.focus(screen.getByRole('button', { name: 'Miền 02 · Giao tiếp' }));
+    expect(within(screen.getByRole('tooltip')).getByText('8 người dưới mức tham chiếu', { exact: false })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /M4-/ })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Chi tiết từng nhân viên', exact: true })).toBeInTheDocument();
     expect(screen.getByText('Mức năng lực trung bình', { selector: 'p' })).toBeInTheDocument();
@@ -51,13 +53,49 @@ describe('owner assessment interactions', () => {
       employees: [{ ...report.employees[0], domainDetails: [comparedDomain('communication', 2, target)] }],
     });
     const view = render(<MemoryRouter><CompetencyReport report={result(2)} /></MemoryRouter>);
-    expect(screen.getByRole('columnheader', { name: 'Mức năng lực trung bình' })).toBeInTheDocument();
-    expect(screen.queryByRole('columnheader', { name: 'Đạt chuẩn vị trí' })).not.toBeInTheDocument();
+    const domain = screen.getByRole('button', { name: 'Miền 02 · Giao tiếp' });
+    fireEvent.click(domain);
+    expect(domain).toHaveAttribute('aria-pressed', 'true');
+    const detail = () => within(view.container.querySelector<HTMLElement>('.tp-lc-detail')!);
+    expect(detail().getByText('Cả đội đạt mức tham chiếu')).toBeInTheDocument();
+    expect(detail().getByText('Đạt mức tham chiếu')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /M2-A/ })).not.toBeInTheDocument();
 
     view.rerender(<MemoryRouter><CompetencyReport report={result(3)} /></MemoryRouter>);
-    expect(within(screen.getByRole('table')).getByRole('link', { name: /M2-A/ }))
-      .toHaveAttribute('href', '/enterprise/courses?focus=M2-A&level=3');
+    expect(detail().getByRole('link', { name: /M2-A/ })).toHaveAttribute('href', '/enterprise/courses?focus=M2-A&level=3');
+  });
+
+  it('draws domains as a line chart whose tooltip carries the spread instead of table columns', () => {
+    const summary = [
+      { categoryId: 'data', number: 1, name: 'Khai thác dữ liệu và thông tin', counts: [4, 2, 2, 2], average: 1.2, level: 1 },
+      { categoryId: 'ai', number: 6, name: 'Ứng dụng trí tuệ nhân tạo', counts: [3, 0, 6, 1], average: 1.5, level: 2 },
+    ];
+    const view = render(<MemoryRouter><CompetencyReport report={{ ...report, assessed: 10, summary }} /></MemoryRouter>);
+    expect(view.container.querySelector('.tp-lc__team')).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Mức năng lực trung bình' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+    fireEvent.focus(screen.getByRole('button', { name: 'Miền 01 · Khai thác dữ liệu và thông tin' }));
+    const tip = within(screen.getByRole('tooltip'));
+    expect(tip.getByText('1,2')).toBeInTheDocument();
+    expect(tip.getByText('Chưa đạt').closest('li')).toHaveTextContent('4');
+    expect(tip.getByText('Nâng cao').closest('li')).toHaveTextContent('2');
+  });
+
+  it('compares the team with the organization milestone once the owner has set one', () => {
+    const milestoneReport: TrialReport = {
+      ...report, assessed: 1,
+      summary: [{ categoryId: 'communication', number: 2, name: 'Giao tiếp', counts: [0, 1, 0, 0], average: 1, level: 1, milestoneLevel: 3 }],
+      employees: [{ ...report.employees[0], domainDetails: [{ ...comparedDomain('communication', 1, 3), usesMilestone: true }] }],
+    };
+    const view = render(<MemoryRouter><CompetencyReport report={milestoneReport} /></MemoryRouter>);
+    expect(within(view.container.querySelector<HTMLElement>('.tp-lc__legend')!).getByText('Mốc doanh nghiệp')).toBeInTheDocument();
+    expect(screen.getByText('1 người dưới mốc doanh nghiệp')).toBeInTheDocument();
+    fireEvent.focus(screen.getByRole('button', { name: 'Miền 02 · Giao tiếp' }));
+    const tip = within(screen.getByRole('tooltip'));
+    expect(tip.getByText('Mốc doanh nghiệp')).toBeInTheDocument();
+    expect(tip.getByText('3,0')).toBeInTheDocument();
+    expect(tip.getByText('1 người dưới mốc', { exact: false })).toBeInTheDocument();
   });
 
   it('keeps draft content mounted but inert when the disclosure closes', () => {

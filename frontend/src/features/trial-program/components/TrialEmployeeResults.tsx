@@ -104,7 +104,7 @@ export function TrialEmployeeResults({ assessment, overview }: {
                       <div className="tt-domain-subline">
                         {translateUi('Hiện tại')}{' '}
                         <strong className="tt-domain-highlight">{detail?.mentorLevel != null && <>{translateUi('Mentor xác nhận')} · </>}{translateUi(levelName(level))}</strong>
-                        {target ? <span> · {translateUi(detail?.usesSystemReference ? 'Chuẩn hệ thống' : 'Chuẩn doanh nghiệp')}: {translateUi(levelName(target))} · {translateUi(level < target ? 'Cần bổ sung' : 'Đạt chuẩn')}</span> : null}
+                        {target ? <span> · {translateUi(detail?.usesMilestone ? 'Mốc doanh nghiệp' : 'Mức tham chiếu vị trí')}: {translateUi(levelName(target))} · {translateUi(level < target ? 'Cần bổ sung' : detail?.usesMilestone ? 'Đạt mốc' : 'Đạt chuẩn')}</span> : null}
                       </div>
                     </div>
                   </div>
