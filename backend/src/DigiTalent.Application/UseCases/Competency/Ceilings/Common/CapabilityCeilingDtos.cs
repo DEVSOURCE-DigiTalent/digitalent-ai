@@ -47,6 +47,12 @@ public class CeilingDomainDto
     /// <summary>Mức yêu cầu cao nhất của các vị trí đang có bộ yêu cầu ACTIVE.</summary>
     public int SuggestedCeiling { get; set; }
 
+    /// <summary>
+    /// Mốc năng lực doanh nghiệp (competency_milestones, 0 = chưa đặt). Không phụ thuộc suất học: báo cáo dùng thử so
+    /// kết quả của nhân viên với mốc này để doanh nghiệp quyết định mua khóa.
+    /// </summary>
+    public int MilestoneLevel { get; set; }
+
     /// <summary>Khóa chuẩn của từng cấp (null nếu tổ chức chưa có khóa đã xuất bản ở cấp đó).</summary>
     public List<CeilingCourseDto> Courses { get; set; } = new();
 }

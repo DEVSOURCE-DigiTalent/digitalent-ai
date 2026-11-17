@@ -43,6 +43,18 @@ public class CapabilityCeilingsController : ControllerBase
         return Ok(ApiResponse<UpdateOrganizationCeilingsUseCaseOutput>.Ok(result, "Organization ceiling saved."));
     }
 
+    // PUT api/v1/capability-ceilings/milestones — body { milestones: [{ categoryId, level }] }, level 0 clears a milestone.
+    // Organization-wide competency milestones; unlike the ceiling they need no purchased seats.
+    [HttpPut("milestones")]
+    [HasPermission(Permissions.PositionRequirement.Manage)]
+    public async Task<ActionResult<ApiResponse<UpdateCompetencyMilestonesUseCaseOutput>>> UpdateMilestones(
+        [FromBody] UpdateCompetencyMilestonesUseCaseInput input,
+        [FromServices] IUseCase<UpdateCompetencyMilestonesUseCaseInput, UpdateCompetencyMilestonesUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(input);
+        return Ok(ApiResponse<UpdateCompetencyMilestonesUseCaseOutput>.Ok(result, "Competency milestones saved."));
+    }
+
     // PUT api/v1/capability-ceilings/departments/{departmentId} — body { inherit?, ceilings: [{ categoryId, level }] }
     [HttpPut("departments/{departmentId:guid}")]
     [HasPermission(Permissions.PositionRequirement.Manage)]

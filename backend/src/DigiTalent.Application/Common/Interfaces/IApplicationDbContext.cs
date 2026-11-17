@@ -44,6 +44,7 @@ public interface IApplicationDbContext
     DbSet<CapabilityBaseline> CapabilityBaselines { get; }
     DbSet<CapabilityBaselineAnswer> CapabilityBaselineAnswers { get; }
     DbSet<CapabilityCeiling> CapabilityCeilings { get; }
+    DbSet<CompetencyMilestone> CompetencyMilestones { get; }
 
     // Learning (khóa học)
     DbSet<Course> Courses { get; }

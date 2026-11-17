@@ -1368,6 +1368,56 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CompetencyMilestone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompetencyCategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("competency_category_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<short>("MilestoneLevel")
+                        .HasColumnType("smallint")
+                        .HasColumnName("milestone_level");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_competency_milestones");
+
+                    b.HasIndex("CompetencyCategoryId")
+                        .HasDatabaseName("ix_competency_milestones_competency_category_id");
+
+                    b.HasIndex("UpdatedByUserId")
+                        .HasDatabaseName("ix_competency_milestones_updated_by_user_id");
+
+                    b.HasIndex("OrganizationId", "CompetencyCategoryId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_competency_milestones_organization_category");
+
+                    b.ToTable("competency_milestones", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_competency_milestones_level", "milestone_level BETWEEN 0 AND 3");
+                        });
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.Course", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8077,6 +8127,29 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_competency_level_criteria_competencies_competency_id");
 
                     b.Navigation("Competency");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.CompetencyMilestone", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.CompetencyCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CompetencyCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_competency_milestones_competency_categories_competency_cate");
+
+                    b.HasOne("DigiTalent.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_competency_milestones_organizations_organization_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_competency_milestones_users_updated_by_user_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.Course", b =>

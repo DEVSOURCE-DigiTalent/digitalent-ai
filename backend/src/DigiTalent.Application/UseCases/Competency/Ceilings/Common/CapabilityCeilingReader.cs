@@ -147,6 +147,7 @@ public class CapabilityCeilingReader
         };
 
         var organizationCeilings = new Dictionary<Guid, int>();
+        var milestones = await CompetencyMilestoneReader.LoadAsync(_context, organizationId);
         foreach (var domain in domains)
         {
             var suggested = Suggest(allPositions, domain.Id);
@@ -210,6 +211,7 @@ public class CapabilityCeilingReader
                 OrganizationCeiling = ceiling,
                 MaxAllowedCeiling = maxAllowed,
                 SuggestedCeiling = suggested,
+                MilestoneLevel = milestones.GetValueOrDefault(domain.Id),
                 Courses = domainCourses,
             });
         }

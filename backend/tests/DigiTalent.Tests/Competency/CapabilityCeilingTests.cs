@@ -231,4 +231,53 @@ public class CapabilityCeilingTests : IDisposable
         var action = () => SaveOrganization(data: 3, ai: 3);
         (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("COURSE_LICENSE_REQUIRED");
     }
+
+    private UpdateCompetencyMilestonesUseCase MilestoneUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader);
+
+    [Fact]
+    public async Task UpdateMilestones_BeforeAnyPurchase_SetsTheOrganizationMilestoneWithoutTouchingTheCeiling()
+    {
+        _context.CourseSeatOrders.RemoveRange(_context.CourseSeatOrders);
+        await _context.SaveChangesAsync();
+
+        var output = await MilestoneUseCase().ExecuteAsync(new UpdateCompetencyMilestonesUseCaseInput
+        {
+            Milestones = { new CeilingInputItem { CategoryId = _dataId, Level = 3 } },
+        });
+
+        var data = output.Domains.Single(d => d.CategoryId == _dataId);
+        data.MilestoneLevel.Should().Be(3);
+        data.OrganizationCeiling.Should().Be(1, "the ceiling still follows purchased seats");
+        output.Domains.Single(d => d.CategoryId == _aiId).MilestoneLevel.Should().Be(0);
+        (await _context.CapabilityCeilings.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateMilestones_UpdatesOnlyTheListedDomainsAndZeroClearsAMilestone()
+    {
+        await MilestoneUseCase().ExecuteAsync(new UpdateCompetencyMilestonesUseCaseInput
+        {
+            Milestones = { new CeilingInputItem { CategoryId = _dataId, Level = 2 }, new CeilingInputItem { CategoryId = _aiId, Level = 3 } },
+        });
+
+        var output = await MilestoneUseCase().ExecuteAsync(new UpdateCompetencyMilestonesUseCaseInput
+        {
+            Milestones = { new CeilingInputItem { CategoryId = _aiId, Level = 0 } },
+        });
+
+        output.Domains.Single(d => d.CategoryId == _dataId).MilestoneLevel.Should().Be(2);
+        output.Domains.Single(d => d.CategoryId == _aiId).MilestoneLevel.Should().Be(0);
+        (await _context.CompetencyMilestones.CountAsync()).Should().Be(2, "a cleared milestone keeps its row at level 0");
+    }
+
+    [Fact]
+    public async Task UpdateMilestones_UnknownDomain_IsRejected()
+    {
+        var action = () => MilestoneUseCase().ExecuteAsync(new UpdateCompetencyMilestonesUseCaseInput
+        {
+            Milestones = { new CeilingInputItem { CategoryId = Guid.NewGuid(), Level = 2 } },
+        });
+
+        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("CATEGORY_NOT_IN_MATRIX");
+    }
 }
