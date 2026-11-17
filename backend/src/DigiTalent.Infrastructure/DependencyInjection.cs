@@ -44,7 +44,8 @@ public static class DependencyInjection
         // Phân quyền: đọc quyền của role từ database, có cache
         services.AddMemoryCache();
         services.AddHttpContextAccessor();
-        services.AddScoped<IAppUrlResolver, AppUrlResolver>();
+        // Singleton: only reads IHttpContextAccessor/IConfiguration, and the singleton trial email sender depends on it.
+        services.AddSingleton<IAppUrlResolver, AppUrlResolver>();
         services.AddScoped<IPermissionReader, PermissionReader>();
 
         // Lưu trữ file (File Storage): hỗ trợ "Local" (đĩa cục bộ) hoặc "Minio" (S3-compatible object storage)
