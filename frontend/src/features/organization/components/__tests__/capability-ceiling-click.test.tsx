@@ -73,7 +73,7 @@ describe('ceiling information clicks', () => {
     const info = vi.spyOn(toast, 'info');
     render(<StrictMode><MemoryRouter><CapabilityCeilingMatrix /></MemoryRouter></StrictMode>);
 
-    fireEvent.click(screen.getByRole('button', { name: /Lĩnh vực 2, cấp 3: chưa mua suất/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Lĩnh vực 2, cấp 3: chưa mua khóa/ }));
     expect(success).toHaveBeenCalledTimes(1);
     expect(success).toHaveBeenCalledWith('Đã chọn khóa A2-3 để mua bản quyền', expect.anything());
 
@@ -85,14 +85,14 @@ describe('ceiling information clicks', () => {
   it('stacks both action bars inside the enterprise shell and clears them independently', () => {
     render(<MemoryRouter><div className="enterprise-shell" data-testid="enterprise-shell"><CapabilityCeilingMatrix /></div></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: 'Thiết lập phạm vi Lĩnh vực 1: cấp 2' }));
-    fireEvent.click(screen.getByRole('button', { name: /Lĩnh vực 2, cấp 3: chưa mua suất/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Lĩnh vực 2, cấp 3: chưa mua khóa/ }));
 
     const dock = screen.getByRole('region', { name: 'Thao tác khung năng lực' });
     expect(dock.parentElement).toBe(screen.getByTestId('enterprise-shell'));
     expect(dock).toContainElement(screen.getByRole('button', { name: 'Lưu thay đổi' }));
     expect(dock).toContainElement(screen.getByRole('button', { name: /Thanh toán & Ký online/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Hủy chọn tất cả' }));
-    expect(dock).not.toHaveTextContent('Giỏ suất học');
+    expect(dock).not.toHaveTextContent('Giỏ khóa học');
     fireEvent.click(screen.getByRole('button', { name: 'Hủy thay đổi' }));
     expect(dock).not.toBeInTheDocument();
   });

@@ -20,14 +20,17 @@ export interface CourseListItem {
   status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED';
   assignedCount: number;
   createdAt?: string;
-  seatsPurchased?: number;
-  seatsGranted?: number;
-  seatsAvailable?: number;
+  /** Price of the course for the whole organization (0 for Basic). */
+  price?: number;
+  /** The organization bought this paid course (once, for every employee). */
+  isPurchased?: boolean;
+  /** Every employee may learn it: a free Basic course or a paid course the organization bought. */
   hasLicense?: boolean;
 }
 
 export interface CourseDetailDto {
-  seatsUsed?: number;
+  /** Employees with an active assignment to the course. */
+  assignedCount?: number;
   final?: CourseFinalContent | null;
   id: string;
   code: string;
@@ -40,9 +43,9 @@ export interface CourseDetailDto {
   status: string;
   categoryName?: string | null;
   prerequisiteTitle?: string | null;
-  seatsPurchased?: number;
-  seatsGranted?: number;
-  seatsAvailable?: number;
+  /** Price of the course for the whole organization (0 for Basic). */
+  price?: number;
+  isPurchased?: boolean;
   hasLicense?: boolean;
   modules: {
     id: string;
@@ -132,15 +135,12 @@ export interface CreateAssignmentResult {
   skipped: { employeeId: string; employeeName: string; reason: SkipReason }[];
 }
 
-export interface PurchaseCourseSeatsResult {
+/** The organization bought a paid course once: every employee may now learn it. */
+export interface PurchaseCourseResult {
   orderId: string;
   courseCode?: string;
   courseTitle?: string;
-  seats: number;
-  unitPrice?: number;
-  totalAmount: number;
-  totalSeatsPurchased: number;
-  totalSeatsAvailable: number;
+  amount: number;
   checkoutUrl?: string;
   qrCode?: string;
   createdAt?: string;
@@ -158,9 +158,6 @@ export const assignmentService = {
   getSummary: () => apiClient.get<ApiResponse<AssignmentSummary>>('/course-assignments/summary'),
   create: (data: CreateAssignmentRequest) => apiClient.post<ApiResponse<CreateAssignmentResult>>('/course-assignments', data),
   cancel: (id: string, reason?: string) => apiClient.delete<ApiResponse<{ id: string }>>(`/course-assignments/${id}`, { data: { reason } }),
-  purchaseSeats: (courseId: string, seats: number, note?: string) =>
-    apiClient.post<ApiResponse<PurchaseCourseSeatsResult>>(
-      `/courses/${courseId}/purchase-seats`,
-      { courseId, seats, note }
-    ),
+  purchase: (courseId: string, note?: string) =>
+    apiClient.post<ApiResponse<PurchaseCourseResult>>(`/courses/${courseId}/purchase`, { courseId, note }),
 };

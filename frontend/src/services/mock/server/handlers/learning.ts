@@ -34,7 +34,7 @@ export function isDueSoon(assignment: AssignmentRecord): boolean {
 }
 
 export function courseDto(data: OrgData, course: CatalogCourse) {
-  const seatsPurchased = data.courseSeatOrders?.[course.id] ?? 0;
+  const isPurchased = course.level > 1 && Boolean(data.courseOrders?.includes(course.id));
   const assignedCount = data.assignments.filter((a) => a.courseId === course.id && isLive(a)).length;
   return {
     id: course.id,
@@ -50,11 +50,9 @@ export function courseDto(data: OrgData, course: CatalogCourse) {
     prerequisiteTitle: course.prerequisiteCourseId ? COURSE_BY_ID.get(course.prerequisiteCourseId)?.title : undefined,
     status: course.status,
     assignedCount,
-    seatsUsed: assignedCount,
-    seatsPurchased,
-    seatsGranted: 0,
-    seatsAvailable: Math.max(0, seatsPurchased - assignedCount),
-    hasLicense: course.level === 1 || seatsPurchased > 0,
+    price: course.level === 3 ? 699000 : course.level === 2 ? 399000 : 0,
+    isPurchased,
+    hasLicense: course.level === 1 || isPurchased,
   };
 }
 
@@ -67,24 +65,19 @@ route('GET', '/courses', ({ org, query }) => {
   return paginate(items, pageRequest({ pageSize: '100', ...query }));
 }, { permission: P.COURSE_READ_CATALOG });
 
-route('POST', '/courses/:id/purchase-seats', ({ params, body, session, update }) => update((data) => {
+route('POST', '/courses/:id/purchase', ({ params, session, update }) => update((data) => {
   const course = COURSES.find((item) => item.id === params.id || item.code === params.id);
   if (!course) throw notFound('Không tìm thấy khóa học.');
-  const seats = Number(body.seats);
-  if (!Number.isInteger(seats) || seats < 1) throw badRequest('Số suất học phải lớn hơn 0.');
-  if (course.level === 1) throw badRequest('Khóa Cơ bản đã miễn phí, không cần mua suất.');
-  data.courseSeatOrders ??= {};
-  data.courseSeatOrders[course.id] = (data.courseSeatOrders[course.id] ?? 0) + seats;
-  const unitPrice = course.level === 3 ? 699000 : 399000;
-  recordAudit(data, session, 'COURSE_SEATS_PURCHASED', 'Khóa học', course.code, `${seats} suất`);
+  if (course.level === 1) throw badRequest('Khóa học Cơ bản được mở miễn phí, không cần mua.');
+  if (data.courseOrders?.includes(course.id)) throw conflict('Doanh nghiệp đã mua khóa học này, mọi nhân viên đều học được.');
+  data.courseOrders = [...(data.courseOrders ?? []), course.id];
+  const amount = course.level === 3 ? 699000 : 399000;
+  recordAudit(data, session, 'COURSE_PURCHASED', 'Khóa học', course.code, 'Mua cho cả doanh nghiệp');
   return {
     orderId: newId('course-order'), courseCode: course.code, courseTitle: course.title,
-    seats, unitPrice, totalAmount: seats * unitPrice,
-    totalSeatsPurchased: data.courseSeatOrders[course.id],
-    totalSeatsAvailable: Math.max(0, data.courseSeatOrders[course.id] - data.assignments.filter((item) => item.courseId === course.id && isLive(item)).length),
-    createdAt: new Date().toISOString(),
+    amount, createdAt: new Date().toISOString(),
   };
-}), { permission: P.COURSE_CREATE, message: 'Đã ghi nhận đơn mua suất học.' });
+}), { permission: P.COURSE_CREATE, message: 'Đã mua khóa học cho doanh nghiệp.' });
 
 // ── Assignments ──
 

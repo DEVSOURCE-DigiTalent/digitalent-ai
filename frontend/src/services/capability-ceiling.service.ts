@@ -18,9 +18,10 @@ export interface CeilingCourse {
   code: string | null;
   title: string | null;
   competencies?: { competencyId: string; targetLevel: number }[];
+  /** Level 1 is always open; levels 2–3 once the organization bought the course. */
   isUnlocked?: boolean;
-  seatsPurchased?: number;
-  pricePerSeat?: number;
+  /** Price of the course for the whole organization (0 for Basic). */
+  price?: number;
 }
 
 export interface CeilingDomain {
@@ -30,7 +31,7 @@ export interface CeilingDomain {
   sortOrder: number;
   /** Organization ceiling (0–3). */
   organizationCeiling: number;
-  /** Maximum ceiling allowed based on purchased licenses/seats (default 1 for free trial). */
+  /** Maximum ceiling allowed by the courses the organization bought (1 when it bought none). */
   maxAllowedCeiling?: number;
   /** Highest level required by the positions with an active requirement set. */
   suggestedCeiling: number;

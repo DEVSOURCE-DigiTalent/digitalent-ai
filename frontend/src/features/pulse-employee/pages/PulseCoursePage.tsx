@@ -124,7 +124,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
           </span>
           <span className={`pu-c-meta-pill ${approved ? 'approved' : 'access'}`}>
             <ShieldCheck size={13} className={approved ? 'text-emerald-700' : 'text-blue-700'} />
-            <span>{approved ? 'Đã công nhận năng lực' : ACCESS_LABELS[course.access] || 'Suất học đã kích hoạt'}</span>
+            <span>{approved ? 'Đã công nhận năng lực' : ACCESS_LABELS[course.access] || 'Đã mở khóa học'}</span>
           </span>
         </div>
       </header>

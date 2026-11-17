@@ -373,7 +373,7 @@ export function CourseAction({ course, tone = 'page' }: { course: PulseCourseSum
       return <PuLink to={PULSE_PATHS.final(course.courseId)} kind={secondary} small>Xem nhận xét</PuLink>;
     case 'NEEDS_SUPPORT':
       return <PuLink to={PULSE_PATHS.final(course.courseId)} kind={secondary} small>Xem hướng hỗ trợ</PuLink>;
-    case 'SEAT_NEEDED':
+    case 'PURCHASE_NEEDED':
       return <PuLink to={PULSE_PATHS.course(course.courseId)} kind={secondary} small>Xem đề cương</PuLink>;
     case 'COMPLETED':
       return <PuLink to={PULSE_PATHS.course(course.courseId)} kind="ghost" small>{translateUi("Xem khóa học")}</PuLink>;

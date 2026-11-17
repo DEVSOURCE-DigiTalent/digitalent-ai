@@ -32,7 +32,7 @@ export const SOURCE_LABELS: Record<PulseLevelSource, string> = {
 
 export const ACCESS_LABELS: Record<PulseCourseAccess, string> = {
   FREE_FULL: 'Miễn phí toàn bộ',
-  SEAT_ACTIVE: 'Đã có suất học',
+  PURCHASED: 'Doanh nghiệp đã mua khóa',
   PREVIEW: 'Chỉ xem trước',
 };
 
@@ -47,7 +47,7 @@ export const SLOT_LABELS: Record<PulseSlotStatus, string> = {
   IN_REVIEW: 'Chờ đánh giá',
   RETRY_WAIT: 'Chờ mở lần nộp cuối',
   NEEDS_SUPPORT: 'Cần hỗ trợ',
-  SEAT_NEEDED: 'Cần suất học',
+  PURCHASE_NEEDED: 'Chờ doanh nghiệp mua khóa',
   AFTER_PRIOR_LEVEL: 'Chưa mở',
   ABOVE_CEILING: 'Ngoài phạm vi',
   OUTSIDE_PATH: 'Ngoài lộ trình',
@@ -61,7 +61,7 @@ export const slotTone = (status: PulseSlotStatus): 'passed' | 'ready' | 'review'
     : status === 'PRE_REVIEW' || status === 'IN_REVIEW' ? 'review'
     : status === 'IN_PROGRESS' ? 'learning'
     : status === 'FINAL_READY' || status === 'RETRY_WAIT' ? 'final'
-    : status === 'TO_LEARN' || status === 'NEEDS_SUPPORT' || status === 'SEAT_NEEDED' ? 'fail'
+    : status === 'TO_LEARN' || status === 'NEEDS_SUPPORT' || status === 'PURCHASE_NEEDED' ? 'fail'
     : status === 'ABOVE_CEILING' || status === 'OUTSIDE_PATH' ? 'beyond'
     : 'locked';
 
@@ -100,7 +100,7 @@ export const BLOCK_MESSAGES: Record<PulseBlockReason, string> = {
   PRIOR_LEVEL_REQUIRED: 'Khóa mở khi bạn đạt khóa ở cấp trước của cùng lĩnh vực.',
   PRE_ASSESSMENT_REQUIRED: 'Bạn cần làm bài kiểm tra đầu vào (trắc nghiệm, tự chấm, một lần) trước khi học khóa này. Đạt 80% thì bỏ qua phần học và mở bài đánh giá cuối khóa; chưa đạt thì học tuần tự từng mô-đun. Bạn vẫn đọc được nội dung, nhưng tiến độ chỉ được ghi sau bài kiểm tra.',
   PRE_ASSESSMENT_PENDING: 'Bài đánh giá đầu vào đang chờ chuyên gia đánh giá. Nếu chưa đạt, khóa sẽ mở để bạn tiếp tục đào tạo.',
-  SEAT_REQUIRED: 'Cấp độ này cần suất học do chủ doanh nghiệp phân bổ. Bạn xem được đề cương và trang mẫu đầu tiên trước.',
+  PURCHASE_REQUIRED: 'Doanh nghiệp chưa mua khóa học có phí này. Bạn xem được đề cương và trang mẫu đầu tiên trước.',
   PREVIOUS_MODULE_REQUIRED: 'Hãy đạt câu hỏi ôn tập của mô đun trước để mở câu hỏi của mô đun này.',
   SLIDES_NOT_VIEWED: 'Đọc hết các trang nội dung để mở câu hỏi ôn tập.',
   REVIEW_REQUIRED: 'Mở lại trang nội dung của câu chưa đúng để làm lần tiếp theo.',

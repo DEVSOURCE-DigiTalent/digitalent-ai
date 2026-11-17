@@ -1592,7 +1592,7 @@ function TrialTermsDialog({
             </div>
             <div className="pulse-auth-dialog-highlight">
               <strong>Học thử 6 khóa Cơ bản</strong>
-              <span>Mua suất từng khóa khi mở rộng cấp Trung cấp, Nâng cao</span>
+              <span>Mua từng khóa Trung cấp, Nâng cao một lần cho cả doanh nghiệp</span>
             </div>
           </div>
 
@@ -1659,9 +1659,9 @@ function TrialTermsDialog({
                   gói trả phí.
                 </li>
                 <li>
-                  Để đào tạo ở cấp <strong>Trung cấp</strong>, <strong>Nâng cao</strong> hoặc mở
-                  rộng số lượng nhân sự, chủ doanh nghiệp chủ động mua suất theo từng khóa học trong
-                  hệ thống.
+                  Để đào tạo ở cấp <strong>Trung cấp</strong>, <strong>Nâng cao</strong>, chủ doanh
+                  nghiệp mua từng khóa học trong hệ thống. Mỗi khóa mua một lần, mọi nhân viên đều học
+                  được.
                 </li>
               </ul>
             </section>

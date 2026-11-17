@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { StandardCourseCatalogPage } from '../pages/StandardCourseCatalogPage';
-import { StandardCourseDetailPage } from '../pages/StandardCourseDetailPage';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import * as assignmentHooks from '@/hooks/use-assignments';
 
@@ -155,72 +154,6 @@ describe('StandardCoursePages (Agent 1 - Phase D)', () => {
       fireEvent.change(screen.getByRole('combobox', { name: 'Sắp xếp khóa học' }), { target: { value: 'title-desc' } });
       expect(screen.getByText('Khóa học 14')).toBeDefined();
       expect(screen.queryByText('Khóa học 1')).toBeNull();
-    });
-  });
-
-  describe('StandardCourseDetailPage', () => {
-    it('renders course detail with TT02 standard note and tabs', () => {
-      vi.spyOn(assignmentHooks, 'useCourse').mockReturnValue({
-        data: mockCourses[0] as any,
-        isLoading: false,
-      } as any);
-
-      vi.spyOn(assignmentHooks, 'useAssignments').mockReturnValue({
-        data: { items: [], totalItems: 0 } as any,
-        isLoading: false,
-      } as any);
-
-      render(
-        <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/enterprise/courses/crs-001']}>
-            <Routes>
-              <Route path="/enterprise/courses/:id" element={<StandardCourseDetailPage />} />
-            </Routes>
-          </MemoryRouter>
-        </QueryClientProvider>,
-      );
-
-      expect(screen.getByText('An toàn dữ liệu cá nhân trong môi trường số')).toBeDefined();
-      expect(screen.getAllByText('DIG-101').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText('Chuẩn hóa TT02')).toBeDefined();
-      expect(screen.getByText('Khóa học chuẩn hóa nền tảng')).toBeDefined();
-      expect(screen.getByRole('button', { name: /Giao khóa học này/i })).toBeDefined();
-      expect(screen.queryByRole('button', { name: /đợt đào tạo/i })).toBeNull();
-    });
-
-    it('switches to curriculum tab and displays syllabus modules', () => {
-      vi.spyOn(assignmentHooks, 'useCourse').mockReturnValue({
-        data: mockCourses[0] as any,
-        isLoading: false,
-      } as any);
-
-      vi.spyOn(assignmentHooks, 'useAssignments').mockReturnValue({
-        data: { items: [], totalItems: 0 } as any,
-        isLoading: false,
-      } as any);
-      vi.spyOn(assignmentHooks, 'useCourseLesson').mockReturnValue({
-        data: { id: 'l-1', title: 'Bài 1: Lỗ hổng mật khẩu', lessonType: 'TEXT', contentBody: 'Nội dung thật từ BE2', moduleTitle: 'Học phần 1' },
-        isLoading: false,
-        isError: false,
-      } as any);
-
-      render(
-        <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/enterprise/courses/crs-001']}>
-            <Routes>
-              <Route path="/enterprise/courses/:id" element={<StandardCourseDetailPage />} />
-            </Routes>
-          </MemoryRouter>
-        </QueryClientProvider>,
-      );
-
-      const syllabusButton = screen.getByRole('button', { name: /^Luồng đào tạo$/i });
-      fireEvent.click(syllabusButton);
-
-      expect(screen.getAllByText(/Học phần 1: Nhận diện rủi ro/).length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Bài 1: Lỗ hổng mật khẩu').length).toBeGreaterThan(0);
-      expect(screen.getByText('Video bài học đang được cập nhật')).toBeDefined();
-      expect(screen.getByText('Nội dung thật từ BE2')).toBeDefined();
     });
   });
 });

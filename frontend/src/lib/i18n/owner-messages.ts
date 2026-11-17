@@ -39,8 +39,6 @@ Không tải được tiến độ đào tạo.|Could not load training progress
 % trung bình toàn tổ chức|% organization average
 (mới, chưa khảo sát)|(new, not assessed)
 (từ|(from
-+ Mua thêm suất|+ Buy more seats
-+ Mua thêm suất & Ký online|+ Buy seats & sign online
 + Thêm khóa|+ Add course
 01 Cơ bản|01 Foundation
 02 Trung cấp|02 Intermediate
@@ -98,7 +96,6 @@ Chưa có phòng ban nào|No departments yet
 Chưa có phòng ban nào được thiết lập.|No departments have been configured.
 Chưa có phòng ban trong đợt đánh giá|No departments in this assessment
 Chưa có phòng ban. Tạo phòng ban trước.|Create a department first.
-Chưa có suất học.|No learning seats yet.
 Chưa có thành viên|No members yet
 Chưa có thành viên nào|No members yet
 Chưa có tiêu chí cho mức|No criteria for level
@@ -155,7 +152,6 @@ Cấu trúc khóa học|Course structure
 Cần có nhân viên đã gán vị trí và vị trí đã có bộ yêu cầu năng lực đang áp dụng.|Assign employees to positions with active competency standards first.
 Cần cải thiện ở đâu?|Where is development needed?
 Cần giao khóa học riêng lẻ?|Need to assign individual courses?
-Cần mua suất học|Learning seats required
 Cần sửa|Needs correction
 Cần ưu tiên|Priority
 Cập nhật tên hiển thị phù hợp với văn hóa và cơ cấu chức danh doanh nghiệp của bạn.|Customize job grade names to match your organization.
@@ -171,7 +167,6 @@ Giao bài tập thực hành|Assign practical task
 Giao bởi|Assigned by
 Giao dịch thành công · Bản quyền đã kích hoạt|Payment successful · Access unlocked
 Giao khóa học cho nhân sự →|Assign courses to employees →
-Giỏ suất học ·|Learning seat cart ·
 Giữ lại|Keep
 Gán phòng ban để bắt đầu theo dõi năng lực và học tập.|Assign a department to track competencies and learning.
 Gán vào chuẩn vị trí|Apply to position standard
@@ -253,8 +248,6 @@ Khảo sát: Thu thập ý kiến và mức độ gắn kết nhân sự|Survey:
 Kiểm tra phòng ban trước khi xác nhận.|Check the department before confirming.
 Kích hoạt lại|Reactivate
 Kích hoạt phạm vi|Activate scope
-Kích hoạt suất học & Mở rộng phạm vi thành công!|Seats activated and scope expanded!
-Kích hoạt suất học thành công!|Learning seats activated!
 Kết quả học tập|Learning outcomes
 Kết quả năng lực doanh nghiệp|Organization competency results
 Kết quả đầu ra|Outcomes
@@ -280,7 +273,6 @@ Minh chứng đã nộp được đánh giá tại|Submitted evidence is reviewe
 Miền năng lực|Competency domain
 Miền:|Domain:
 Miễn phí mở rộng phạm vi Cấp 1|Free level 1 scope
-Mua suất học để thiết lập phạm vi|Purchase learning seats to configure scope
 Mã *|Code *
 Mã cấp bậc|Job grade code
 Mã phòng ban:|Department code:
@@ -294,8 +286,6 @@ Mô tả vị trí|Position description
 Mô tả định nghĩa|Definition
 Mọi hành động|All actions
 Mọi lĩnh vực|All domains
-Mỗi suất dành cho một nhân viên trong một khóa. Hết suất vẫn giữ quyền khóa học; mua thêm khi cần phân công người mới. Chuẩn vị trí có thể thiết lập trước khi mua.|Each seat is for one employee in one course. Course access remains unlocked when seats run out; buy more to assign new learners. Position standards can be set before purchase.
-Mỗi ô ứng với một khóa học. Mua suất để mở quyền chọn cấp độ, sau đó chọn mức và lưu thay đổi.|Each cell represents one course. Purchase seats to unlock a level, then select it and save.
 Mời thành viên nhanh|Quick member invitation
 Mở cài đặt chuẩn vị trí|Open position standard settings
 Mở miễn phí.|Free access.
@@ -381,9 +371,7 @@ Sắp xếp theo|Sort by
 Số khóa học mỗi trang|Courses per page
 Số lượng khóa mở bản quyền:|Unlocked courses:
 Số lượng nhân viên đào tạo:|Employees to train:
-Số lượng suất cần trang bị cho nhân sự:|Learning seats required:
 Số nhân viên mỗi trang|Employees per page
-Số suất học:|Learning seats:
 Thao tác Nhanh|Quick actions
 Thao tác nhanh|Quick actions
 TOÀN CẢNH NĂNG LỰC|COMPETENCY OVERVIEW
@@ -432,8 +420,6 @@ Chờ đánh giá để xác định năng lực cần bổ sung.|Awaiting asses
 {count} vị trí|{count} positions
 {count} khóa học|{count} courses
 {count} khóa|{count} courses
-{count} suất học|{count} learning seats
-{count} suất|{count} seats
 {count} học phần|{count} modules
 {count} giờ|{count} hours
 {count} phút|{count} minutes
@@ -484,7 +470,6 @@ Tiến độ đợt|Program progress
 Tiếp tục mời nhân viên|Continue inviting employees
 Tiếp tục:|Continue:
 Toàn bộ nhân viên đều đáp ứng hoặc vượt mức yêu cầu.|All employees meet or exceed the required level.
-Trang bị suất để giao khóa học cho nhân viên.|Purchase seats to assign courses to employees.
 Trong phạm vi áp dụng|Within the applied scope
 Truy cập và phân công|Access & assignments
 Trình độ hiện tại chưa đáp ứng yêu cầu vị trí|Current level is below position requirements
@@ -566,7 +551,6 @@ Xem các đợt đào tạo &rarr;|View training programs →
 Xem các đợt đào tạo →|View training programs →
 Xem hàng chờ đánh giá|View assessment queue
 Xem khoảng trống năng lực|View competency gaps
-Xem khóa học & suất còn lại|View course & available seats
 Xem nhiệm vụ thực tế|View practical tasks
 Xem nội dung bài học|View lesson content
 Xem nội dung đánh giá|View assessment content
@@ -610,10 +594,6 @@ nhân viên có phân tích|employees analyzed
 nhân viên cần|employees need this
 phòng ban)|departments)
 quyền sử dụng|access rights
-suất học)|learning seats)
-suất · Còn|seats · Available
-suất để phân công.|seats for assignment.
-suất):|seats):
 sẽ ẩn khỏi danh sách đang dùng. Dữ liệu lịch sử vẫn được giữ lại.|will be hidden from active lists. Historical data is preserved.
 tiêu chí|criteria
 trong các đợt đào tạo|in training programs
@@ -678,7 +658,6 @@ trên|of
 Đã giao / Hoàn thành|Assigned / completed
 Đã gửi thông báo thành công tới|Announcement sent to
 Đã hiểu & Đóng|Got it & close
-Đã hết suất. Mua thêm để phân công người mới.|No seats available. Buy more to assign new learners.
 Đã hủy|Cancelled
 Đã lên lịch|Scheduled
 Đã phát lệnh gửi email thông báo chi tiết đến hòm thư của nhân sự.|Email notifications have been queued for delivery.
@@ -716,7 +695,6 @@ Quản lý tên hiển thị và định nghĩa trách nhiệm cho 3 cấp bậc
 {count} khóa học · {levels} cấp độ|{count} courses · {levels} levels
 {count} khóa học · {assignments} phân công|{count} courses · {assignments} assignments
 {count} học phần · {duration} giờ|{count} modules · {duration} hours
-{count} suất · Còn {available}|{count} seats · {available} available
 Đang xem {shown} trong {total} phòng ban|Showing {shown} of {total} departments
 {count} trong {total} thành viên|{count} of {total} members
 Trang {page} / {total}|Page {page} / {total}
@@ -736,8 +714,6 @@ Mở cài đặt vị trí cho lĩnh vực {domain}|Configure positions for {dom
 Thiết lập phạm vi {domain}: cấp {level}|Set scope for {domain}: level {level}
 Xem khóa {code}|View course {code}
 trong lộ trình đang xem|in the current learning path
-chưa mua suất, bấm để chọn mua cùng khóa khác|no seats purchased; select to buy with other courses
-{domain}, cấp {level}: chưa mua suất, bấm để chọn mua cùng khóa khác.|{domain}, level {level}: no seats purchased; select to buy with other courses.
 Giám đốc điều hành|Chief executive officer
 Kinh doanh (CRM)|Sales (CRM)
 Thanh điều hướng|Navigation sidebar
@@ -748,4 +724,38 @@ DigiTalent Pulse — Tổng quan|DigiTalent Pulse — Overview
 {hours} giờ {minutes} phút|{hours} hours {minutes} minutes
 Không có lĩnh vực hoặc khóa học nào khớp “{query}”.|No domains or courses match “{query}”.
 Xem thêm khóa học khác bên dưới.|Explore other courses below.
+Đã mua|Purchased
+Người học|Learners
+Mọi nhân viên|Every employee
+Cần mua khóa|Purchase required
+Mua khóa học|Buy course
+Mua khóa học cho doanh nghiệp|Buy the course for the organization
+Mua khóa học để thiết lập phạm vi|Buy the course to configure the scope for
+Đã mua cho cả doanh nghiệp|Purchased for the whole organization
+Chưa mua khóa học|Course not purchased
+Chưa mua khóa học.|Course not purchased yet.
+Đã mở quyền học|Learning access open
+Quyền học của khóa|Course access
+Đã giao|Assigned
+Giỏ khóa học ·|Course cart ·
+Khóa học & quyền học|Courses & learning access
+Cần mua khóa học|Course purchase required
+Xem khóa học & trạng thái mua|View course & purchase status
+Mọi nhân viên đều học được, không giới hạn số người. Quản lý có thể giao khóa cho nhân viên.|Every employee can learn it, with no limit on learners. Managers can assign the course.
+Khóa học có phí, mua một lần cho cả doanh nghiệp rồi giao cho nhân viên học.|A paid course: buy it once for the whole organization, then assign it to employees.
+Mọi nhân viên đều học được, không giới hạn số người.| Every employee can learn it, with no limit on learners.
+Mua một lần cho cả doanh nghiệp, sau đó mọi nhân viên đều học được.| Buy it once for the whole organization; every employee can then learn it.
+Doanh nghiệp đã mua khóa học này.|The organization bought this course.
+Mỗi ô ứng với một khóa học. Mua khóa để mở quyền chọn cấp độ, sau đó chọn mức và lưu thay đổi.|Each cell represents one course. Buy the course to unlock the level, then choose a level and save.
+Mỗi khóa chỉ mua một lần cho cả doanh nghiệp: mọi nhân viên đều học được, không giới hạn số người. Chuẩn vị trí có thể thiết lập trước khi mua.|Each course is bought once for the whole organization: every employee can learn it, with no limit on learners. Position standards can be set before buying.
+Khóa học đã mua:|Courses purchased:
+khóa · mọi nhân viên đều học được| courses · every employee can learn them
+Cả doanh nghiệp học, không giới hạn số người|Whole organization, no limit on learners
+khóa):| courses):
+Các khóa đã chọn đều đã được mua hoặc miễn phí. Mỗi khóa chỉ mua một lần cho cả doanh nghiệp.|The selected courses are already purchased or free. Each course is bought once for the whole organization.
+Đã mua · mọi nhân viên học được|Purchased · every employee can learn it
+Mua khóa và giá|Course purchases & pricing
+Giá khóa|Course price
+Giá khóa cho cả doanh nghiệp (₫)|Course price for the organization (₫)
+Giá khóa (mua một lần cho cả doanh nghiệp) và trạng thái mở bán.|Course price (bought once per organization) and sales status.
 `.trim().split('\n').map(line => { const index=line.indexOf('|'); return [line.slice(0,index),line.slice(index+1)]; }));

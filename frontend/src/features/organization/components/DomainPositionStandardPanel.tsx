@@ -107,7 +107,7 @@ export function DomainPositionStandardPanel({ domain, domains, departmentId, ini
         {domain.courses.map((course) => <button key={course.level} type="button" className={`cp-standard__course-option${selectedLevel === course.level ? ' is-active' : ''}`} aria-pressed={selectedLevel === course.level} disabled={!canEdit || busy || requirementLoading || !course.courseId} onClick={() => setSelectedLevel(course.level)}>
           <span className="cp-standard__course-option-head"><strong>{translateUi(LEVEL_NAMES[course.level])}</strong><small>{course.code ?? translateUi(`Cấp ${course.level}`)}</small></span>
           <span>{translateUi(course.title) ?? translateUi('Chưa có khóa học')}</span>
-          <em>{course.level === 1 ? translateUi('Miễn phí') : course.isUnlocked === false ? 'Chưa mua suất học' : 'Đã mở quyền học'}</em>
+          <em>{course.level === 1 ? translateUi('Miễn phí') : course.isUnlocked === false ? translateUi('Chưa mua khóa học') : translateUi('Đã mở quyền học')}</em>
           {selectedLevel === course.level && <Check size={15} className="cp-standard__course-option-check" aria-hidden="true" />}
         </button>)}
       </div>

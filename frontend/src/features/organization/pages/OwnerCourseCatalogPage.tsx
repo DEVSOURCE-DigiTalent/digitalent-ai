@@ -3,7 +3,7 @@ import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Filter, Search, Sparkles, X } from 'lucide-react';
-import { useCourseCatalog, usePurchaseCourseSeats } from '@/hooks/use-assignments';
+import { useCourseCatalog } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import { courseCategories } from '@/features/courses/course-catalog';
 import type { CourseListItem } from '@/services/assignment.service';
@@ -47,7 +47,7 @@ export function OwnerCourseCatalogPage() {
   });
   const [activeDomain, setActiveDomain] = useState<number | null>(null);
   const [selection, setSelection] = useState<Selection>(null);
-  const [purchaseModalCourse, setPurchaseModalCourse] = useState<CourseListItem | null>(null);
+
   const appliedSelectedParam = useRef<string | null>(null);
 
   // Danh sách mã khóa học được chọn trước từ trang Thiết lập Khung năng lực (?selected=M1-I,M2-A...)
@@ -316,26 +316,13 @@ export function OwnerCourseCatalogPage() {
             {/* ── Detail ── */}
             <aside data-course-domain={selectedBranch?.domain} className="course-catalog-detail lg:sticky lg:top-[84px]">
               {selectedCourse ? (
-                <CourseDetail
-                  course={selectedCourse}
-                  branch={selectedBranch}
-                  onBuySeats={(c) => setPurchaseModalCourse(c)}
-                />
+                <CourseDetail course={selectedCourse} branch={selectedBranch} />
               ) : <div className="course-detail-empty"><BookOpen size={26} /><strong>{translateUi("Chọn khóa học")}</strong><span>{translateUi("Chi tiết sẽ hiển thị tại đây.")}</span></div>}
             </aside>
             </div>
           </>
         )}
 
-        {purchaseModalCourse && (
-          <CourseSeatPurchaseModal
-            course={purchaseModalCourse}
-            onClose={() => setPurchaseModalCourse(null)}
-            onSuccess={() => {
-              refetch();
-            }}
-          />
-        )}
       </div>
     </div>
   );
@@ -420,7 +407,6 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
   useUiLanguage();
   const tone = LEVEL_TONES[slot.level];
   const level = LEVELS.find((l) => l.level === slot.level)!;
-  const pricing = levelPricing(slot.level);
   return (
     <>
       {arrow && (
@@ -436,8 +422,8 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
           const isGapTarget = course.id === gapCourseId;
           const dimmed = (levelFilter && levelFilter !== slot.level) || (query && !courseMatches(course, query));
           const duration = formatDuration(course.estimatedDurationMinutes);
-          const totalSeats = (course.seatsPurchased ?? 0) + (course.seatsGranted ?? 0);
-          const isLicensed = level.level === 1 || course.hasLicense || totalSeats > 0;
+          const pricing = levelPricing(slot.level, course.price);
+          const isLicensed = level.level === 1 || course.hasLicense || Boolean(course.isPurchased);
           return (
             <button
               key={course.id}
@@ -479,7 +465,7 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
                     ? 'bg-amber-100 text-amber-900 border border-amber-300 font-extrabold'
                     : 'bg-slate-100 text-slate-700 border border-slate-200'
                 }`}>
-                  {pricing.isFree ? pricing.badge : isLicensed ? translateUi(`Đã có ${totalSeats} suất`) : pricing.badge}
+                  {pricing.isFree ? pricing.badge : isLicensed ? translateUi('Đã mua') : pricing.badge}
                 </span>
                 {course.status === 'DRAFT' && <span className="rounded px-1.5 py-0.5" style={{ background: '#f0f2f6', color: '#66748d' }}>{translateUi("Nháp")}</span>}
               </span>
@@ -519,21 +505,12 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function CourseDetail({
-  course,
-  branch,
-  onBuySeats: _onBuySeats,
-}: {
-  course: CourseListItem;
-  branch?: DomainBranch;
-  onBuySeats?: (course: CourseListItem) => void;
-}) {
+function CourseDetail({ course, branch }: { course: CourseListItem; branch?: DomainBranch }) {
   useUiLanguage();
   const level = courseLevel(course);
   const tone = LEVEL_TONES[level] ?? LEVEL_TONES[1];
-  const pricing = levelPricing(level);
-  const totalSeats = (course.seatsPurchased ?? 0) + (course.seatsGranted ?? 0);
-  const isLicensed = level === 1 || course.hasLicense || totalSeats > 0;
+  const pricing = levelPricing(level, course.price);
+  const isLicensed = level === 1 || course.hasLicense || Boolean(course.isPurchased);
 
   return (
     <Panel>
@@ -551,7 +528,7 @@ function CourseDetail({
             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
             : 'bg-amber-50 text-amber-800 border border-amber-200'
         }`}>
-          {level === 1 ? pricing.formatted : isLicensed ? translateUi(`Đã có ${totalSeats} suất`) : pricing.formatted}
+          {level === 1 ? pricing.formatted : isLicensed ? translateUi('Đã mua') : pricing.formatted}
         </span>
       </div>
       <h2 className="mt-2 text-[20px] font-bold leading-tight" style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}>{translateUi(course.title)}</h2>
@@ -561,7 +538,7 @@ function CourseDetail({
         <Row label={translateUi("Học phần")}>{course.modules}</Row>
         {formatDuration(course.estimatedDurationMinutes) && <Row label={translateUi("Thời lượng")}>{formatDuration(course.estimatedDurationMinutes)}</Row>}
         <Row label={translateUi("Điều kiện")}>{course.prerequisiteTitle ?? translateUi('Không yêu cầu')}</Row>
-        {level > 1 && isLicensed && <Row label={translateUi("Suất khả dụng")}>{course.seatsAvailable ?? totalSeats}</Row>}
+        {level > 1 && <Row label={translateUi("Người học")}>{isLicensed ? translateUi('Mọi nhân viên') : translateUi('Cần mua khóa')}</Row>}
         <Row label={translateUi("Phân công")}>{course.assignedCount}{translateUi(" nhân viên")}</Row>
       </dl>
 
@@ -574,221 +551,21 @@ function CourseDetail({
           {isLicensed ? 'Xem chi tiết khóa học →' : 'Xem mô tả khóa học →'}
         </Link>
         {isLicensed ? (
-          <>
-            <Link
-              to={`/enterprise/assignments?courseId=${course.id}`}
-              className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold transition-all hover:bg-slate-50"
-              style={{ borderColor: '#cdd7f5', color: 'var(--po-accent)' }}
-            >{translateUi("Giao khóa học")}</Link>
-            {level > 1 && (
-              <Link
-                to={`/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`}
-                className="rounded-[11px] border px-3 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all block"
-                style={{ borderColor: 'var(--po-line)' }}
-              >{translateUi("+ Mua thêm suất & Ký online")}</Link>
-            )}
-          </>
+          <Link
+            to={`/enterprise/assignments?courseId=${course.id}`}
+            className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold transition-all hover:bg-slate-50"
+            style={{ borderColor: '#cdd7f5', color: 'var(--po-accent)' }}
+          >{translateUi("Giao khóa học")}</Link>
         ) : (
           <Link
             to={`/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`}
             className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm hover:brightness-95"
             style={{ borderColor: '#f59e0b', color: '#b45309', background: '#fffbeb' }}
           >
-            <span>🔒 Mua suất học & Ký online ({pricing.formatted}) →</span>
+            <span>🔒 Mua khóa học & Ký online ({pricing.formatted}) →</span>
           </Link>
         )}
       </div>
     </Panel>
-  );
-}
-
-function CourseSeatPurchaseModal({
-  course,
-  onClose,
-  onSuccess,
-}: {
-  course: CourseListItem;
-  onClose: () => void;
-  onSuccess?: () => void;
-}) {
-  useUiLanguage();
-  const level = courseLevel(course);
-  const pricing = levelPricing(level);
-  const [seats, setSeats] = useState(10);
-  const [result, setResult] = useState<{
-    orderId: string;
-    totalAmount: number;
-    seats: number;
-    checkoutUrl?: string;
-    qrCode?: string;
-    createdAt?: string;
-  } | null>(null);
-
-  const purchaseMutation = usePurchaseCourseSeats();
-  const totalAmount = seats * pricing.price;
-
-  const handlePurchase = () => {
-    purchaseMutation.mutate(
-      { courseId: course.id, seats },
-      {
-        onSuccess: (data) => {
-          setResult({
-            orderId: data.orderId,
-            totalAmount: data.totalAmount,
-            seats: data.seats,
-            checkoutUrl: data.checkoutUrl,
-            qrCode: data.qrCode,
-            createdAt: data.createdAt,
-          });
-          onSuccess?.();
-        },
-      }
-    );
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-        <div className="flex items-start justify-between border-b pb-4">
-          <div>
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
-              🔒 Bản quyền khóa học thương mại
-            </span>
-            <h2 className="mt-2 text-lg font-bold text-slate-900">{translateUi(course.title)}</h2>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">{canonicalCourseCode(course.code)}{translateUi(" · Bậc ")}{level} ({levelName(level)})</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-
-        {result ? (
-          <div className="py-8 text-center space-y-3">
-            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xl">
-              ✓
-            </div>
-            <h3 className="text-base font-bold text-slate-900">{translateUi("Kích hoạt suất học & Mở rộng phạm vi thành công!")}</h3>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">{translateUi("Bạn đã trang bị thành công ")}<b>{result.seats}{translateUi(" suất")}</b>{translateUi(" cho khóa học ")}<b>{canonicalCourseCode(course.code)}</b>.
-              Khóa học đã được mở bản quyền và phạm vi năng lực của doanh nghiệp đã được nâng lên <b>{translateUi("Bậc ")}{level} ({levelName(level)})</b>.
-            </p>
-            <div className="mx-auto max-w-sm rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-left text-xs space-y-1">
-              <div className="flex justify-between text-slate-600">
-                <span>Mã giao dịch:</span>
-                <span className="font-mono font-semibold text-slate-800">{result.orderId.substring(0, 8)}...</span>
-              </div>
-              <div className="flex justify-between text-slate-600">
-                <span>{translateUi("Tổng chi phí:")}</span>
-                <span className="font-bold text-emerald-800">{result.totalAmount.toLocaleString('vi-VN')} ₫</span>
-              </div>
-              <div className="flex justify-between text-slate-600">
-                <span>{translateUi("Thời gian:")}</span>
-                <span className="text-slate-700">{result.createdAt ? new Date(result.createdAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')}</span>
-              </div>
-            </div>
-            {result.checkoutUrl && (
-              <div className="pt-2">
-                <a
-                  href={result.checkoutUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:opacity-95"
-                  style={{ background: '#2563eb' }}
-                >
-                  💳 Mở cổng thanh toán VietQR / PayOS
-                </a>
-              </div>
-            )}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-sm"
-                style={{ background: 'var(--po-accent)' }}
-              >{translateUi("Hoàn tất & Bắt đầu đào tạo")}</button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4 py-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-xs text-slate-700 leading-relaxed">
-              💡 Doanh nghiệp của bạn đang dùng thử và được <b>{translateUi("miễn phí 100% toàn bộ khóa Cơ bản")}</b>.
-              Mỗi suất học dành cho một nhân viên trong khóa học Trung cấp hoặc Nâng cao.
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">{translateUi("Số lượng suất cần trang bị cho nhân sự:")}</label>
-              <div className="flex items-center gap-2 mb-2">
-                {[5, 10, 20, 50].map((count) => (
-                  <button
-                    key={count}
-                    type="button"
-                    onClick={() => setSeats(count)}
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
-                      seats === count
-                        ? 'border-primary-600 bg-primary-50 text-primary-700'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    {count}{translateUi(" suất")}</button>
-                ))}
-              </div>
-              <input
-                type="number"
-                min={1}
-                max={500}
-                value={seats}
-                onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary-600"
-              />
-            </div>
-
-            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-600">
-                <span>Đơn giá niêm yết:</span>
-                <span className="font-semibold text-slate-900">{pricing.formatted}</span>
-              </div>
-              <div className="flex justify-between text-slate-600">
-                <span>{translateUi("Số lượng nhân viên đào tạo:")}</span>
-                <span className="font-semibold text-slate-900">{seats}{translateUi(" nhân viên")}</span>
-              </div>
-              <div className="flex justify-between border-t border-amber-200/60 pt-2 text-sm font-bold text-slate-900">
-                <span>{translateUi("Tổng chi phí đầu tư:")}</span>
-                <span className="text-primary-700 font-extrabold">{totalAmount.toLocaleString('vi-VN')} ₫</span>
-              </div>
-            </div>
-
-            {purchaseMutation.isError && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
-                {translateUi((purchaseMutation.error as any)?.response?.data?.message) ||
-                  translateUi((purchaseMutation.error as any)?.message) ||
-                  'Có lỗi xảy ra khi thực hiện mua suất học.'}
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={purchaseMutation.isPending}
-                className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >{translateUi("Để sau")}</button>
-              <button
-                type="button"
-                onClick={handlePurchase}
-                disabled={purchaseMutation.isPending}
-                className="rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:brightness-105 disabled:opacity-50 flex items-center gap-1.5"
-                style={{ background: 'var(--po-accent)' }}
-              >
-                {purchaseMutation.isPending && <span className="animate-spin inline-block size-3.5 border-2 border-white border-t-transparent rounded-full" />}
-                <span>{purchaseMutation.isPending ? translateUi('Đang xử lý...') : translateUi(`Xác nhận mua suất học (${totalAmount.toLocaleString('vi-VN')} ₫)`)}</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
