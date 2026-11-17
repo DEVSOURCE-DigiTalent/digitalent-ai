@@ -302,7 +302,6 @@ thành viên|members
 phòng ban|departments
 vị trí|positions
 khóa học|courses
-suất|seats
 đợt|programs
 Tổng quan đội ngũ|Team overview
 Tiến độ đánh giá|Assessment progress
@@ -427,7 +426,6 @@ Chưa mua|Not purchased
 Trạng thái|Status
 Chọn ô|Select a cell
 Đặt phạm vi & lưu|Set scope & save
-Khóa học & suất học|Courses & learning seats
 Tên lĩnh vực|Domain name
 Cài đặt vị trí|Configure positions
 Kế thừa phạm vi doanh nghiệp|Inherit organization scope
@@ -445,14 +443,9 @@ Miễn phí (Trial)|Free (trial)
 Học phần|Modules
 Năng lực đáp ứng|Competencies covered
 Xem mô tả khóa học|View course description
-Mua thêm suất|Buy more seats
 Thêm vào giỏ|Add to cart
-Thêm suất vào giỏ|Add seats to cart
-Mua suất học|Buy learning seats
-Tổng suất học|Total seats
 Đã sử dụng|Used
 Còn lại|Available
-Mỗi suất dành cho một nhân viên trong khóa học này.|Each seat gives one employee access to this course.
 Chọn cấp cho vị trí|Set the position level
 Vị trí áp dụng|Applicable position
 Lưu chuẩn vị trí|Save position standard
@@ -840,7 +833,6 @@ Xem báo cáo|View report
 Thông tin khóa học|Course information
 Giao cho nhân viên|Assign to employees
 Không tìm thấy khóa học|No courses found
-Số suất|Seats
 Học phần đã hoàn thành|Completed modules
 Nội dung khóa học|Course content
 Tổng quan khóa học|Course overview
@@ -936,7 +928,6 @@ Ngôn ngữ|Language
 Tiếng Việt|Vietnamese
 Tiếng Anh|English
 Gợi ý|Suggestions
-Đã có suất học|Seats available
 Tất cả khóa học|All courses
 Đang phân công|Assigned
 Chưa phân công|Unassigned
@@ -964,7 +955,6 @@ Thu gọn tất cả|Collapse all
 Chọn cấp độ|Select level
 Hành trình phát triển|Development journey
 Đã có quyền học|Access unlocked
-Đã mua suất|Seats purchased
 Xem giỏ hàng|View cart
 Mua ngay|Buy now
 Giá|Price
@@ -1147,7 +1137,6 @@ Không có thông báo mới.|No new notifications.
 Hệ thống sẽ hiển thị thông báo mới ngay khi có hoạt động liên quan.|New alerts will appear here as related activity arrives.
 Mở bản nháp hoặc tạo phiên bản mới|Open draft or create new version
 Thêm lĩnh vực vào khung năng lực|Add domain to competency framework
-Cấp suất & Quản lý tổ chức|Grant seats & manage organizations
 Phân công & Duyệt dùng thử|Assign mentors & review trials
 Tạo hoặc thao tác nhanh|Quick actions
 Tìm trang, tổ chức, user...|Find page, org, or user...
@@ -1187,7 +1176,6 @@ Mở hồ sơ tổ chức|Open organization profile
 In danh sách|Print list
 Suất học đã bán|Seats sold
 Trên tổng số tổ chức|Of all organizations
-Trạng thái và suất đã mua|Status and seats purchased
 Khóa đang học|Courses in progress
 Ngày đăng ký|Registered on
 Chưa mua khóa|No course purchased
@@ -1205,7 +1193,6 @@ Mức yêu cầu theo vị trí|Required level by position
 Kinh doanh|Sales
 Vị trí|Positions
 Đã thay thế|Replaced
-Giá mỗi suất|Price per seat
 Thay đổi|Changes
 Lượt mua|Purchases
 Khóa đang bán|Courses on sale
@@ -1239,18 +1226,13 @@ Thi và giám sát|Exams and proctoring
 Phân công mentor|Assign mentor
 Tạo tài khoản mentor|Create mentor account
 Công bố khóa học|Publish course
-Cấp suất học|Grant seats
 Chấm bài cuối khóa|Grade course final
 Gửi liên kết đặt lại mật khẩu|Send password reset link
 Suất học theo khóa|Seats by course
-Tổ chức chưa mua suất học nào.|This organization has not bought any seats.
-Chưa có đơn hàng hoặc lần cấp suất nào.|No orders or seat grants yet.
 Thao tác hỗ trợ|Support actions
 Mọi thao tác ở đây được ghi vào Nhật ký hoạt động.|Every action here is written to the activity log.
-Cấp 1 suất học|Grant 1 seat
 Tạm ngưng tổ chức|Suspend organization
 Mở lại tổ chức|Reopen organization
-Cấp suất|Grant seat
 Tổ chức đang tạm ngưng.|This organization is suspended.
 Thông tin tài khoản|Account details
 Ngày tạo tài khoản|Account created
@@ -1268,7 +1250,6 @@ Khung năng lực|Competency framework
 Không đổi được sau lần công bố đầu|Cannot change after the first release
 Tên và mục tiêu|Name and goals
 Giá và mở bán|Price and sales
-Giá mỗi suất (₫)|Price per seat (₫)
 Tổ chức có thể mua|Organizations can buy it
 Tổ chức đã mua vẫn học bình thường|Organizations that already bought keep learning
 Đặt được giá|Price can be set

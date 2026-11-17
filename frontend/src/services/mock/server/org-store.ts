@@ -94,15 +94,18 @@ function load(): Record<string, OrgData> {
 function updateOwnerDemoSeed(data: OrgData): boolean {
   let changed = false;
   if (!data.overallAssessments) { data.overallAssessments = demoOverallAssessments(); changed = true; }
-  // Legacy demo storage predates explicit course-seat purchases. Give the showcase
-  // its documented sample licenses once; no runtime ceiling is used as evidence of purchase.
-  if (!data.courseSeatOrders) {
-    data.courseSeatOrders = Object.fromEntries(
-      [['cat-1', 3], ['cat-2', 2], ['cat-3', 3], ['cat-4', 2], ['cat-6', 2]].map(([categoryId, level]) => {
-        const course = COURSES.find((item) => item.categoryId === categoryId && item.level === level)!;
-        return [course.id, 12];
-      }),
-    );
+  // Paid courses are bought once per organization. Older demo storage kept seat counts per course:
+  // any course with seats counts as bought. Storage without either gets the showcase purchases once.
+  const legacy = data as OrgData & { courseSeatOrders?: Record<string, number> };
+  if (!data.courseOrders) {
+    data.courseOrders = legacy.courseSeatOrders
+      ? Object.entries(legacy.courseSeatOrders).filter(([, seats]) => seats > 0).map(([id]) => id)
+      : [['cat-1', 3], ['cat-2', 2], ['cat-3', 3], ['cat-4', 2], ['cat-6', 2]].map(([categoryId, level]) =>
+        COURSES.find((item) => item.categoryId === categoryId && item.level === level)!.id);
+    changed = true;
+  }
+  if (legacy.courseSeatOrders) {
+    delete legacy.courseSeatOrders;
     changed = true;
   }
   const departmentNames: Record<string, [string, string]> = {

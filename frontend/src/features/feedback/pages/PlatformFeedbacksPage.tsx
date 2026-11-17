@@ -24,7 +24,7 @@ import {
 import { toast } from 'sonner';
 import { feedbackService, type FeedbackItem } from '@/services/feedback.service';
 import { Footer, Loading, LoadError, Pager } from '@/features/platform/components/pulse-ui';
-import { formatDate, formatDateTime, formatRelativeTime } from '@/features/platform/components/pulse-format';
+import { formatDate, formatDateTime, formatRelativeTime, formatTime } from '@/features/platform/components/pulse-format';
 import { PlatformDrawer } from '@/features/platform/components/PlatformDrawer';
 import { openScreenshot } from '../lib/open-screenshot';
 
@@ -261,7 +261,8 @@ function FeedbackSenderCell({
       >
         {initial}
       </div>
-      <div style={{ minWidth: 0, display: 'grid', gap: 2 }}>
+      {/* minmax(0, 1fr): the grid column may shrink below the text width, so long emails end in "…" instead of overflowing */}
+      <div style={{ minWidth: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 2 }}>
         <div
           className="pa-org-name"
           style={{
@@ -298,11 +299,12 @@ function FeedbackSenderCell({
               fontWeight: 500,
               color: '#0369a1',
               marginTop: 1,
+              minWidth: 0,
             }}
             title={organizationName}
           >
             <Building size={11} style={{ flexShrink: 0 }} />
-            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 190 }}>
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
               {organizationName}
             </span>
           </div>
@@ -877,7 +879,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                   <th style={{ width: 124 }}>{translateUi(isBug ? 'Mã và khu vực' : 'Mã và điểm')}</th>
                   <th>{translateUi('Nội dung')}</th>
                   <th style={{ width: 200 }}>{translateUi('Người gửi')}</th>
-                  <th style={{ width: 104 }}>{translateUi('Ngày gửi')}</th>
+                  <th style={{ width: 116 }}>{translateUi('Ngày gửi')}</th>
                   <th style={{ width: 128 }}>{translateUi('Trạng thái')}</th>
                   <th style={{ width: 104, textAlign: 'right' }}>{translateUi('Thao tác')}</th>
                 </tr>
@@ -940,9 +942,9 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
 
                       {/* Cột 2: Tiêu đề, đính kèm ảnh và trích đoạn */}
                       <td>
-                        <div style={{ display: 'grid', gap: 3, maxWidth: 440 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <strong style={{ fontSize: 13.5, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 3, maxWidth: 440 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                            <strong style={{ fontSize: 13.5, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
                               {translateUi(item.title)}
                             </strong>
                             {hasScreenshots && (
@@ -1009,11 +1011,14 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
                       {/* Cột 4: Ngày gửi */}
                       <td>
                         <div style={{ display: 'grid', gap: 2 }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>
                             {formatRelativeTime(item.createdAt)}
                           </span>
+                          {/* After 7 days the first line is already the date, so show the time instead of repeating it */}
                           <span style={{ fontSize: 12, color: '#64748b', fontFamily: 'monospace' }}>
-                            {formatDate(item.createdAt)}
+                            {Date.now() - new Date(item.createdAt).getTime() < 7 * 86_400_000
+                              ? formatDate(item.createdAt)
+                              : formatTime(item.createdAt)}
                           </span>
                         </div>
                       </td>

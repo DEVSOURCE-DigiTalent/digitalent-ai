@@ -66,31 +66,12 @@ public class CreateCourseAssignmentUseCase : IUseCase<CreateCourseAssignmentInpu
                 && targetIds.Contains(e.EmployeeId))
             .Select(e => e.EmployeeId).Distinct().ToListAsync();
 
-        var isPaidCourse = course.Code.EndsWith("-I", StringComparison.OrdinalIgnoreCase) ||
-                           course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ||
-                           course.EntryLevel >= 2;
-        if (isPaidCourse)
+        var isPaidCourse = CourseOwnership.IsPaid(course.Code) || course.EntryLevel >= 2;
+        if (isPaidCourse && !await CourseOwnership.IsPurchasedAsync(_context, organizationId, course.Code))
         {
-            var purchasedSeats = await (
-                from o in _context.CourseSeatOrders.AsNoTracking()
-                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-                where o.OrganizationId == organizationId && codes.Contains(pc.Code)
-                select (int?)o.Seats
-            ).SumAsync() ?? 0;
-
-            var usedSeats = await _context.CourseAssignments.AsNoTracking()
-                .Where(ca => versionIds.Contains(ca.CourseId) && ca.Status == Statuses.CourseAssignment.Active)
-                .Select(ca => ca.EmployeeId).Distinct().CountAsync();
-
-            var availableSeats = Math.Max(0, purchasedSeats - usedSeats);
-            var neededSeats = targetEmployees.Count(row => row.Employee.Status == Statuses.Employee.Active
-                && !existingAssignments.Contains(row.Employee.Id) && !completedEnrollments.Contains(row.Employee.Id));
-            if (availableSeats < neededSeats)
-            {
-                var price = course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ? "699.000 ₫" : "399.000 ₫";
-                throw new BadRequestException(
-                    $"Khóa học '{course.Title}' là khóa học có phí ({price}/suất). Tổ chức hiện có {purchasedSeats} suất ({usedSeats} đã phân công, còn {availableSeats} suất). Cần mua thêm suất học để phân công cho nhân viên.");
-            }
+            throw new BadRequestException(
+                $"Khóa học '{course.Title}' là khóa học có phí. Doanh nghiệp cần mua khóa học trước khi phân công cho nhân viên.",
+                "courseId", "COURSE_NOT_PURCHASED");
         }
 
         DateOnly? dueDate = null;

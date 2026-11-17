@@ -1,14 +1,15 @@
+import { canonicalCourseCode } from '@/features/courses/course-code';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { PlatformOrganization } from '@/services/platform-admin.service';
-import { useOrganizationAction, usePlatformCourses, usePlatformOrganization } from '@/hooks/use-platform-admin';
+import { useOrganizationAction, usePlatformOrganization } from '@/hooks/use-platform-admin';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { LoadError, Loading, ReasonField } from '../../components/pulse-ui';
 import {
   LEVEL_NAMES,
-  ORDER_KIND,
+
   ROLE_LABELS,
   USER_STATUS,
   errorMessage,
@@ -31,7 +32,7 @@ import {
   FileCheck,
 } from 'lucide-react';
 
-type SupportAction = 'grant' | 'suspend' | 'restore';
+type SupportAction = 'suspend' | 'restore';
 type DetailTab = 'overview' | 'people' | 'orders' | 'support';
 
 interface OrganizationDetailContentProps {
@@ -47,14 +48,12 @@ function readableOrgCode(code: string | null | undefined): string | null {
 export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetailContentProps) {
   useUiLanguage();
   const { data, isLoading, error } = usePlatformOrganization(orgId);
-  const courses = usePlatformCourses();
   const action = useOrganizationAction(orgId);
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.PLATFORM_ORGANIZATION_MANAGE);
 
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
-  const [kind, setKind] = useState<SupportAction>('grant');
-  const [courseCode, setCourseCode] = useState('');
+  const [kind, setKind] = useState<SupportAction | null>(null);
   const [reason, setReason] = useState('');
 
   if (isLoading) return <Loading />;
@@ -64,7 +63,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
     organization?: PlatformOrganization;
     departments?: unknown[];
     people?: typeof data.people;
-    seats?: typeof data.seats;
+    purchasedCourses?: typeof data.purchasedCourses;
     orders?: typeof data.orders;
     coursesInUse?: typeof data.coursesInUse;
   };
@@ -72,21 +71,17 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
   if (!o) return <LoadError error={new Error('Không tìm thấy dữ liệu tổ chức')} />;
 
   const suspended = o.status === 'SUSPENDED';
-  // Cấp suất cho khóa của phiên bản mới nhất; API còn trả khóa phiên bản cũ có cùng tên nên danh sách bị trùng.
-  const allCourses = courses.data ?? [];
-  const latestVersion = allCourses.reduce((max, c) => Math.max(max, c.versionNo), 0);
-  const paidCourses = allCourses.filter((c) => !c.isFree && c.versionNo === latestVersion);
-  const selectedCourse = courseCode || paidCourses[0]?.code || '';
-  const actionAllowed = kind === 'grant' ? Boolean(selectedCourse) : kind === 'suspend' ? !suspended : suspended;
   const peopleList = raw.people ?? [];
   const ordersList = raw.orders ?? [];
-  const seatsList = raw.seats ?? [];
+  const purchasedList = raw.purchasedCourses ?? [];
+  // Chỉ một thao tác hợp lệ theo trạng thái: đang hoạt động thì tạm ngưng, đang tạm ngưng thì mở lại.
+  const supportKind: SupportAction = kind ?? (suspended ? 'restore' : 'suspend');
+  const actionAllowed = supportKind === 'suspend' ? !suspended : suspended;
   const coursesInUseList = raw.coursesInUse ?? [];
 
   const participantCount = o.participantCount ?? (o as unknown as { membersCount?: number }).membersCount ?? peopleList.length;
   const employeeCount = o.employeeCount ?? (o as unknown as { seatLimit?: number }).seatLimit ?? 10;
   const departmentCount = o.departmentCount ?? (o as unknown as { departmentsCount?: number }).departmentsCount ?? (raw.departments?.length ?? 1);
-  const totalSeats = (o.seatsPurchased ?? 0) + (o.seatsGranted ?? 0);
   const pctActivated = Math.min(100, Math.round((participantCount / Math.max(employeeCount, 1)) * 100));
 
   // Hợp đồng điện tử thật: đọc từ ghi chú các đơn mua, không sinh mã
@@ -94,21 +89,11 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const payload =
-      kind === 'grant'
-        ? ({ kind, courseCode: selectedCourse, seats: 1, reason: reason.trim() } as const)
-        : ({ kind, reason: reason.trim() } as const);
-
-    action.mutate(payload, {
+    action.mutate({ kind: supportKind, reason: reason.trim() }, {
       onSuccess: () => {
         setReason('');
-        toast.success(
-          kind === 'grant'
-            ? `Đã cấp một suất cho ${o.name}`
-            : kind === 'suspend'
-              ? `Đã tạm ngưng ${o.name}`
-              : `Đã khôi phục ${o.name}`,
-        );
+        setKind(null);
+        toast.success(supportKind === 'suspend' ? `Đã tạm ngưng ${o.name}` : `Đã khôi phục ${o.name}`);
       },
       onError: (err) => toast.error(errorMessage(err)),
     });
@@ -153,12 +138,12 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
       {/* 3 Quick Executive Stat Chips */}
       <div className="pa-org-detail-strip">
         <div className="pa-org-detail-chip is-hero">
-          <span className="pa-org-detail-chip-label">Suất học</span>
+          <span className="pa-org-detail-chip-label">Khóa đã mua</span>
           <span className="pa-org-detail-chip-val">
-            {totalSeats > 0 ? `${totalSeats} suất` : '0 suất'}
+            {purchasedList.length} khóa
           </span>
           <span className="pa-org-detail-chip-sub">
-            {o.seatsPurchased > 0 ? `${o.seatsPurchased} đã mua` : 'Chưa mua suất nào'}
+            {purchasedList.length > 0 ? 'Mọi nhân viên đều học được' : 'Chưa mua khóa nào'}
           </span>
         </div>
 
@@ -216,7 +201,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
           onClick={() => setActiveTab('orders')}
         >
           <CreditCard size={14} aria-hidden="true" />
-          <span>Suất học</span>
+          <span>Khóa đã mua</span>
           <span className="pa-org-detail-tab-badge">{ordersList.length}</span>
         </button>
 
@@ -298,7 +283,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                     </div>
                     <div className="pa-contract-amount">
                       <strong>{formatMoney(c.totalAmount)}</strong>
-                      <span>{c.seats} suất · {c.orderCount} khóa</span>
+                      <span>{c.orderCount} khóa</span>
                     </div>
                   </li>
                 ))}
@@ -471,27 +456,28 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
         </div>
       )}
 
-      {/* TAB 3: ĐƠN HÀNG & SUẤT HỌC */}
+      {/* TAB 3: KHÓA ĐÃ MUA & ĐƠN HÀNG */}
       {activeTab === 'orders' && (
         <div className="pa-org-detail-panel">
-          {/* Course Seats */}
+          {/* Paid courses the organization has: every employee may learn them */}
           <div className="pa-org-detail-card">
             <div className="pa-org-detail-card-head">
               <span className="pa-org-detail-card-title">
                 <span className="pa-org-detail-icon-box" aria-hidden="true">
                   <Layers size={14} />
                 </span>
-                Suất học theo khóa
+                Khóa đã mua
               </span>
+              <span style={{ fontSize: 12, color: 'var(--pa-ink-3)' }}>Mọi nhân viên đều học được</span>
             </div>
 
-            {seatsList.length === 0 ? (
+            {purchasedList.length === 0 ? (
               <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', padding: '12px 0', margin: 0 }}>
-                Tổ chức chưa mua suất học nào.
+                Tổ chức chưa mua khóa học có phí nào.
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {seatsList.map((s) => (
+                {purchasedList.map((s) => (
                   <div
                     key={s.courseCode}
                     style={{
@@ -507,11 +493,11 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                     <div>
                       <strong style={{ fontSize: 13, color: '#0f172a' }}>{s.courseTitle}</strong>
                       <div style={{ fontSize: 12, color: '#64748b' }}>
-                        {s.seatsPurchased} đã mua · {s.seatsGranted} được cấp
+                        {s.courseCode} · {s.levelName}
                       </div>
                     </div>
                     <span className="pa-org-tab-count" style={{ fontSize: 12, padding: '2px 8px', minWidth: 28, height: 22 }}>
-                      {s.seatsPurchased + s.seatsGranted} suất
+                      Mua ngày {formatDate(s.purchasedAt)}
                     </span>
                   </div>
                 ))}
@@ -532,7 +518,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
 
             {ordersList.length === 0 ? (
               <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', padding: '12px 0', margin: 0 }}>
-                Chưa có đơn hàng hoặc lần cấp suất nào.
+                Chưa có đơn mua khóa học nào.
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
@@ -552,20 +538,16 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                     <div>
                       <strong style={{ fontSize: 13, color: '#0f172a' }}>{order.courseTitle}</strong>
                       <div style={{ fontSize: 12, color: '#64748b' }}>
-                        {ORDER_KIND[order.kind]?.label} · {formatDateTime(order.createdAt)}
+                        {formatDateTime(order.createdAt)}
                         {order.reason && ` · Lý do: ${order.reason}`}
                       </div>
                     </div>
 
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>
-                        {order.seats} suất
+                      <div style={{ fontWeight: 700, fontSize: 13, color: order.amount > 0 ? '#15803d' : '#64748b' }}>
+                        {order.amount > 0 ? formatMoney(order.amount) : 'Miễn phí'}
                       </div>
-                      {order.totalAmount > 0 && (
-                        <div style={{ fontSize: 12, color: '#15803d', fontWeight: 600 }}>
-                          {formatMoney(order.totalAmount)}
-                        </div>
-                      )}
+                      <div style={{ fontSize: 12, color: '#64748b' }}>{canonicalCourseCode(order.courseCode)}</div>
                     </div>
                   </div>
                 ))}
@@ -598,51 +580,32 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
             </div>
 
             <form onSubmit={onSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: kind === 'grant' ? '1fr 1fr' : '1fr', gap: 12, marginBottom: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginBottom: 12 }}>
                 <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: '#334155' }}>
                   Chọn thao tác
                   <select
-                    value={kind}
+                    value={supportKind}
                     onChange={(e) => setKind(e.target.value as SupportAction)}
                     className="pa-tr-select"
                     style={{ width: '100%' }}
                   >
-                    <option value="grant">Cấp 1 suất học</option>
                     <option value="suspend">Tạm ngưng tổ chức</option>
                     <option value="restore">Mở lại tổ chức</option>
                   </select>
                 </label>
-
-                {kind === 'grant' && (
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: '#334155' }}>
-                    Khóa học
-                    <select
-                      value={selectedCourse}
-                      onChange={(e) => setCourseCode(e.target.value)}
-                      className="pa-tr-select"
-                      style={{ width: '100%' }}
-                    >
-                      {paidCourses.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.code} · {translateUi(c.domainName)} · {c.levelName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
               </div>
 
               <div style={{ marginBottom: 12 }}>
                 <ReasonField value={reason} onChange={setReason} />
               </div>
 
-              {kind === 'suspend' && (
+              {supportKind === 'suspend' && !suspended && (
                 <p style={{ fontSize: 12, color: '#dc2626', margin: '4px 0 10px', fontWeight: 500 }}>
                   Khi tạm ngưng, mọi nhân viên của tổ chức không đăng nhập được và phiên đang mở bị ngắt ngay.
                 </p>
               )}
 
-              {!actionAllowed && kind !== 'grant' && (
+              {!actionAllowed && (
                 <p style={{ fontSize: 12, color: '#dc2626', margin: '4px 0 10px', fontWeight: 500 }}>
                   {suspended ? 'Tổ chức đang tạm ngưng.' : 'Tổ chức đang hoạt động, không cần mở lại.'}
                 </p>
@@ -658,7 +621,7 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
                   borderColor: 'var(--pa-accent-solid)',
                 }}
               >
-                <span>{action.isPending ? 'Đang ghi nhận…' : kind === 'grant' ? 'Cấp suất' : kind === 'suspend' ? 'Tạm ngưng tổ chức' : 'Mở lại tổ chức'}</span>
+                <span>{action.isPending ? 'Đang ghi nhận…' : supportKind === 'suspend' ? 'Tạm ngưng tổ chức' : 'Mở lại tổ chức'}</span>
                 <ArrowRight size={13} aria-hidden="true" />
               </button>
             </form>

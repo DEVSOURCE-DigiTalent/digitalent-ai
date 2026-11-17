@@ -68,7 +68,7 @@ public class PlatformCourseContentReader
             LevelName = PlatformCatalog.LevelName(c.Level),
             Title = c.Title,
             Outcome = c.Outcome,
-            PricePerSeat = c.PricePerSeat,
+            Price = c.Price,
             SalesStatus = c.SalesStatus,
             Final = new PlatformCourseFinalDto
             {

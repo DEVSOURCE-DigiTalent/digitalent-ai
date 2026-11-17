@@ -2,6 +2,7 @@ using DigiTalent.Api.Authorization;
 using DigiTalent.Api.Common;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Learning.Courses;
+using DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourse;
 using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -39,15 +40,16 @@ public class CoursesController : ControllerBase
         return Ok(ApiResponse<CourseDetailDto>.Ok(result));
     }
 
-    [HttpPost("{id:guid}/purchase-seats")]
+    // POST api/v1/courses/{id}/purchase — the organization buys a paid course once; every employee may then learn it.
+    [HttpPost("{id:guid}/purchase")]
     [HasPermission(Permissions.Learning.Create)]
-    public async Task<ActionResult<ApiResponse<DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourseSeats.PurchaseCourseSeatsOutput>>> PurchaseSeats(
+    public async Task<ActionResult<ApiResponse<PurchaseCourseOutput>>> Purchase(
         Guid id,
-        [FromBody] DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourseSeats.PurchaseCourseSeatsInput input,
-        [FromServices] IUseCase<DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourseSeats.PurchaseCourseSeatsInput, DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourseSeats.PurchaseCourseSeatsOutput> useCase)
+        [FromBody] PurchaseCourseInput input,
+        [FromServices] IUseCase<PurchaseCourseInput, PurchaseCourseOutput> useCase)
     {
         input.CourseId = id;
         var result = await useCase.ExecuteAsync(input);
-        return Ok(ApiResponse<DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourseSeats.PurchaseCourseSeatsOutput>.Ok(result, "Đã mua suất học thành công."));
+        return Ok(ApiResponse<PurchaseCourseOutput>.Ok(result, "Đã mua khóa học cho doanh nghiệp."));
     }
 }

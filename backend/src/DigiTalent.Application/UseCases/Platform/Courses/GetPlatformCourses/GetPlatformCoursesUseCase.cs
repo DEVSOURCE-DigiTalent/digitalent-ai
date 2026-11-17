@@ -5,7 +5,7 @@ using DigiTalent.Application.UseCases.Platform.Common;
 namespace DigiTalent.Application.UseCases.Platform.Courses;
 
 /// <summary>
-/// Platform Admin / Chương trình học: the 18 standard courses with versions, prices and seat totals.
+/// Platform Admin / Chương trình học: the 18 standard courses with versions, prices and purchase counts.
 /// </summary>
 public class GetPlatformCoursesUseCase : IUseCase<GetPlatformCoursesUseCaseInput, GetPlatformCoursesUseCaseOutput>
 {

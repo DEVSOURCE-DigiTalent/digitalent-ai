@@ -16,7 +16,7 @@ import {
 /** Việc quản trị nền tảng làm được, mỗi mục dẫn sang trang tương ứng. */
 const CAPABILITIES = [
   { to: '/platform/versions', title: 'Khung năng lực và khóa học', text: 'Sửa mô tả lĩnh vực, soạn khóa học trong bản nháp và công bố phiên bản mới.' },
-  { to: '/platform/commerce', title: 'Giá và suất học', text: 'Đặt giá mỗi suất cho từng khóa và xem lịch sử mua suất của các tổ chức.' },
+  { to: '/platform/commerce', title: 'Giá và đơn hàng', text: 'Đặt giá cho từng khóa (mua một lần cho cả doanh nghiệp) và xem lịch sử mua khóa của các tổ chức.' },
   { to: '/platform/trials', title: 'Hỗ trợ khách hàng', text: 'Phân công mentor chấm bài dùng thử, tạm ngưng hoặc mở lại tổ chức, khóa hoặc mở khóa tài khoản.' },
 ] as const;
 

@@ -15,7 +15,7 @@ public class PlatformCourse : BaseEntity
     public int VersionNo { get; set; } = 1;
     public string Title { get; set; } = string.Empty;
     public string Outcome { get; set; } = string.Empty;
-    public long PricePerSeat { get; set; }
+    public long Price { get; set; }
     public string SalesStatus { get; set; } = string.Empty;
     public DateTimeOffset? PublishedAt { get; set; }
 
@@ -23,17 +23,14 @@ public class PlatformCourse : BaseEntity
 }
 
 /// <summary>
-/// Table course_seat_orders: paid course seats bought by an organization (PURCHASE) or granted to it by
-/// Platform Admin (ADMIN_GRANT, reason required). One seat = one employee in one course.
+/// Table course_orders: a paid course an organization bought. A course is bought once for the whole organization:
+/// once there is an order, every employee may learn it. Reason keeps the purchase note (e-contract code, signer).
 /// </summary>
-public class CourseSeatOrder : BaseEntity
+public class CourseOrder : BaseEntity
 {
     public Guid OrganizationId { get; set; }
     public Guid CourseId { get; set; }
-    public int Seats { get; set; }
-    public string Kind { get; set; } = string.Empty;
-    public long UnitPrice { get; set; }
-    public long TotalAmount { get; set; }
+    public long Amount { get; set; }
     public string? Reason { get; set; }
     public Guid? CreatedByUserId { get; set; }
 }

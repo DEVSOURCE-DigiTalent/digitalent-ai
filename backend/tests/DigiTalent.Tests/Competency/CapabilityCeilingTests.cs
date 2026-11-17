@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Me;
 using DigiTalent.Application.UseCases.Learning.Courses;
+using DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourse;
 using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
@@ -37,7 +38,7 @@ public class CapabilityCeilingTests : IDisposable
             new CompetencyCategory { Id = _dataId, OrganizationId = _orgId, Code = "TT02_D1", Name = "Khai thác dữ liệu", SortOrder = 1 },
             new CompetencyCategory { Id = _aiId, OrganizationId = _orgId, Code = "TT02_D6", Name = "Ứng dụng AI", SortOrder = 6 });
         _context.Departments.Add(new Department { Id = _deptId, OrganizationId = _orgId, Code = "KT", Name = "Kế toán" });
-        // Cấp 2–3 chỉ mở khi doanh nghiệp đã mua suất học: mặc định đã mua đủ cho cả hai lĩnh vực.
+        // Cấp 2–3 chỉ mở khi doanh nghiệp đã mua khóa học: mặc định đã mua đủ cho cả hai lĩnh vực.
         AddLicensedCourses(_dataId, domainNumber: 1);
         AddLicensedCourses(_aiId, domainNumber: 6);
         _context.SaveChanges();
@@ -45,7 +46,7 @@ public class CapabilityCeilingTests : IDisposable
         _reader = new CapabilityCeilingReader(_context, new PulseCatalogReader(_context));
     }
 
-    /// <summary>Khóa Cấp 2 và Cấp 3 của lĩnh vực trong danh mục doanh nghiệp, mỗi khóa có đơn mua suất học.</summary>
+    /// <summary>Khóa Cấp 2 và Cấp 3 của lĩnh vực trong danh mục doanh nghiệp, mỗi khóa đã được doanh nghiệp mua.</summary>
     private void AddLicensedCourses(Guid categoryId, int domainNumber)
     {
         var competency = new Domain.Entities.Competency { Id = Guid.NewGuid(), CategoryId = categoryId, Code = $"TT02-{domainNumber}.1", Name = $"Năng lực {domainNumber}.1" };
@@ -58,7 +59,7 @@ public class CapabilityCeilingTests : IDisposable
             _context.CourseCompetencies.Add(new CourseCompetency { CourseId = course.Id, CompetencyId = competency.Id, TargetLevel = (short)level, CoverageType = "PRIMARY" });
             var platformCourse = new PlatformCourse { Code = code, Level = (short)level, Title = code, SalesStatus = Statuses.PlatformCourseSales.Open };
             _context.PlatformCourses.Add(platformCourse);
-            _context.CourseSeatOrders.Add(new CourseSeatOrder { OrganizationId = _orgId, CourseId = platformCourse.Id, Seats = 5, Kind = PlatformCatalog.SeatOrderKind.Purchase });
+            _context.CourseOrders.Add(new CourseOrder { OrganizationId = _orgId, CourseId = platformCourse.Id, Amount = 399000 });
         }
     }
 
@@ -115,7 +116,7 @@ public class CapabilityCeilingTests : IDisposable
     {
         await SaveOrganization(data: 2, ai: 1);
         var dataCourseIds = await _context.PlatformCourses.Where(c => c.Code.StartsWith("M1-")).Select(c => c.Id).ToListAsync();
-        _context.CourseSeatOrders.RemoveRange(_context.CourseSeatOrders.Where(o => dataCourseIds.Contains(o.CourseId)));
+        _context.CourseOrders.RemoveRange(_context.CourseOrders.Where(o => dataCourseIds.Contains(o.CourseId)));
         await _context.SaveChangesAsync();
 
         var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(_orgId);
@@ -169,15 +170,17 @@ public class CapabilityCeilingTests : IDisposable
     }
 
     [Fact]
-    public async Task CourseCatalogAndDetailRecognizeSeatsFromBothPrefixesOnce()
+    public async Task CourseCatalogAndDetailRecognizeAnOrderUnderEitherPrefix()
     {
+        // Only an old order on the historical A-code: the M-code course of the organization is bought by it.
+        _context.CourseOrders.RemoveRange(_context.CourseOrders);
         var course = await _context.Courses.SingleAsync(c => c.Code == "M1-I");
         course.Code = "A1-I";
         var legacyCourse = new PlatformCourse { Code = "A1-I", Level = 2, Title = course.Title };
         _context.PlatformCourses.Add(legacyCourse);
-        _context.CourseSeatOrders.Add(new CourseSeatOrder
+        _context.CourseOrders.Add(new CourseOrder
         {
-            OrganizationId = _orgId, CourseId = legacyCourse.Id, Seats = 2, Kind = PlatformCatalog.SeatOrderKind.AdminGrant,
+            OrganizationId = _orgId, CourseId = legacyCourse.Id, Amount = 399000, Reason = "Doanh nghiệp mua khóa học",
         });
         await _context.SaveChangesAsync();
 
@@ -185,19 +188,58 @@ public class CapabilityCeilingTests : IDisposable
             .ExecuteAsync(new GetCoursesUseCaseInput { Search = "M1-I" });
         var item = catalog.Items.Should().ContainSingle().Which;
         item.Code.Should().Be("M1-I");
-        item.TotalSeats.Should().Be(7);
+        item.IsPurchased.Should().BeTrue();
+        item.HasLicense.Should().BeTrue();
 
         var detail = await new GetCourseByIdUseCase(_context, _currentUser.Object)
             .ExecuteAsync(new GetCourseByIdUseCaseInput { Id = course.Id });
         detail.Code.Should().Be("M1-I");
-        detail.SeatsPurchased.Should().Be(5);
-        detail.SeatsGranted.Should().Be(2);
+        detail.IsPurchased.Should().BeTrue();
+        detail.HasLicense.Should().BeTrue();
+
+        var other = await _context.Courses.SingleAsync(c => c.Code == "M1-A");
+        (await new GetCourseByIdUseCase(_context, _currentUser.Object).ExecuteAsync(new GetCourseByIdUseCaseInput { Id = other.Id }))
+            .HasLicense.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task PurchaseCourse_UnlocksItForTheWholeOrganizationOnce()
+    {
+        _context.CourseOrders.RemoveRange(_context.CourseOrders);
+        await _context.SaveChangesAsync();
+        var course = await _context.Courses.SingleAsync(c => c.Code == "M1-I");
+        var purchase = new PurchaseCourseUseCase(_context, _currentUser.Object);
+
+        var result = await purchase.ExecuteAsync(new PurchaseCourseInput { CourseId = course.Id });
+
+        result.CourseCode.Should().Be("M1-I");
+        result.Amount.Should().Be(PlatformCatalog.DefaultPrice(2));
+        var order = await _context.CourseOrders.SingleAsync();
+        order.Amount.Should().Be(PlatformCatalog.DefaultPrice(2));
+        (await _context.CapabilityCeilings.SingleAsync(c => c.CompetencyCategoryId == _dataId && c.DepartmentId == null))
+            .CeilingLevel.Should().Be(2);
+
+        var again = () => purchase.ExecuteAsync(new PurchaseCourseInput { CourseId = course.Id });
+        await again.Should().ThrowAsync<ConflictException>();
+        (await _context.CourseOrders.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task PurchaseCourse_BasicCourseIsFree()
+    {
+        var basic = new Course { OrganizationId = _orgId, Code = "M1-F", VersionNo = 1, Title = "M1-F", Status = Statuses.Course.Published, CreatedByUserId = Guid.NewGuid() };
+        _context.Courses.Add(basic);
+        await _context.SaveChangesAsync();
+
+        var action = () => new PurchaseCourseUseCase(_context, _currentUser.Object).ExecuteAsync(new PurchaseCourseInput { CourseId = basic.Id });
+
+        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("BASIC_COURSE_IS_FREE");
     }
 
     [Fact]
     public async Task UpdateOrganization_WithoutPurchasedCourse_IsRejected()
     {
-        _context.CourseSeatOrders.RemoveRange(_context.CourseSeatOrders);
+        _context.CourseOrders.RemoveRange(_context.CourseOrders);
         await _context.SaveChangesAsync();
 
         var action = () => SaveOrganization(data: 2, ai: 1);
@@ -221,11 +263,11 @@ public class CapabilityCeilingTests : IDisposable
     [Fact]
     public async Task UpdateOrganization_AboveThePurchasedLevel_IsRejected()
     {
-        // Lĩnh vực dữ liệu chỉ mua suất Cấp 2; lĩnh vực AI chưa mua suất nào.
-        var notBought = await _context.CourseSeatOrders
+        // Lĩnh vực dữ liệu chỉ mua khóa Cấp 2; lĩnh vực AI chưa mua khóa nào.
+        var notBought = await _context.CourseOrders
             .Where(o => _context.PlatformCourses.Any(p => p.Id == o.CourseId && (p.Code == "M1-A" || p.Code.StartsWith("M6-"))))
             .ToListAsync();
-        _context.CourseSeatOrders.RemoveRange(notBought);
+        _context.CourseOrders.RemoveRange(notBought);
         await _context.SaveChangesAsync();
 
         var action = () => SaveOrganization(data: 3, ai: 3);

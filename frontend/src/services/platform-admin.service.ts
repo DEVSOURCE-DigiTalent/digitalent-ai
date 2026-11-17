@@ -10,9 +10,7 @@ import type { ApiResponse, PagedList } from '../types/api';
 
 export type SalesStatus = 'OPEN' | 'PAUSED';
 export type OrganizationStage = 'TRIAL' | 'PAID';
-export type SeatOrderKind = 'PURCHASE' | 'ADMIN_GRANT';
-
-/** A published course (in the catalog version in use) with prices, content size and seat totals. */
+/** A published course (in the catalog version in use) with its price, content size and how many organizations bought it. */
 export interface PlatformCourse {
   id: string;
   code: string;
@@ -26,18 +24,19 @@ export interface PlatformCourse {
   versionNo: number;
   title: string;
   outcome: string;
-  pricePerSeat: number;
+  /** Price of the course for a whole organization (bought once). */
+  price: number;
   salesStatus: SalesStatus;
   isFree: boolean;
   /** Price in the draft catalog version, null when there is no draft. */
-  draftPricePerSeat: number | null;
+  draftPrice: number | null;
   /** Sales status in the draft catalog version, null when there is no draft. */
   draftSalesStatus: SalesStatus | null;
   publishedAt: string | null;
   moduleCount: number;
   questionCount: number;
-  seatsPurchased: number;
-  seatsGranted: number;
+  /** Organizations that bought the course. */
+  purchaseCount: number;
   revenue: number;
 }
 
@@ -53,8 +52,8 @@ export interface PlatformOrganization {
   employeeCount: number;
   managerCount: number;
   userCount: number;
-  seatsPurchased: number;
-  seatsGranted: number;
+  /** Paid courses the organization bought. */
+  coursesPurchased: number;
   revenue: number;
   setupCompleted: boolean;
   createdAt: string;
@@ -71,16 +70,14 @@ export interface PlatformOrganization {
   participantCount: number;
 }
 
-export interface PlatformSeatOrder {
+/** One order: an organization bought a course (once, for every employee). */
+export interface PlatformCourseOrder {
   id: string;
   organizationId: string;
   organizationName: string;
   courseCode: string;
   courseTitle: string;
-  seats: number;
-  kind: SeatOrderKind;
-  unitPrice: number;
-  totalAmount: number;
+  amount: number;
   reason: string | null;
   createdByEmail: string | null;
   createdAt: string;
@@ -98,8 +95,9 @@ export interface PlatformOrganizationDetail {
     positionName: string | null;
     status: string;
   }[];
-  seats: { courseCode: string; courseTitle: string; seatsPurchased: number; seatsGranted: number }[];
-  orders: PlatformSeatOrder[];
+  /** Paid courses the organization bought, one row per course. */
+  purchasedCourses: { courseCode: string; courseTitle: string; levelName: string; purchasedAt: string }[];
+  orders: PlatformCourseOrder[];
   coursesInUse: { courseCode: string; courseTitle: string; level: number; levelName: string; participants: number; completed: number }[];
 }
 
@@ -195,8 +193,7 @@ export interface PlatformOverview {
   courseCount: number;
   pausedCourseCount: number;
   questionCount: number;
-  seatsPurchased: number;
-  seatsGranted: number;
+  purchaseCount: number;
   revenue: number;
   recentOrganizations: PlatformOrganization[];
   recentActivity: PlatformAuditLog[];
@@ -204,10 +201,11 @@ export interface PlatformOverview {
 
 export interface PlatformCommerce {
   courses: PlatformCourse[];
-  seatsPurchased: number;
-  seatsGranted: number;
+  purchaseCount: number;
+  /** Organizations that bought at least one course. */
+  buyerCount: number;
   revenue: number;
-  orders: PagedList<PlatformSeatOrder>;
+  orders: PagedList<PlatformCourseOrder>;
 }
 
 export interface PageQuery {
@@ -229,14 +227,12 @@ function params<T extends object>(query: T): Partial<T> {
 export const platformAdminService = {
   getOverview: () => unwrap<PlatformOverview>(apiClient.get('/platform/overview')),
 
-  /** Published courses with prices and seat totals (frameworks, versions and the builder: platform-catalog.service). */
+  /** Published courses with prices and purchase counts (frameworks, versions and the builder: platform-catalog.service). */
   getCourses: () => unwrap<{ items: PlatformCourse[] }>(apiClient.get('/platform/courses')).then((r) => r.items),
 
   getOrganizations: (query: PageQuery & { status?: string; stage?: string } = {}) =>
     unwrap<PagedList<PlatformOrganization>>(apiClient.get('/platform/organizations', { params: params(query) })),
   getOrganization: (id: string) => unwrap<PlatformOrganizationDetail>(apiClient.get(`/platform/organizations/${id}`)),
-  grantSeats: (id: string, body: { courseCode: string; seats: number; reason: string }) =>
-    unwrap<PlatformOrganizationDetail>(apiClient.post(`/platform/organizations/${id}/seat-grants`, body)),
   suspendOrganization: (id: string, reason: string) =>
     unwrap<PlatformOrganizationDetail>(apiClient.post(`/platform/organizations/${id}/suspend`, { reason })),
   restoreOrganization: (id: string, reason: string) =>
@@ -248,7 +244,7 @@ export const platformAdminService = {
   lockUser: (id: string, reason: string) => unwrap<PlatformUserDetail>(apiClient.post(`/platform/users/${id}/lock`, { reason })),
   unlockUser: (id: string, reason: string) => unwrap<PlatformUserDetail>(apiClient.post(`/platform/users/${id}/unlock`, { reason })),
 
-  getCommerce: (query: PageQuery & { kind?: string } = {}) =>
+  getCommerce: (query: PageQuery = {}) =>
     unwrap<PlatformCommerce>(apiClient.get('/platform/commerce', { params: params(query) })),
   getAuditLogs: (query: PageQuery & { scope?: 'platform' | 'all'; action?: string } = {}) =>
     unwrap<PagedList<PlatformAuditLog>>(apiClient.get('/platform/audit-logs', { params: params(query) })),

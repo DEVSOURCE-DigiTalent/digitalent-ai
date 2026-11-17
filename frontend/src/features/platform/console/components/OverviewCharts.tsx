@@ -16,7 +16,7 @@ import { ArrowRight, BarChart3 } from 'lucide-react';
 import type {
   PlatformCourse,
   PlatformOverview,
-  PlatformSeatOrder,
+  PlatformCourseOrder,
 } from '@/services/platform-admin.service';
 import type { PlatformTrialItem } from '@/services/trial-program.service';
 import { translateUi } from '@/lib/i18n';
@@ -29,7 +29,7 @@ interface TimeBucketDatum {
   key: string;
   label: string;
   revenue: number;
-  seats: number;
+  /** Course purchases in the period (one organization buying one course). */
   orderCount: number;
 }
 
@@ -39,7 +39,8 @@ interface CourseRevenueDatum {
   domainName: string;
   levelName: string;
   revenue: number;
-  seats: number;
+  /** Organizations that bought the course. */
+  purchases: number;
 }
 
 interface DonutSliceDatum {
@@ -84,32 +85,32 @@ function moveTabFocus(
 }
 
 interface RevenueColumnCardProps {
-  orders: PlatformSeatOrder[];
+  orders: PlatformCourseOrder[];
   courses: PlatformCourse[];
   totalRevenue: number;
-  seatsPurchased: number;
+  purchaseCount: number;
   isSubLoading: boolean;
 }
 
 /**
  * Primary Revenue Column Chart (<BarChart>) using Solid Clay-Orange bars (#b85c24).
- * Supports switching between Time-series buckets (from seat orders) and Course breakdown.
+ * Supports switching between Time-series buckets (from course orders) and Course breakdown.
  */
 export function RevenueColumnCard({
   orders,
   courses,
   totalRevenue,
-  seatsPurchased,
+  purchaseCount,
   isSubLoading,
 }: RevenueColumnCardProps) {
   const paidOrders = useMemo(
-    () => orders.filter((order) => order.kind === 'PURCHASE' && order.totalAmount > 0),
+    () => orders.filter((order) => order.amount > 0),
     [orders],
   );
 
   const paidCourses = useMemo<CourseRevenueDatum[]>(() => {
     return [...courses]
-      .filter((course) => course.revenue > 0 || course.seatsPurchased > 0)
+      .filter((course) => course.revenue > 0 || course.purchaseCount > 0)
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 8)
       .map((course) => ({
@@ -118,7 +119,7 @@ export function RevenueColumnCard({
         domainName: course.domainName,
         levelName: course.levelName,
         revenue: course.revenue,
-        seats: course.seatsPurchased,
+        purchases: course.purchaseCount,
       }));
   }, [courses]);
 
@@ -147,15 +148,13 @@ export function RevenueColumnCard({
 
       const existing = map.get(key);
       if (existing) {
-        existing.revenue += order.totalAmount;
-        existing.seats += order.seats;
+        existing.revenue += order.amount;
         existing.orderCount += 1;
       } else {
         map.set(key, {
           key,
           label,
-          revenue: order.totalAmount,
-          seats: order.seats,
+          revenue: order.amount,
           orderCount: 1,
         });
       }
@@ -180,12 +179,12 @@ export function RevenueColumnCard({
   const hasChartData = activeTab === 'time' ? timeBuckets.length > 0 : paidCourses.length > 0;
 
   return (
-    <section className="pa-ov-panel" aria-label="Biểu đồ cột doanh thu suất học">
+    <section className="pa-ov-panel" aria-label="Biểu đồ cột doanh thu bán khóa học">
       <div className="pa-ov-panel-head">
         <div>
           <h2 className="pa-ov-panel-title">Doanh thu</h2>
           <p className="pa-ov-panel-sub">
-            {formatMoney(totalRevenue)} · {formatNumber(seatsPurchased)} suất đã bán
+            {formatMoney(totalRevenue)} · {formatNumber(purchaseCount)} lượt mua khóa
           </p>
         </div>
 
@@ -238,12 +237,12 @@ export function RevenueColumnCard({
           </span>
           <p className="pa-ov-empty-text">
             {activeTab === 'time'
-              ? 'Chưa có đơn mua suất học trả phí nào phát sinh trong kỳ.'
-              : 'Chưa có khóa học nào phát sinh doanh thu bán suất.'}{' '}
-            Kiểm tra biểu giá hoặc đơn hàng tại mục Đơn giá và Suất học.
+              ? 'Chưa có đơn mua khóa học có phí nào phát sinh trong kỳ.'
+              : 'Chưa có khóa học nào phát sinh doanh thu.'}{' '}
+            Kiểm tra biểu giá hoặc đơn hàng tại mục Giá và đơn hàng.
           </p>
           <Link to="/platform/commerce" className="btn btn-outline btn-small inline-flex items-center gap-1.5">
-            <span>Mở Đơn giá &amp; Suất học</span>
+            <span>Mở Giá và đơn hàng</span>
             <ArrowRight size={14} />
           </Link>
         </div>
@@ -281,8 +280,8 @@ export function RevenueColumnCard({
                             <strong>{formatMoney(datum.revenue)}</strong>
                           </div>
                           <div className="pa-ov-tooltip-row">
-                            <span>Suất bán</span>
-                            <strong>{formatNumber(datum.seats)} suất ({datum.orderCount} đơn)</strong>
+                            <span>Lượt mua</span>
+                            <strong>{formatNumber(datum.orderCount)} khóa</strong>
                           </div>
                         </div>
                       );
@@ -328,8 +327,8 @@ export function RevenueColumnCard({
                             <strong>{formatMoney(datum.revenue)}</strong>
                           </div>
                           <div className="pa-ov-tooltip-row">
-                            <span>Suất bán</span>
-                            <strong>{formatNumber(datum.seats)} suất</strong>
+                            <span>Tổ chức đã mua</span>
+                            <strong>{formatNumber(datum.purchases)}</strong>
                           </div>
                         </div>
                       );

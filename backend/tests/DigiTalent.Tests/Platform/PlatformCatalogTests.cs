@@ -249,7 +249,7 @@ public class PlatformCatalogTests
         created.Code.Should().Be("AI1-F");
         created.ChangeKind.Should().Be(PlatformCatalog.ChangeKind.New);
         created.CodeEditable.Should().BeTrue();
-        created.PricePerSeat.Should().Be(0);
+        created.Price.Should().Be(0);
         (await PlatformCatalogReader.ReadCoursesAsync(context)).Should().NotContain(c => c.Code == "AI1-F", "khóa mới chưa công bố");
 
         var blocked = await world.CheckAsync(2);
@@ -263,7 +263,7 @@ public class PlatformCatalogTests
         var course = created.CourseId;
         await new UpdatePlatformCatalogCourseUseCase(context, world.Editor, world.Reader).ExecuteAsync(new UpdatePlatformCatalogCourseUseCaseInput
         {
-            VersionNo = 2, CourseId = course, Title = created.Title, DomainId = created.DomainId, Level = 1, PricePerSeat = 150_000,
+            VersionNo = 2, CourseId = course, Title = created.Title, DomainId = created.DomainId, Level = 1, Price = 150_000,
             SalesStatus = Statuses.PlatformCourseSales.Open, Outcome = "Viết được câu lệnh có vai trò, bối cảnh và tiêu chí kiểm tra cho việc thật.",
         });
         await new UpdatePlatformCourseFinalUseCase(context, world.Editor, world.Reader).ExecuteAsync(new UpdatePlatformCourseFinalUseCaseInput
@@ -295,16 +295,16 @@ public class PlatformCatalogTests
         var renamePublished = () => new UpdatePlatformCatalogCourseUseCase(context, world.Editor, world.Reader).ExecuteAsync(new UpdatePlatformCatalogCourseUseCaseInput
         {
             VersionNo = 2, CourseId = a1i, Code = "M1-I-NEW", Title = a1iDraft.Title, Outcome = a1iDraft.Outcome, DomainId = a1iDraft.DomainId,
-            Level = 2, PricePerSeat = 450_000, SalesStatus = Statuses.PlatformCourseSales.Open,
+            Level = 2, Price = 450_000, SalesStatus = Statuses.PlatformCourseSales.Open,
         });
         (await renamePublished.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("CODE_LOCKED", "mã khóa đã công bố không đổi được");
         context.ChangeTracker.Clear();
         await new UpdatePlatformCatalogCourseUseCase(context, world.Editor, world.Reader).ExecuteAsync(new UpdatePlatformCatalogCourseUseCaseInput
         {
             VersionNo = 2, CourseId = a1i, Title = a1iDraft.Title, Outcome = a1iDraft.Outcome, DomainId = a1iDraft.DomainId,
-            Level = 2, PricePerSeat = 450_000, SalesStatus = Statuses.PlatformCourseSales.Open,
+            Level = 2, Price = 450_000, SalesStatus = Statuses.PlatformCourseSales.Open,
         });
-        (await context.PlatformCourses.AsNoTracking().SingleAsync(c => c.Id == a1i)).PricePerSeat.Should().Be(PlatformCatalog.DefaultIntermediatePrice);
+        (await context.PlatformCourses.AsNoTracking().SingleAsync(c => c.Id == a1i)).Price.Should().Be(PlatformCatalog.DefaultIntermediatePrice);
 
         var ready = await world.CheckAsync(2);
         ready.CanPublish.Should().BeTrue(string.Join(" | ", ready.Items.Select(i => i.Message)));
@@ -319,8 +319,8 @@ public class PlatformCatalogTests
 
         var courses = await PlatformCatalogReader.ReadCoursesAsync(context);
         courses.Should().HaveCount(19);
-        courses.Single(c => c.Code == "M1-I").PricePerSeat.Should().Be(450_000);
-        courses.Single(c => c.Code == "AI1-F").Should().Match<PlatformCourseItem>(c => c.FrameworkName == tt02.Name && c.DomainName == "AI trong vận hành doanh nghiệp" && c.PricePerSeat == 0 && c.VersionNo == 2);
+        courses.Single(c => c.Code == "M1-I").Price.Should().Be(450_000);
+        courses.Single(c => c.Code == "AI1-F").Should().Match<PlatformCourseItem>(c => c.FrameworkName == tt02.Name && c.DomainName == "AI trong vận hành doanh nghiệp" && c.Price == 0 && c.VersionNo == 2);
 
         var frameworks = await PlatformFrameworkReader.ReadListAsync(context);
         frameworks.CurrentCatalogVersionNo.Should().Be(2);
@@ -423,9 +423,9 @@ public class PlatformCatalogTests
             VersionNo = 2,
             Items =
             {
-                new PlatformCoursePriceInput { CourseId = a1i, PricePerSeat = 520_000, SalesStatus = Statuses.PlatformCourseSales.Open },
-                new PlatformCoursePriceInput { CourseId = a1f, PricePerSeat = 99_000, SalesStatus = Statuses.PlatformCourseSales.Open },
-                new PlatformCoursePriceInput { CourseId = a1a, PricePerSeat = 699_000, SalesStatus = Statuses.PlatformCourseSales.Paused },
+                new PlatformCoursePriceInput { CourseId = a1i, Price = 520_000, SalesStatus = Statuses.PlatformCourseSales.Open },
+                new PlatformCoursePriceInput { CourseId = a1f, Price = 99_000, SalesStatus = Statuses.PlatformCourseSales.Open },
+                new PlatformCoursePriceInput { CourseId = a1a, Price = 699_000, SalesStatus = Statuses.PlatformCourseSales.Paused },
             },
         };
         var noDraft = () => prices.ExecuteAsync(input);
@@ -433,21 +433,21 @@ public class PlatformCatalogTests
 
         await world.CreateDraftAsync();
         var draft = await prices.ExecuteAsync(input);
-        draft.Courses.Single(c => c.Code == "M1-I").Should().Match<PlatformCatalogCourseRow>(c => c.PricePerSeat == 520_000 && c.ChangeKind == PlatformCatalog.ChangeKind.Edited);
-        draft.Courses.Single(c => c.Code == "M1-F").Should().Match<PlatformCatalogCourseRow>(c => c.PricePerSeat == 0 && c.ChangeKind == PlatformCatalog.ChangeKind.Unchanged);
+        draft.Courses.Single(c => c.Code == "M1-I").Should().Match<PlatformCatalogCourseRow>(c => c.Price == 520_000 && c.ChangeKind == PlatformCatalog.ChangeKind.Edited);
+        draft.Courses.Single(c => c.Code == "M1-F").Should().Match<PlatformCatalogCourseRow>(c => c.Price == 0 && c.ChangeKind == PlatformCatalog.ChangeKind.Unchanged);
         draft.Courses.Single(c => c.Code == "M1-A").SalesStatus.Should().Be(Statuses.PlatformCourseSales.Paused);
 
         // The version in use keeps its prices; the price list shows both
         var listed = await PlatformCatalogReader.ReadCoursesAsync(world.Context);
-        listed.Single(c => c.Code == "M1-I").Should().Match<PlatformCourseItem>(c => c.PricePerSeat != 520_000 && c.DraftPricePerSeat == 520_000);
+        listed.Single(c => c.Code == "M1-I").Should().Match<PlatformCourseItem>(c => c.Price != 520_000 && c.DraftPrice == 520_000);
         listed.Single(c => c.Code == "M1-A").DraftSalesStatus.Should().Be(Statuses.PlatformCourseSales.Paused);
 
         (await world.CheckAsync(2)).CanPublish.Should().BeTrue();
         await world.PublishAsync(2, "Giá mới");
         var after = await PlatformCatalogReader.ReadCoursesAsync(world.Context);
-        after.Single(c => c.Code == "M1-I").PricePerSeat.Should().Be(520_000);
+        after.Single(c => c.Code == "M1-I").Price.Should().Be(520_000);
         after.Single(c => c.Code == "M1-A").SalesStatus.Should().Be(Statuses.PlatformCourseSales.Paused);
-        after.Single(c => c.Code == "M1-I").DraftPricePerSeat.Should().BeNull();
+        after.Single(c => c.Code == "M1-I").DraftPrice.Should().BeNull();
 
         new UpdatePlatformCatalogPricesUseCaseValidator().Validate(new UpdatePlatformCatalogPricesUseCaseInput { VersionNo = 3 }).IsValid.Should().BeFalse();
     }

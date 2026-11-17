@@ -70,7 +70,7 @@ public class PublishPlatformCatalogVersionUseCase : IUseCase<PublishPlatformCata
                 mirror.Level = course.Level;
                 mirror.Title = course.Title;
                 mirror.Outcome = course.Outcome;
-                mirror.PricePerSeat = course.PricePerSeat;
+                mirror.Price = course.Price;
                 mirror.SalesStatus = course.SalesStatus;
                 mirror.VersionNo = draft.VersionNo;
                 if (course.ChangeKind != PlatformCatalog.ChangeKind.Unchanged || mirror.PublishedAt == null)

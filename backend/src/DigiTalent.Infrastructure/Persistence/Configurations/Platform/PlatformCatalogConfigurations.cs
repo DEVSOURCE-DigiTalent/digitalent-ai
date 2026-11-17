@@ -79,7 +79,7 @@ public class PlatformCourseConfiguration : IEntityTypeConfiguration<PlatformCour
         {
             table.HasCheckConstraint("ck_platform_courses_level", "level BETWEEN 1 AND 3");
             table.HasCheckConstraint("ck_platform_courses_version", "version_no >= 1");
-            table.HasCheckConstraint("ck_platform_courses_price", "price_per_seat >= 0 AND (level > 1 OR price_per_seat = 0)");
+            table.HasCheckConstraint("ck_platform_courses_price", "price >= 0 AND (level > 1 OR price = 0)");
             table.HasCheckConstraint("ck_platform_courses_sales_status", "sales_status IN ('OPEN','PAUSED')");
         });
         builder.HasKey(c => c.Id);
@@ -94,25 +94,22 @@ public class PlatformCourseConfiguration : IEntityTypeConfiguration<PlatformCour
 }
 
 /// <summary>
-/// Table "course_seat_orders".
+/// Table "course_orders" (schema v3.9): one row per paid course an organization bought.
 /// </summary>
-public class CourseSeatOrderConfiguration : IEntityTypeConfiguration<CourseSeatOrder>
+public class CourseOrderConfiguration : IEntityTypeConfiguration<CourseOrder>
 {
-    public void Configure(EntityTypeBuilder<CourseSeatOrder> builder)
+    public void Configure(EntityTypeBuilder<CourseOrder> builder)
     {
-        builder.ToTable("course_seat_orders", table =>
+        builder.ToTable("course_orders", table =>
         {
-            table.HasCheckConstraint("ck_course_seat_orders_seats", "seats > 0");
-            table.HasCheckConstraint("ck_course_seat_orders_kind", "kind IN ('PURCHASE','ADMIN_GRANT')");
-            table.HasCheckConstraint("ck_course_seat_orders_amount", "unit_price >= 0 AND total_amount >= 0");
-            table.HasCheckConstraint("ck_course_seat_orders_grant_reason", "kind <> 'ADMIN_GRANT' OR reason IS NOT NULL");
+            table.HasCheckConstraint("ck_course_orders_amount", "amount >= 0");
         });
         builder.HasKey(o => o.Id);
-        builder.Property(o => o.Kind).IsRequired().HasMaxLength(20);
+
         builder.Property(o => o.Reason).HasMaxLength(1000);
         builder.HasIndex(o => new { o.OrganizationId, o.CreatedAt }).IsDescending(false, true)
-            .HasDatabaseName("ix_course_seat_orders_org_created");
-        builder.HasIndex(o => o.CourseId).HasDatabaseName("ix_course_seat_orders_course");
+            .HasDatabaseName("ix_course_orders_org_created");
+        builder.HasIndex(o => o.CourseId).HasDatabaseName("ix_course_orders_course");
         builder.HasOne<Organization>().WithMany().HasForeignKey(o => o.OrganizationId);
         builder.HasOne<PlatformCourse>().WithMany().HasForeignKey(o => o.CourseId);
         builder.HasOne<User>().WithMany().HasForeignKey(o => o.CreatedByUserId);
@@ -156,7 +153,7 @@ public class PlatformCatalogCourseConfiguration : IEntityTypeConfiguration<Platf
         {
             table.HasCheckConstraint("ck_platform_catalog_courses_change", "change_kind IN ('NEW','EDITED','UNCHANGED')");
             table.HasCheckConstraint("ck_platform_catalog_courses_level", "level BETWEEN 1 AND 3");
-            table.HasCheckConstraint("ck_platform_catalog_courses_price", "price_per_seat >= 0 AND (level > 1 OR price_per_seat = 0)");
+            table.HasCheckConstraint("ck_platform_catalog_courses_price", "price >= 0 AND (level > 1 OR price = 0)");
             table.HasCheckConstraint("ck_platform_catalog_courses_sales_status", "sales_status IN ('OPEN','PAUSED')");
         });
         builder.HasKey(c => c.Id);

@@ -42,21 +42,21 @@ export function CapabilityCeilingGuide({ open, onClose }: { open: boolean; onClo
           <p>{translateUi("Cấp độ áp dụng của phòng ban không vượt mức doanh nghiệp đã thiết lập. Khi thu hẹp phạm vi chung, các phòng ban vượt mức sẽ được điều chỉnh tương ứng.")}</p>
         </section>
         <section className="ceiling-guide__section">
-          <h3><span>02</span>{translateUi(" Khóa học & suất học")}</h3>
+          <h3><span>02</span>{translateUi(" Khóa học & quyền học")}</h3>
           <div className="ceiling-guide__levels">
             <div><span>{translateUi("CẤP 1 · F")}</span><strong>{translateUi("Cơ bản")}</strong><small><Check size={13} />{translateUi("Miễn phí")}</small></div>
-            <div><span>{translateUi("CẤP 2 · I")}</span><strong>{translateUi("Trung cấp")}</strong><small><LockKeyhole size={13} />{translateUi("Cần mua suất học")}</small></div>
-            <div><span>{translateUi("CẤP 3 · A")}</span><strong>{translateUi("Nâng cao")}</strong><small><LockKeyhole size={13} />{translateUi("Cần mua suất học")}</small></div>
+            <div><span>{translateUi("CẤP 2 · I")}</span><strong>{translateUi("Trung cấp")}</strong><small><LockKeyhole size={13} />{translateUi("Cần mua khóa học")}</small></div>
+            <div><span>{translateUi("CẤP 3 · A")}</span><strong>{translateUi("Nâng cao")}</strong><small><LockKeyhole size={13} />{translateUi("Cần mua khóa học")}</small></div>
           </div>
-          <p>{translateUi("Mỗi ô ứng với một khóa học. Mua suất để mở quyền chọn cấp độ, sau đó chọn mức và lưu thay đổi.")}</p>
-          <div className="ceiling-guide__note"><Info size={16} /><span>{translateUi("Mỗi suất dành cho một nhân viên trong một khóa. Hết suất vẫn giữ quyền khóa học; mua thêm khi cần phân công người mới. Chuẩn vị trí có thể thiết lập trước khi mua.")}</span></div>
+          <p>{translateUi("Mỗi ô ứng với một khóa học. Mua khóa để mở quyền chọn cấp độ, sau đó chọn mức và lưu thay đổi.")}</p>
+          <div className="ceiling-guide__note"><Info size={16} /><span>{translateUi("Mỗi khóa chỉ mua một lần cho cả doanh nghiệp: mọi nhân viên đều học được, không giới hạn số người. Chuẩn vị trí có thể thiết lập trước khi mua.")}</span></div>
         </section>
         <section className="ceiling-guide__section">
           <h3><span>03</span>{translateUi(" Thao tác nhanh")}</h3>
           <div className="ceiling-guide__steps">
             <div><MousePointer2 size={16} /><strong>{translateUi("Ô đã mở")}</strong><span>{translateUi("Chọn cấp độ ")}<ArrowRight size={12} />{translateUi(" Lưu thay đổi")}</span></div>
             <div><LockKeyhole size={16} /><strong>{translateUi("Ô chưa mua")}</strong><span>{translateUi("Chọn nhiều khóa vào giỏ")}</span></div>
-            <div><Info size={16} /><strong>{translateUi("Nút thông tin")}</strong><span>{translateUi("Xem khóa học & suất còn lại")}</span></div>
+            <div><Info size={16} /><strong>{translateUi("Nút thông tin")}</strong><span>{translateUi("Xem khóa học & trạng thái mua")}</span></div>
             <div><ChevronDown size={16} /><strong>{translateUi("Tên lĩnh vực")}</strong><span>{translateUi("Mở cài đặt chuẩn vị trí")}</span></div>
           </div>
         </section>

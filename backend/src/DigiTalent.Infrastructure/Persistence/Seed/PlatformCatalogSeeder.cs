@@ -134,7 +134,7 @@ public static class PlatformCatalogSeeder
                     VersionNo = 1,
                     Title = definition.CourseTitles[level - 1],
                     Outcome = $"Vận dụng các năng lực {competencies} của lĩnh vực {definition.Name.ToLowerInvariant()} ở mức {levelName} với minh chứng truy vết được.",
-                    PricePerSeat = PlatformCatalog.DefaultPrice(level),
+                    Price = PlatformCatalog.DefaultPrice(level),
                     SalesStatus = Statuses.PlatformCourseSales.Open,
                     PublishedAt = now,
                 };
@@ -168,7 +168,7 @@ public static class PlatformCatalogSeeder
                     Level = course.Level,
                     Title = course.Title,
                     Outcome = course.Outcome,
-                    PricePerSeat = course.PricePerSeat,
+                    Price = course.Price,
                     SalesStatus = course.SalesStatus,
                     FinalTitle = "Bài cuối khóa",
                     FinalPrompt = string.Empty,

@@ -150,7 +150,7 @@ public class PlatformCatalogController : ControllerBase
         return Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(await useCase.ExecuteAsync(input), "Version published."));
     }
 
-    // PUT api/v1/platform/catalog/versions/{versionNo}/prices — body { items: [{ courseId, pricePerSeat, salesStatus }] }
+    // PUT api/v1/platform/catalog/versions/{versionNo}/prices — body { items: [{ courseId, price, salesStatus }] }
     [HttpPut("catalog/versions/{versionNo:int}/prices")]
     [HasPermission(Permissions.Platform.CatalogManage)]
     public async Task<ActionResult<ApiResponse<PlatformCatalogVersionDetail>>> UpdatePrices(
@@ -185,7 +185,7 @@ public class PlatformCatalogController : ControllerBase
         [FromServices] IUseCase<GetPlatformCatalogCourseUseCaseInput, PlatformCatalogCourseDetail> useCase) =>
         Ok(ApiResponse<PlatformCatalogCourseDetail>.Ok(await useCase.ExecuteAsync(new GetPlatformCatalogCourseUseCaseInput { VersionNo = versionNo, CourseId = courseId })));
 
-    // PUT api/v1/platform/catalog/versions/{versionNo}/courses/{courseId} — body { code?, title, outcome, domainId, level, pricePerSeat, salesStatus }
+    // PUT api/v1/platform/catalog/versions/{versionNo}/courses/{courseId} — body { code?, title, outcome, domainId, level, price, salesStatus }
     [HttpPut("catalog/versions/{versionNo:int}/courses/{courseId:guid}")]
     [HasPermission(Permissions.Platform.CatalogManage)]
     public async Task<ActionResult<ApiResponse<PlatformCatalogCourseDetail>>> UpdateCourse(

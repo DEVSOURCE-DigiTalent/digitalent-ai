@@ -9,43 +9,42 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourseSeats;
+namespace DigiTalent.Application.UseCases.Learning.Courses.PurchaseCourse;
 
-public class PurchaseCourseSeatsInput
+public class PurchaseCourseInput
 {
     public Guid CourseId { get; set; }
-    public int Seats { get; set; }
     public string? Note { get; set; }
 }
 
-public class PurchaseCourseSeatsOutput
+public class PurchaseCourseOutput
 {
     public Guid OrderId { get; set; }
     public string CourseCode { get; set; } = string.Empty;
     public string CourseTitle { get; set; } = string.Empty;
-    public int Seats { get; set; }
-    public long UnitPrice { get; set; }
-    public long TotalAmount { get; set; }
-    public int TotalSeatsPurchased { get; set; }
-    public int TotalSeatsAvailable { get; set; }
+    public long Amount { get; set; }
     public string? CheckoutUrl { get; set; }
     public string? QrCode { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
 
-public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, PurchaseCourseSeatsOutput>
+/// <summary>
+/// The organization buys a paid course once: every employee may then learn it. Basic courses are free;
+/// buying a course the organization already unlocked is refused (COURSE_ALREADY_PURCHASED).
+/// </summary>
+public class PurchaseCourseUseCase : IUseCase<PurchaseCourseInput, PurchaseCourseOutput>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
     private readonly IPayOSService? _payOSService;
-    private readonly ILogger<PurchaseCourseSeatsUseCase>? _logger;
+    private readonly ILogger<PurchaseCourseUseCase>? _logger;
     private readonly string _appUrl;
 
-    public PurchaseCourseSeatsUseCase(
+    public PurchaseCourseUseCase(
         IApplicationDbContext context,
         ICurrentUser currentUser,
         IPayOSService? payOSService = null,
-        ILogger<PurchaseCourseSeatsUseCase>? logger = null,
+        ILogger<PurchaseCourseUseCase>? logger = null,
         IOptions<IndividualCommerceOptions>? options = null)
     {
         _context = context;
@@ -55,23 +54,22 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
         _appUrl = (options?.Value.Security.PublicAppUrl ?? "http://localhost:5173").TrimEnd('/');
     }
 
-    public async Task<PurchaseCourseSeatsOutput> ExecuteAsync(PurchaseCourseSeatsInput input)
+    public async Task<PurchaseCourseOutput> ExecuteAsync(PurchaseCourseInput input)
     {
         var organizationId = _currentUser.GetRequiredOrganizationId();
         var userId = _currentUser.UserId;
-
-        if (input.Seats <= 0)
-        {
-            throw new BadRequestException("Số lượng suất học phải lớn hơn 0.");
-        }
 
         var course = await _context.Courses.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == input.CourseId && c.OrganizationId == organizationId)
             ?? throw new NotFoundException($"Course '{input.CourseId}' not found.");
 
-        if (course.Code.EndsWith("-F", StringComparison.OrdinalIgnoreCase))
+        if (!CourseOwnership.IsPaid(course.Code))
         {
-            throw new BadRequestException("Khóa học Cơ bản được mở miễn phí toàn bộ trong gói dùng thử, không cần mua suất.");
+            throw new BadRequestException("Khóa học Cơ bản được mở miễn phí, không cần mua.", "courseId", "BASIC_COURSE_IS_FREE");
+        }
+        if (await CourseOwnership.IsPurchasedAsync(_context, organizationId, course.Code))
+        {
+            throw new ConflictException("Doanh nghiệp đã mua khóa học này, mọi nhân viên đều học được.");
         }
 
         var codes = CourseCodes.Aliases(course.Code);
@@ -83,24 +81,19 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
             .FirstOrDefaultAsync()
             ?? throw new NotFoundException($"Khóa học chuẩn '{course.Code}' chưa được niêm yết trên nền tảng.");
 
-        var unitPrice = platformCourse.PricePerSeat > 0
-            ? platformCourse.PricePerSeat
-            : (platformCourse.Level == 3 ? 699000L : 399000L);
-        var totalAmount = (long)input.Seats * unitPrice;
+        // Same price as the course list shows: the published catalog price of the code (or its A-alias).
+        var amount = await CourseOwnership.PriceAsync(_context, course.Code);
 
-        var order = new CourseSeatOrder
+        var order = new CourseOrder
         {
             OrganizationId = organizationId,
             CourseId = platformCourse.Id,
-            Seats = input.Seats,
-            Kind = PlatformCatalog.SeatOrderKind.Purchase,
-            UnitPrice = unitPrice,
-            TotalAmount = totalAmount,
-            Reason = string.IsNullOrWhiteSpace(input.Note) ? "Doanh nghiệp đăng ký mua suất học" : input.Note.Trim(),
+            Amount = amount,
+            Reason = string.IsNullOrWhiteSpace(input.Note) ? "Doanh nghiệp mua khóa học" : input.Note.Trim(),
             CreatedByUserId = userId,
         };
 
-        _context.CourseSeatOrders.Add(order);
+        _context.CourseOrders.Add(order);
         await _context.SaveChangesAsync();
 
         // 1. Tự động nâng phạm vi năng lực của doanh nghiệp ứng với khóa học vừa mua (nếu cấp độ cao hơn)
@@ -154,7 +147,7 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Failed to auto-elevate capability ceiling on seat purchase.");
+            _logger?.LogWarning(ex, "Failed to auto-elevate capability ceiling on course purchase.");
         }
 
         // 2. Tạo liên kết thanh toán PayOS VietQR
@@ -167,8 +160,8 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
                 long orderCode = (DateTimeOffset.UtcNow.ToUnixTimeSeconds() % 100000000) * 1000 + System.Security.Cryptography.RandomNumberGenerator.GetInt32(100, 999);
                 var payResult = await _payOSService.CreatePaymentLinkAsync(
                     orderCode: orderCode,
-                    amount: totalAmount,
-                    description: $"DT {normalizedCode} {input.Seats}suat",
+                    amount: amount,
+                    description: $"DT {normalizedCode}",
                     returnUrl: _appUrl + "/enterprise/courses",
                     cancelUrl: _appUrl + "/enterprise/courses"
                 );
@@ -177,34 +170,16 @@ public class PurchaseCourseSeatsUseCase : IUseCase<PurchaseCourseSeatsInput, Pur
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Failed to create PayOS link for enterprise seat order.");
+                _logger?.LogWarning(ex, "Failed to create PayOS link for enterprise course order.");
             }
         }
 
-        var totalPurchased = await (
-            from o in _context.CourseSeatOrders.AsNoTracking()
-            join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-            where o.OrganizationId == organizationId && codes.Contains(pc.Code)
-            select o.Seats
-        ).SumAsync();
-
-        var versionIds = await _context.Courses.AsNoTracking()
-            .Where(c => c.OrganizationId == organizationId && codes.Contains(c.Code))
-            .Select(c => c.Id).ToListAsync();
-        var assignedCount = await _context.CourseAssignments.AsNoTracking()
-            .Where(ca => versionIds.Contains(ca.CourseId) && ca.Status == Statuses.CourseAssignment.Active)
-            .Select(ca => ca.EmployeeId).Distinct().CountAsync();
-
-        return new PurchaseCourseSeatsOutput
+        return new PurchaseCourseOutput
         {
             OrderId = order.Id,
             CourseCode = normalizedCode,
             CourseTitle = course.Title,
-            Seats = input.Seats,
-            UnitPrice = unitPrice,
-            TotalAmount = totalAmount,
-            TotalSeatsPurchased = totalPurchased,
-            TotalSeatsAvailable = Math.Max(0, totalPurchased - assignedCount),
+            Amount = amount,
             CheckoutUrl = checkoutUrl,
             QrCode = qrCode,
             CreatedAt = order.CreatedAt,

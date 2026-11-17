@@ -1,9 +1,9 @@
 import { canonicalCourseCode } from '@/features/courses/course-code';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserCheck, Layers, ShieldCheck, X, BookOpen, Clock3 } from 'lucide-react';
-import { useCourse, useAssignments, usePurchaseCourseSeats } from '@/hooks/use-assignments';
+import { ArrowLeft, UserCheck, Layers, ShieldCheck, BookOpen, Clock3 } from 'lucide-react';
+import { useCourse, useAssignments } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import {
   courseCategories,
@@ -14,7 +14,7 @@ import { CourseModules } from '../components/CourseModules';
 import { CourseEnrollment } from '../components/CourseEnrollment';
 import { OwnerCourseFinalBrief } from '../components/OwnerCourseFinalBrief';
 import { CourseArtwork } from '../components/CourseArtwork';
-import { formatDuration } from '../components/course-tree';
+import { formatDuration, levelPricing } from '../components/course-tree';
 import { PULSE_TOKENS } from '../owner-theme';
 import { PageLoading } from '@/components/shared/LoadingState';
 import './owner-course-catalog.css';
@@ -32,9 +32,8 @@ export function OwnerCourseDetailPage() {
   useUiLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
 
-  const { data: course, isLoading, refetch } = useCourse(id);
+  const { data: course, isLoading } = useCourse(id);
   const { data: apiCategories = [] } = useCompetencyCategories();
   const categories = useMemo(
     () => courseCategories(apiCategories),
@@ -91,13 +90,10 @@ export function OwnerCourseDetailPage() {
     categories.find((c) => categoryDomain(c) === domainIdx)?.name ||
     'Miền năng lực số';
 
-  const totalSeats = (course.seatsPurchased ?? 0) + (course.seatsGranted ?? 0);
-  const hasLicense = isBasic || Boolean(course.hasLicense) || totalSeats > 0;
-  const pricing = isBasic
-    ? { formatted: 'Miễn phí', price: 0 }
-    : level === 2
-    ? { formatted: '399.000 ₫/suất', price: 399000 }
-    : { formatted: '699.000 ₫/suất', price: 699000 };
+  // A paid course is bought once for the whole organization; once bought, every employee may learn it.
+  const hasLicense = isBasic || Boolean(course.hasLicense) || Boolean(course.isPurchased);
+  const pricing = levelPricing(level, course.price);
+  const checkoutPath = `/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`;
 
   const assignedEmployees = assignmentsData?.items ?? [];
   const completedCount = assignedEmployees.filter(
@@ -131,7 +127,7 @@ export function OwnerCourseDetailPage() {
               className="inline-block size-[6px] rounded-full"
               style={{ background: 'var(--po-coral)' }}
             />
-            {isBasic ? 'Nền tảng cơ bản · Miễn phí' : hasLicense ? translateUi(`${tierLabel} · Đã có ${totalSeats} suất`) : translateUi(`${tierLabel} · Cần mua suất học`)}
+            {isBasic ? 'Nền tảng cơ bản · Miễn phí' : hasLicense ? translateUi(`${tierLabel} · Đã mua cho cả doanh nghiệp`) : translateUi(`${tierLabel} · Cần mua khóa học`)}
           </span>
 
           <h1>
@@ -144,40 +140,30 @@ export function OwnerCourseDetailPage() {
 
           <div className="flex flex-wrap items-center gap-2.5 mt-6">
             {hasLicense ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(`/enterprise/assignments?courseId=${course.id}`)
-                  }
-                  className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-                  style={{
-                    background: 'var(--po-surface)',
-                    color: 'var(--po-accent)',
-                    boxShadow: '0 9px 18px rgba(19,123,132,.17)',
-                  }}
-                >
-                  <UserCheck className="size-4" />{translateUi("Giao khóa học")}</button>
-                {!isBasic && (
-                  <button
-                    type="button"
-                    onClick={() => setPurchaseModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-[11px] px-3.5 py-3 text-[13px] font-semibold text-amber-200 hover:text-white transition-colors"
-                  >{translateUi("+ Mua thêm suất")}</button>
-                )}
-              </>
-            ) : (
               <button
                 type="button"
-                onClick={() => setPurchaseModalOpen(true)}
+                onClick={() =>
+                  navigate(`/enterprise/assignments?courseId=${course.id}`)
+                }
+                className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
+                style={{
+                  background: 'var(--po-surface)',
+                  color: 'var(--po-accent)',
+                  boxShadow: '0 9px 18px rgba(19,123,132,.17)',
+                }}
+              >
+                <UserCheck className="size-4" />{translateUi("Giao khóa học")}</button>
+            ) : (
+              <Link
+                to={checkoutPath}
                 className="inline-flex items-center gap-2 rounded-[11px] px-5 py-3 text-[13px] font-bold transition-all shadow-lg hover:brightness-110"
                 style={{
                   background: '#f59e0b',
                   color: '#fff',
                 }}
               >
-                <span>🔒 Mua suất học ({pricing.formatted})</span>
-              </button>
+                <span>🔒 Mua khóa học ({pricing.formatted})</span>
+              </Link>
             )}
           </div>
         </div>
@@ -199,20 +185,14 @@ export function OwnerCourseDetailPage() {
             <b>{translateUi("Mở miễn phí.")}</b>{translateUi(" Nhân viên có thể bắt đầu học ngay.")}</div>
         ) : hasLicense ? (
           <div
-            className="rounded-[11px] border p-4 text-xs mb-4 flex flex-wrap items-center justify-between gap-3"
+            className="rounded-[11px] border p-4 text-xs mb-4"
             style={{
               borderColor: '#bbf7d0',
               background: '#f0fdf4',
               color: '#166534',
             }}
           >
-            <div>
-              <b>{translateUi("Đã có bản quyền.")}</b> {totalSeats}{translateUi(" suất · Còn ")}{course.seatsAvailable ?? totalSeats}{translateUi(" suất để phân công.")}</div>
-            <Link
-              to={`/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`}
-              className="text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
-            >{translateUi("+ Mua thêm suất & Ký online")}</Link>
-          </div>
+            <b>{translateUi('Doanh nghiệp đã mua khóa học này.')}</b>{translateUi(" Mọi nhân viên đều học được, không giới hạn số người.")}</div>
         ) : (
           <div
             className="rounded-[11px] border p-4 text-xs mb-4 flex flex-wrap items-center justify-between gap-3"
@@ -223,12 +203,12 @@ export function OwnerCourseDetailPage() {
             }}
           >
             <div>
-              <b>{translateUi("Chưa có suất học.")}</b>{translateUi(" Trang bị suất để giao khóa học cho nhân viên.")}</div>
+              <b>{translateUi("Chưa mua khóa học.")}</b>{translateUi(" Mua một lần cho cả doanh nghiệp, sau đó mọi nhân viên đều học được.")}</div>
             <Link
-              to={`/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`}
+              to={checkoutPath}
               className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-all inline-flex items-center gap-1.5"
             >
-              <span>Trang bị suất học & Ký online ({pricing.formatted}) →</span>
+              <span>Mua khóa học & Ký online ({pricing.formatted}) →</span>
             </Link>
           </div>
         )}
@@ -303,9 +283,7 @@ export function OwnerCourseDetailPage() {
             assignmentCount={assignmentsData?.totalItems ?? 0}
             completedCount={completedCount}
             hasLicense={hasLicense}
-            totalSeats={totalSeats}
-            seatsAvailable={course.seatsAvailable ?? totalSeats}
-            onBuySeats={() => setPurchaseModalOpen(true)}
+            checkoutPath={checkoutPath}
           />
         </div>
 
@@ -316,196 +294,6 @@ export function OwnerCourseDetailPage() {
       </div>
       </div>
 
-      {purchaseModalOpen && (
-        <CourseDetailPurchaseModal
-          course={course}
-          level={level}
-          tierLabel={tierLabel}
-          pricing={pricing}
-          onClose={() => setPurchaseModalOpen(false)}
-          onSuccess={() => {
-            refetch();
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function CourseDetailPurchaseModal({
-  course,
-  level,
-  tierLabel,
-  pricing,
-  onClose,
-  onSuccess,
-}: {
-  course: { id: string; code: string; title: string };
-  level: number;
-  tierLabel: string;
-  pricing: { formatted: string; price: number };
-  onClose: () => void;
-  onSuccess?: () => void;
-}) {
-  useUiLanguage();
-  const [seats, setSeats] = useState(10);
-  const [result, setResult] = useState<{
-    orderId: string;
-    totalAmount: number;
-    seats: number;
-    createdAt?: string;
-  } | null>(null);
-
-  const purchaseMutation = usePurchaseCourseSeats();
-  const totalAmount = seats * pricing.price;
-
-  const handlePurchase = () => {
-    purchaseMutation.mutate(
-      { courseId: course.id, seats },
-      {
-        onSuccess: (data) => {
-          setResult({
-            orderId: data.orderId,
-            totalAmount: data.totalAmount,
-            seats: data.seats,
-            createdAt: data.createdAt,
-          });
-          onSuccess?.();
-        },
-      }
-    );
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-        <div className="flex items-start justify-between border-b pb-4">
-          <div>
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
-              🔒 Bản quyền khóa học thương mại
-            </span>
-            <h2 className="mt-2 text-lg font-bold text-slate-900">{translateUi(course.title)}</h2>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">{canonicalCourseCode(course.code)}{translateUi(" · Bậc ")}{level} ({tierLabel})</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-
-        {result ? (
-          <div className="py-8 text-center space-y-3">
-            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xl">
-              ✓
-            </div>
-            <h3 className="text-base font-bold text-slate-900">{translateUi("Kích hoạt suất học thành công!")}</h3>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">{translateUi("Bạn đã trang bị thành công ")}<b>{result.seats}{translateUi(" suất")}</b>{translateUi(" cho khóa học ")}<b>{canonicalCourseCode(course.code)}</b>.
-              Khóa học đã được mở bản quyền ngay lập tức và đồng bộ vào hệ thống quản lý Platform Admin.
-            </p>
-            <div className="mx-auto max-w-sm rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-left text-xs space-y-1">
-              <div className="flex justify-between text-slate-600">
-                <span>Mã giao dịch:</span>
-                <span className="font-mono font-semibold text-slate-800">{result.orderId.substring(0, 8)}...</span>
-              </div>
-              <div className="flex justify-between text-slate-600">
-                <span>{translateUi("Tổng chi phí:")}</span>
-                <span className="font-bold text-emerald-800">{result.totalAmount.toLocaleString('vi-VN')} ₫</span>
-              </div>
-              <div className="flex justify-between text-slate-600">
-                <span>{translateUi("Thời gian:")}</span>
-                <span className="text-slate-700">{result.createdAt ? new Date(result.createdAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')}</span>
-              </div>
-            </div>
-            <div className="pt-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-sm"
-                style={{ background: 'var(--po-accent)' }}
-              >{translateUi("Hoàn tất & Bắt đầu đào tạo")}</button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4 py-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-xs text-slate-700 leading-relaxed">
-              💡 Doanh nghiệp của bạn đang dùng thử và được <b>{translateUi("miễn phí 100% toàn bộ khóa Cơ bản")}</b>.
-              Khóa Trung cấp & Nâng cao cung cấp kỹ năng thực chiến và cấp chứng chỉ chuẩn TT02 theo từng đầu người (1 suất = 1 nhân viên).
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">{translateUi("Số lượng suất cần trang bị cho nhân sự:")}</label>
-              <div className="flex items-center gap-2 mb-2">
-                {[5, 10, 20, 50].map((count) => (
-                  <button
-                    key={count}
-                    type="button"
-                    onClick={() => setSeats(count)}
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
-                      seats === count
-                        ? 'border-primary-600 bg-primary-50 text-primary-700'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    {count}{translateUi(" suất")}</button>
-                ))}
-              </div>
-              <input
-                type="number"
-                min={1}
-                max={500}
-                value={seats}
-                onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary-600"
-              />
-            </div>
-
-            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-600">
-                <span>Đơn giá niêm yết:</span>
-                <span className="font-semibold text-slate-900">{pricing.formatted}</span>
-              </div>
-              <div className="flex justify-between text-slate-600">
-                <span>{translateUi("Số lượng nhân viên đào tạo:")}</span>
-                <span className="font-semibold text-slate-900">{seats}{translateUi(" nhân viên")}</span>
-              </div>
-              <div className="flex justify-between border-t border-amber-200/60 pt-2 text-sm font-bold text-slate-900">
-                <span>{translateUi("Tổng chi phí đầu tư:")}</span>
-                <span className="text-primary-700 font-extrabold">{totalAmount.toLocaleString('vi-VN')} ₫</span>
-              </div>
-            </div>
-
-            {purchaseMutation.isError && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
-                {translateUi((purchaseMutation.error as any)?.response?.data?.message) ||
-                  translateUi((purchaseMutation.error as any)?.message) ||
-                  'Có lỗi xảy ra khi thực hiện mua suất học.'}
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={purchaseMutation.isPending}
-                className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >{translateUi("Để sau")}</button>
-              <button
-                type="button"
-                onClick={handlePurchase}
-                disabled={purchaseMutation.isPending}
-                className="rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:brightness-105 disabled:opacity-50 flex items-center gap-1.5"
-                style={{ background: 'var(--po-accent)' }}
-              >
-                {purchaseMutation.isPending && <span className="animate-spin inline-block size-3.5 border-2 border-white border-t-transparent rounded-full" />}
-                <span>{purchaseMutation.isPending ? translateUi('Đang xử lý...') : translateUi(`Xác nhận mua suất học (${totalAmount.toLocaleString('vi-VN')} ₫)`)}</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

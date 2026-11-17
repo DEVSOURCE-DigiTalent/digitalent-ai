@@ -191,7 +191,7 @@ public static class Permissions
 
     /// <summary>
     /// Platform Admin console (Pulse redesign): organizations, users, the Digital AI standard,
-    /// the 18 standard courses and seat orders across every organization.
+    /// the standard courses and course orders across every organization.
     /// </summary>
     public static class Platform
     {

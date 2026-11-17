@@ -7,13 +7,11 @@
 .cp-standard__title p { margin: 0; color: #6a8090; font-size: 12px; }
 .cp-standard__license { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border: 1px solid #a9dfd1; border-radius: 999px; background: #ebfaf3; color: #13765b; font-size: 11px; font-weight: 750; }
 .cp-standard__license.is-locked { border-color: #f3d9a6; background: #fffaeb; color: #98661b; }
-.cp-standard__seats { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 28px; padding: 15px 18px; border: 1px solid #dceae8; border-radius: 14px; background: #ffffffd9; }
-.cp-standard__seats > div { display: grid; gap: 4px; min-width: 100px; }
-.cp-standard__seats span { color: #647d89; font-size: 12px; }
-.cp-standard__seats strong { color: #244957; font-size: 23px; font-variant-numeric: tabular-nums; line-height: 1.2; }
-.cp-standard__seats .is-available strong { color: #0e8876; }
-.cp-standard__seats .is-exhausted strong { color: #b4761c; }
-.cp-standard__seats p { flex: 1; min-width: 180px; margin: 0; color: #647d89; font-size: 12px; line-height: 1.5; }
+.cp-standard__access { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 28px; padding: 15px 18px; border: 1px solid #dceae8; border-radius: 14px; background: #ffffffd9; }
+.cp-standard__access > div { display: grid; gap: 4px; min-width: 100px; }
+.cp-standard__access span { color: #647d89; font-size: 12px; }
+.cp-standard__access strong { color: #244957; font-size: 23px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.cp-standard__access .is-available strong { color: #0e8876; }
 .cp-standard__mapping { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(230px, 1fr); gap: 12px; }
 .cp-standard__mapping-section { min-width: 0; padding: 16px; border: 1px solid #dceae8; border-radius: 14px; background: #ffffffd9; }
 .cp-standard__mapping-section > strong { display: flex; align-items: center; gap: 7px; margin-bottom: 12px; color: #245568; font-size: 12px; font-weight: 800; }
@@ -75,10 +73,10 @@
 .cp-standard--course .cp-standard__modules li::before { margin-top: 2px; }
 .cp-standard--course .cp-standard__competencies { gap: 6px; }
 .cp-standard--course .cp-standard__competencies span { font-size: 11.5px; padding: 5px 8px; background: #f4f9f8; border-color: #e1ece9; }
-.cp-standard--course .cp-standard__seats { gap: 8px 24px; padding: 10px 13px; border-radius: 10px; }
-.cp-standard--course .cp-standard__seats > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.cp-standard--course .cp-standard__seats strong { font-size: 18px; }
-.cp-standard--course .cp-standard__seats span { font-size: 11px; }
+.cp-standard--course .cp-standard__access { gap: 8px 24px; padding: 10px 13px; border-radius: 10px; }
+.cp-standard--course .cp-standard__access > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.cp-standard--course .cp-standard__access strong { font-size: 18px; }
+.cp-standard--course .cp-standard__access span { font-size: 11px; }
 .cp-standard--course .cp-standard__actions { padding-top: 10px; border-top: 1px solid #e5eeec; }
 @media (max-width: 900px) { .cp-standard--course .cp-standard__mapping { grid-template-columns: 1fr; } }
 @media (max-width: 650px) { .cp-standard--course .cp-standard__modules { grid-template-columns: 1fr; } .cp-standard--course .cp-standard__title { min-width: 160px; } .cp-standard__header-actions { margin-left: 47px; } }

@@ -23,10 +23,8 @@ export function CoursePositionStandardPanel({ domain, course, isSelectedToBuy, s
   useUiLanguage();
   const { data: courseDetail, isLoading: courseLoading } = useCourse(course.courseId ?? undefined);
   const { data: competencyData } = useAllActiveCompetencies();
+  // A paid course is bought once for the whole organization: once bought, every employee may learn it.
   const isLicensed = course.level === 1 || course.isUnlocked === true;
-  const totalSeats = (courseDetail?.seatsPurchased ?? course.seatsPurchased ?? 0) + (courseDetail?.seatsGranted ?? 0);
-  const availableSeats = courseDetail?.seatsAvailable;
-  const usedSeats = courseDetail?.seatsUsed ?? (availableSeats == null ? null : Math.max(0, totalSeats - availableSeats));
   const taught = new Map((course.competencies ?? []).map((item) => [item.competencyId, item.targetLevel]));
   const coveredCompetencies = (competencyData ?? []).filter((item) => TT02_CODES.has(item.frameworkCode ?? '') && item.categoryId === domain.categoryId && (taught.get(item.id) ?? 0) >= course.level);
 
@@ -45,11 +43,9 @@ export function CoursePositionStandardPanel({ domain, course, isSelectedToBuy, s
       {course.courseId && <Link to={`/enterprise/courses?focus=${encodeURIComponent(course.courseId)}`}>{translateUi("Xem khóa học ")}<ArrowRight size={13} /></Link>}
       </div>
     </div>
-    {course.level > 1 && isLicensed && <div className="cp-standard__seats" aria-label={translateUi("Suất học của khóa")}>
-      <div><span>{translateUi("Tổng suất học")}</span><strong>{totalSeats}</strong></div>
-      <div><span>{translateUi("Đã sử dụng")}</span><strong>{usedSeats ?? '—'}</strong></div>
-      <div className={availableSeats === 0 ? 'is-exhausted' : 'is-available'}><span>{translateUi("Còn lại")}</span><strong>{availableSeats ?? '—'}</strong></div>
-      {availableSeats === 0 && <p>{translateUi("Đã hết suất. Mua thêm để phân công người mới.")}</p>}
+    {course.level > 1 && isLicensed && <div className="cp-standard__access" aria-label={translateUi("Quyền học của khóa")}>
+      <div className="is-available"><span>{translateUi("Người học")}</span><strong>{translateUi("Mọi nhân viên")}</strong></div>
+      <div><span>{translateUi("Đã giao")}</span><strong>{courseDetail?.assignedCount ?? '—'}</strong></div>
     </div>}
     <div className="cp-standard__mapping">
       <div className="cp-standard__mapping-section">
@@ -61,12 +57,10 @@ export function CoursePositionStandardPanel({ domain, course, isSelectedToBuy, s
         <div className="cp-standard__competencies">{coveredCompetencies.map((item) => <span key={item.id} title={translateUi(item.name)}>{item.frameworkCode} · {item.name}</span>)}</div>
       </div>
     </div>
-    {course.courseId && course.level > 1 && <div className="cp-standard__actions">
-      {course.courseId && course.level > 1 && course.code && <>
-        <button type="button" onClick={onSelectToBuy}>{isSelectedToBuy ? 'Bỏ khỏi giỏ' : translateUi('Thêm vào giỏ')}</button>
-        <Link className={isLicensed && availableSeats !== 0 ? '' : 'is-primary'} to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}>{isLicensed ? translateUi('Mua thêm suất') : translateUi('Mua suất học')} <ArrowRight size={13} /></Link>
-      </>}
-      {course.courseId && course.level > 1 && course.isUnlocked !== true && <span className="cp-standard__purchase-note">{translateUi("Mua suất học để thiết lập phạm vi ")}{scopeLabel}.</span>}
+    {course.courseId && course.level > 1 && !isLicensed && course.code && <div className="cp-standard__actions">
+      <button type="button" onClick={onSelectToBuy}>{isSelectedToBuy ? translateUi('Bỏ khỏi giỏ') : translateUi('Thêm vào giỏ')}</button>
+      <Link className="is-primary" to={`/enterprise/courses/checkout?courses=${encodeURIComponent(course.code)}`}>{translateUi('Mua khóa học')} <ArrowRight size={13} /></Link>
+      <span className="cp-standard__purchase-note">{translateUi("Mua khóa học để thiết lập phạm vi ")}{scopeLabel}.</span>
     </div>}
   </section>;
 }

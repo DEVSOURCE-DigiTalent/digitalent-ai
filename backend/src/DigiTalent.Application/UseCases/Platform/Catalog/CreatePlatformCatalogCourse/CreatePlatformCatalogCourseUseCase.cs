@@ -56,7 +56,7 @@ public class CreatePlatformCatalogCourseUseCase : IUseCase<CreatePlatformCatalog
             VersionNo = draft.VersionNo,
             Title = title,
             Outcome = string.Empty,
-            PricePerSeat = price,
+            Price = price,
             SalesStatus = Statuses.PlatformCourseSales.Open,
             PublishedAt = null,
         };
@@ -70,7 +70,7 @@ public class CreatePlatformCatalogCourseUseCase : IUseCase<CreatePlatformCatalog
             Level = level,
             Title = title,
             Outcome = string.Empty,
-            PricePerSeat = price,
+            Price = price,
             SalesStatus = Statuses.PlatformCourseSales.Open,
             FinalTitle = "Bài cuối khóa",
             FinalPrompt = string.Empty,

@@ -116,7 +116,7 @@ function organizationRows(organizations: PlatformOrganization[]): AttentionRow[]
       rows.push({ ...base, key: `${o.id}-suspended`, severity: 'danger', tag: 'Tổ chức', reason: 'Đang tạm ngưng, nhân viên không đăng nhập được' });
     } else if (o.stage === 'PAID' && o.participantCount === 0) {
       rows.push({ ...base, key: `${o.id}-idle`, severity: 'warn', tag: 'Đã mua khóa',
-        reason: `Đã mua ${formatNumber(o.seatsPurchased)} suất, chưa nhân viên nào học` });
+        reason: `Đã mua ${formatNumber(o.coursesPurchased)} khóa, chưa nhân viên nào học` });
     }
     if (!o.ownerEmail) {
       rows.push({ ...base, key: `${o.id}-owner`, severity: 'info', tag: 'Tổ chức', reason: 'Chưa có chủ doanh nghiệp' });

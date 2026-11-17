@@ -402,31 +402,9 @@ public class PulseLearnerReader
             };
         }).ToList();
 
-        var seatOrders = await (
-                from o in _context.CourseSeatOrders.AsNoTracking()
-                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-                where o.OrganizationId == organizationId
-                select new { pc.Code, o.Seats })
-            .ToListAsync();
-        var purchasedSeatsByCode = seatOrders
-            .GroupBy(s => CourseCodes.Canonical(s.Code), StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.Sum(s => s.Seats), StringComparer.OrdinalIgnoreCase);
-
-        var usedSeats = await _context.CourseAssignments.AsNoTracking()
-            .Where(ca => ca.Status == Statuses.CourseAssignment.Active)
-            .Join(_context.Courses.AsNoTracking().Where(c => c.OrganizationId == organizationId),
-                ca => ca.CourseId, c => c.Id, (ca, c) => new { ca.EmployeeId, c.Code })
-            .Distinct()
-            .ToListAsync();
-        var usedSeatsByCode = usedSeats
-            .GroupBy(s => CourseCodes.Canonical(s.Code), StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.Select(assignment => assignment.EmployeeId).Distinct().Count(), StringComparer.OrdinalIgnoreCase);
-
-        bool HasAvailableSeat(string code)
-        {
-            var key = CourseCodes.Canonical(code);
-            return purchasedSeatsByCode.GetValueOrDefault(key) > usedSeatsByCode.GetValueOrDefault(key);
-        }
+        // A paid course is open to every employee once the organization bought it (or Platform Admin granted it).
+        var unlockedCodes = await CourseOwnership.PurchasedCodesAsync(_context, organizationId);
+        bool IsUnlocked(string code) => unlockedCodes.Contains(CourseCodes.Canonical(code));
 
         var hasPosition = placement.HasValue;
         var now = Now;
@@ -460,12 +438,12 @@ public class PulseLearnerReader
                     : approved || started || entryDone || !entryOffered || awaitingFramework ? PulsePreStatus.NotNeeded
                     : !hasPosition || zone is PulseCourseZone.OutsidePath or PulseCourseZone.AboveCeiling || !prereqApproved ? PulsePreStatus.Locked
                     : PulsePreStatus.Required;
-                var hasPurchasedSeat = HasAvailableSeat(course.Code)
+                var purchased = IsUnlocked(course.Code)
                     || courses.Any(higher => higher.CategoryId == course.CategoryId
                                              && higher.Tier > course.Tier
-                                             && HasAvailableSeat(higher.Code));
+                                             && IsUnlocked(higher.Code));
                 var access = course.Tier == 1 ? PulseCourseAccess.FreeFull
-                    : (enrollment != null || hasPurchasedSeat) ? PulseCourseAccess.SeatActive
+                    : (enrollment != null || purchased) ? PulseCourseAccess.Purchased
                     : PulseCourseAccess.Preview;
                 // Changes to the roadmap apply to new learning. Keep existing in-progress courses usable.
                 var enforceRoadmap = !started;
@@ -475,7 +453,7 @@ public class PulseLearnerReader
                     : enforceRoadmap && !prereqApproved ? PulseBlockReason.PriorLevelRequired
                     : preStatus == PulsePreStatus.Required ? PulseBlockReason.PreAssessmentRequired
                     : preStatus == PulsePreStatus.Pending ? PulseBlockReason.PreAssessmentPending
-                    : course.Tier > 1 && enrollment == null && !hasPurchasedSeat ? PulseBlockReason.SeatRequired
+                    : course.Tier > 1 && enrollment == null && !purchased ? PulseBlockReason.PurchaseRequired
                     : null;
                 var modules = enrollment != null
                     ? modulesByCourse.GetValueOrDefault(enrollment.CourseId) ?? new List<PulseModuleInfo>()
@@ -499,7 +477,7 @@ public class PulseLearnerReader
                     : finalStatus is PulseFinalStatus.Flagged or PulseFinalStatus.DeadlineMissed ? PulseSlotStatus.NeedsSupport
                     : finalStatus == PulseFinalStatus.RetryWait ? PulseSlotStatus.RetryWait
                     : enrollment != null && PulseRules.CanSubmitFinal(finalStatus) ? PulseSlotStatus.FinalReady
-                    : course.Tier > 1 && enrollment == null && !hasPurchasedSeat ? PulseSlotStatus.SeatNeeded
+                    : course.Tier > 1 && enrollment == null && !purchased ? PulseSlotStatus.PurchaseNeeded
                     : enrollment != null && enrollment.Status != Statuses.Enrollment.NotStarted ? PulseSlotStatus.InProgress
                     : PulseSlotStatus.ToLearn;
                 return new PulseCourseState

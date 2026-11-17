@@ -52,7 +52,7 @@ export function CourseInfoForm({
     level: course.level,
     title: course.title,
     outcome: course.outcome,
-    pricePerSeat: course.pricePerSeat,
+    price: course.price,
     salesStatus: course.salesStatus,
   };
   const [form, setForm] = useState(initial);
@@ -64,7 +64,7 @@ export function CourseInfoForm({
 
   const dirty = JSON.stringify(form) !== JSON.stringify(initial);
   const codeValid = !course.codeEditable || CODE_PATTERN.test(form.code.trim().toUpperCase());
-  const valid = codeValid && form.title.trim().length >= 3 && Boolean(form.domainId) && form.pricePerSeat >= 0;
+  const valid = codeValid && form.title.trim().length >= 3 && Boolean(form.domainId) && form.price >= 0;
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -72,7 +72,7 @@ export function CourseInfoForm({
     setForm((f) => ({
       ...f,
       level: newLevel,
-      pricePerSeat: newLevel === 1 ? 0 : f.pricePerSeat,
+      price: newLevel === 1 ? 0 : f.price,
     }));
   };
 
@@ -86,7 +86,7 @@ export function CourseInfoForm({
         outcome: form.outcome.trim(),
         domainId: form.domainId,
         level: form.level,
-        pricePerSeat: free ? 0 : form.pricePerSeat,
+        price: free ? 0 : form.price,
         salesStatus: form.salesStatus,
       }),
     )
@@ -221,7 +221,7 @@ export function CourseInfoForm({
                 <span>{translateUi('Giá và mở bán')}</span>
               </div>
               <div className="pa-cb-panel-desc">
-                {translateUi('Giá mỗi suất và trạng thái mở bán.')}
+                {translateUi('Giá khóa (mua một lần cho cả doanh nghiệp) và trạng thái mở bán.')}
               </div>
             </div>
           </div>
@@ -229,14 +229,14 @@ export function CourseInfoForm({
           <div className="pa-cb-panel-body">
             <div className="pa-cb-grid-2">
               <div className="pa-cb-meta-cell">
-                <span className="pa-cb-meta-label">{translateUi('Giá mỗi suất')}</span>
+                <span className="pa-cb-meta-label">{translateUi('Giá khóa')}</span>
                 <span className="pa-cb-meta-value">
                   {course.level === 1 ? (
                     <span style={{ color: '#16a34a', fontWeight: 700 }}>
                       {translateUi('Miễn phí')}
                     </span>
                   ) : (
-                    <span>{formatMoney(course.pricePerSeat)}</span>
+                    <span>{formatMoney(course.price)}</span>
                   )}
                 </span>
               </div>
@@ -507,7 +507,7 @@ export function CourseInfoForm({
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Giá mỗi suất và trạng thái mở bán.')}
+              {translateUi('Giá khóa (mua một lần cho cả doanh nghiệp) và trạng thái mở bán.')}
             </div>
           </div>
         </div>
@@ -517,7 +517,7 @@ export function CourseInfoForm({
             {/* Cột 1: Học phí */}
             <div>
               <label className="pa-cb-field-label" htmlFor="field-price">
-                <span>{translateUi('Giá mỗi suất (₫)')}</span>
+                <span>{translateUi('Giá khóa cho cả doanh nghiệp (₫)')}</span>
                 {free && (
                   <span style={{ fontSize: 12.5, color: '#16a34a', fontWeight: 600 }}>
                     {translateUi('Miễn phí')}
@@ -531,8 +531,8 @@ export function CourseInfoForm({
                   min={0}
                   step={1000}
                   className="pa-cb-input"
-                  value={free ? 0 : form.pricePerSeat}
-                  onChange={(e) => set('pricePerSeat', Number(e.target.value))}
+                  value={free ? 0 : form.price}
+                  onChange={(e) => set('price', Number(e.target.value))}
                   disabled={free}
                   style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}
                 />

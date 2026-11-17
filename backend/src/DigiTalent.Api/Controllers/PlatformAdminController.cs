@@ -12,7 +12,7 @@ namespace DigiTalent.Api.Controllers;
 
 /// <summary>
 /// Platform Admin console (Pulse redesign, docs/ui-redesign/16 §12.4 and §12.6): overview, the six-domain Digital AI
-/// standard, the 18 standard courses, organizations, users, seat orders and the audit log, across every organization.
+/// standard, the 18 standard courses, organizations, users, course orders and the audit log, across every organization.
 /// </summary>
 [ApiController]
 [Route("api/v1/platform")]
@@ -30,7 +30,7 @@ public class PlatformAdminController : ControllerBase
 
     // ----- Courses -----------------------------------------------------------------------------
 
-    // GET api/v1/platform/courses — published courses with prices and seat totals (frameworks and versions: PlatformCatalogController)
+    // GET api/v1/platform/courses — published courses with prices and purchase counts (frameworks and versions: PlatformCatalogController)
     [HttpGet("courses")]
     [HasPermission(Permissions.Platform.CatalogRead)]
     public async Task<ActionResult<ApiResponse<GetPlatformCoursesUseCaseOutput>>> GetCourses(
@@ -64,18 +64,6 @@ public class PlatformAdminController : ControllerBase
         return Ok(ApiResponse<PlatformOrganizationDetailOutput>.Ok(result));
     }
 
-    // POST api/v1/platform/organizations/{id}/seat-grants — body { courseCode, seats, reason }
-    [HttpPost("organizations/{id:guid}/seat-grants")]
-    [HasPermission(Permissions.Platform.OrganizationManage)]
-    public async Task<ActionResult<ApiResponse<PlatformOrganizationDetailOutput>>> GrantSeats(
-        Guid id,
-        [FromBody] GrantPlatformCourseSeatsUseCaseInput input,
-        [FromServices] IUseCase<GrantPlatformCourseSeatsUseCaseInput, PlatformOrganizationDetailOutput> useCase)
-    {
-        input.OrganizationId = id;
-        var result = await useCase.ExecuteAsync(input);
-        return Ok(ApiResponse<PlatformOrganizationDetailOutput>.Ok(result, "Seats granted."));
-    }
 
     // POST api/v1/platform/organizations/{id}/suspend — body { reason }
     [HttpPost("organizations/{id:guid}/suspend")]

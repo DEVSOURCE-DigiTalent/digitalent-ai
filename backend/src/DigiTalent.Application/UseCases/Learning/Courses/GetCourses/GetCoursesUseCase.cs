@@ -133,23 +133,16 @@ public class GetCoursesUseCase : IUseCase<GetCoursesUseCaseInput, GetCoursesUseC
             })
             .ToListAsync();
 
-        var seatOrders = await (
-            from o in _context.CourseSeatOrders.AsNoTracking()
-            join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-            where o.OrganizationId == organizationId
-            group o by new { pc.Code, o.Kind } into g
-            select new { g.Key.Code, g.Key.Kind, Seats = g.Sum(x => x.Seats) }
-        ).ToListAsync();
+        var purchased = await CourseOwnership.PurchasedCodesAsync(_context, organizationId);
+        var prices = await CourseOwnership.PricesAsync(_context);
 
         foreach (var item in items)
         {
             item.Code = CourseCodes.Canonical(item.Code);
-            item.SeatsPurchased = seatOrders
-                .Where(s => CourseCodes.Canonical(s.Code) == item.Code && s.Kind == Domain.Constants.PlatformCatalog.SeatOrderKind.Purchase)
-                .Sum(s => s.Seats);
-            item.SeatsGranted = seatOrders
-                .Where(s => CourseCodes.Canonical(s.Code) == item.Code && s.Kind == Domain.Constants.PlatformCatalog.SeatOrderKind.AdminGrant)
-                .Sum(s => s.Seats);
+            item.Price = CourseOwnership.IsPaid(item.Code)
+                ? prices.GetValueOrDefault(item.Code, Domain.Constants.PlatformCatalog.DefaultPrice(item.Code.EndsWith("-A") ? 3 : 2))
+                : 0;
+            item.IsPurchased = CourseOwnership.IsPaid(item.Code) && purchased.Contains(item.Code);
         }
 
         return new GetCoursesUseCaseOutput

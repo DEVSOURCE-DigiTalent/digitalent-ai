@@ -1,7 +1,7 @@
 namespace DigiTalent.Application.UseCases.Platform.Organizations;
 
 /// <summary>
-/// One organization in the Platform Admin list. "Paid" = at least one purchased seat order.
+/// One organization in the Platform Admin list. "Paid" = at least one purchased course.
 /// </summary>
 public class PlatformOrganizationItem
 {
@@ -16,8 +16,8 @@ public class PlatformOrganizationItem
     public int EmployeeCount { get; set; }
     public int ManagerCount { get; set; }
     public int UserCount { get; set; }
-    public int SeatsPurchased { get; set; }
-    public int SeatsGranted { get; set; }
+    /// <summary>Distinct paid courses the organization bought.</summary>
+    public int CoursesPurchased { get; set; }
     public long Revenue { get; set; }
     public bool SetupCompleted { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

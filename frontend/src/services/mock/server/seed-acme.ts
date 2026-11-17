@@ -353,15 +353,14 @@ export function buildAcmeData(): OrgData {
   // Demo licenses are explicit purchase data, never inferred from saved ceilings.
   // Category 5 intentionally has only the free foundation course, so the owner can
   // immediately see and test the purchase gate for Trung cấp / Nâng cao.
-  const courseSeatOrders = Object.fromEntries(
+  const courseOrders = 
     [
       ['cat-1', 3], ['cat-2', 2], ['cat-3', 3],
       ['cat-4', 2], ['cat-6', 2],
     ].map(([categoryId, level]) => {
       const course = COURSES.find((item) => item.categoryId === categoryId && item.level === level)!;
-      return [course.id, 12];
-    }),
-  );
+      return course.id;
+    });
 
   const data: OrgData = {
     organizationId: ACME_ORGANIZATION_ID,
@@ -385,7 +384,7 @@ export function buildAcmeData(): OrgData {
     memberOverrides: {},
     audit: buildAudit(),
     internalCourses: buildInternalCourses(),
-    courseSeatOrders,
+    courseOrders,
   };
 
   seedWork(data);

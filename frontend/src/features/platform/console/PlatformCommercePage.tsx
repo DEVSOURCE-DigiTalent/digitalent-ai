@@ -48,7 +48,7 @@ type AugmentedPlatformCourse = PlatformCourse & { isNewInDraft?: boolean };
 
 /**
  * PA-09 · Giá và đơn hàng B2B
- * Quản trị biểu giá niêm yết theo phiên bản và sổ cái giao dịch mua/cấp bù suất học.
+ * Quản trị giá khóa học theo phiên bản (mỗi khóa mua một lần cho cả doanh nghiệp) và sổ cái mua / mở khóa miễn phí.
  */
 export function PlatformCommercePage() {
   useUiLanguage();
@@ -56,12 +56,11 @@ export function PlatformCommercePage() {
   const rawTab = params.get('tab');
   const activeTab: CommerceTab = rawTab === 'ORDERS' ? 'ORDERS' : 'PRICING';
 
-  const [kind, setKind] = useState('');
   const [pageIndex, setPageIndex] = useState(1);
   const [orderSearch, setOrderSearch] = useState('');
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
 
-  const { data, isLoading, error } = usePlatformCommerce({ kind, pageIndex, pageSize: 20 });
+  const { data, isLoading, error } = usePlatformCommerce({ pageIndex, pageSize: 20 });
   const versions = useCatalogVersions();
   const currentNo = versions.data?.currentVersionNo ?? null;
   const draftNo = versions.data?.draftVersionNo ?? null;
@@ -95,16 +94,15 @@ export function PlatformCommercePage() {
         versionNo: draftNo,
         title: dc.title,
         outcome: '',
-        pricePerSeat: dc.level === 1 ? 0 : dc.pricePerSeat,
+        price: dc.level === 1 ? 0 : dc.price,
         salesStatus: dc.salesStatus,
         isFree: dc.level === 1,
-        draftPricePerSeat: dc.pricePerSeat,
+        draftPrice: dc.price,
         draftSalesStatus: dc.salesStatus,
         publishedAt: null,
         moduleCount: dc.moduleCount,
         questionCount: dc.questionCount,
-        seatsPurchased: 0,
-        seatsGranted: 0,
+        purchaseCount: 0,
         revenue: 0,
         isNewInDraft: true,
       }));
@@ -135,8 +133,8 @@ export function PlatformCommercePage() {
 
   // Metrics calculations
   const totalRevenue = data?.revenue ?? 0;
-  const seatsPurchased = data?.seatsPurchased ?? 0;
-  // API còn trả khóa của phiên bản cũ (vẫn có suất đã bán). Thẻ "Khóa đang bán" chỉ đếm phiên bản đang dùng.
+  const purchaseCount = data?.purchaseCount ?? 0;
+  // API còn trả khóa của phiên bản cũ (vẫn có lượt mua). Thẻ "Khóa đang bán" chỉ đếm phiên bản đang dùng.
   const currentCourses = useMemo(
     () => (currentNo ? combinedCourses.filter((c) => c.versionNo === currentNo) : combinedCourses),
     [combinedCourses, currentNo],
@@ -153,19 +151,19 @@ export function PlatformCommercePage() {
         const page = await platformAdminService.getCommerce({ pageIndex: 1, pageSize: CSV_EXPORT_LIMIT });
         downloadCsv(
           csvFileName('don-hang'),
-          ['Thời gian', 'Tổ chức', 'Mã khóa', 'Khóa học', 'Loại', 'Số suất', 'Đơn giá (VND)', 'Thành tiền (VND)', 'Người thực hiện', 'Ghi chú'],
+          ['Thời gian', 'Tổ chức', 'Mã khóa', 'Khóa học', 'Thành tiền (VND)', 'Người mua', 'Ghi chú'],
           page.orders.items.map((o) => [
             formatDateTime(o.createdAt), o.organizationName, o.courseCode, o.courseTitle,
-            o.kind === 'PURCHASE' ? 'Mua' : 'Được cấp', o.seats, o.unitPrice, o.totalAmount, o.createdByEmail, o.reason,
+            o.amount, o.createdByEmail, o.reason,
           ]),
         );
       } else {
         downloadCsv(
           csvFileName('bang-gia'),
-          ['Mã khóa', 'Khóa học', 'Lĩnh vực', 'Cấp độ', 'Phiên bản', 'Giá mỗi suất (VND)', 'Mở bán', 'Suất đã bán', 'Suất được cấp', 'Doanh thu (VND)'],
+          ['Mã khóa', 'Khóa học', 'Lĩnh vực', 'Cấp độ', 'Phiên bản', 'Giá khóa (VND)', 'Mở bán', 'Tổ chức đã mua', 'Doanh thu (VND)'],
           combinedCourses.map((c) => [
-            c.code, c.title, c.domainName, c.levelName, `v${c.versionNo}`, c.pricePerSeat,
-            SALES_STATUS[c.salesStatus]?.label ?? c.salesStatus, c.seatsPurchased, c.seatsGranted, c.revenue,
+            c.code, c.title, c.domainName, c.levelName, `v${c.versionNo}`, c.price,
+            SALES_STATUS[c.salesStatus]?.label ?? c.salesStatus, c.purchaseCount, c.revenue,
           ]),
         );
       }
@@ -199,7 +197,7 @@ export function PlatformCommercePage() {
             Giá và đơn hàng
           </h1>
           <p className="pa-org-subtitle">
-            Giá mỗi suất của từng khóa và lịch sử mua, cấp suất của các tổ chức.
+            Giá của từng khóa (mỗi khóa mua một lần cho cả doanh nghiệp) và lịch sử mua khóa của các tổ chức.
           </p>
         </div>
 
@@ -249,8 +247,8 @@ export function PlatformCommercePage() {
       {data && versions.data && (
         <>
           {/* Executive 4 Financial KPI Cards */}
-          <div className="pa-org-kpi-grid" role="region" aria-label="Thống kê doanh thu và quy mô suất học">
-            {/* Card 1: Doanh thu suất học */}
+          <div className="pa-org-kpi-grid" role="region" aria-label="Thống kê doanh thu bán khóa học">
+            {/* Card 1: Doanh thu */}
             <div className="pa-org-stat-card">
               <div className="pa-org-kpi-head">
                 <span className="pa-org-kpi-label">Doanh thu</span>
@@ -266,35 +264,35 @@ export function PlatformCommercePage() {
               </div>
             </div>
 
-            {/* Card 2: Suất đã kích hoạt */}
+            {/* Card 2: Khóa đã bán */}
             <div className="pa-org-stat-card">
               <div className="pa-org-kpi-head">
-                <span className="pa-org-kpi-label">Suất đã bán</span>
+                <span className="pa-org-kpi-label">Khóa đã bán</span>
                 <div className="pa-kpi-icon-wrap sky" aria-hidden="true">
                   <Building2 size={14} />
                 </div>
               </div>
               <div className="pa-org-kpi-val-row">
                 <span className="pa-org-kpi-val" style={{ color: '#0369a1' }}>
-                  {formatNumber(seatsPurchased)}
+                  {formatNumber(purchaseCount)}
                 </span>
-                <span className="pa-org-kpi-sub">suất có phí, mọi tổ chức</span>
+                <span className="pa-org-kpi-sub">lượt mua khóa có phí, mọi tổ chức</span>
               </div>
             </div>
 
-            {/* Card 3: Đơn hàng giao dịch */}
+            {/* Card 3: Doanh nghiệp đã mua */}
             <div className="pa-org-stat-card">
               <div className="pa-org-kpi-head">
-                <span className="pa-org-kpi-label">Lượt mua</span>
+                <span className="pa-org-kpi-label">Doanh nghiệp đã mua</span>
                 <div className="pa-kpi-icon-wrap sky" style={{ background: '#ede9fe', color: '#7c3aed' }} aria-hidden="true">
                   <ShoppingBag size={14} />
                 </div>
               </div>
               <div className="pa-org-kpi-val-row">
                 <span className="pa-org-kpi-val" style={{ color: '#7c3aed' }}>
-                  {formatNumber(data.orders.totalItems)}
+                  {formatNumber(data.buyerCount)}
                 </span>
-                <span className="pa-org-kpi-sub">lượt mua và cấp suất</span>
+                <span className="pa-org-kpi-sub">có ít nhất một khóa có phí</span>
               </div>
             </div>
 
@@ -351,7 +349,7 @@ export function PlatformCommercePage() {
           {/* Workstream Section 1: Biểu giá khóa học */}
           {activeTab === 'PRICING' && (
             <PriceTable
-              key={`${draftNo}-${combinedCourses.map((c) => `${c.draftPricePerSeat}${c.draftSalesStatus}`).join()}`}
+              key={`${draftNo}-${combinedCourses.map((c) => `${c.draftPrice}${c.draftSalesStatus}`).join()}`}
               courses={combinedCourses}
               currentNo={currentNo}
               draftNo={draftNo}
@@ -371,7 +369,7 @@ export function PlatformCommercePage() {
                     <span>Đơn hàng</span>
                   </h2>
                   <p className="pa-commerce-section-desc">
-                    Nhật ký giao dịch mua suất từ doanh nghiệp và các lượt cấp bù hỗ trợ từ quản trị viên.
+                    Mỗi đơn là một doanh nghiệp mua một khóa học, mua một lần cho mọi nhân viên.
                   </p>
                 </div>
               </div>
@@ -400,27 +398,12 @@ export function PlatformCommercePage() {
                   )}
                 </div>
 
-                <select
-                  value={kind}
-                  onChange={(e) => {
-                    setKind(e.target.value);
-                    setPageIndex(1);
-                  }}
-                  className="pa-select-filter"
-                  aria-label="Phân loại đơn hàng"
-                >
-                  <option value="">Tất cả loại đơn</option>
-                  <option value="PURCHASE">Mua</option>
-                  <option value="ADMIN_GRANT">Được cấp</option>
-                </select>
-
-                {(orderSearch || kind) && (
+                {orderSearch && (
                   <button
                     type="button"
                     className="pa-btn-reset-filters"
                     onClick={() => {
                       setOrderSearch('');
-                      setKind('');
                       setPageIndex(1);
                     }}
                     title="Khôi phục bộ lọc đơn hàng về mặc định"
@@ -445,15 +428,13 @@ export function PlatformCommercePage() {
                         <tr>
                           <th style={{ width: 150 }}>Thời gian</th>
                           <th style={{ minWidth: 260 }}>Khóa học và tổ chức</th>
-                          <th style={{ width: 160 }}>Loại</th>
-                          <th style={{ width: 110, textAlign: 'right' }}>Số suất</th>
+
                           <th style={{ width: 140, textAlign: 'right' }}>Thành tiền</th>
                           <th style={{ minWidth: 260 }}>Người mua và ghi chú</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredOrders.map((o) => {
-                          const isPurchase = o.kind === 'PURCHASE';
                           return (
                             <tr key={o.id}>
                               <td>
@@ -485,34 +466,16 @@ export function PlatformCommercePage() {
                                   </Link>
                                 </div>
                               </td>
-                              <td>
-                                <span
-                                  className="pa-org-level-pill"
-                                  style={{
-                                    background: isPurchase ? '#ecfdf5' : '#eff6ff',
-                                    color: isPurchase ? '#059669' : '#1d4ed8',
-                                    borderColor: isPurchase ? '#a7f3d0' : '#bfdbfe',
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {isPurchase ? 'Mua' : 'Được cấp'}
-                                </span>
-                              </td>
-                              <td style={{ textAlign: 'right' }}>
-                                <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
-                                  {o.seats}
-                                </span>
-                                <span style={{ fontSize: 12, color: '#64748b', marginLeft: 4 }}>suất</span>
-                              </td>
                               <td style={{ textAlign: 'right' }}>
                                 <strong
                                   style={{
                                     fontSize: 13,
-                                    color: isPurchase ? '#15803d' : '#64748b',
+                                    color: '#15803d',
                                     fontVariantNumeric: 'tabular-nums',
+                                    whiteSpace: 'nowrap',
                                   }}
                                 >
-                                  {o.totalAmount > 0 ? formatMoney(o.totalAmount) : 'Miễn phí'}
+                                  {formatMoney(o.amount)}
                                 </strong>
                               </td>
                               <td>
@@ -674,7 +637,7 @@ function PriceTable({
   const initial = useMemo(
     () =>
       Object.fromEntries(
-        courses.map((c) => [c.id, { price: c.draftPricePerSeat ?? c.pricePerSeat, sales: c.draftSalesStatus ?? c.salesStatus } satisfies Edit]),
+        courses.map((c) => [c.id, { price: c.draftPrice ?? c.price, sales: c.draftSalesStatus ?? c.salesStatus } satisfies Edit]),
       ),
     [courses],
   );
@@ -741,7 +704,7 @@ function PriceTable({
 
   const onSave = () =>
     save.mutate(
-      changed.map((c) => ({ courseId: c.id, pricePerSeat: c.isFree ? 0 : edits[c.id]!.price, salesStatus: edits[c.id]!.sales })),
+      changed.map((c) => ({ courseId: c.id, price: c.isFree ? 0 : edits[c.id]!.price, salesStatus: edits[c.id]!.sales })),
       {
         onSuccess: () => toast.success(`Đã lưu giá ${changed.length} khóa vào bản nháp v${draftNo}.`, { description: 'Doanh nghiệp vẫn thấy giá đang dùng cho tới khi công bố.' }),
         onError: (err) => toast.error(errorMessage(err)),
@@ -936,7 +899,7 @@ function PriceTable({
                   </th>
                 )}
                 <th style={{ width: 140, textAlign: 'center' }}>Mở bán</th>
-                <th style={{ width: 140, textAlign: 'right' }}>Suất học</th>
+                <th style={{ width: 140, textAlign: 'right' }}>Tổ chức đã mua</th>
                 {draftNo !== null && editable && (
                   <th style={{ width: 90, textAlign: 'center' }}>Thao tác</th>
                 )}
@@ -946,9 +909,9 @@ function PriceTable({
               {displayedGroups.map((group) => (
                 <PriceGroup key={group.name} name={group.name} count={group.courses.length} colSpan={totalColSpan}>
                   {group.courses.map((c) => {
-                    const edit = edits[c.id] ?? { price: c.pricePerSeat, sales: c.salesStatus };
+                    const edit = edits[c.id] ?? { price: c.price, sales: c.salesStatus };
                     const isChanged = changed.includes(c);
-                    const draftDiffers = c.draftPricePerSeat !== null && (c.draftPricePerSeat !== c.pricePerSeat || c.draftSalesStatus !== c.salesStatus);
+                    const draftDiffers = c.draftPrice !== null && (c.draftPrice !== c.price || c.draftSalesStatus !== c.salesStatus);
                     const levelStyle =
                       c.level === 1
                         ? { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0' }
@@ -984,7 +947,7 @@ function PriceTable({
                                 <span
                                   className="pa-cell-sub"
                                   style={{ fontSize: 12, whiteSpace: 'nowrap' }}
-                                  title="Khóa của phiên bản cũ: không còn bán mới, suất đã mua vẫn học bình thường"
+                                  title="Khóa của phiên bản cũ: không còn bán mới, doanh nghiệp đã mua vẫn học bình thường"
                                 >
                                   Bản v{c.versionNo}
                                 </span>
@@ -1018,7 +981,7 @@ function PriceTable({
                             <span style={{ color: '#166534', fontWeight: 600, fontSize: 13 }}>Miễn phí</span>
                           ) : (
                             <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>
-                              {formatMoney(c.pricePerSeat)}
+                              {formatMoney(c.price)}
                             </span>
                           )}
                         </td>
@@ -1049,7 +1012,7 @@ function PriceTable({
                                 <span style={{ fontSize: 13, color: '#64748b' }}>₫</span>
                               </div>
                             ) : (
-                              <span style={{ fontSize: 13, fontWeight: 600 }}>{formatMoney(c.draftPricePerSeat ?? c.pricePerSeat)}</span>
+                              <span style={{ fontSize: 13, fontWeight: 600 }}>{formatMoney(c.draftPrice ?? c.price)}</span>
                             )}
                             {draftDiffers && !isChanged && (
                               <small style={{ display: 'block', fontSize: 12, color: '#c2410c', marginTop: 2 }}>
@@ -1085,7 +1048,7 @@ function PriceTable({
                           {c.isFree ? (
                             <span style={{ color: '#64748b' }}>Miễn phí</span>
                           ) : (
-                            <span>{c.seatsPurchased} mua · {c.seatsGranted} cấp</span>
+                            <span>{c.purchaseCount} tổ chức</span>
                           )}
                         </td>
 
@@ -1177,7 +1140,7 @@ function PriceTable({
               ) : (
                 'Chưa có thay đổi đơn giá nào.'
               )}{' '}
-              Tạm ngưng bán chỉ chặn lượt mua mới, suất cũ đã mua vẫn học bình thường.
+              Tạm ngưng bán chỉ chặn lượt mua mới, doanh nghiệp đã mua vẫn học bình thường.
             </span>
           </div>
 
@@ -1316,7 +1279,7 @@ function AddCourseModal({
     level: 1,
     code: '',
     title: '',
-    pricePerSeat: 0,
+    price: 0,
   });
 
   const frameworkId = form.frameworkId || frameworks.data?.items[0]?.id || '';
@@ -1329,7 +1292,7 @@ function AddCourseModal({
     setForm((f) => ({
       ...f,
       level: newLevel,
-      pricePerSeat: newLevel === 1 ? 0 : f.pricePerSeat > 0 ? f.pricePerSeat : 500000 * newLevel,
+      price: newLevel === 1 ? 0 : f.price > 0 ? f.price : 500000 * newLevel,
     }));
   };
 
@@ -1346,9 +1309,9 @@ function AddCourseModal({
       },
       {
         onSuccess: (course) => {
-          if (form.level > 1 && form.pricePerSeat > 0) {
+          if (form.level > 1 && form.price > 0) {
             updatePrices.mutate(
-              [{ courseId: course.courseId, pricePerSeat: form.pricePerSeat, salesStatus: 'OPEN' }],
+              [{ courseId: course.courseId, price: form.price, salesStatus: 'OPEN' }],
               {
                 onSuccess: () => {
                   toast.success(`Đã thêm khóa học ${course.code} vào bản nháp v${versionNo}.`);
@@ -1501,7 +1464,7 @@ function AddCourseModal({
             </label>
 
             <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 600, color: '#334155' }}>
-              Đơn giá niêm yết (₫ / suất)
+              Giá khóa cho cả doanh nghiệp (₫)
               {form.level === 1 ? (
                 <div
                   style={{
@@ -1524,8 +1487,8 @@ function AddCourseModal({
                   type="number"
                   min={1000}
                   step={1000}
-                  value={form.pricePerSeat || ''}
-                  onChange={(e) => setForm({ ...form, pricePerSeat: Number(e.target.value) })}
+                  value={form.price || ''}
+                  onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
                   placeholder="VD: 1000000"
                   style={{
                     height: 36,
