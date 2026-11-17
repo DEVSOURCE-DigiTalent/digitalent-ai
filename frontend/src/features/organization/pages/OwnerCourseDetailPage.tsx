@@ -158,21 +158,6 @@ export function OwnerCourseDetailPage() {
                   }}
                 >
                   <UserCheck className="size-4" />{translateUi("Giao khóa học")}</button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(
-                      `/enterprise/training-batches/new?courseId=${course.id}`,
-                    )
-                  }
-                  className="inline-flex items-center gap-2 rounded-[11px] border px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-                  style={{
-                    background: 'transparent',
-                    color: '#fff',
-                    borderColor: 'rgba(255,255,255,.25)',
-                  }}
-                >
-                  <Layers className="size-4" />{translateUi("Đợt đào tạo")}</button>
                 {!isBasic && (
                   <button
                     type="button"

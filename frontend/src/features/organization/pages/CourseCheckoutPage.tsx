@@ -421,11 +421,11 @@ export function CourseCheckoutPage() {
 
               <button
                 type="button"
-                onClick={() => navigate('/enterprise/training-batches')}
+                onClick={() => navigate('/enterprise/assignments')}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-105"
                 style={{ background: 'var(--po-accent)' }}
               >
-                <span>{translateUi("Tạo đợt đào tạo & Gán nhân sự →")}</span>
+                <span>{translateUi("Giao khóa học cho nhân sự →")}</span>
               </button>
 
               <button

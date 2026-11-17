@@ -33,9 +33,6 @@ const OwnerCourseCatalogPage = lazyPage(() => import('../../../features/organiza
 const OwnerCourseDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerCourseDetailPage'), 'OwnerCourseDetailPage');
 const CourseCheckoutPage = lazyPage(() => import('../../../features/organization/pages/CourseCheckoutPage'), 'CourseCheckoutPage');
 const InternalCourseDetailPage = lazyPage(() => import('../../../features/courses/pages/InternalCourseDetailPage'), 'InternalCourseDetailPage');
-const OwnerTrainingBatchesPage = lazyPage(() => import('../../../features/organization/pages/OwnerTrainingBatchesPage'), 'OwnerTrainingBatchesPage');
-const OwnerNewTrainingBatchPage = lazyPage(() => import('../../../features/organization/pages/OwnerNewTrainingBatchPage'), 'OwnerNewTrainingBatchPage');
-const OwnerTrainingBatchDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerTrainingBatchDetailPage'), 'OwnerTrainingBatchDetailPage');
 const OwnerCycleReportPage = lazyPage(() => import('../../../features/organization/pages/OwnerCycleReportPage'), 'OwnerCycleReportPage');
 const OwnerSetupBlueprintPage = lazyPage(() => import('../../../features/organization/pages/OwnerSetupBlueprintPage'), 'OwnerSetupBlueprintPage');
 const TrialProgramPage = lazyPage(() => import('../../../features/trial-program/pages/TrialProgramPage'), 'TrialProgramPage');
@@ -72,9 +69,6 @@ export const OWNER_PAGES: PageRegistry = {
   'OW-23': OwnerCourseCatalogPage,
   'OW-24': OwnerCourseDetailPage,
   'OW-CHECKOUT': CourseCheckoutPage,
-  'OW-25': OwnerTrainingBatchesPage,
-  'OW-26': OwnerNewTrainingBatchPage,
-  'OW-27': OwnerTrainingBatchDetailPage,
   'OW-28': CourseAssignmentPage,
   'OW-29': RecommendationReviewPage,
   'OW-30': TrainingMonitorPage,

@@ -185,7 +185,7 @@ describe('StandardCoursePages (Agent 1 - Phase D)', () => {
       expect(screen.getByText('Chuẩn hóa TT02')).toBeDefined();
       expect(screen.getByText('Khóa học chuẩn hóa nền tảng')).toBeDefined();
       expect(screen.getByRole('button', { name: /Giao khóa học này/i })).toBeDefined();
-      expect(screen.getByRole('button', { name: /Thêm vào đợt đào tạo/i })).toBeDefined();
+      expect(screen.queryByRole('button', { name: /đợt đào tạo/i })).toBeNull();
     });
 
     it('switches to curriculum tab and displays syllabus modules', () => {
