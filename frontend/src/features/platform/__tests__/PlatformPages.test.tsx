@@ -29,7 +29,6 @@ const service = vi.hoisted(() => ({
   getCourses: vi.fn(),
   getOrganizations: vi.fn(),
   getOrganization: vi.fn(),
-  grantSeats: vi.fn(),
   suspendOrganization: vi.fn(),
   restoreOrganization: vi.fn(),
   getUsers: vi.fn(),
@@ -103,8 +102,7 @@ const organization: PlatformOrganization = {
   employeeCount: 6,
   managerCount: 2,
   userCount: 9,
-  seatsPurchased: 0,
-  seatsGranted: 0,
+  coursesPurchased: 0,
   revenue: 0,
   setupCompleted: true,
   createdAt: '2026-10-01T08:00:00Z',
@@ -132,16 +130,15 @@ const course = (code: string, level: number): PlatformCourse => ({
   versionNo: 3,
   title: `Dữ liệu · ${LEVELS[level - 1]}`,
   outcome: 'Áp dụng dữ liệu và thông tin với minh chứng truy vết được.',
-  pricePerSeat: level === 1 ? 0 : level === 2 ? 399000 : 699000,
+  price: level === 1 ? 0 : level === 2 ? 399000 : 699000,
   salesStatus: 'OPEN',
   isFree: level === 1,
-  draftPricePerSeat: null,
+  draftPrice: null,
   draftSalesStatus: null,
   publishedAt: '2026-10-01T08:00:00Z',
   moduleCount: 4,
   questionCount: 24,
-  seatsPurchased: 0,
-  seatsGranted: 0,
+  purchaseCount: 0,
   revenue: 0,
 });
 
@@ -170,8 +167,7 @@ const overview: PlatformOverview = {
   courseCount: 18,
   pausedCourseCount: 0,
   questionCount: 432,
-  seatsPurchased: 3,
-  seatsGranted: 0,
+  purchaseCount: 1,
   revenue: 1197000,
   recentOrganizations: [organization],
   recentActivity: [],
@@ -243,7 +239,7 @@ const row = (code: string, level: number, changeKind: CatalogCourseRow['changeKi
   levelName: LEVELS[level - 1]!,
   moduleCount: 4,
   questionCount: 24,
-  pricePerSeat: level === 1 ? 0 : 399000,
+  price: level === 1 ? 0 : 399000,
   salesStatus: 'OPEN',
   changeKind,
 });
@@ -273,7 +269,7 @@ const courseDetail = (versionNo: number, overrides: Partial<CatalogCourseDetail>
   levelName: 'Cơ bản',
   title: 'AI cho công việc',
   outcome: '',
-  pricePerSeat: 0,
+  price: 0,
   salesStatus: 'OPEN',
   final: { title: 'Bài cuối khóa', promptHtml: '', criteria: ['Đúng yêu cầu'] },
   modules: [{ moduleId: 'm-1', index: 0, title: 'Viết câu lệnh', quizTitle: 'Ôn tập', blocks: [], questions: [] }],
@@ -295,8 +291,8 @@ describe('Platform Admin console (v2)', () => {
     service.getCourses.mockResolvedValue([course('A1-F', 1), course('A1-I', 2), course('A1-A', 3)]);
     service.getCommerce.mockResolvedValue({
       courses: [course('A1-F', 1), course('A1-I', 2), course('A1-A', 3)],
-      seatsPurchased: 3,
-      seatsGranted: 0,
+      purchaseCount: 1,
+      buyerCount: 1,
       revenue: 1197000,
       orders: {
         items: [
@@ -306,10 +302,7 @@ describe('Platform Admin console (v2)', () => {
             organizationName: 'Northstar Studio',
             courseCode: 'A1-I',
             courseTitle: 'Dữ liệu · Trung cấp',
-            seats: 3,
-            kind: 'PURCHASE',
-            unitPrice: 399000,
-            totalAmount: 1197000,
+            amount: 1197000,
             reason: null,
             createdByEmail: 'owner@northstar.vn',
             createdAt: '2026-10-12T08:00:00Z',
@@ -517,7 +510,7 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/versions/3/courses/c-AI1-F');
 
     expect(await screen.findByText(/v3 đang dùng — chỉ xem/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Giá mỗi suất/)).toBeDisabled();
+    expect(screen.getByLabelText(/Giá khóa cho cả doanh nghiệp/)).toBeDisabled();
     expect(screen.queryByRole('button', { name: '+ Thêm mô đun' })).not.toBeInTheDocument();
     fireEvent.click(await screen.findByRole('button', { name: 'Sửa trong v4' }));
 
@@ -526,35 +519,39 @@ describe('Platform Admin console (v2)', () => {
     expect(screen.getByRole('button', { name: '+ Thêm mô đun' })).toBeInTheDocument();
   });
 
-  it('PA-06 requires a reason before granting a paid seat', async () => {
+  it('PA-06 lists the courses the organization bought and suspends it with a reason', async () => {
     const detail: PlatformOrganizationDetail = {
-      organization,
+      organization: { ...organization, stage: 'PAID', coursesPurchased: 1 },
       departments: [],
       people: [],
-      seats: [],
-      orders: [],
-      coursesInUse: [{ courseCode: 'A1-F', courseTitle: 'Dữ liệu · Cơ bản', level: 1, levelName: 'Cơ bản', participants: 4, completed: 2 }],
+      purchasedCourses: [{ courseCode: 'M1-I', courseTitle: 'Dữ liệu · Trung cấp', levelName: 'Trung cấp', purchasedAt: '2026-10-12T08:00:00Z' }],
+      orders: [{
+        id: 'ord-1', organizationId: 'org-1', organizationName: 'Northstar Studio', courseCode: 'A1-I', courseTitle: 'Dữ liệu · Trung cấp',
+        amount: 399000, reason: null, createdByEmail: 'owner@northstar.vn', createdAt: '2026-10-12T08:00:00Z',
+      }],
+      coursesInUse: [{ courseCode: 'M1-F', courseTitle: 'Dữ liệu · Cơ bản', level: 1, levelName: 'Cơ bản', participants: 4, completed: 2 }],
     };
     service.getOrganization.mockResolvedValue(detail);
-    service.grantSeats.mockResolvedValue({ ...detail, organization: { ...organization, seatsGranted: 1 } });
+    service.suspendOrganization.mockResolvedValue({ ...detail, organization: { ...detail.organization, status: 'SUSPENDED' } });
     renderAt('/platform/organizations/org-1');
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Hỗ trợ doanh nghiệp với lý do rõ ràng.' })).toBeInTheDocument();
-    expect(await screen.findByText('Northstar Studio')).toBeInTheDocument();
-    expect(screen.getByText('Gói Doanh nghiệp')).toBeInTheDocument();
-    expect(screen.getByText('4 / 6')).toBeInTheDocument();
-    expect(screen.getByText('Dữ liệu · Cơ bản')).toBeInTheDocument();
-    const submit = screen.getByRole('button', { name: 'Xác nhận thao tác hỗ trợ →' });
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Khóa có phí để cấp suất' })).toHaveValue('A1-I'));
-    expect(submit).toBeDisabled();
+    expect((await screen.findAllByText('Northstar Studio')).length).toBeGreaterThan(0);
+    expect(screen.getByText('Mọi nhân viên đều học được')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /Khóa đã mua/ }));
+    expect(await screen.findByText('M1-I · Trung cấp')).toBeInTheDocument();
+    // The order of the historical A-code is shown under the current M-code, priced once.
+    expect(screen.getByText('399.000 ₫')).toBeInTheDocument();
+    expect(screen.queryByText(/tặng/i)).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Lý do ghi nhật ký'), { target: { value: 'Bù suất do lỗi thanh toán' } });
+    fireEvent.click(screen.getByRole('tab', { name: /Hỗ trợ/ }));
+    expect(screen.queryByRole('option', { name: /Mở khóa/ })).not.toBeInTheDocument();
+    const submit = screen.getByRole('button', { name: /Tạm ngưng tổ chức/ });
+    expect(submit).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Lý do'), { target: { value: 'Khách hàng yêu cầu tạm dừng' } });
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
 
-    await waitFor(() =>
-      expect(service.grantSeats).toHaveBeenCalledWith('org-1', { courseCode: 'A1-I', seats: 1, reason: 'Bù suất do lỗi thanh toán' }),
-    );
+    await waitFor(() => expect(service.suspendOrganization).toHaveBeenCalledWith('org-1', 'Khách hàng yêu cầu tạm dừng'));
   });
 
   it('PA-08 locks an employee account with a reason', async () => {
@@ -631,8 +628,8 @@ describe('Platform Admin console (v2)', () => {
 
   it('PA-09 saves draft prices without touching the price in use', async () => {
     service.getCommerce.mockResolvedValue({
-      courses: [course('A1-F', 1), course('A1-I', 2)].map((c) => ({ ...c, draftPricePerSeat: c.pricePerSeat, draftSalesStatus: 'OPEN' })),
-      seatsPurchased: 3, seatsGranted: 0, revenue: 1197000,
+      courses: [course('A1-F', 1), course('A1-I', 2)].map((c) => ({ ...c, draftPrice: c.price, draftSalesStatus: 'OPEN' })),
+      purchaseCount: 1, buyerCount: 1, revenue: 1197000,
       orders: { items: [], pageIndex: 1, pageSize: 20, totalItems: 0, totalPages: 0 },
     });
     catalog.updatePrices.mockResolvedValue(versionDetail(4));
@@ -646,7 +643,7 @@ describe('Platform Admin console (v2)', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Trạng thái bán của A1-I' }), { target: { value: 'PAUSED' } });
     fireEvent.click(save);
 
-    await waitFor(() => expect(catalog.updatePrices).toHaveBeenCalledWith(4, [{ courseId: 'c-A1-I', pricePerSeat: 520000, salesStatus: 'PAUSED' }]));
+    await waitFor(() => expect(catalog.updatePrices).toHaveBeenCalledWith(4, [{ courseId: 'c-A1-I', price: 520000, salesStatus: 'PAUSED' }]));
   });
 
   it('SHR-01 is the Platform Admin profile, opened from the header', async () => {
@@ -657,7 +654,7 @@ describe('Platform Admin console (v2)', () => {
     expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument();
     // Chỉ hiện việc có thật: các mục dẫn sang trang làm việc đó, không còn số liệu trùng Tổng quan hay lời hứa bảo mật.
     expect(screen.getByRole('heading', { level: 3, name: 'Việc bạn làm được' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Giá và suất học/ })).toHaveAttribute('href', '/platform/commerce');
+    expect(screen.getByRole('link', { name: /Đặt giá cho từng khóa/ })).toHaveAttribute('href', '/platform/commerce');
     expect(screen.getByRole('heading', { level: 3, name: 'Hiển thị' })).toBeInTheDocument();
     expect(screen.queryByText(/Thông tư 02/)).not.toBeInTheDocument();
     expect(screen.queryByText(/bất biến/)).not.toBeInTheDocument();

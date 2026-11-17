@@ -279,8 +279,7 @@ route('GET', '/platform/overview', () => {
     courseCount: 18,
     pausedCourseCount: 0,
     questionCount: 72,
-    seatsPurchased: 250,
-    seatsGranted: 50,
+    purchaseCount: 25,
     revenue: 125000000,
     recentOrganizations: orgs.slice(0, 5).map((o) => ({
       id: o.id,
@@ -291,8 +290,7 @@ route('GET', '/platform/overview', () => {
       ownerName: o.ownerName,
       ownerEmail: o.ownerEmail,
       seatLimit: o.seatLimit || 20,
-      seatsPurchased: o.seatLimit || 20,
-      seatsGranted: 0,
+      coursesPurchased: 2,
       seatsInUse: o.seatsUsed || 5,
       activeLearners: o.membersCount || 5,
       activeCourses: 6,
@@ -397,20 +395,17 @@ route('GET', '/platform/organizations/:id', (context) => {
       { userId: 'usr-2', fullName: 'Bùi Minh Khang', email: 'khang.bm@doanhnghiep.vn', role: 'MEMBER', departmentName: 'Kinh doanh & Tiếp thị', positionName: 'Chuyên viên CRM', status: 'ACTIVE' },
       { userId: 'usr-3', fullName: 'Đặng Quốc Huy', email: 'huy.dq@doanhnghiep.vn', role: 'MEMBER', departmentName: 'Tài chính - Kế toán', positionName: 'Kế toán tổng hợp', status: 'ACTIVE' },
     ],
-    seats: [
-      { courseCode: 'DGT-BAS-01', courseTitle: 'Chiến lược tìm kiếm và quản lý thông tin số', seatsPurchased: org.seatLimit || 10, seatsGranted: 0 },
+    purchasedCourses: [
+      { courseCode: 'M1-I', courseTitle: 'Chiến lược tìm kiếm và quản lý thông tin số', levelName: 'Trung cấp', purchasedAt: org.createdAt },
     ],
     orders: [
       {
         id: `ord-${org.id.slice(0, 6)}`,
         organizationId: org.id,
         organizationName: org.name,
-        courseCode: 'DGT-BAS-01',
+        courseCode: 'M1-I',
         courseTitle: 'Chiến lược tìm kiếm và quản lý thông tin số',
-        seats: org.seatLimit || 10,
-        kind: 'PURCHASE',
-        unitPrice: 399000,
-        totalAmount: (org.seatLimit || 10) * 399000,
+        amount: 399000,
         reason: `[Hợp đồng điện tử: DT-ESIGN-${org.id.replace(/-/g, '').slice(0, 8).toUpperCase()}] Đại diện: ${org.ownerName || 'Chủ tài khoản'}`,
         createdByEmail: org.ownerEmail,
         createdAt: org.createdAt,
@@ -1509,16 +1504,15 @@ route('GET', '/platform/courses', () => {
       versionNo: 1,
       title: c.title,
       outcome: `Đạt chuẩn năng lực số mức độ ${levelLabel(c.level)}`,
-      pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
+      price: c.level === 1 ? 0 : 500000 * c.level,
       salesStatus: 'OPEN' as const,
       isFree: c.level === 1,
-      draftPricePerSeat: null,
+      draftPrice: null,
       draftSalesStatus: null,
       publishedAt: '2026-10-01T00:00:00Z',
       moduleCount: c.modules,
       questionCount: 12,
-      seatsPurchased: 20,
-      seatsGranted: 5,
+      purchaseCount: 4,
       revenue: c.level === 1 ? 0 : 10000000,
     };
   });
@@ -1541,23 +1535,22 @@ route('GET', '/platform/commerce', () => {
       versionNo: 1,
       title: c.title,
       outcome: `Đạt chuẩn năng lực số mức độ ${levelLabel(c.level)}`,
-      pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
+      price: c.level === 1 ? 0 : 500000 * c.level,
       salesStatus: 'OPEN' as const,
       isFree: c.level === 1,
-      draftPricePerSeat: null,
+      draftPrice: null,
       draftSalesStatus: null,
       publishedAt: '2026-10-01T00:00:00Z',
       moduleCount: c.modules,
       questionCount: 12,
-      seatsPurchased: 20,
-      seatsGranted: 5,
+      purchaseCount: 4,
       revenue: c.level === 1 ? 0 : 10000000,
     };
   });
   return {
     courses,
-    seatsPurchased: 250,
-    seatsGranted: 50,
+    purchaseCount: 25,
+    buyerCount: 7,
     revenue: 125000000,
     orders: {
       items: [],
@@ -1593,7 +1586,7 @@ interface CatalogStoreState {
           levelName: levelLabel(c.level),
           moduleCount: c.modules,
           questionCount: 12,
-          pricePerSeat: c.level === 1 ? 0 : 500000 * c.level,
+          price: c.level === 1 ? 0 : 500000 * c.level,
           salesStatus: 'OPEN' as CatalogSalesStatus,
           changeKind: 'UNCHANGED' as ChangeKind,
         };
@@ -1770,7 +1763,7 @@ interface CatalogStoreState {
         levelName: levelLabel(level),
         title,
         outcome: 'Học viên hoàn thành khóa học sẽ nắm vững kỹ năng thực hành theo chuẩn năng lực số doanh nghiệp.',
-        pricePerSeat: level === 1 ? 0 : 500000 * level,
+        price: level === 1 ? 0 : 500000 * level,
         salesStatus: 'OPEN',
         final: {
           title: `Bài đánh giá tổng hợp: ${title}`,
@@ -1924,13 +1917,13 @@ interface CatalogStoreState {
 
     route('PUT', '/platform/catalog/versions/:versionNo/prices', (context) => {
       const vNo = Number(context.params.versionNo);
-      const body = context.body as { items: { courseId: string; pricePerSeat: number; salesStatus: CatalogSalesStatus }[] };
+      const body = context.body as { items: { courseId: string; price: number; salesStatus: CatalogSalesStatus }[] };
       const courses = getCoursesForVersion(vNo);
       for (const item of body.items ?? []) {
         const c = courses.find((row) => row.courseId === item.courseId);
         if (c) {
           if (c.level > 1) {
-            c.pricePerSeat = item.pricePerSeat;
+            c.price = item.price;
           }
           c.salesStatus = item.salesStatus;
           c.changeKind = 'EDITED';
@@ -1966,10 +1959,10 @@ interface CatalogStoreState {
       if (body.level !== undefined) {
         detail.level = body.level;
         detail.levelName = levelLabel(body.level);
-        if (body.level === 1) detail.pricePerSeat = 0;
+        if (body.level === 1) detail.price = 0;
       }
-      if (body.pricePerSeat !== undefined && detail.level > 1) {
-        detail.pricePerSeat = body.pricePerSeat;
+      if (body.price !== undefined && detail.level > 1) {
+        detail.price = body.price;
       }
       if (body.salesStatus !== undefined) detail.salesStatus = body.salesStatus;
       if (body.code !== undefined && detail.codeEditable) detail.code = body.code;
@@ -1983,7 +1976,7 @@ interface CatalogStoreState {
         row.domainName = detail.domainName;
         row.level = detail.level;
         row.levelName = detail.levelName;
-        row.pricePerSeat = detail.pricePerSeat;
+        row.price = detail.price;
         row.salesStatus = detail.salesStatus;
         row.code = detail.code;
         row.changeKind = 'EDITED';
@@ -2014,7 +2007,7 @@ interface CatalogStoreState {
         levelName: levelLabel(body.level),
         title: body.title,
         outcome: '',
-        pricePerSeat: body.level === 1 ? 0 : 500000 * body.level,
+        price: body.level === 1 ? 0 : 500000 * body.level,
         salesStatus: 'OPEN',
         final: { title: 'Bài đánh giá cuối khóa', promptHtml: '', criteria: [] },
         modules: [],
@@ -2035,7 +2028,7 @@ interface CatalogStoreState {
         levelName: detail.levelName,
         moduleCount: 0,
         questionCount: 0,
-        pricePerSeat: detail.pricePerSeat,
+        price: detail.price,
         salesStatus: detail.salesStatus,
         changeKind: 'NEW',
       });

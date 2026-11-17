@@ -424,7 +424,7 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
                 <th style={{ textAlign: 'center', width: 110 }}>{translateUi("Cấp độ")}</th>
                 <th style={{ textAlign: 'center', width: 85 }}>Mô đun</th>
                 <th style={{ textAlign: 'center', width: 85 }}>Câu hỏi</th>
-                <th style={{ textAlign: 'right', width: 120 }}>{translateUi("Giá mỗi suất")}</th>
+                <th style={{ textAlign: 'right', width: 120 }}>{translateUi("Giá khóa")}</th>
                 <th style={{ textAlign: 'center', width: 110 }}>{translateUi("Thay đổi")}</th>
                 <th style={{ width: 105, textAlign: 'right' }}>{translateUi("Thao tác")}</th>
               </tr>
@@ -509,7 +509,7 @@ function CourseRowItem({
         {c.questionCount}
       </td>
       <td style={{ textAlign: 'right', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-        {c.level === 1 ? <span style={{ color: '#15803d' }}>{translateUi("Miễn phí")}</span> : formatMoney(c.pricePerSeat)}
+        {c.level === 1 ? <span style={{ color: '#15803d' }}>{translateUi("Miễn phí")}</span> : formatMoney(c.price)}
       </td>
       <td style={{ textAlign: 'center' }}>
         <Pill tone={kind?.tone}>{translateUi(kind?.label) ?? c.changeKind}</Pill>

@@ -67,12 +67,12 @@ export function PlatformOrganizationsPage() {
     setIsExporting(true);
     try {
       const page = await platformAdminService.getOrganizations({ search, ...filter, pageIndex: 1, pageSize: CSV_EXPORT_LIMIT });
-      const header = ['Tổ chức', 'Mã', 'Chủ doanh nghiệp', 'Email chủ doanh nghiệp', 'Trạng thái', 'Suất đã mua', 'Suất được cấp',
+      const header = ['Tổ chức', 'Mã', 'Chủ doanh nghiệp', 'Email chủ doanh nghiệp', 'Trạng thái', 'Khóa đã mua',
         'Doanh thu (VND)', 'Nhân viên', 'Nhân viên đang học', 'Khóa Cơ bản', 'Khóa Trung cấp', 'Khóa Nâng cao', 'Ngày đăng ký'];
       const rows = page.items.map((o) => [
         o.name, o.code, o.ownerName, o.ownerEmail,
         o.status === 'SUSPENDED' ? ORG_STATUS.SUSPENDED.label : STAGE_LABELS[o.stage]?.label ?? o.stage,
-        o.seatsPurchased, o.seatsGranted, o.revenue, o.employeeCount, o.participantCount,
+        o.coursesPurchased, o.revenue, o.employeeCount, o.participantCount,
         o.coursesInUseByLevel?.[0] ?? 0, o.coursesInUseByLevel?.[1] ?? 0, o.coursesInUseByLevel?.[2] ?? 0,
         formatDate(o.createdAt),
       ]);
@@ -94,7 +94,7 @@ export function PlatformOrganizationsPage() {
   const paidCount = overview?.paidOrganizationCount ?? (data ? data.items.filter((o) => o.stage === 'PAID').length : 0);
   const suspendedCount = overview?.suspendedOrganizationCount ?? (data ? data.items.filter((o) => o.status === 'SUSPENDED').length : 0);
 
-  const seatsPurchased = overview?.seatsPurchased ?? 0;
+  const purchaseCount = overview?.purchaseCount ?? 0;
   const conversionRate = overview?.conversionRate ?? (totalCount ? Math.round((paidCount / totalCount) * 100) : 0);
   const revenue = overview?.revenue ?? 0;
 
@@ -115,7 +115,7 @@ export function PlatformOrganizationsPage() {
             Tổ chức
           </h1>
           <p className="pa-org-subtitle">
-            Trạng thái, suất học đã mua và số nhân viên đang học của từng tổ chức.
+            Trạng thái, khóa học đã mua và số nhân viên đang học của từng tổ chức.
           </p>
         </div>
 
@@ -160,14 +160,14 @@ export function PlatformOrganizationsPage() {
 
         <div className="pa-org-stat-card">
           <div className="pa-org-kpi-head">
-            <span className="pa-org-kpi-label">Suất học đã bán</span>
+            <span className="pa-org-kpi-label">Lượt mua khóa</span>
             <div className="pa-kpi-icon-wrap sky" aria-hidden="true">
               <CheckCircle2 size={14} />
             </div>
           </div>
           <div className="pa-org-kpi-val-row">
-            <span className="pa-org-kpi-val" style={{ color: '#0369a1' }}>{overviewQuery.isLoading ? '…' : formatNumber(seatsPurchased)}</span>
-            <span className="pa-org-kpi-sub">suất có phí, mọi tổ chức</span>
+            <span className="pa-org-kpi-val" style={{ color: '#0369a1' }}>{overviewQuery.isLoading ? '…' : formatNumber(purchaseCount)}</span>
+            <span className="pa-org-kpi-sub">khóa có phí, mọi tổ chức</span>
           </div>
         </div>
 
@@ -271,7 +271,7 @@ export function PlatformOrganizationsPage() {
                 <thead>
                   <tr>
                     <th>Tổ chức</th>
-                    <th>Trạng thái và suất đã mua</th>
+                    <th>Trạng thái và khóa đã mua</th>
                     <th>Khóa đang học</th>
                     <th className="num">{translateUi('Nhân viên đang học')}</th>
                     <th>{translateUi('Ngày đăng ký')}</th>
@@ -442,7 +442,6 @@ function PlanCell({ organization: o }: { organization: PlatformOrganization }) {
   useUiLanguage();
   const isSuspended = o.status === 'SUSPENDED';
   const isPaid = o.stage === 'PAID';
-  const totalSeats = o.seatsPurchased + o.seatsGranted;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -466,9 +465,9 @@ function PlanCell({ organization: o }: { organization: PlatformOrganization }) {
       </div>
 
       <small className="pa-cell-sub" style={{ fontSize: 12, color: '#475569' }}>
-        {isPaid && totalSeats > 0 ? (
+        {isPaid && o.coursesPurchased > 0 ? (
           <>
-            <strong>{formatNumber(totalSeats)} suất mua</strong>
+            <strong>{formatNumber(o.coursesPurchased)} khóa đã mua</strong>
             {o.planRenewsAt && <span> · Hạn {formatDate(o.planRenewsAt)}</span>}
           </>
         ) : isPaid ? (

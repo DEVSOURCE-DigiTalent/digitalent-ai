@@ -34,7 +34,7 @@ export const usePlatformOpenTicketCount = (type: 'FEEDBACK' | 'BUG') =>
     },
   });
 
-/** Published courses with prices and seat totals (frameworks and versions: use-platform-catalog). */
+/** Published courses with prices and purchase counts (frameworks and versions: use-platform-catalog). */
 export const usePlatformCourses = () =>
   useQuery({ queryKey: [...KEY, 'courses'], queryFn: platformAdminService.getCourses });
 
@@ -55,8 +55,7 @@ export const usePlatformOrganization = (id: string | undefined) =>
 export function useOrganizationAction(id: string) {
   const invalidate = useInvalidateConsole();
   return useMutation({
-    mutationFn: (action: { kind: 'grant'; courseCode: string; seats: number; reason: string } | { kind: 'suspend' | 'restore'; reason: string }) => {
-      if (action.kind === 'grant') return platformAdminService.grantSeats(id, { courseCode: action.courseCode, seats: action.seats, reason: action.reason });
+    mutationFn: (action: { kind: 'suspend' | 'restore'; reason: string }) => {
       return action.kind === 'suspend'
         ? platformAdminService.suspendOrganization(id, action.reason)
         : platformAdminService.restoreOrganization(id, action.reason);
@@ -84,7 +83,7 @@ export function useUserLockAction(id: string) {
   });
 }
 
-export const usePlatformCommerce = (query: PageQuery & { kind?: string }) =>
+export const usePlatformCommerce = (query: PageQuery) =>
   useQuery({
     queryKey: [...KEY, 'commerce', query],
     queryFn: () => platformAdminService.getCommerce(query),

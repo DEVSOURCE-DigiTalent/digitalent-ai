@@ -187,7 +187,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
             <span className="pa-ol-text">
               <strong>{translateUi("Thông tin khóa học")}</strong>
               <small>
-                {translateUi(LEVEL_NAMES[course.level])} · {course.pricePerSeat ? formatMoney(course.pricePerSeat) : translateUi('Miễn phí')}
+                {translateUi(LEVEL_NAMES[course.level])} · {course.price ? formatMoney(course.price) : translateUi('Miễn phí')}
               </small>
             </span>
           </button>
@@ -247,7 +247,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
         <div className="pa-canvas">
           {section === 'info' && (
             <CourseInfoForm
-              key={`${course.title}|${course.domainId}|${course.level}|${course.pricePerSeat}|${course.salesStatus}|${course.code}|${course.outcome}`}
+              key={`${course.title}|${course.domainId}|${course.level}|${course.price}|${course.salesStatus}|${course.code}|${course.outcome}`}
               course={course}
               editable={editable}
               edit={edit}
