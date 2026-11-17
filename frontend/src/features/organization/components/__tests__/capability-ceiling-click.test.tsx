@@ -18,7 +18,7 @@ vi.mock('@/hooks/use-capability-ceilings', () => ({
   useUpdateDepartmentCeilings: () => ({ isPending: false }),
 }));
 vi.mock('../CoursePositionStandardPanel', () => ({ CoursePositionStandardPanel: ({ course }: { course: { code: string } }) => `Chi tiết ${course.code}` }));
-vi.mock('../DomainPositionStandardPanel', () => ({ DomainPositionStandardPanel: () => React.createElement('button', { type: 'button' }, 'Chọn vị trí') }));
+vi.mock('../DomainMilestonePanel', () => ({ DomainMilestonePanel: () => React.createElement('button', { type: 'button' }, 'Chọn mốc') }));
 vi.mock('../CapabilityCeilingGuide', () => ({ CapabilityCeilingGuide: () => null }));
 
 beforeEach(() => {
@@ -31,16 +31,16 @@ afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.resto
 describe('ceiling information clicks', () => {
   it('matches the expanded domain and allows closing from its own header without closing on form clicks', () => {
     render(<MemoryRouter><CapabilityCeilingMatrix /></MemoryRouter>);
-    fireEvent.click(screen.getByRole('button', { name: 'Mở cài đặt vị trí cho lĩnh vực Lĩnh vực 2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mở mốc năng lực của lĩnh vực Lĩnh vực 2' }));
     act(() => vi.advanceTimersByTime(40));
     const close = screen.getByRole('button', { name: 'Thu gọn Lĩnh vực 2' });
     expect(close.closest('.cc-domain-panel')?.getAttribute('data-domain')).toBe('2');
-    fireEvent.click(screen.getByRole('button', { name: 'Chọn vị trí' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chọn mốc' }));
     expect(close.closest('.cc-inline-panel')?.classList.contains('is-open')).toBe(true);
     fireEvent.click(close);
     act(() => vi.advanceTimersByTime(400));
     expect(screen.queryByRole('button', { name: 'Thu gọn Lĩnh vực 2' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Mở cài đặt vị trí cho lĩnh vực Lĩnh vực 2' }).getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByRole('button', { name: 'Mở mốc năng lực của lĩnh vực Lĩnh vực 2' }).getAttribute('aria-expanded')).toBe('false');
   });
   it('opens on one click and switches to another course without waiting for an exit timer', () => {
     render(<MemoryRouter><CapabilityCeilingMatrix /></MemoryRouter>);

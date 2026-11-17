@@ -86,3 +86,11 @@
 @media (max-width: 900px) { .cp-standard__mapping { grid-template-columns: 1fr; } }
 @media (max-width: 650px) { .cp-standard { padding: 16px; } .cp-standard__position-picker { width: 100%; } .cp-standard__course-options { grid-template-columns: 1fr; } .cp-standard__course-option { min-height: 105px; } }
 @media (prefers-reduced-motion: reduce) { .cp-standard, .cp-standard * { animation: none; transition: none; } }
+
+/* Mốc năng lực doanh nghiệp (DomainMilestonePanel). */
+.cp-milestone-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 750; color: #0a6f68; background: #def4ef; }
+.cp-milestone-tag.is-suggested { color: #8a5a12; background: #fdf1dc; }
+.cp-milestone-actions { display: flex; align-items: center; gap: 8px; }
+.cp-milestone-clear { padding: 9px 12px; border-radius: 10px; border: 1px solid #d6e7e8; background: #fff; color: #5a7380; font-size: 12px; font-weight: 700; cursor: pointer; transition: color .2s, border-color .2s; }
+.cp-milestone-clear:hover:not(:disabled) { color: #9a3d1b; border-color: #f0c6b5; }
+.cp-milestone-clear:disabled { opacity: .45; cursor: not-allowed; }

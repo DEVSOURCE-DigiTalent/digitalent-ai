@@ -276,6 +276,8 @@ export interface OrgData {
   internalCourses?: InternalCourseRecord[];
   /** Absent = not saved yet (the organization ceiling shown is the suggestion). */
   capabilityCeilings?: CapabilityCeilingRecord;
+  /** Organization competency milestone per category id (competency_milestones; 0 or missing = not set). */
+  competencyMilestones?: Record<string, number>;
   /** Paid course seats are independent of configured organization ceilings. */
   courseSeatOrders?: Record<string, number>;
   /** Plan changes made after sign-up (seeded organizations have their plan in code). */

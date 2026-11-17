@@ -131,6 +131,7 @@ export function ceilingMatrixDto(data: OrgData) {
       organizationCeiling: organizationCeiling.get(d.id)!,
       maxAllowedCeiling: maxLicensedLevel(data, d.id),
       suggestedCeiling: suggest(requirements.keys(), d.id),
+      milestoneLevel: data.competencyMilestones?.[d.id] ?? 0,
       courses: [1, 2, 3].map((level) => {
         const course = courseFor(d.id, level);
         const seatsPurchased = level === 1 ? 0 : paidSeats(data, course?.id);
@@ -155,8 +156,8 @@ interface CeilingInput {
 }
 
 /** Same checks as the backend validators: one row per domain, level 0..3, domain of the matrix. */
-function readCeilings(body: Record<string, unknown>): CeilingInput[] {
-  const raw = Array.isArray(body.ceilings) ? (body.ceilings as Partial<CeilingInput>[]) : [];
+function readCeilings(body: Record<string, unknown>, field: 'ceilings' | 'milestones' = 'ceilings'): CeilingInput[] {
+  const raw = Array.isArray(body[field]) ? (body[field] as Partial<CeilingInput>[]) : [];
   const ids = new Set<string>();
   return raw.map((item) => {
     const categoryId = String(item.categoryId ?? '');
@@ -164,7 +165,7 @@ function readCeilings(body: Record<string, unknown>): CeilingInput[] {
     if (!Number.isInteger(level) || level < 0 || level > MAX_LEVEL) throw badRequest('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.');
     if (ids.has(categoryId)) throw badRequest('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.');
     if (!CATEGORIES.some((c) => c.id === categoryId)) {
-      throw badRequest('Năng lực không thuộc ma trận phạm vi năng lực.', 'CATEGORY_NOT_IN_MATRIX', 'ceilings');
+      throw badRequest('Năng lực không thuộc ma trận phạm vi năng lực.', 'CATEGORY_NOT_IN_MATRIX', field);
     }
     ids.add(categoryId);
     return { categoryId, level };
@@ -209,6 +210,16 @@ route('PUT', '/capability-ceilings/organization', ({ body, session, update }) =>
     adjusted > 0 ? `Thu hẹp phạm vi của ${adjusted} phòng ban theo phạm vi mới` : undefined);
   return { ...ceilingMatrixDto(data), adjustedDepartmentCount: adjusted };
 }), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu phạm vi doanh nghiệp.' });
+
+/** Organization-wide milestones: no seat check (set before buying), only listed domains change, 0 clears one. */
+route('PUT', '/capability-ceilings/milestones', ({ body, session, update }) => update((data) => {
+  const milestones = readCeilings(body, 'milestones');
+  if (milestones.length === 0) throw badRequest('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.');
+  data.competencyMilestones ??= {};
+  for (const item of milestones) data.competencyMilestones[item.categoryId] = item.level;
+  recordAudit(data, session, 'COMPETENCY_MILESTONE_UPDATED', 'Phạm vi năng lực', 'Mốc năng lực doanh nghiệp');
+  return ceilingMatrixDto(data);
+}), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu mốc năng lực.' });
 
 route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, update }) => update((data) => {
   const department = data.departments.find((d) => d.id === params.id && d.status === 'ACTIVE');

@@ -34,6 +34,11 @@ export interface CeilingDomain {
   maxAllowedCeiling?: number;
   /** Highest level required by the positions with an active requirement set. */
   suggestedCeiling: number;
+  /**
+   * Organization-wide competency milestone (0 = not set). Needs no purchased seats: the trial report compares
+   * employees' results with it so the owner can decide which courses to buy.
+   */
+  milestoneLevel?: number;
   courses: CeilingCourse[];
 }
 
@@ -88,4 +93,7 @@ export const capabilityCeilingService = {
     apiClient.put<ApiResponse<CapabilityCeilings>>('/capability-ceilings/organization', { ceilings }),
   updateDepartment: (departmentId: string, data: UpdateDepartmentCeilingsRequest) =>
     apiClient.put<ApiResponse<CapabilityCeilings>>(`/capability-ceilings/departments/${departmentId}`, data),
+  /** Level 0 clears a milestone; domains not listed keep theirs. */
+  updateMilestones: (milestones: CeilingInput[]) =>
+    apiClient.put<ApiResponse<CapabilityCeilings>>('/capability-ceilings/milestones', { milestones }),
 };

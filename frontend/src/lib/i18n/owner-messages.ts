@@ -748,4 +748,23 @@ DigiTalent Pulse — Tổng quan|DigiTalent Pulse — Overview
 {hours} giờ {minutes} phút|{hours} hours {minutes} minutes
 Không có lĩnh vực hoặc khóa học nào khớp “{query}”.|No domains or courses match “{query}”.
 Xem thêm khóa học khác bên dưới.|Explore other courses below.
+Mốc doanh nghiệp|Company milestone
+Đặt mốc|Set milestones
+Mốc năng lực doanh nghiệp|Company competency milestone
+Chọn để đặt mốc|Select to set a milestone
+Mốc · Cấp {level}|Milestone · Level {level}
+Mốc|Milestone
+Mốc hiện tại|Current milestone
+Gợi ý theo vị trí|Suggested by positions
+Mốc hiện tại: {code}|Current milestone: {code}
+Chưa đặt mốc|No milestone set
+Bỏ mốc|Clear milestone
+Lưu mốc|Save milestone
+Mở mốc năng lực của lĩnh vực {domain}|Open the competency milestone of {domain}
+Đóng mốc năng lực của lĩnh vực {domain}|Close the competency milestone of {domain}
+Mốc năng lực doanh nghiệp · {domain}|Company competency milestone · {domain}
+Chọn mốc cho lĩnh vực {domain}|Choose the milestone for {domain}
+Chưa mua suất học|No seats purchased
+Đã mở quyền học|Seats available
+Cấp {level}|Level {level}
 `.trim().split('\n').map(line => { const index=line.indexOf('|'); return [line.slice(0,index),line.slice(index+1)]; }));

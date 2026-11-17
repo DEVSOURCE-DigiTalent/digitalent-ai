@@ -3,7 +3,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { X, Info, Building2, Users, ChevronDown, Check, Search, ArrowRight, Layers3, Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit } from 'lucide-react';
+import { X, Info, Building2, Users, ChevronDown, Check, Search, ArrowRight, Layers3, Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit, Flag } from 'lucide-react';
 import {
   useCapabilityCeilings,
   useUpdateDepartmentCeilings,
@@ -14,7 +14,7 @@ import { organizationErrorMessage } from '@/lib/organization-errors';
 import { SectionLoading } from '@/components/shared/LoadingState';
 import type { CapabilityCeilings, CeilingCourse, CeilingDomain } from '@/services/capability-ceiling.service';
 import { CoursePositionStandardPanel } from './CoursePositionStandardPanel';
-import { DomainPositionStandardPanel } from './DomainPositionStandardPanel';
+import { DomainMilestonePanel } from './DomainMilestonePanel';
 import { CapabilityCeilingGuide } from './CapabilityCeilingGuide';
 import './capability-ceiling.css';
 import './owner-filter-controls.css';
@@ -268,6 +268,7 @@ export function CapabilityCeilingMatrix() {
     else openSelection({ kind: 'course', categoryId: domain.categoryId, level });
   };
   const inspectDomain = (domain: CeilingDomain) => {
+    if (activeScope !== ALL) return;
     if (panelVisible && activeSelection?.kind === 'domain' && activeSelection.categoryId === domain.categoryId) closeSelection();
     else openSelection({ kind: 'domain', categoryId: domain.categoryId });
   };
@@ -450,7 +451,7 @@ export function CapabilityCeilingMatrix() {
 
           {/* Ma trận màu xanh */}
           <div className="cc-mx" role="group" aria-label={translateUi("Ma trận năng lực nhân cấp độ")}>
-            <div className="cc-mx-domain-heading"><Layers3 size={16} aria-hidden="true" /><span>{translateUi("Lĩnh vực năng lực")}<small>{translateUi("Chọn để cài đặt vị trí")}</small></span></div>
+            <div className="cc-mx-domain-heading"><Layers3 size={16} aria-hidden="true" /><span>{translateUi("Lĩnh vực năng lực")}{activeScope === ALL && <small>{translateUi("Chọn để đặt mốc")}</small>}</span></div>
             {matrix.levels.map((level) => (
               <div key={level.level} className="hd">
                 <span className="cc-level-marker" aria-hidden="true">{String(level.level).padStart(2, '0')}</span>
@@ -470,6 +471,7 @@ export function CapabilityCeilingMatrix() {
                   routeLevel={routeLevel}
                   dnLevel={dnLevel}
                   isDepartment={activeScope !== ALL}
+                  milestoneLevel={domain.milestoneLevel ?? 0}
                   selectedDomain={isSelected && activeSelection?.kind === 'domain'}
                   editable={canEdit}
                   selectedToBuy={selectedToBuy}
@@ -478,7 +480,7 @@ export function CapabilityCeilingMatrix() {
                   onDomainClick={inspectDomain}
                   onToggleBuy={toggleSelectToBuy}
                 />
-                {isRendered && activeDomain && (
+                {isRendered && activeDomain && (activeCourse || activeScope === ALL) && (
                   <div
                     id={`course-position-standard-${domain.categoryId}`}
                     className={`cc-inline-panel${isSelected ? ' is-open' : ''}`}
@@ -489,7 +491,7 @@ export function CapabilityCeilingMatrix() {
                         <div className="cc-domain-panel" data-domain={domain.sortOrder}>
                         <button type="button" className="cc-domain-panel__header" onClick={closeSelection} aria-label={translateUi(`Thu gọn ${domain.name}`)} aria-expanded={isSelected} aria-controls={`domain-panel-content-${domain.categoryId}`}>
                           <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
-                          <span className="cc-domain-panel__heading"><small>{activeCourse ? translateUi('KHÓA HỌC & SUẤT HỌC') : activeScope === ALL ? translateUi('CHUẨN VỊ TRÍ THEO LĨNH VỰC') : translateUi('CHUẨN VỊ TRÍ CỦA PHÒNG BAN')}</small><strong>{translateUi(domain.name)}</strong></span>
+                          <span className="cc-domain-panel__heading"><small>{activeCourse ? translateUi('KHÓA HỌC & SUẤT HỌC') : translateUi('MỐC NĂNG LỰC DOANH NGHIỆP')}</small><strong>{translateUi(domain.name)}</strong></span>
                           <span className="cc-domain-panel__collapse">{translateUi("Thu gọn ")}<ChevronDown size={16} aria-hidden="true" /></span>
                         </button>
                         <div id={`domain-panel-content-${domain.categoryId}`}>
@@ -499,12 +501,9 @@ export function CapabilityCeilingMatrix() {
                           isSelectedToBuy={Boolean(activeCourse.code && selectedToBuy.has(activeCourse.code))}
                           scopeLabel={activeScope === ALL ? 'doanh nghiệp' : 'phòng ban'}
                           onSelectToBuy={() => toggleSelectToBuy(activeCourse, activeDomain)}
-                        /> : <DomainPositionStandardPanel
-                          key={activeScope + activeDomain.categoryId}
+                        /> : <DomainMilestonePanel
+                          key={activeDomain.categoryId}
                           domain={activeDomain}
-                          domains={matrix.domains}
-                          departmentId={activeScope === ALL ? undefined : activeScope}
-                          initialPositionId={initialPositionId}
                           canEdit={canEdit}
                         />}
                         </div>
@@ -652,6 +651,7 @@ function DomainRow({
   routeLevel,
   dnLevel,
   isDepartment,
+  milestoneLevel,
   selectedDomain,
   editable,
   selectedToBuy,
@@ -664,6 +664,7 @@ function DomainRow({
   routeLevel: number;
   dnLevel: number;
   isDepartment: boolean;
+  milestoneLevel: number;
   selectedDomain: boolean;
   editable: boolean;
   selectedToBuy?: Map<string, { code: string; title: string; level: number; domainName: string; price: number }>;
@@ -676,12 +677,22 @@ function DomainRow({
   const DomainIcon = DOMAIN_ICONS[domain.sortOrder - 1] ?? Layers3;
   return (
     <>
-      <button type="button" data-domain={domain.sortOrder} className={`rl${selectedDomain ? ' is-selected' : ''}`} aria-expanded={selectedDomain} aria-controls={`course-position-standard-${domain.categoryId}`} aria-label={translateUi(`${selectedDomain ? 'Đóng' : 'Mở'} cài đặt vị trí cho lĩnh vực ${domain.name}`)} onClick={() => onDomainClick(domain)}>
-        <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
-        <span className="cc-domain-copy"><span className="cc-domain-title">{translateUi(domain.name)}</span>
-        <small><span className="cc-domain-level">{isDepartment ? `PB ${routeLevel} · DN ${dnLevel}` : translateUi(`DN · Cấp ${dnLevel}`)}</span><span className="cc-domain-hint">{selectedDomain ? 'Đóng cài đặt' : translateUi('Cài đặt vị trí')}</span></small></span>
-        <ChevronDown className={`cc-domain-chevron${selectedDomain ? ' is-open' : ''}`} size={15} aria-hidden="true" />
-      </button>
+      {isDepartment ? (
+        <div data-domain={domain.sortOrder} className="rl is-static">
+          <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
+          <span className="cc-domain-copy"><span className="cc-domain-title">{translateUi(domain.name)}</span>
+          <small><span className="cc-domain-level">{`PB ${routeLevel} · DN ${dnLevel}`}</span></small></span>
+        </div>
+      ) : (
+        <button type="button" data-domain={domain.sortOrder} className={`rl${selectedDomain ? ' is-selected' : ''}`} aria-expanded={selectedDomain} aria-controls={`course-position-standard-${domain.categoryId}`} aria-label={translateUi(`${selectedDomain ? 'Đóng' : 'Mở'} mốc năng lực của lĩnh vực ${domain.name}`)} onClick={() => onDomainClick(domain)}>
+          <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
+          <span className="cc-domain-copy"><span className="cc-domain-title">{translateUi(domain.name)}</span>
+          <small><span className="cc-domain-level">{translateUi(`DN · Cấp ${dnLevel}`)}</span>{milestoneLevel > 0
+            ? <span className="cc-domain-milestone"><Flag size={9} aria-hidden="true" />{translateUi(`Mốc · Cấp ${milestoneLevel}`)}</span>
+            : <span className="cc-domain-hint">{selectedDomain ? translateUi('Đóng') : translateUi('Đặt mốc')}</span>}</small></span>
+          <ChevronDown className={`cc-domain-chevron${selectedDomain ? ' is-open' : ''}`} size={15} aria-hidden="true" />
+        </button>
+      )}
       {domain.courses.map((course) => {
         const isLocked = course.level > 1 && course.isUnlocked !== true;
         const inRoute = !isLocked && course.level <= routeLevel;
@@ -714,8 +725,13 @@ function DomainRow({
         const title = `${course.courseId && course.code ? `${course.code} · ${course.title}` : 'Chưa có khóa học'}: ${state}`;
         const handleClick = () => onPick(domain, course.level);
 
+        const milestoneBadge = course.level === milestoneLevel
+          ? <span className="cc-milestone-badge" title={translateUi('Mốc doanh nghiệp')}><Flag size={9} aria-hidden="true" />{translateUi('Mốc')}</span>
+          : null;
+
         if (editable && isLocked && onToggleBuy) return (
           <div key={course.level} className="cc-purchase-cell">
+            {milestoneBadge}
             <button
               type="button"
               className={className}
@@ -732,6 +748,7 @@ function DomainRow({
 
         return editable ? (
           <div key={course.level} className="cc-purchase-cell cc-course-cell">
+          {milestoneBadge}
           <button
             type="button"
             className={className}
@@ -747,8 +764,11 @@ function DomainRow({
           <button type="button" className="cc-purchase-cell__detail" disabled={!course.courseId} aria-label={translateUi(`Xem khóa ${course.code ?? `cấp ${course.level}`}`)} title={translateUi("Khóa học & suất học")} onClick={() => onInspect(domain, course.level)}><Info size={13} /></button>
           </div>
         ) : (
-          <div key={course.level} className={className} title={translateUi(title)}>
-            {translateUi(label)}
+          <div key={course.level} className="cc-purchase-cell">
+            {milestoneBadge}
+            <div className={className} title={translateUi(title)}>
+              {translateUi(label)}
+            </div>
           </div>
         );
       })}

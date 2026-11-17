@@ -5,6 +5,7 @@ import {
   type CeilingInput,
   type UpdateDepartmentCeilingsRequest,
 } from '../services/capability-ceiling.service';
+import { TRIAL_PROGRAM_KEYS } from './use-trial-program';
 
 export const CAPABILITY_CEILINGS_KEY = ['capability-ceilings'] as const;
 
@@ -41,5 +42,18 @@ export function useUpdateDepartmentCeilings() {
     mutationFn: async ({ departmentId, data }: { departmentId: string; data: UpdateDepartmentCeilingsRequest }) =>
       (await capabilityCeilingService.updateDepartment(departmentId, data)).data.data,
     onSuccess: store,
+  });
+}
+
+/** Organization milestone per domain; the trial report compares results with it, so its cache is refreshed too. */
+export function useUpdateCompetencyMilestones() {
+  const store = useStoreMatrix();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (milestones: CeilingInput[]) => (await capabilityCeilingService.updateMilestones(milestones)).data.data,
+    onSuccess: (matrix) => {
+      store(matrix);
+      void queryClient.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.all });
+    },
   });
 }

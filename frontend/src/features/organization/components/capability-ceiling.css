@@ -357,3 +357,11 @@ button.cc-cell:hover { box-shadow: 0 8px 18px rgba(15,118,110,.13); transform: t
 @media (max-width: 640px) { .cc-domain-panel__header { gap: 8px; padding: 12px; } .cc-domain-panel__header .cc-domain-icon { display: grid; width: 30px; height: 32px; } .cc-domain-panel__heading strong { font-size: 13px; } .cc-domain-panel__heading small { font-size: 8px; } .cc-domain-panel__collapse { font-size: 10px; gap: 3px; } }
 @media (max-width: 640px) { .cc-actions .btns, .cc-actions .cc-btn { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .cc-root * { transition: none !important; animation: none !important; transform: none !important; } }
+
+/* Mốc năng lực doanh nghiệp: chip trên hàng lĩnh vực và dấu trên ô khóa đúng cấp mốc. */
+.cc-domain-milestone { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: #fdebe3; color: #9a3d1b; font-size: 9px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.cc-domain-copy small { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
+.cc-domain-copy small .cc-domain-hint { margin-left: 6px; }
+.cc-mx .rl.is-static { cursor: default; }
+.cc-milestone-badge { position: absolute; top: 5px; left: 6px; z-index: 2; display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 999px; background: #fff; color: #9a3d1b; font-size: 9.5px; font-weight: 750; box-shadow: 0 0 0 1px #f3c9b8, 0 2px 6px #9a3d1b1f; pointer-events: none; }
+@media (max-width: 640px) { .cc-milestone-badge { top: 2px; left: 2px; padding: 0 4px; font-size: 8px; } .cc-domain-milestone { margin-left: 0; } }
