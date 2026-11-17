@@ -291,6 +291,38 @@ public class OwnerSurveyFlowTests
         finished.Report.Employees.Should().ContainSingle();
     }
 
+    [Fact]
+    public async Task Report_compares_results_with_the_organization_milestone_and_falls_back_to_the_position_reference()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var asOwner = await TrialAsAsync(world, PulseTestWorld.OwnerEmail, Roles.Owner);
+        var initial = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
+        await asOwner.Request.ExecuteAsync(new SubmitTrialRequestUseCaseInput { TestDeadline = world.Clock.Now.AddHours(1) });
+        var employeeId = initial.Participants.First(p => p.EmployeeId.HasValue).EmployeeId!.Value;
+        world.Context.TrialAssessments.Add(new TrialAssessment { OrganizationId = initial.OrganizationId, EmployeeId = employeeId, SubmittedAt = world.Clock.Now, ReviewedAt = world.Clock.Now, ChoiceScore = 10, ChoiceTotal = 18 });
+        await world.Context.SaveChangesAsync();
+        var before = (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Report!;
+        var withMilestone = before.Summary[0].CategoryId;
+        var withoutMilestone = before.Summary[1].CategoryId;
+        var referenceTarget = before.Employees.Single().DomainDetails.Single(d => d.CategoryId == withoutMilestone).TargetLevel;
+        world.Context.CompetencyMilestones.Add(new CompetencyMilestone { OrganizationId = initial.OrganizationId, CompetencyCategoryId = withMilestone, MilestoneLevel = 3 });
+        await world.Context.SaveChangesAsync();
+
+        var report = (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Report!;
+
+        var compared = report.Employees.Single().DomainDetails.Single(d => d.CategoryId == withMilestone);
+        compared.TargetLevel.Should().Be(3);
+        compared.UsesMilestone.Should().BeTrue();
+        compared.UsesSystemReference.Should().BeFalse();
+        compared.SkillGap.Should().Be(3 - compared.Level);
+        compared.StatusText.Should().Contain("Mốc doanh nghiệp");
+        report.Summary.Single(d => d.CategoryId == withMilestone).MilestoneLevel.Should().Be(3);
+        var reference = report.Employees.Single().DomainDetails.Single(d => d.CategoryId == withoutMilestone);
+        reference.UsesMilestone.Should().BeFalse();
+        reference.TargetLevel.Should().Be(referenceTarget);
+        report.Summary.Single(d => d.CategoryId == withoutMilestone).MilestoneLevel.Should().Be(0);
+    }
+
     private static async Task<List<PulseAnswerInput>> AnswersAsync(PulseTestWorld world, IReadOnlyList<TrialExamQuestionDto> questions, int correctTiers)
     {
         var answers = new List<PulseAnswerInput>();

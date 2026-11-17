@@ -57,13 +57,14 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
             var standard = positionId is Guid id
                 ? (await new PositionTargetsReader(_context).LoadAsync(trial.OrganizationId, [id])).GetValueOrDefault(id)
                 : null;
+            var milestones = await CompetencyMilestoneReader.LoadAsync(_context, trial.OrganizationId);
 
             domainDetails = domains.Select(d =>
             {
                 byCategory.TryGetValue(d.CategoryId, out var dResult);
                 var lvl = dResult == null ? 0 : TrialAssessmentResults.EffectiveLevelOf(dResult);
-                var targetLevel = standard?.Levels.GetValueOrDefault(d.CategoryId) ?? 0;
-                var (levelLabel, statusText, gapText, recCourse) = TrialProgramReader.DescribeDomainResult(d.Number, d.Name, lvl, targetLevel);
+                var (targetLevel, usesMilestone) = TrialProgramReader.TargetOf(milestones, standard, d.CategoryId);
+                var (levelLabel, statusText, gapText, recCourse) = TrialProgramReader.DescribeDomainResult(d.Number, d.Name, lvl, targetLevel, usesMilestone);
                 return new TrialReportEmployeeDomainDetailDto
                 {
                     CategoryId = d.CategoryId,
@@ -71,7 +72,8 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
                     Name = d.Name,
                     Level = lvl,
                     TargetLevel = targetLevel,
-                    UsesSystemReference = standard?.UsesSystemReference == true,
+                    UsesSystemReference = !usesMilestone && standard?.UsesSystemReference == true,
+                    UsesMilestone = usesMilestone,
                     SkillGap = Math.Max(0, targetLevel - lvl),
                     LevelLabel = levelLabel,
                     StatusText = statusText,
