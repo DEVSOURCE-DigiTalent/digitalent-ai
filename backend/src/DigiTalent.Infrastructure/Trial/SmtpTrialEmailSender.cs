@@ -6,6 +6,7 @@ using DigiTalent.Application.IndividualCommerce;
 using DigiTalent.Application.Trial;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DigiTalent.Infrastructure.Email;
 
 namespace DigiTalent.Infrastructure.Trial;
 
@@ -77,7 +78,7 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
 
         try
         {
-            await client.SendMailAsync(mail, ct);
+            await client.SendWithTimeoutAsync(mail, ct);
             _logger.LogInformation("[SmtpTrialEmailSender] Successfully sent trial {Kind} email to {Email}.", kind, email);
         }
         catch (Exception ex)

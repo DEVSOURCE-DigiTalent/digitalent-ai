@@ -5,6 +5,7 @@ using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.IndividualCommerce;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DigiTalent.Infrastructure.Email;
 
 namespace DigiTalent.Infrastructure.Auth;
 
@@ -65,7 +66,7 @@ public sealed class EmailVerificationSender : IEmailVerificationSender
             EnableSsl = smtp.EnableSsl,
             Credentials = new NetworkCredential(smtp.UserName, smtp.Password),
         };
-        await client.SendMailAsync(email, cancellationToken);
+        await client.SendWithTimeoutAsync(email, cancellationToken);
         _logger.LogInformation("[EmailVerificationSender] OTP sent to {Email}", toEmail);
         return null;
     }

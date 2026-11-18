@@ -5,6 +5,7 @@ using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.IndividualCommerce;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DigiTalent.Infrastructure.Email;
 
 namespace DigiTalent.Infrastructure.Invitations;
 
@@ -55,7 +56,7 @@ public sealed class SmtpInvitationSender : IInvitationSender
 
         try
         {
-            await client.SendMailAsync(email, cancellationToken);
+            await client.SendWithTimeoutAsync(email, cancellationToken);
             _logger.LogInformation("[SmtpInvitationSender] Successfully sent invitation email to {Email} with link {Link}", invitation.Email, link);
             return _links.ExposeDebugLink ? link : null;
         }

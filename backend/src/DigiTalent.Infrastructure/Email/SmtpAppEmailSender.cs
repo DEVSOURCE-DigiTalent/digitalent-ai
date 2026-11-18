@@ -60,7 +60,7 @@ public class SmtpAppEmailSender : IAppEmailSender
 
             message.To.Add(recipient);
 
-            await client.SendMailAsync(message, cancellationToken);
+            await client.SendWithTimeoutAsync(message, cancellationToken);
             _logger.LogInformation("[SmtpAppEmailSender] Successfully sent email '{Subject}' to {Email}.", subject, toEmail);
             return true;
         }
