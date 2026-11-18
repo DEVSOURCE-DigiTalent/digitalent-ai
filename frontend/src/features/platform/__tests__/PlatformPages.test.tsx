@@ -678,13 +678,11 @@ describe('Platform Admin console (v2)', () => {
     expect(await screen.findByRole('status', { name: 'Đang tải mẫu vị trí chuẩn' })).toBeInTheDocument();
   });
 
-  it('PA-13 renders enterprise reference positions matrix with 4 KPI cards without regulatory text', async () => {
+  it('PA-13 renders enterprise reference positions matrix with 2 KPI cards without regulatory text', async () => {
     renderAt('/platform/reference-positions');
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Vị trí tham chiếu' })).toBeInTheDocument();
     expect(await screen.findByText('Vị trí')).toBeInTheDocument();
-    expect(screen.getByText('Ô mức Nâng cao')).toBeInTheDocument();
-    expect(screen.getByText('Mức trung bình')).toBeInTheDocument();
     expect(screen.getByText('Trạng thái')).toBeInTheDocument();
     expect(screen.queryByText(/Thông tư 02/i)).not.toBeInTheDocument();
   });
