@@ -217,6 +217,14 @@ export interface PlatformTrialItem {
   participants: number;
   submitted: number;
   reviewed: number;
+  /** The trial was converted to a regular plan: no mentor needed any more. */
+  converted?: boolean;
+  /** Course finals of its employees waiting for a decision (graded by the assigned mentor while it is a trial). */
+  waitingFinals?: number;
+  /** Paid courses the organization bought (once for every employee). */
+  coursesPurchased?: number;
+  /** Employees with at least one enrollment. */
+  learners?: number;
 }
 
 export interface MentorItem {
@@ -224,7 +232,10 @@ export interface MentorItem {
   fullName: string;
   email: string;
   status: string;
+  /** Trial organizations assigned to the mentor that are not converted yet. */
   activeTrials: number;
+  /** Course finals waiting for a decision in those organizations. */
+  waitingFinals?: number;
   createdAt: string;
 }
 
