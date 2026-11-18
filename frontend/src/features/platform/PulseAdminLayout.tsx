@@ -52,6 +52,7 @@ import { trialNeedsMentor } from '@/features/trial-program/lib/trial-mentor';
 import './pulse-catalog.css';
 import './pulse-admin-shell.css';
 import './pulse-admin-polish.css';
+import './pulse-admin-owner-look.css';
 
 const SIDEBAR_STORAGE_KEY = 'dt-pa-sidebar-collapsed';
 
