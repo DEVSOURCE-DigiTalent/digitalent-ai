@@ -1,4 +1,5 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
+import { PAGE_SIZE_OPTIONS, useClientPage } from './paging';
 import type { ReactNode } from 'react';
 import { SectionLoading } from '@/components/shared/LoadingState';
 import { REASON_MIN, errorMessage } from './pulse-format';
@@ -80,11 +81,16 @@ export function Pager({
   totalPages,
   totalItems,
   onChange,
+  pageSize,
+  onPageSizeChange,
 }: {
   pageIndex: number;
   totalPages: number;
   totalItems: number;
   onChange: (page: number) => void;
+  /** With both, a "rows per page" select (10 · 15 · 20 · 25) appears before the buttons. */
+  pageSize?: number;
+  onPageSizeChange?: (size: number) => void;
 }) {
   useUiLanguage();
   if (totalItems === 0) return null;
@@ -93,10 +99,35 @@ export function Pager({
       <span>{translateUi("Trang ")}{pageIndex}/{Math.max(totalPages, 1)} · {totalItems} mục
       </span>
       <div className="button-row">
+        {pageSize !== undefined && onPageSizeChange && (
+          <select
+            className="pa-pager-size"
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}
+            aria-label={translateUi('Số dòng mỗi trang')}
+          >
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>
+                {size} / trang
+              </option>
+            ))}
+          </select>
+        )}
         <button type="button" className="btn btn-outline btn-small" disabled={pageIndex <= 1} onClick={() => onChange(pageIndex - 1)}>{translateUi("Trước")}</button>
         <button type="button" className="btn btn-outline btn-small" disabled={pageIndex >= totalPages} onClick={() => onChange(pageIndex + 1)}>{translateUi("Sau")}</button>
       </div>
     </div>
+  );
+}
+
+/** Pages a list already loaded (10 rows by default) and puts the pager under it. */
+export function ClientPaged<T>({ items, children }: { items: readonly T[]; children: (rows: readonly T[]) => ReactNode }) {
+  const { pageItems, pager } = useClientPage(items);
+  return (
+    <>
+      {children(pageItems)}
+      <Pager {...pager} />
+    </>
   );
 }
 

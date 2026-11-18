@@ -29,6 +29,7 @@ import {
   ArrowUpDown,
   X,
 } from 'lucide-react';
+import { DEFAULT_PAGE_SIZE } from '../components/paging';
 
 const TABS = [
   { key: 'ALL', label: 'Tất cả', role: '', dotColor: '#64748b' },
@@ -50,6 +51,7 @@ export function PlatformUsersPage() {
   const [status, setStatus] = useState(params.get('status') ?? '');
   const [sortBy, setSortBy] = useState<string>('DEFAULT');
   const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [drawerUserId, setDrawerUserId] = useState<string | null>(null);
 
   // Drag-to-scroll state for role tabs
@@ -70,7 +72,7 @@ export function PlatformUsersPage() {
     role: queryRole,
     status: queryStatus,
     pageIndex,
-    pageSize: 20,
+    pageSize,
   });
 
   const overview = overviewQuery.data;
@@ -776,6 +778,11 @@ export function PlatformUsersPage() {
               totalPages={data.totalPages}
               totalItems={data.totalItems}
               onChange={setPageIndex}
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPageIndex(1);
+              }}
             />
           </>
         )}

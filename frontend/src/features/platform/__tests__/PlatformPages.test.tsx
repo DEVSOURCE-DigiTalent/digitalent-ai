@@ -640,10 +640,11 @@ describe('Platform Admin console (v2)', () => {
     const save = screen.getByRole('button', { name: 'Lưu vào bản nháp v4' });
     expect(save).toBeDisabled();
     fireEvent.change(input, { target: { value: '520000' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Trạng thái bán của A1-I' }), { target: { value: 'PAUSED' } });
+    // Pausing the sale of one course is hidden (levels are learnt in order); the status is sent back unchanged.
+    expect(screen.queryByRole('combobox', { name: 'Trạng thái bán của A1-I' })).not.toBeInTheDocument();
     fireEvent.click(save);
 
-    await waitFor(() => expect(catalog.updatePrices).toHaveBeenCalledWith(4, [{ courseId: 'c-A1-I', price: 520000, salesStatus: 'PAUSED' }]));
+    await waitFor(() => expect(catalog.updatePrices).toHaveBeenCalledWith(4, [{ courseId: 'c-A1-I', price: 520000, salesStatus: 'OPEN' }]));
   });
 
   it('SHR-01 is the Platform Admin profile, opened from the header', async () => {
