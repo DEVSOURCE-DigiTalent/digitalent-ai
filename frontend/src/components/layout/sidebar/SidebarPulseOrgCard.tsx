@@ -1,6 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { PanelLeftClose } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useOrganizationOverview } from '@/hooks/use-organization';
 
 interface SidebarPulseOrgCardProps {
   isRail?: boolean;
@@ -12,7 +13,9 @@ export function SidebarPulseOrgCard({ isRail = false, onToggleCollapsed }: Sideb
   useUiLanguage();
   const user = useCurrentUser((s) => s.user);
 
-  const orgName = user?.organization?.name || 'Tổ chức';
+  // The real /auth/me only carries the organization id; the overview (cached, also used by OW-01) has the name.
+  const overview = useOrganizationOverview();
+  const orgName = user?.organization?.name || overview.data?.name || 'Tổ chức';
   const planName = user?.subscription?.planName ?? user?.subscription?.planCode ?? '';
   const status = user?.subscription?.status;
   const usedSeats = user?.subscription?.seatsUsed;

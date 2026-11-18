@@ -30,7 +30,8 @@ export function OnboardingChecklistWidget() {
     startTour,
   } = useOnboardingStore();
 
-  const [isOpen, setIsOpen] = useState(true);
+  // Starts as the small pill so it never covers a page's main button; the owner opens it when wanted.
+  const [isOpen, setIsOpen] = useState(false);
 
   if (isTourActive || isDismissed || !currentRole) return null;
 

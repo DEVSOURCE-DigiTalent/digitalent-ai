@@ -62,9 +62,9 @@ describe('CommandPalette', () => {
     );
 
     const input = screen.getByPlaceholderText('Tìm màn hình…');
-    fireEvent.change(input, { target: { value: 'Thành viên' } });
+    fireEvent.change(input, { target: { value: 'Nhân sự' } });
 
-    expect(screen.getByText('Thành viên')).toBeInTheDocument();
+    expect(screen.getByText('Nhân sự')).toBeInTheDocument();
     expect(screen.queryByText('Khoảng trống năng lực')).not.toBeInTheDocument();
   });
 
@@ -79,9 +79,9 @@ describe('CommandPalette', () => {
     );
 
     const input = screen.getByPlaceholderText('Tìm màn hình…');
-    fireEvent.change(input, { target: { value: 'Thành viên' } });
+    fireEvent.change(input, { target: { value: 'Nhân sự' } });
 
-    expect(screen.queryByText('Thành viên')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nhân sự')).not.toBeInTheDocument();
   });
 
   it('navigates and closes on item click', () => {
@@ -92,9 +92,9 @@ describe('CommandPalette', () => {
     );
 
     const input = screen.getByPlaceholderText('Tìm màn hình…');
-    fireEvent.change(input, { target: { value: 'Thành viên' } });
+    fireEvent.change(input, { target: { value: 'Nhân sự' } });
 
-    fireEvent.click(screen.getByText('Thành viên'));
+    fireEvent.click(screen.getByText('Nhân sự'));
     expect(mockNavigate).toHaveBeenCalledWith('/enterprise/members');
     expect(onClose).toHaveBeenCalled();
   });

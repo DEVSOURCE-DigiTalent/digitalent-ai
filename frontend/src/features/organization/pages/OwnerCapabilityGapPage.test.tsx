@@ -33,8 +33,14 @@ describe('company learning overview', () => {
   it('does not turn missing assessments into zero percent competence', () => {
     render(<MemoryRouter><CompanyLearningOverview overview={{ employees: 5, assessedEmployees: 0, waitingEmployees: 5, noStandardEmployees: 0, domains: [{ ...overview.domains[0], assessed: 0, met: 0, needsLearning: 0, courses: [] }] }} /></MemoryRouter>);
     expect(screen.queryByText('0%')).not.toBeInTheDocument();
-    expect(screen.getByText('Sẵn sàng đối chiếu')).toBeInTheDocument();
+    expect(screen.getByText('Chờ kết quả khảo sát')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Xem khóa học' })).not.toBeInTheDocument();
+  });
+  it('does not claim the whole team meets the standard when few people have results', () => {
+    render(<MemoryRouter><CompanyLearningOverview overview={{ ...overview, employees: 6, assessedEmployees: 1, waitingEmployees: 5 }} /></MemoryRouter>);
+    expect(screen.getByRole('heading', { name: 'Mới có 1/6 người có kết quả' })).toBeInTheDocument();
+    expect(screen.getByText('Chưa đủ để kết luận cho cả đội')).toBeInTheDocument();
+    expect(screen.queryByText('Đội ngũ đã đạt chuẩn')).not.toBeInTheDocument();
   });
 });
 

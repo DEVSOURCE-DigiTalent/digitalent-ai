@@ -28,6 +28,9 @@ export function CompanyLearningOverview({ overview }: { overview: LearningNeedsO
   const assessed = overview.domains.reduce((sum, domain) => sum + domain.assessed, 0);
   const met = overview.domains.reduce((sum, domain) => sum + domain.met, 0);
   const percent = progress(met, assessed);
+  // Fewer than half of the staff compared: the rate describes those people only, not the team.
+  const lowCoverage = overview.employees > 0 && overview.assessedEmployees * 2 < overview.employees;
+  const anyNeeds = overview.domains.some((domain) => domain.needsLearning > 0);
   const missing = [...new Set(active?.courses.flatMap((course) => course.missingCompetencies) ?? [])];
   return <>
     <section className="company-gap-board" aria-label={translateUi("Tổng quan năng lực doanh nghiệp")}>
@@ -36,12 +39,12 @@ export function CompanyLearningOverview({ overview }: { overview: LearningNeedsO
         <div className="company-gap-ring" role="progressbar" aria-label={translateUi("Đạt chuẩn theo lĩnh vực trong doanh nghiệp")} aria-valuenow={percent ?? undefined} aria-valuemin={0} aria-valuemax={100} aria-valuetext={percent == null ? 'Chờ đánh giá' : `${met} trên ${assessed} lượt đối chiếu nhân viên với chuẩn lĩnh vực đã đạt`} title={translateUi("Chỉ tính các lĩnh vực đã có kết quả đánh giá; người chưa đánh giá chưa được tính.")} style={{ '--progress': `${percent ?? 0}%` } as CSSProperties}>
           <div><strong>{percent == null ? '—' : `${percent}%`}</strong><span>{translateUi("đạt chuẩn")}</span></div>
         </div>
-        <h2>{percent == null ? 'Sẵn sàng đối chiếu' : percent === 100 ? 'Đội ngũ đã đạt chuẩn' : translateUi('Thu hẹp khoảng trống')}</h2>
-        <p>{percent == null ? translateUi('Chờ kết quả đánh giá tổng thể.') : translateUi('Theo chuẩn vị trí · các lĩnh vực đã đánh giá')}</p>
-        <div className="company-gap-coverage"><span><i />{overview.assessedEmployees}/{overview.employees}{translateUi(" nhân sự đã đối chiếu")}</span>{overview.waitingEmployees > 0 && <Link to="/enterprise/trial">{overview.waitingEmployees}{translateUi(" chờ đánh giá ")}<ArrowRight size={13} /></Link>}{overview.noStandardEmployees > 0 && <Link to="/enterprise/setup">{overview.noStandardEmployees}{translateUi(" chưa có chuẩn vị trí ")}<ArrowRight size={13} /></Link>}</div>
+        <h2>{translateUi(percent == null ? 'Chờ kết quả khảo sát' : lowCoverage ? `Mới có ${overview.assessedEmployees}/${overview.employees} người có kết quả` : percent === 100 ? 'Đội ngũ đã đạt chuẩn' : 'Còn khoảng trống cần bù')}</h2>
+        <p>{translateUi(percent == null ? 'Kết quả hiện ở đây khi nhân viên làm xong khảo sát.' : lowCoverage ? 'Chưa đủ để kết luận cho cả đội' : 'Theo chuẩn vị trí, ở các lĩnh vực đã có kết quả')}</p>
+        <div className="company-gap-coverage"><span><i />{overview.assessedEmployees}/{overview.employees}{translateUi(" nhân sự đã đối chiếu")}</span>{overview.waitingEmployees > 0 && <Link to="/enterprise/trial">{overview.waitingEmployees}{translateUi(" chờ khảo sát ")}<ArrowRight size={13} /></Link>}{overview.noStandardEmployees > 0 && <Link to="/enterprise/setup">{overview.noStandardEmployees}{translateUi(" chưa có chuẩn vị trí ")}<ArrowRight size={13} /></Link>}</div>
       </div>
       <div className="company-gap-domain-area">
-        <div className="company-gap-section-top"><h2>{translateUi("Cần cải thiện ở đâu?")}</h2><span>{translateUi("Theo lĩnh vực")}</span></div>
+        <div className="company-gap-section-top"><h2>{translateUi(anyNeeds ? "Cần cải thiện ở đâu?" : "Kết quả theo lĩnh vực")}</h2><span>{translateUi("Theo lĩnh vực")}</span></div>
         {overview.domains.length ? <div className="company-gap-domain-grid">{overview.domains.map((domain) => {
           const palette = DOMAIN_STYLES[domain.number - 1] ?? DOMAIN_STYLES[0];
           const Icon = palette.icon;

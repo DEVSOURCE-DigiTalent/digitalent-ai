@@ -36,7 +36,7 @@ afterEach(() => { cleanup(); report.isLoading = false; });
 describe('Owner progress tabs', () => {
   it('opens the map and shows report metrics and the selected branch destination', () => {
     render(<MemoryRouter><OwnerProgressTabs /></MemoryRouter>);
-    expect(screen.getByRole('tab', { name: 'Tiến độ đánh giá' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Khảo sát năng lực số' })).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Bản đồ doanh nghiệp' }));
 
     const map = within(screen.getByRole('tabpanel', { name: 'Bản đồ doanh nghiệp' }));
@@ -68,7 +68,7 @@ describe('Owner progress tabs', () => {
     expect(map.getByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute('href', '/enterprise/certificates');
 
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Bản đồ doanh nghiệp' }), { key: 'ArrowLeft' });
-    expect(screen.getByRole('tab', { name: 'Tiến độ đánh giá' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: 'Khảo sát năng lực số' })).toHaveFocus();
   });
 
   it('switches on horizontal pointer drag and presents a loading indicator', () => {

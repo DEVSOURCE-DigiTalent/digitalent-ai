@@ -11,13 +11,13 @@ describe('buildBreadcrumbs', () => {
   it('returns just the screen title for a top-level item (Tổng quan)', () => {
     const crumbs = buildBreadcrumbs('/enterprise/dashboard', ENTERPRISE_SCREENS, OWNER_SIDEBAR);
     expect(crumbs.length).toBeGreaterThanOrEqual(1);
-    expect(crumbs[crumbs.length - 1].label).toBe('Tổng quan tổ chức');
+    expect(crumbs[crumbs.length - 1].label).toBe('Tổng quan');
   });
 
-  it('returns the screen title for Thành viên (flat sidebar, no group)', () => {
+  it('returns the screen title for Nhân sự (flat sidebar, no group)', () => {
     const crumbs = buildBreadcrumbs('/enterprise/members', ENTERPRISE_SCREENS, OWNER_SIDEBAR);
     expect(crumbs.length).toBe(1);
-    expect(crumbs[0].label).toBe('Thành viên');
+    expect(crumbs[0].label).toBe('Nhân sự');
     expect(crumbs[0].href).toBe('/enterprise/members');
   });
 

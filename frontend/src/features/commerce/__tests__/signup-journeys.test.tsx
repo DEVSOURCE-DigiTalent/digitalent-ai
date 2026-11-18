@@ -154,7 +154,7 @@ describe('enterprise purchase, contract signing and organization setup (FLOW-01 
     fireEvent.click(enterButton);
 
     expect(await screen.findByTestId('enterprise-layout', {}, { timeout: 10000 })).toBeInTheDocument();
-    expect(await heading('Tổng quan doanh nghiệp')).toBeInTheDocument();
+    expect(await heading('Tổng quan')).toBeInTheDocument();
     await waitFor(() => {
       expect(useCurrentUser.getState().user?.onboardingStatus).toBeUndefined();
     });
