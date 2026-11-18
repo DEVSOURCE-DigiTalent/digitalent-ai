@@ -4,8 +4,9 @@ using DigiTalent.Domain.Constants;
 namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
-/// GET /me/pulse/overview — Hôm nay, Lộ trình, Hồ sơ của nhân viên: vị trí, người đánh giá, lộ trình doanh nghiệp đặt
-/// (mục tiêu vị trí giới hạn bởi phạm vi phòng ban), các năng lực vị trí yêu cầu, trạng thái từng khóa và việc nên làm tiếp.
+/// GET /me/pulse/overview — Hôm nay, Lộ trình, Hồ sơ của nhân viên: vị trí, người đánh giá, lộ trình (bắt buộc tới mức
+/// tối thiểu doanh nghiệp đặt cho phòng ban, học vượt với khóa doanh nghiệp đã có), các năng lực vị trí yêu cầu, trạng thái
+/// từng khóa và việc nên làm tiếp.
 /// </summary>
 public class GetPulseOverviewUseCase : IUseCase<GetPulseOverviewUseCaseInput, GetPulseOverviewUseCaseOutput>
 {

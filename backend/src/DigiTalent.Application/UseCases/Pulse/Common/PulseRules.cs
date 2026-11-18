@@ -90,14 +90,15 @@ public static class PulseRules
     };
 
     /// <summary>
-    /// Vùng của một khóa (cấp <paramref name="tier"/>) trên lộ trình: vị trí không yêu cầu lĩnh vực → ngoài lộ trình;
-    /// cao hơn phạm vi phòng ban → ngoài phạm vi; cao hơn mục tiêu vị trí nhưng trong phạm vi → tùy chọn; còn lại → lộ trình.
+    /// Vùng của một khóa (cấp <paramref name="tier"/>) trên lộ trình: tới mức tối thiểu doanh nghiệp yêu cầu
+    /// (<paramref name="required"/>) → lộ trình bắt buộc (khóa chưa mua vẫn ở đây, chờ doanh nghiệp mua); cao hơn mức yêu cầu
+    /// mà doanh nghiệp đã có khóa (<paramref name="available"/>: Cơ bản miễn phí, khóa đã mua hoặc đã được giao) → học vượt,
+    /// được khuyến khích; cao hơn mức yêu cầu và doanh nghiệp chưa mua → chưa mở.
     /// </summary>
-    public static string ZoneOf(int tier, int target, int ceiling) =>
-        target == 0 ? PulseCourseZone.OutsidePath
-        : tier > ceiling ? PulseCourseZone.AboveCeiling
-        : tier > target ? PulseCourseZone.Optional
-        : PulseCourseZone.Path;
+    public static string ZoneOf(int tier, int required, bool available) =>
+        tier <= required ? PulseCourseZone.Path
+        : available ? PulseCourseZone.Optional
+        : PulseCourseZone.AboveCeiling;
 
     /// <summary>
     /// Tiến độ học của một khóa (%): mỗi mô đun có hai phần — đọc hết trang và đạt câu ôn tập (mô đun không có câu ôn
@@ -266,16 +267,19 @@ public static class PulseCourseAccess
     public const string Preview = "PREVIEW";
 }
 
-/// <summary>Vùng của một khóa trên lộ trình: mục tiêu vị trí giới hạn bởi phạm vi năng lực của phòng ban.</summary>
+/// <summary>
+/// Vùng của một khóa trên lộ trình: mọi khóa doanh nghiệp đã có đều mở cho nhân viên; mức phòng ban (chưa đặt thì chuẩn vị trí)
+/// là mức tối thiểu bắt buộc, phần cao hơn là học vượt.
+/// </summary>
 public static class PulseCourseZone
 {
-    /// <summary>Trong lộ trình: từ Cơ bản tới min(mục tiêu vị trí, phạm vi phòng ban).</summary>
+    /// <summary>Bắt buộc: từ Cơ bản tới mức tối thiểu doanh nghiệp yêu cầu cho phòng ban (chưa đặt thì theo chuẩn vị trí).</summary>
     public const string Path = "PATH";
-    /// <summary>Cao hơn mục tiêu vị trí nhưng trong phạm vi phòng ban: học thêm nếu muốn.</summary>
+    /// <summary>Học vượt: cao hơn mức yêu cầu, doanh nghiệp đã có khóa — định hướng riêng của nhân viên, được khuyến khích.</summary>
     public const string Optional = "OPTIONAL";
-    /// <summary>Cao hơn phạm vi doanh nghiệp đặt cho phòng ban: chưa mở.</summary>
+    /// <summary>Cao hơn mức yêu cầu và doanh nghiệp chưa mua khóa: chưa mở.</summary>
     public const string AboveCeiling = "ABOVE_CEILING";
-    /// <summary>Vị trí không yêu cầu lĩnh vực này.</summary>
+    /// <summary>Không thuộc lộ trình (giữ cho client cũ; lộ trình hiện không tạo vùng này).</summary>
     public const string OutsidePath = "OUTSIDE_PATH";
 }
 
@@ -299,6 +303,7 @@ public static class PulsePreStatus
 /// <summary>Khóa được công nhận theo đường nào.</summary>
 public static class PulseApprovedVia
 {
+    /// <summary>Không còn được tạo: bài đánh giá dùng thử chỉ để doanh nghiệp quyết định mua, không công nhận khóa.</summary>
     public const string PlacementTest = "PLACEMENT_TEST";
     public const string PreAssessment = "PRE_ASSESSMENT";
     public const string Final = "FINAL";
@@ -327,7 +332,7 @@ public static class PulseBlockReason
     public const string QuizChanged = "QUIZ_CHANGED";
 }
 
-/// <summary>Trạng thái một lĩnh vực trên lộ trình (so mức đã xác nhận với đỉnh lộ trình = min(mục tiêu, phạm vi)).</summary>
+/// <summary>Trạng thái một lĩnh vực trên lộ trình (so mức đã xác nhận với mức tối thiểu doanh nghiệp yêu cầu).</summary>
 public static class PulseDomainStatus
 {
     public const string Pending = "PENDING";
