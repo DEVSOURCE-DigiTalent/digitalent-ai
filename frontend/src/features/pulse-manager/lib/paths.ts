@@ -13,8 +13,6 @@ export const MANAGER_PATHS = {
   member: (employeeId: string) => path('MG-03').replace(':id', encodeURIComponent(employeeId)),
   matrix: path('MG-04'),
   capability: path('MG-05'),
-  training: path('MG-06'),
-  trainingDetail: (assignmentId: string) => path('MG-07').replace(':assignmentId', encodeURIComponent(assignmentId)),
   tasks: path('MG-08'),
   task: (taskId: string) => path('MG-10').replace(':id', encodeURIComponent(taskId)),
   newTask: path('MG-09'),

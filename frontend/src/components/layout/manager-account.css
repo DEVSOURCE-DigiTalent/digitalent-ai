@@ -1,33 +1,33 @@
 .manager-shell {
-  --account-accent: #513b9c;
-  --account-ink: #282143;
-  --account-muted: #625976;
-  --account-line: #ddd5ef;
+  --account-accent: #15536d;
+  --account-ink: #102e40;
+  --account-muted: #496273;
+  --account-line: #cddfe7;
   --account-surface: #fff;
-  --account-raised: #f7f4fc;
-  --account-tint: #eee7fc;
-  --account-ring: #8561da44;
+  --account-raised: #f0f6f8;
+  --account-tint: #e0eff4;
+  --account-ring: #4b9cb144;
 }
 html[data-theme='dark'] .manager-shell {
-  --account-accent: #dacbff;
-  --account-ink: #f2ebfc;
-  --account-muted: #c6bad8;
-  --account-line: #55476d;
-  --account-surface: #262039;
-  --account-raised: #302745;
-  --account-tint: #3b2c57;
-  --account-ring: #b99af877;
+  --account-accent: #a7deec;
+  --account-ink: #e9f5fa;
+  --account-muted: #b4ceda;
+  --account-line: #376177;
+  --account-surface: #102c3e;
+  --account-raised: #153548;
+  --account-tint: #1c475a;
+  --account-ring: #85cfdf77;
 }
-.manager-shell .account-menu__trigger-avatar { background: linear-gradient(135deg, #392b78, #7153c7); }
+.manager-shell .account-menu__trigger-avatar { background: linear-gradient(135deg, #0a2f48, #126079); }
 .manager-shell .account-menu__trigger:hover,
 .manager-shell .account-menu__trigger[aria-expanded='true'] {
-  border-color: #c8b7ef; background: #f0eaff;
+  border-color: #b6dae6; background: #e1f3f7;
 }
 .manager-shell .account-menu__panel {
   width: min(288px, calc(100vw - 2rem));
   border-color: var(--account-line);
   background: linear-gradient(145deg, var(--account-surface), var(--account-raised));
-  box-shadow: 0 16px 40px #25134633;
+  box-shadow: 0 16px 40px #102f4333;
 }
 .manager-shell .account-menu__identity {
   border-color: var(--account-line);
@@ -55,7 +55,7 @@ html[data-theme='dark'] .manager-shell {
   background: var(--account-tint); border-color: var(--account-line); color: var(--account-accent); box-shadow: none;
 }
 .manager-shell .aw-card {
-  padding: clamp(16px, 2.2vw, 28px); border-radius: 20px; background: var(--account-surface); box-shadow: 0 10px 30px #291b4e0d;
+  padding: clamp(16px, 2.2vw, 28px); border-radius: 20px; background: var(--account-surface); box-shadow: 0 10px 30px #102f430d;
 }
 .manager-shell .aw-section-title { margin-bottom: 18px; }
 .manager-shell .aw-icon,
@@ -64,13 +64,13 @@ html[data-theme='dark'] .manager-shell {
   border-color: var(--account-line); background: var(--account-tint); color: var(--account-accent); box-shadow: none;
 }
 .manager-shell .aw-identity {
-  padding: clamp(19px, 2.6vw, 30px); border-radius: 20px; border-color: #7660a9;
-  background: radial-gradient(ellipse at 90% 0, #9d7cf075, transparent 68%), linear-gradient(135deg, #271c4b, #473383);
-  box-shadow: 0 12px 28px #271c4b25;
+  padding: clamp(19px, 2.6vw, 30px); border-radius: 20px; border-color: #30647c;
+  background: radial-gradient(ellipse at 90% 0, #197d9375, transparent 68%), linear-gradient(135deg, #08283f, #0d4562);
+  box-shadow: 0 12px 28px #08283f25;
 }
 .manager-shell .aw-avatar { width: 54px; height: 54px; border-radius: 16px; font-size: 23px; color: #fff; box-shadow: none; }
 .manager-shell .aw-identity h2 { margin-top: 14px; }
-.manager-shell :is(.aw-identity__email, .aw-roles > span) { color: #f0eaff; }
+.manager-shell :is(.aw-identity__email, .aw-roles > span) { color: #e1f3f7; }
 .manager-shell :is(.aw-section-title p, .aw-field, .aw-field small, .aw-actions > span, .aw-state, .aw-device small) {
   color: var(--account-muted); font-size: 13px;
 }
@@ -87,9 +87,9 @@ html[data-theme='dark'] .manager-shell {
 .manager-shell .aw-actions { margin-top: 18px; padding-top: 14px; border-color: var(--account-line); }
 .manager-shell .aw-security-grid .aw-actions { justify-content: flex-end; }
 .manager-shell .aw-primary {
-  border-color: #5540a6; background: linear-gradient(120deg, #4f3ba1, #6248b7); box-shadow: none;
+  border-color: #15536d; background: linear-gradient(120deg, #0a2f48, #126079); box-shadow: none;
 }
-.manager-shell .aw-primary:hover:not(:disabled) { box-shadow: 0 7px 16px #40248642; }
+.manager-shell .aw-primary:hover:not(:disabled) { box-shadow: 0 7px 16px #0a2f4842; }
 .manager-shell .aw-primary:disabled { background: var(--account-tint); border-color: var(--account-line); color: var(--account-muted); opacity: 1; }
 .manager-shell .aw-secondary { background: var(--account-raised); border-color: var(--account-line); color: var(--account-accent); }
 .manager-shell .aw-secondary:hover { background: var(--account-tint); }

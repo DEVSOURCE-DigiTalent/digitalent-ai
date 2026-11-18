@@ -4,7 +4,6 @@ import {
   Bug,
   FileBarChart,
   FileCheck2,
-  GraduationCap,
   LayoutDashboard,
   MessageSquare,
   TrendingUp,
@@ -28,7 +27,6 @@ export const MANAGER_SIDEBAR: SidebarConfig = [
 
   // ── CÁC CÔNG CỤ KHÁC ──
   { label: 'Các công cụ khác' },
-  { label: 'Đào tạo đội ngũ', icon: GraduationCap, screenId: 'MG-06', activeFor: ['MG-07'] },
   { label: 'Học tập của tôi', icon: BookOpen, screenId: 'EM-01' },
   { label: 'Hoạt động', icon: Bell, screenId: 'SHR-03' },
   { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04' },

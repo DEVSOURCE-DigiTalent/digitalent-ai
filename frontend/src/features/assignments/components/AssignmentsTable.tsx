@@ -20,12 +20,10 @@ interface AssignmentsTableProps {
   pageInfo: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };
   /** Where a name leads; none for roles that cannot open the capability page. */
   employeeLink?: boolean;
-  employeeLinkPrefix?: string;
-  assignmentLinkPrefix?: string;
 }
 
 /** The list of course assignments shared by the assignment and the training monitor screens. */
-export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchChange, filters, toolbarActions, pageInfo, className, employeeLink = true, employeeLinkPrefix = '/enterprise/members', assignmentLinkPrefix }: AssignmentsTableProps) {
+export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchChange, filters, toolbarActions, pageInfo, className, employeeLink = true }: AssignmentsTableProps) {
   useUiLanguage();
   const columns: Column<AssignmentRow>[] = [
     {
@@ -36,7 +34,7 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
           <span className="assignment-avatar" aria-hidden="true">{a.employeeName.split(/\s+/).slice(-2).map((part) => part.charAt(0)).join('').toUpperCase()}</span>
           <div>
           {employeeLink ? (
-            <Link to={`${employeeLinkPrefix}/${a.employeeId}`} className="font-medium text-slate-900 hover:underline">{a.employeeName}</Link>
+            <Link to={`/enterprise/members/${a.employeeId}`} className="font-medium text-slate-900 hover:underline">{a.employeeName}</Link>
           ) : (
             <span className="font-medium text-slate-900">{a.employeeName}</span>
           )}
@@ -50,9 +48,7 @@ export function AssignmentsTable({ rows, isLoading, onCancel, search, onSearchCh
       header: 'Khóa học',
       cell: (a) => (
         <div>
-          {assignmentLinkPrefix ? (
-            <Link to={`${assignmentLinkPrefix}/${a.id}`} className="assignment-course-name hover:underline">{a.courseTitle}</Link>
-          ) : <p className="assignment-course-name">{a.courseTitle}</p>}
+          <p className="assignment-course-name">{a.courseTitle}</p>
           <p className="assignment-course-code font-mono">{a.courseCode}{a.source === 'SKILL_GAP' || a.source === 'RECOMMENDATION' ? ' · từ đề xuất' : ''}</p>
         </div>
       ),

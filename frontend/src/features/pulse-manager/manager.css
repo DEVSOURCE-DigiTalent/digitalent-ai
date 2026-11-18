@@ -215,16 +215,6 @@ a.pm-row:hover strong { color: var(--pm-strong); }
 .pm-hierarchy li { position: relative; padding: 7px 12px; border-radius: 999px; background: var(--pm-tint); color: var(--pm-strong); font-size: 12px; font-weight: 800; }
 .pm-hierarchy li + li::before { content: "≥"; position: absolute; left: -19px; top: 50%; transform: translateY(-50%); color: #9aa6b8; font-weight: 700; }
 
-/* ── Đào tạo đội ngũ ────────────────────────────────────────────────────── */
-.pm-course { padding: clamp(18px, 2.2vw, 24px); border: 1px solid #e0e8ee; border-radius: 20px; background: #fff; }
-.pm-course + .pm-course { margin-top: 14px; }
-.pm-learner { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 150px; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid #edf1f4; }
-.pm-learner > .pu-pill { justify-self: end; }
-.pm-learner strong { display: block; font-size: 13px; }
-.pm-learner small { color: #7a869c; font-size: 11px; }
-.pm-learner .pu-bar { margin-top: 0; }
-.pm-learner-progress { display: grid; gap: 5px; color: #6c7891; font-size: 11px; }
-
 /* ── Báo cáo chu kỳ: dòng thời gian ─────────────────────────────────────── */
 .pm-timeline { margin: 6px 0 0; padding: 0; list-style: none; }
 .pm-timeline li { position: relative; padding: 0 0 16px 22px; border-left: 2px solid #e3ecef; margin-left: 5px; }
@@ -276,8 +266,6 @@ button.pm-activity-item:hover strong { color: var(--pm-strong); }
   .pm-kpis, .pm-cards, .pm-split, .pm-summary, .pm-picker { grid-template-columns: minmax(0, 1fr); }
   .pm-level-row { grid-template-columns: 1fr auto; }
   .pm-level-row .pm-levels { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; white-space: normal; }
-  .pm-learner { grid-template-columns: 1fr auto; }
-  .pm-learner-progress { grid-column: 1 / -1; grid-row: 2; }
 }
 @media (max-width: 640px) {
   .pm-domain-grid { grid-template-columns: minmax(0, 1fr); }
@@ -310,7 +298,7 @@ html[data-theme='dark'] .pu.pu-manager {
   color: var(--pu-ink);
 }
 html[data-theme='dark'] .pu-manager :is(
-  .pu-surface, .pm-panel, .pm-card, .pm-kpi, .pm-strip, .pm-summary > div, .pm-level-row, .pm-domain-card, .pm-course,
+  .pu-surface, .pm-panel, .pm-card, .pm-kpi, .pm-strip, .pm-summary > div, .pm-level-row, .pm-domain-card,
   .pm-evidence, .pu-metrics > div, .pu-rplayer, .pu-attempt, .pu-rubric > div, .pu-review-choice-list li,
   .pu-tabs button, .pu-btn-outline, .pu-btn-ghost, .pu-field textarea, .pu-field input, .pu-field select,
   .pu-risk-gauge b, .pu-risk-factors li, .pu-rplayer-speed button[aria-pressed='true'], .pu-review-recording > summary
@@ -329,7 +317,7 @@ html[data-theme='dark'] .pu-manager :is(
   color: var(--pu-ink-2);
 }
 html[data-theme='dark'] .pu-manager :is(.pu-bar, .pu-lane, .pu-timeline-track, .pu-ai-bar) { background: #22363e; }
-html[data-theme='dark'] .pu-manager :is(.pm-row, .pm-learner, .pm-activity li, .pu-rplayer-events) { border-color: var(--pu-line); }
+html[data-theme='dark'] .pu-manager :is(.pm-row, .pm-activity li, .pu-rplayer-events) { border-color: var(--pu-line); }
 html[data-theme='dark'] .pu-manager .pm-timeline li { border-left-color: #22363e; }
 html[data-theme='dark'] .pu-manager .pm-timeline li::before { border-color: #142228; }
 html[data-theme='dark'] .pu-manager .pu-tabs button[aria-pressed='true'] { border-color: var(--pm-accent); background: var(--pm-accent); color: #fff; }
@@ -340,11 +328,11 @@ html[data-theme='dark'] .pu-manager :is(.pu-rplayer-events button:hover, .pu-rpl
 /* Chữ viết cứng màu mực / xám trong manager.css và pulse.css */
 html[data-theme='dark'] .pu-manager :is(
   .pu-page-head h1, .pm-row strong, .pm-strip p, .pm-summary strong, .pm-submission header strong, .pm-activity-item.unread strong,
-  .pm-person strong, .pm-level-row strong, .pm-learner strong, .pm-timeline strong, .pu-ai-label, .pu-ai-fraud-event
+  .pm-person strong, .pm-level-row strong, .pm-timeline strong, .pu-ai-label, .pu-ai-fraud-event
 ) { color: var(--pu-ink); }
 html[data-theme='dark'] .pu-manager :is(
   .pu-page-head p, .pm-row small, .pm-summary small, .pm-kpi span, .pm-card small, .pm-person small, .pm-domain-head small,
-  .pm-level-row small, .pm-levels, .pm-legend, .pm-learner small, .pm-learner-progress, .pm-timeline small, .pm-activity-item strong,
+  .pm-level-row small, .pm-levels, .pm-legend, .pm-timeline small, .pm-activity-item strong,
   .pm-domain-card ul, .pm-submission p, .pm-rubric-box ul, .pu-ai-note, .pu-ai-fraud-note, .pu-ai-fraud-summary, .pu-footer-note
 ) { color: var(--pu-muted); }
 html[data-theme='dark'] .pu-manager :is(.pm-levels b, .pm-level-chips span, .pm-rubric-box .pu-mini) { color: #8fd8cf; }

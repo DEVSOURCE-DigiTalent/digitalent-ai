@@ -11,8 +11,6 @@ Các trang chỉ dùng cho role `MANAGER` nằm trong `pages/`. Trang nhóm ở 
 | `/enterprise/team/members/:id` | `GET /employees/{guid}`, `/intelligence/skill-gaps?employeeId=`, `/course-assignments?employeeId=` |
 | `/enterprise/team/competency` | `GET /intelligence/skill-gaps` và `GET /intelligence/skill-gaps/{runId}` |
 | `/enterprise/team/skill-gap` | `GET /intelligence/skill-gaps` |
-| `/enterprise/team/training` | `GET /course-assignments`, `/course-assignments/summary` |
-| `/enterprise/team/training/:assignmentId` | `GET /course-assignments/{guid}` |
 | `/enterprise/me` | `GET /me/dashboard` |
 | `/enterprise/me/competency`, `/skill-gap`, `/evidence` | `GET /me/competency-profile`, `/me/skill-gap`, `/me/evidence` |
 | `/enterprise/me/learning-path` | `GET /me/learning-path`; tự ghi danh qua `POST /me/courses/{guid}/enroll` |

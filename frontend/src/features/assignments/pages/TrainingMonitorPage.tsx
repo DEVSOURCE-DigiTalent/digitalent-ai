@@ -1,6 +1,5 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
 import { PageHeader, ScoreCard } from '@/components/shared';
 import { useAssignmentSummary, useAssignments } from '@/hooks/use-assignments';
 import { useDepartments } from '@/hooks/use-departments';
@@ -14,19 +13,12 @@ import { AssignmentsTable } from '../components/AssignmentsTable';
 const PAGE_SIZE = 15;
 type Quick = '' | 'overdue' | 'dueSoon';
 
-interface TrainingMonitorPageProps {
-  /** If provided or if path is /enterprise/team/training, renders in manager scope context. */
-  isManagerScope?: boolean;
-}
-
 /**
- * OW-30 / MG-06: Training Monitor.
+ * OW-30: Training Monitor.
  * Real-time monitoring of course progress, deadlines, overdue items with filters by Dept, Position, and Job Grade (G1–G3).
  */
-export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingMonitorPageProps) {
+export function TrainingMonitorPage() {
   useUiLanguage();
-  const location = useLocation();
-  const isManager = propIsManager ?? location.pathname.includes('/team/training');
 
   const { data: summary } = useAssignmentSummary();
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
@@ -72,10 +64,7 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={translateUi(isManager ? 'Tiến độ đào tạo nhóm' : 'Theo dõi đào tạo')}
-        subtitle={translateUi(isManager ? 'Theo dõi tiến độ học tập, hạn hoàn thành và học viên cần đôn đốc trong nhóm phụ trách' : undefined)}
-      />
+      <PageHeader title={translateUi('Theo dõi đào tạo')} />
 
       {summary && (
         <>
@@ -97,7 +86,7 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
             />
           </div>
 
-          {summary.byDepartment.length > 0 && !isManager && (
+          {summary.byDepartment.length > 0 && (
             <section aria-labelledby="dept-title" className="rounded-lg border border-slate-200 bg-white p-5">
               <h2 id="dept-title" className="mb-3 text-base font-semibold text-slate-900">
                 Tiến độ theo phòng ban
@@ -130,8 +119,6 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
       <AssignmentsTable
         rows={displayedRows}
         isLoading={isLoading}
-        employeeLinkPrefix={isManager ? '/enterprise/team/members' : undefined}
-        assignmentLinkPrefix={isManager ? '/enterprise/team/training' : undefined}
         search={search}
         onSearchChange={(value) => {
           setSearch(value);
@@ -141,9 +128,7 @@ export function TrainingMonitorPage({ isManagerScope: propIsManager }: TrainingM
           <>
             <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo trạng thái")} value={status} onChange={(value) => { setStatus(value as AssignmentStatus | ''); setPage(1); }} options={[{ value: '', label: 'Tất cả trạng thái' }, ...((import.meta.env.VITE_USE_MOCK === 'true' ? ['NOT_STARTED', 'IN_PROGRESS', 'READY_FOR_ASSESSMENT', 'COMPLETED'] : ['ACTIVE', 'CANCELLED']) as AssignmentStatus[]).map((s) => ({ value: s, label: ASSIGNMENT_STATUS_LABELS[s] }))]} />
 
-            {!isManager && (
-              <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
-            )}
+            <OwnerFilterSelect icon="filter" label={translateUi("Lọc theo phòng ban")} value={departmentId} onChange={(value) => { setDepartmentId(value); setPage(1); }} options={[{ value: '', label: 'Mọi phòng ban' }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
 
             <OwnerFilterSelect icon="filter" label="Lọc theo vị trí" value={jobPositionId} onChange={(value) => { setJobPositionId(value); setPage(1); }} options={[{ value: '', label: 'Mọi vị trí' }, ...positions.map((p) => ({ value: p.id, label: p.name }))]} />
 

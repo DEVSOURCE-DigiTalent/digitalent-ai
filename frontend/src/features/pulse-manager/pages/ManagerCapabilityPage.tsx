@@ -1,6 +1,7 @@
 import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { useId, useState } from 'react';
-import { BarChart3, BrainCircuit, ChevronDown, Database, Lightbulb, MessagesSquare, Palette, Search, ShieldCheck, Target, Users } from 'lucide-react';
+import { BarChart3, BrainCircuit, ChevronDown, Database, Lightbulb, MessagesSquare, Palette, Search, ShieldCheck } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { PageLoading, SectionLoading } from '@/components/shared/LoadingState';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
@@ -42,19 +43,19 @@ export function ManagerCapabilityPage() {
 }
 
 function DepartmentCapabilities({ people }: { people: WorkforceRow[] }) {
-  const [selectedId, setSelectedId] = useState(people[0].id);
+  const [params, setParams] = useSearchParams();
+  const selectedId = params.get('employeeId');
   const employee = people.find(({ id }) => id === selectedId) ?? people[0];
   const capability = useEmployeeCapability(employee.id);
-  const evaluated = people.filter(({ hasSnapshot }) => hasSnapshot).length;
   const model = buildCapability(capability.data?.competencies ?? []);
-  const { summary } = model;
 
   return (
     <div className="mc-workspace">
       <div className="mc-controls">
         <div className="mc-person-select">
           <span>{translateUi('Nhân sự')}</span>
-          <OwnerFilterSelect variant="manager" label="Nhân sự" value={employee.id} onChange={setSelectedId}
+          <OwnerFilterSelect variant="manager" label="Nhân sự" value={employee.id}
+            onChange={(id) => setParams({ employeeId: id }, { replace: true, preventScrollReset: true })}
             options={people.map(({ id, fullName }) => ({ value: id, label: fullName }))} />
         </div>
         <div className="mc-position">
@@ -67,11 +68,6 @@ function DepartmentCapabilities({ people }: { people: WorkforceRow[] }) {
           <PuLink to={MANAGER_PATHS.matrix} kind="ghost" small>{translateUi('Ma trận năng lực')}</PuLink>
         </div>
       </div>
-      <dl className="mc-metrics">
-        <div><Users size={19} aria-hidden="true" /><dt>{translateUi('Nhân viên có kết quả đối chiếu')}</dt><dd>{evaluated}<small> / {people.length}</small></dd><span>{translateUi('Phòng ban')}</span></div>
-        <div><ShieldCheck size={19} aria-hidden="true" /><dt>{translateUi('Năng lực yêu cầu đã xác nhận')}</dt><dd>{capability.data ? <>{summary.measured}<small> / {summary.targets}</small></> : '—'}</dd><span>{translateUi('Nhân viên đang xem')}</span></div>
-        <div data-tone="gap"><Target size={19} aria-hidden="true" /><dt>{translateUi('Khoảng cách đã xác nhận')}</dt><dd>{summary.measured ? summary.gaps : '—'}</dd><span>{translateUi(summary.measured ? 'Trong các năng lực đã xác nhận' : capability.data ? 'Chưa đủ dữ liệu đối chiếu' : 'Chưa có số liệu')}</span></div>
-      </dl>
       {capability.isLoading ? <SectionLoading label="Đang tải năng lực nhân viên" />
         : capability.isError || !capability.data ? <LoadError message="Không tải được hồ sơ năng lực của nhân viên này." onRetry={capability.refetch} />
         : <EmployeeCapabilities key={employee.id} data={capability.data} model={model} />}
@@ -166,18 +162,16 @@ function EmployeeCapabilities({ data, model }: { data: EmployeeCapability; model
       </>}
     </section>
 
-    <section className="mc-panel mc-recommendations" aria-labelledby="mc-recommendations-title">
+    {recommendations.length > 0 && <section className="mc-panel mc-recommendations" aria-labelledby="mc-recommendations-title">
       <div>
         <h2 id="mc-recommendations-title">{translateUi('Đào tạo đề xuất')}</h2>
-        {recommendations.length === 0 && <p>{translateUi(summary.measured ? 'Chưa có khóa học phù hợp.' : 'Cần mức năng lực đã xác nhận để đề xuất khóa học.')}</p>}
       </div>
-      <PuLink to={MANAGER_PATHS.training} kind="outline" small>{translateUi('Xem tiến độ đào tạo')}</PuLink>
-      {recommendations.length > 0 && <ul>
+      <ul>
         {recommendations.map((course) => <li key={course.courseId}><strong>{translateUi(course.title)}</strong>
           {course.reasons.length > 0 && <small>{course.reasons.map(({ competencyName }) => translateUi(competencyName)).join(' · ')}</small>}
         </li>)}
-      </ul>}
-    </section>
+      </ul>
+    </section>}
   </>;
 }
 

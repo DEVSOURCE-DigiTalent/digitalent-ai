@@ -153,7 +153,6 @@ export function ManagerCycleReportPage() {
   const avgProgress = unfinished.length
     ? Math.round(unfinished.reduce((sum, learner) => sum + learner.progressPercent, 0) / unfinished.length)
     : null;
-  const firstAssignmentDate = rows.map((row) => row.assignedAt).filter(Boolean).sort()[0];
   const events = [
     ...completed.flatMap((learner) => learner.completedAt ? [{
       at: learner.completedAt, title: learner.courseTitle, employee: learner.employeeName,
@@ -175,9 +174,7 @@ export function ManagerCycleReportPage() {
 
   return (
     <ManagerPage testId="manager-cycle-report">
-      <ManagerPageHeader scope={department.name} title="Báo cáo chu kỳ" actions={
-        can(PERMISSIONS.LEARNING_PROGRESS_READ) && <PuLink to={MANAGER_PATHS.training} kind="outline">{translateUi('Theo dõi đào tạo')} →</PuLink>
-      } />
+      <ManagerPageHeader scope={department.name} title="Báo cáo chu kỳ" />
       <div className="manager-cycle">
         <KpiRow label="Tổng quan phòng ban" items={[
           { label: 'Học viên', icon: <GraduationCap size={16} />, value: assignmentsReady ? new Set(learners.map((learner) => learner.employeeId)).size : '—' },
@@ -233,17 +230,6 @@ export function ManagerCycleReportPage() {
             )}
           </section>
         </div>
-
-        <section className="manager-cycle__panel manager-cycle__resources" aria-label={translateUi('Năng lực đội ngũ')}>
-          <div>
-            <details>
-              <summary>{translateUi('Khi nào mức năng lực được cập nhật?')}</summary>
-              <p>{translateUi('Mức năng lực đã xác nhận cập nhật khi bài cuối khóa được duyệt.')}</p>
-            </details>
-            {can(PERMISSIONS.SKILL_GAP_READ) && <PuLink to={MANAGER_PATHS.capability} kind="outline" small>{translateUi('Xem năng lực đội ngũ')} →</PuLink>}
-            {firstAssignmentDate && <p>{translateUi('Ghi nhận phân công từ')} {formatDate(firstAssignmentDate)}</p>}
-          </div>
-        </section>
       </div>
     </ManagerPage>
   );

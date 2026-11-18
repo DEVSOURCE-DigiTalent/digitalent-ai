@@ -28,7 +28,6 @@ import { ManagerCapabilityPage } from '../pages/ManagerCapabilityPage';
 import { ManagerActivityPage } from '../pages/ManagerActivityPage';
 import { ManagerOverviewPage } from '../pages/ManagerOverviewPage';
 import { ManagerCycleReportPage } from '../pages/ManagerCycleReportPage';
-import { ManagerTeamTrainingPage } from '../pages/ManagerTeamTrainingPage';
 
 const ok = <T,>(data: T) => ({ data: { success: true, message: 'Success', data } }) as never;
 const page = <T,>(items: T[]) => ok({ items, pageIndex: 1, pageSize: 100, totalItems: items.length, totalPages: 1 });
@@ -86,37 +85,6 @@ beforeEach(() => {
 });
 
 const labelsOf = (config: typeof MANAGER_SIDEBAR) => config.map((section) => section.label);
-
-it('filters department training and preserves separate links for assigned and independent learning', async () => {
-  signInManager([...MANAGER_PERMISSIONS, 'course_assignment.read']);
-  const assigned = {
-    id: 'assignment-1', employeeId: 'emp-1', employeeName: 'Nguyễn An', employeeCode: 'E1',
-    courseId: 'course-1', courseCode: 'M1', courseTitle: 'Kỹ năng số', assignedByName: 'Chủ doanh nghiệp',
-    assignedAt: '2026-10-01T00:00:00Z', progressPercent: 100, overdue: true, status: 'IN_PROGRESS',
-  } as AssignmentRow;
-  const getAssignments = vi.spyOn(assignmentService, 'getList').mockImplementation(async (params) => ok({
-    items: params?.pageIndex === 1 ? [assigned] : [{
-      ...assigned, id: 'independent-2', employeeId: 'emp-2', employeeName: 'Mai Linh', employeeCode: 'E2',
-      source: 'SELF_ENROLLED', overdue: false, progressPercent: 0,
-    }],
-    totalPages: 2,
-  }));
-  vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok({ items: [] }));
-  renderAt(MANAGER_PATHS.training, <ManagerTeamTrainingPage />);
-
-  const courseTitle = await screen.findByRole('heading', { name: 'Kỹ năng số' });
-  fireEvent.click(courseTitle.closest('summary')!);
-  expect(await screen.findByRole('link', { name: 'Nguyễn An' })).toHaveAttribute('href', MANAGER_PATHS.trainingDetail('assignment-1'));
-  expect(screen.getByRole('link', { name: 'Mai Linh' })).toHaveAttribute('href', MANAGER_PATHS.member('emp-2'));
-  expect(screen.getByText('Quá hạn học')).toBeInTheDocument();
-  expect(getAssignments).toHaveBeenLastCalledWith(expect.objectContaining({
-    departmentId: 'dep-ops', includeIndependentLearning: true, pageIndex: 2,
-  }));
-  fireEvent.click(screen.getByRole('button', { name: /Cần hỗ trợ/ }));
-  expect(screen.queryByRole('link', { name: 'Mai Linh' })).not.toBeInTheDocument();
-  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'nguyen an' } });
-  expect(screen.getByRole('link', { name: 'Nguyễn An' })).toBeInTheDocument();
-});
 
 it('uses all assignment pages in the selected department and resets course pagination on search', async () => {
   signInManager([...MANAGER_PERMISSIONS, 'course_assignment.read']);
@@ -181,33 +149,34 @@ it('keeps pagination visible for four employees and returns to page one when fil
 });
 
 describe('Manager overview', () => {
-  it('charts department totals and opens the matching Manager screen', async () => {
-    const workforce = vi.spyOn(workforceService, 'getList').mockImplementation(async (params) =>
-      ok({ items: [], totalItems: params?.learning === 'ACTIVE' || params?.gap === 'ANY' ? 1 : 0 }),
-    );
-    const queue = vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok({
-      items: [
-        { kind: 'FINAL', status: 'PENDING' },
-        { kind: 'FINAL', status: 'FLAGGED' },
-        { kind: 'PRE_ASSESSMENT', status: 'PENDING' },
+  it('compares department targets with measured levels and leaves missing baseline blank', async () => {
+    const development = vi.spyOn(workforceService, 'getDevelopment').mockResolvedValue(ok({
+      employeeCount: 4,
+      domains: [
+        { code: 'TT02_D1', name: 'Dữ liệu và thông tin', baseline: null, current: 2, target: 3, baselineCount: 0, currentCount: 2,
+          currentLevels: { belowBasic: 0, basic: 0, intermediate: 2, advanced: 0, noData: 2 } },
+        { code: 'TT02_D2', name: 'Giao tiếp', baseline: 0, current: 1, target: 2, baselineCount: 1, currentCount: 3,
+          currentLevels: { belowBasic: 1, basic: 1, intermediate: 1, advanced: 0, noData: 1 } },
       ],
     }));
     renderAt(MANAGER_PATHS.overview, <ManagerOverviewPage />);
 
-    const summary = within(await screen.findByRole('region', { name: 'Tóm tắt phòng ban' }));
-    expect(summary.getByRole('link', { name: /Nhân viên.*Đang làm việc/ })).toHaveAttribute('href', MANAGER_PATHS.members);
-    const attention = within(await screen.findByRole('region', { name: 'Cần theo dõi' }));
-    expect(attention.getByRole('link', { name: /1 Cần hỗ trợ/ })).toHaveAttribute('href', MANAGER_PATHS.finalReviews);
-    const metrics = within(await screen.findByRole('region', { name: 'Chỉ số phòng ban' }));
-    await waitFor(() => expect(metrics.getByText('Đang có khóa học').closest('li')).toHaveTextContent('1'));
-    fireEvent.click(metrics.getByRole('button', { name: 'Năng lực đội ngũ' }));
-    await waitFor(() => expect(metrics.getByText('Có khoảng trống năng lực').closest('li')).toHaveTextContent('1'));
-    fireEvent.click(metrics.getByRole('button', { name: 'Kết quả bài làm' }));
-    expect(metrics.getByText('Chờ đánh giá').closest('li')).toHaveTextContent('1');
-    expect(metrics.getByText('Cần hỗ trợ').closest('li')).toHaveTextContent('1');
-    expect(metrics.getByRole('link', { name: /Kết quả bài làm/ })).toHaveAttribute('href', MANAGER_PATHS.finalReviews);
-    expect(workforce).toHaveBeenCalledWith(expect.objectContaining({ departmentId: 'dep-ops', pageSize: 1, gap: 'ANY' }));
-    expect(queue).toHaveBeenCalledWith(true, undefined, false, undefined, 'dep-ops');
+    const domain = await screen.findByRole('button', { name: 'Giao tiếp', exact: true });
+    const baseline = () => screen.getByText('Đầu vào', { selector: 'dt' }).nextElementSibling;
+    expect(baseline()).toHaveTextContent('Chưa có dữ liệu');
+    fireEvent.click(domain);
+    expect(domain).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { name: 'Giao tiếp', exact: true })).toBeInTheDocument();
+    expect(baseline()).toHaveTextContent('Chưa đạt');
+    expect(screen.getByText('Còn thiếu')).toBeInTheDocument();
+    const distribution = screen.getByText('Số người theo mức hiện tại').parentElement!;
+    expect(within(distribution).getByText('Cơ bản').nextElementSibling).toHaveTextContent(/^1$/);
+    expect(within(distribution).getByText('Nâng cao').nextElementSibling).toHaveTextContent(/^0$/);
+    const baselineToggle = screen.getByRole('button', { name: 'Đầu vào', exact: true });
+    fireEvent.click(baselineToggle);
+    expect(baselineToggle).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('link', { name: 'Xem nhân viên' })).toHaveAttribute('href', MANAGER_PATHS.members);
+    expect(development).toHaveBeenCalledWith({ departmentId: 'dep-ops' });
   });
 });
 
@@ -226,7 +195,7 @@ describe('Manager sidebar (Pulse)', () => {
     expect(options.queryByRole('option', { name: 'Tài chính' })).toBeNull();
     fireEvent.click(options.getByRole('option', { name: 'Hỗ trợ' }));
     await waitFor(() => expect(getWorkforce).toHaveBeenLastCalledWith(expect.objectContaining({ departmentId: 'dep-support' })));
-    expect(screen.getByText('8 nhân viên trong phòng ban')).toBeInTheDocument();
+    expect(select).toHaveTextContent('Hỗ trợ');
     fireEvent.keyDown(select, { key: 'ArrowUp' });
     fireEvent.keyDown(select, { key: 'Home' });
     fireEvent.keyDown(select, { key: 'Enter' });
@@ -236,7 +205,7 @@ describe('Manager sidebar (Pulse)', () => {
   it('has the two prototype groups with their items in order', () => {
     expect(labelsOf(MANAGER_SIDEBAR)).toEqual([
       'Quản lý đội', 'Tổng quan', 'Nhân viên', 'Năng lực đội ngũ', 'Kết quả bài làm', 'Báo cáo chu kỳ',
-      'Các công cụ khác', 'Đào tạo đội ngũ', 'Hoạt động', 'Góp ý', 'Báo lỗi',
+      'Các công cụ khác', 'Học tập của tôi', 'Hoạt động', 'Góp ý', 'Báo lỗi',
     ]);
   });
 
@@ -262,8 +231,6 @@ describe('Manager sidebar (Pulse)', () => {
     ['/enterprise/team/competency', 'Năng lực đội ngũ'],
     ['/enterprise/team/final-reviews', 'Kết quả bài làm'],
     ['/enterprise/team/reports', 'Báo cáo chu kỳ'],
-    ['/enterprise/team/training', 'Đào tạo đội ngũ'],
-    ['/enterprise/team/training/asg-1', 'Đào tạo đội ngũ'],
     ['/enterprise/notifications', 'Hoạt động'],
   ])('on %s highlights exactly "%s"', (path, label) => {
     render(
