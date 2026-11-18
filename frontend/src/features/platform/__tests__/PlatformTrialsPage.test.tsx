@@ -82,6 +82,27 @@ const SAMPLE_TRIALS: PlatformTrialItem[] = [
     participants: 12,
     submitted: 12,
     reviewed: 12,
+    coursesPurchased: 4,
+    learners: 9,
+    waitingFinals: 1,
+  },
+  {
+    organizationId: 'org-learn',
+    organizationName: 'Bán lẻ Sao Mai',
+    ownerName: 'Lê Thị Mai',
+    ownerEmail: 'mai@saomai.vn',
+    stage: 'REPORTED',
+    startedAt: '2026-10-20T08:00:00Z',
+    testDeadline: '2026-10-30T18:00:00Z',
+    reportPublishedAt: '2026-10-30T18:00:00Z',
+    mentorUserId: null,
+    mentorName: null,
+    participants: 5,
+    submitted: 5,
+    reviewed: 0,
+    coursesPurchased: 2,
+    learners: 3,
+    waitingFinals: 2,
   },
 ];
 
@@ -104,13 +125,13 @@ const SAMPLE_MENTORS: MentorItem[] = [
   },
 ];
 
-function renderTrials() {
+function renderTrials(path = '/platform/trials') {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/platform/trials']}>
+      <MemoryRouter initialEntries={[path]}>
         <App />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -156,43 +177,57 @@ describe('PlatformTrialsPage (PA-14)', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders distinct stage labels, 4 KPI filter cards, and interactive mentor filtering', async () => {
+  it('keeps the survey apart from the mentor who grades the learning assignments', async () => {
     renderTrials();
 
-    const getTable = () => screen.getByRole('region', { name: /bảng yêu cầu thẩm định dùng thử/i });
+    const survey = () => screen.getByRole('region', { name: /bảng bài khảo sát/i });
 
-    await waitFor(() => expect(within(getTable()).getByText('Logistics Phương Đông')).toBeInTheDocument());
-    expect(within(getTable()).getByText('VinTech Solutions')).toBeInTheDocument();
-    expect(within(getTable()).getByText('Giáo dục Số EduGlobal')).toBeInTheDocument();
+    await waitFor(() => expect(within(survey()).getByText('Logistics Phương Đông')).toBeInTheDocument());
 
-    // REQUESTED and ASSIGNED must have distinct labels inside the table (not merged as "Đang khảo sát")
-    expect(within(getTable()).getAllByText('Chờ phân công').length).toBeGreaterThanOrEqual(1);
-    expect(within(getTable()).getAllByText('Đang chấm').length).toBeGreaterThanOrEqual(1);
-    expect(within(getTable()).getByText('Chưa phân công')).toBeInTheDocument();
+    // Survey: requested and mentor-assigned organizations are both still taking the test; no mentor column.
+    expect(within(survey()).getAllByText('Đang làm bài')).toHaveLength(2);
+    expect(within(survey()).getAllByText('Đã có báo cáo')).toHaveLength(2);
+    expect(within(survey()).queryByText('Chưa phân công')).not.toBeInTheDocument();
+    expect(within(survey()).queryByText('Lê Minh Tuấn')).not.toBeInTheDocument();
 
-    // Filter via KPI card "Chờ phân công"
-    fireEvent.click(screen.getByRole('button', { name: /chờ phân công/i }));
-    expect(within(getTable()).getByText('Logistics Phương Đông')).toBeInTheDocument();
-    expect(within(getTable()).queryByText('VinTech Solutions')).not.toBeInTheDocument();
+    // KPI "Đang làm khảo sát" filters the survey table; clicking again shows everything.
+    fireEvent.click(screen.getByRole('button', { name: /đang làm khảo sát/i }));
+    expect(within(survey()).getByText('VinTech Solutions')).toBeInTheDocument();
+    expect(within(survey()).queryByText('Giáo dục Số EduGlobal')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /đang làm khảo sát/i }));
+    expect(within(survey()).getByText('Giáo dục Số EduGlobal')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /bảng mentor chấm bài học/i })).not.toBeInTheDocument();
+  });
 
-    // Clicking active KPI resets back to all
-    fireEvent.click(screen.getByRole('button', { name: /chờ phân công/i }));
-    expect(within(getTable()).getByText('VinTech Solutions')).toBeInTheDocument();
+  it('lists the learning organizations and their mentor on the Mentor page', async () => {
+    renderTrials('/platform/mentors');
+    const learning = () => screen.getByRole('region', { name: /bảng mentor chấm bài học/i });
+    await waitFor(() => expect(within(learning()).getByText('Bán lẻ Sao Mai')).toBeInTheDocument());
+    expect(screen.queryByRole('region', { name: /bảng bài khảo sát/i })).not.toBeInTheDocument();
 
-    // Open Mentor dropdown and filter table by Lê Minh Tuấn
+    // Learning: only organizations with a report; the one without a mentor comes first with its waiting work.
+    expect(within(learning()).queryByText('Logistics Phương Đông')).not.toBeInTheDocument();
+    const rows = within(learning()).getAllByRole('row');
+    expect(within(rows[1]).getByText('Bán lẻ Sao Mai')).toBeInTheDocument();
+    expect(within(rows[1]).getByText('Chưa phân công')).toBeInTheDocument();
+    expect(within(rows[1]).getByText('2 bài')).toBeInTheDocument();
+    expect(within(rows[2]).getByText('Nguyễn Thu Hương')).toBeInTheDocument();
+
+    // Filter the learning table by mentor.
     fireEvent.click(screen.getByRole('button', { name: /lọc theo mentor/i }));
-    fireEvent.click(screen.getByRole('button', { name: /tuan\.le@digitalent\.ai/i }));
-    expect(within(getTable()).getByText('VinTech Solutions')).toBeInTheDocument();
-    expect(within(getTable()).queryByText('Logistics Phương Đông')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /huong\.nguyen@digitalent\.ai/i }));
+    expect(within(learning()).getByText('Giáo dục Số EduGlobal')).toBeInTheDocument();
+    expect(within(learning()).queryByText('Bán lẻ Sao Mai')).not.toBeInTheDocument();
   });
 
   it('opens TrialDetailDrawer and assigns a mentor, and supports CreateMentorDrawer', async () => {
-    renderTrials();
+    renderTrials('/platform/mentors');
 
-    await waitFor(() => expect(screen.getByText('Logistics Phương Đông')).toBeInTheDocument());
+    const learning = () => screen.getByRole('region', { name: /bảng mentor chấm bài học/i });
+    await waitFor(() => expect(within(learning()).getByText('Bán lẻ Sao Mai')).toBeInTheDocument());
 
-    // Open assign drawer from table CTA
-    fireEvent.click(screen.getByRole('button', { name: /^Phân công$/i }));
+    // Open the assign drawer from the learning table
+    fireEvent.click(within(learning()).getByRole('button', { name: /^Phân công$/i }));
     expect(screen.getByRole('radiogroup', { name: /chọn mentor phụ trách/i })).toBeInTheDocument();
 
     // Select Nguyễn Thu Hương and submit
@@ -200,7 +235,7 @@ describe('PlatformTrialsPage (PA-14)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Xác nhận phân công/i }));
 
     await waitFor(() =>
-      expect(trialServiceMock.assignMentor).toHaveBeenCalledWith('org-req', 'm-2'),
+      expect(trialServiceMock.assignMentor).toHaveBeenCalledWith('org-learn', 'm-2'),
     );
 
     // Open CreateMentorDrawer from header action

@@ -7,45 +7,61 @@ import {
   useMentors,
   usePlatformTrials,
 } from '@/hooks/use-trial-program';
-import type { MentorItem, PlatformTrialItem, TrialStage } from '@/services/trial-program.service';
+import type { MentorItem, PlatformTrialItem } from '@/services/trial-program.service';
 import { LoadError } from '@/features/platform/components/pulse-ui';
 import { errorMessage, initials } from '@/features/platform/components/pulse-format';
 import { PlatformDrawer } from '@/features/platform/components/PlatformDrawer';
 import { PlatformTrialsSkeleton } from './PlatformTrialsSkeleton';
+import { MENTOR_MAX_ORGANIZATIONS, isTrialLearning, trialNeedsMentor } from '../lib/trial-mentor';
 import {
   Calendar,
   Check,
   CheckCircle2,
   ChevronDown,
+  ClipboardCheck,
   Clock,
   ExternalLink,
   FileText,
   FlaskConical,
+  GraduationCap,
   Mail,
   RefreshCw,
   Search,
   User,
   UserPlus,
+  UserX,
   Users,
   X,
 } from 'lucide-react';
 
-type TabKey = TrialStage | 'ALL';
+type SurveyStatus = 'TAKING' | 'REPORTED' | 'SETUP';
+type SurveyTab = SurveyStatus | 'ALL';
+type LearningTab = 'ALL' | 'NO_MENTOR' | 'WAITING';
 
-const TABS: readonly { key: TabKey; label: string }[] = [
+const SURVEY_TABS: readonly { key: SurveyTab; label: string }[] = [
   { key: 'ALL', label: 'Tất cả' },
-  { key: 'REQUESTED', label: 'Chờ phân công' },
-  { key: 'ASSIGNED', label: 'Đang chấm' },
+  { key: 'TAKING', label: 'Đang làm bài' },
   { key: 'REPORTED', label: 'Đã có báo cáo' },
   { key: 'SETUP', label: 'Chưa gửi yêu cầu' },
 ];
 
-const ADMIN_STAGE: Record<TrialStage, { label: string; tone: 'neutral' | 'warn' | 'info' | 'ok' }> = {
-  REQUESTED: { label: 'Chờ phân công', tone: 'warn' },
-  ASSIGNED: { label: 'Đang chấm', tone: 'info' },
+const LEARNING_TABS: readonly { key: LearningTab; label: string }[] = [
+  { key: 'ALL', label: 'Tất cả' },
+  { key: 'NO_MENTOR', label: 'Chưa có mentor' },
+  { key: 'WAITING', label: 'Có bài chờ chấm' },
+];
+
+/** The survey phase only: the multiple choice is scored by the system, so the mentor does not change it. */
+const SURVEY_STATUS: Record<SurveyStatus, { label: string; tone: 'neutral' | 'warn' | 'ok' }> = {
+  TAKING: { label: 'Đang làm bài', tone: 'warn' },
   REPORTED: { label: 'Đã có báo cáo', tone: 'ok' },
   SETUP: { label: 'Chưa gửi yêu cầu', tone: 'neutral' },
 };
+
+function surveyStatusOf(t: PlatformTrialItem): SurveyStatus {
+  if (t.stage === 'REPORTED') return 'REPORTED';
+  return t.stage === 'SETUP' ? 'SETUP' : 'TAKING';
+}
 
 function formatDateTimePlain(value?: string | null, fallback = 'Chưa đặt'): string {
   if (!value) return fallback;
@@ -60,38 +76,36 @@ function formatDateTimePlain(value?: string | null, fallback = 'Chưa đặt'): 
   }).format(date);
 }
 
-function getSlaStatus(trial: PlatformTrialItem) {
-  if (trial.stage === 'REPORTED') {
-    return { label: 'Đã hoàn tất', tone: 'ok' as const };
-  }
-  if (trial.stage === 'SETUP') {
-    return { label: 'Đang thiết lập', tone: 'neutral' as const };
-  }
-  const now = Date.now();
-  if (trial.testDeadline) {
-    const deadline = new Date(trial.testDeadline).getTime();
-    if (!Number.isNaN(deadline) && deadline < now) {
-      return { label: 'Quá hạn nộp bài', tone: 'bad' as const };
-    }
-  }
-  if (trial.preferredReviewAt) {
-    const pref = new Date(trial.preferredReviewAt).getTime();
-    if (!Number.isNaN(pref)) {
-      if (pref < now) {
-        return { label: 'Quá hạn mong muốn', tone: 'bad' as const };
-      }
-      if (pref - now <= 48 * 3600 * 1000) {
-        return { label: 'Gấp trong 48 giờ', tone: 'warn' as const };
-      }
-    }
-  }
-  return { label: 'Đúng hạn', tone: 'neutral' as const };
+/** Deadline warning while employees are still taking the survey. */
+function getDeadlineStatus(t: PlatformTrialItem) {
+  if (surveyStatusOf(t) !== 'TAKING' || !t.testDeadline) return null;
+  const left = new Date(t.testDeadline).getTime() - Date.now();
+  if (Number.isNaN(left)) return null;
+  if (left < 0) return { label: 'Quá hạn nộp bài', tone: 'bad' as const };
+  if (left <= 48 * 3600 * 1000) return { label: 'Còn dưới 48 giờ', tone: 'warn' as const };
+  return null;
+}
+
+const isLearning = isTrialLearning;
+const needsMentor = trialNeedsMentor;
+
+/** The mentor can be set or changed before the report; after it, only set once (the backend refuses a change). */
+function canAssignMentor(t: PlatformTrialItem) {
+  return t.stage === 'REQUESTED' || t.stage === 'ASSIGNED' || needsMentor(t);
+}
+
+/** Learning rows that need the admin first: assignments nobody can grade, then no mentor, then waiting work. */
+function learningRank(t: PlatformTrialItem) {
+  const waiting = t.waitingFinals ?? 0;
+  if (!t.mentorUserId && waiting > 0) return 0;
+  if (!t.mentorUserId) return 1;
+  return waiting > 0 ? 2 : 3;
 }
 
 function getWorkloadLabel(activeTrials: number, status?: string) {
   if (status && status !== 'ACTIVE') return { label: 'Đã khóa', tone: 'is-locked' };
   if (activeTrials === 0) return { label: 'Đang rảnh', tone: 'is-free' };
-  if (activeTrials >= 3) return { label: 'Tải cao', tone: 'is-high' };
+  if (activeTrials >= MENTOR_MAX_ORGANIZATIONS) return { label: 'Đã đủ', tone: 'is-high' };
   return { label: 'Đang phụ trách', tone: '' };
 }
 
@@ -167,13 +181,24 @@ function CompanyAvatar({
 }
 
 /**
- * PA-14: Yêu cầu thẩm định & Đánh giá dùng thử doanh nghiệp
+ * PA-14: Dùng thử & mentor — tiến độ khảo sát của tổ chức dùng thử và mentor chấm bài học
  */
+/** PA-14: survey progress of the trial organizations. */
 export function PlatformTrialsPage() {
+  return <TrialsConsole view="survey" />;
+}
+
+/** PA-17: organizations that learn, the mentor who grades their end-of-level assignments, and the mentor team. */
+export function PlatformMentorsPage() {
+  return <TrialsConsole view="mentors" />;
+}
+
+function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
   const trials = usePlatformTrials();
   const mentors = useMentors();
 
-  const [tab, setTab] = useState<TabKey>('ALL');
+  const [tab, setTab] = useState<SurveyTab>('ALL');
+  const [learningTab, setLearningTab] = useState<LearningTab>('ALL');
   const [search, setSearch] = useState('');
   const [mentorFilter, setMentorFilter] = useState('');
   const [slaFilter, setSlaFilter] = useState<'ALL' | 'URGENT'>('ALL');
@@ -187,6 +212,7 @@ export function PlatformTrialsPage() {
   } | null>(null);
   const mentorDropdownRef = useRef<HTMLDivElement | null>(null);
   const mentorSectionRef = useRef<HTMLElement | null>(null);
+  const learningSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!mentorDropdownOpen) return;
@@ -207,41 +233,23 @@ export function PlatformTrialsPage() {
     [trialsList, selectedTrialId],
   );
 
-  const requestedCount = useMemo(
-    () => trialsList.filter((t) => t.stage === 'REQUESTED').length,
-    [trialsList],
-  );
-  const urgentRequestedCount = useMemo(
-    () =>
-      trialsList.filter((t) => {
-        if (t.stage !== 'REQUESTED') return false;
-        const sla = getSlaStatus(t);
-        return sla.tone === 'bad' || sla.tone === 'warn';
-      }).length,
-    [trialsList],
-  );
-  const assignedCount = useMemo(
-    () => trialsList.filter((t) => t.stage === 'ASSIGNED').length,
-    [trialsList],
-  );
-  const reportedCount = useMemo(
-    () => trialsList.filter((t) => t.stage === 'REPORTED').length,
-    [trialsList],
-  );
-  const setupCount = useMemo(
-    () => trialsList.filter((t) => t.stage === 'SETUP').length,
-    [trialsList],
-  );
-
-  const totalEvaluatingSubs = useMemo(
-    () =>
-      trialsList
-        .filter((t) => t.stage === 'ASSIGNED')
-        .reduce((sum, t) => sum + (t.submitted || 0), 0),
-    [trialsList],
-  );
-  const totalParticipants = useMemo(
-    () => trialsList.reduce((sum, t) => sum + (t.participants || 0), 0),
+  // Survey phase
+  const surveyCounts = useMemo(() => {
+    const counts: Record<SurveyTab, number> = { ALL: trialsList.length, TAKING: 0, REPORTED: 0, SETUP: 0 };
+    for (const t of trialsList) counts[surveyStatusOf(t)] += 1;
+    return counts;
+  }, [trialsList]);
+  const takingTotals = useMemo(() => {
+    const taking = trialsList.filter((t) => surveyStatusOf(t) === 'TAKING');
+    return {
+      submitted: taking.reduce((sum, t) => sum + (t.submitted || 0), 0),
+      participants: taking.reduce((sum, t) => sum + (t.participants || 0), 0),
+      urgent: taking.filter((t) => getDeadlineStatus(t) !== null).length,
+    };
+  }, [trialsList]);
+  // Employees with results: participants of the trials whose report is published.
+  const reportedParticipants = useMemo(
+    () => trialsList.filter((t) => t.stage === 'REPORTED').reduce((sum, t) => sum + (t.participants || 0), 0),
     [trialsList],
   );
 
@@ -249,18 +257,19 @@ export function PlatformTrialsPage() {
     () => mentorsList.filter((m) => m.status === 'ACTIVE'),
     [mentorsList],
   );
+  // Free = no course final waiting for the mentor; busy = at least one.
   const freeMentors = useMemo(
-    () => activeMentors.filter((m) => (m.activeTrials || 0) === 0),
+    () => activeMentors.filter((m) => (m.waitingFinals || 0) === 0),
     [activeMentors],
   );
   const busyMentors = useMemo(
-    () => activeMentors.filter((m) => (m.activeTrials || 0) > 0),
+    () => activeMentors.filter((m) => (m.waitingFinals || 0) > 0),
     [activeMentors],
   );
   const mentorTrialsMap = useMemo(() => {
     const map = new Map<string, PlatformTrialItem[]>();
     for (const t of trialsList) {
-      if (t.mentorUserId) {
+      if (t.mentorUserId && !t.converted) {
         const list = map.get(t.mentorUserId) || [];
         list.push(t);
         map.set(t.mentorUserId, list);
@@ -268,9 +277,10 @@ export function PlatformTrialsPage() {
     }
     return map;
   }, [trialsList]);
-  const maxMentorLoad = useMemo(
-    () => Math.max(3, ...mentorsList.map((m) => m.activeTrials || 0)),
-    [mentorsList],
+  const maxMentorLoad = MENTOR_MAX_ORGANIZATIONS;
+  const fullMentors = useMemo(
+    () => activeMentors.filter((m) => (m.activeTrials || 0) >= MENTOR_MAX_ORGANIZATIONS),
+    [activeMentors],
   );
 
   const selectedMentorName = useMemo(
@@ -278,29 +288,14 @@ export function PlatformTrialsPage() {
     [mentorsList, mentorFilter],
   );
 
-  const countForTab = (k: TabKey) => {
-    if (k === 'ALL') return trialsList.length;
-    if (k === 'REQUESTED') return requestedCount;
-    if (k === 'ASSIGNED') return assignedCount;
-    if (k === 'REPORTED') return reportedCount;
-    if (k === 'SETUP') return setupCount;
-    return 0;
-  };
-
   const filteredItems = useMemo(() => {
     let result = trialsList;
 
     if (tab !== 'ALL') {
-      result = result.filter((t) => t.stage === tab);
-    }
-    if (mentorFilter) {
-      result = result.filter((t) => t.mentorUserId === mentorFilter);
+      result = result.filter((t) => surveyStatusOf(t) === tab);
     }
     if (slaFilter === 'URGENT') {
-      result = result.filter((t) => {
-        const sla = getSlaStatus(t);
-        return sla.tone === 'bad' || sla.tone === 'warn';
-      });
+      result = result.filter((t) => getDeadlineStatus(t) !== null);
     }
     const q = search.trim().toLowerCase();
     if (q) {
@@ -309,24 +304,59 @@ export function PlatformTrialsPage() {
           t.organizationName.toLowerCase().includes(q) ||
           t.ownerName.toLowerCase().includes(q) ||
           t.ownerEmail.toLowerCase().includes(q) ||
-          (t.mentorName && t.mentorName.toLowerCase().includes(q)) ||
           (t.requestNote && t.requestNote.toLowerCase().includes(q)),
       );
     }
     return result;
-  }, [trialsList, tab, mentorFilter, slaFilter, search]);
+  }, [trialsList, tab, slaFilter, search]);
 
-  const hasFilters = Boolean(search || mentorFilter || slaFilter !== 'ALL' || tab !== 'ALL');
+  const hasFilters = Boolean(search || slaFilter !== 'ALL' || tab !== 'ALL');
 
   const resetFilters = () => {
     setSearch('');
-    setMentorFilter('');
     setSlaFilter('ALL');
     setTab('ALL');
   };
 
-  const toggleStageFromKpi = (target: TrialStage) => {
+  const toggleSurveyTab = (target: SurveyTab) => {
     setTab((prev) => (prev === target ? 'ALL' : target));
+  };
+
+  // Learning phase
+  const learningList = useMemo(
+    () =>
+      trialsList
+        .filter(isLearning)
+        .slice()
+        .sort((a, b) => learningRank(a) - learningRank(b) || a.organizationName.localeCompare(b.organizationName, 'vi')),
+    [trialsList],
+  );
+  const learningCounts = useMemo(
+    () => ({
+      ALL: learningList.length,
+      NO_MENTOR: learningList.filter((t) => !t.mentorUserId).length,
+      WAITING: learningList.filter((t) => (t.waitingFinals ?? 0) > 0).length,
+    }),
+    [learningList],
+  );
+  const waitingTotals = useMemo(
+    () => ({
+      all: learningList.reduce((sum, t) => sum + (t.waitingFinals ?? 0), 0),
+      unattended: learningList.filter((t) => !t.mentorUserId).reduce((sum, t) => sum + (t.waitingFinals ?? 0), 0),
+    }),
+    [learningList],
+  );
+  const filteredLearning = useMemo(() => {
+    let result = learningList;
+    if (learningTab === 'NO_MENTOR') result = result.filter((t) => !t.mentorUserId);
+    if (learningTab === 'WAITING') result = result.filter((t) => (t.waitingFinals ?? 0) > 0);
+    if (mentorFilter) result = result.filter((t) => t.mentorUserId === mentorFilter);
+    return result;
+  }, [learningList, learningTab, mentorFilter]);
+
+  const showLearning = (target: LearningTab) => {
+    setLearningTab((prev) => (prev === target ? 'ALL' : target));
+    learningSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const openTrialDrawer = (trial: PlatformTrialItem, focusAssign = false) => {
@@ -347,7 +377,7 @@ export function PlatformTrialsPage() {
       {/* Tier 1: Clean Header without redundant paragraph */}
       <header className="pa-ov-header" style={{ marginBottom: 0 }}>
         <div>
-          <h1>Đánh giá dùng thử</h1>
+          <h1>{view === 'survey' ? 'Đánh giá dùng thử' : 'Mentor'}</h1>
         </div>
 
         <div className="pa-ov-actions">
@@ -360,14 +390,16 @@ export function PlatformTrialsPage() {
             <RefreshCw size={14} className={trials.isFetching ? 'animate-spin' : ''} aria-hidden="true" />
             <span>Làm mới</span>
           </button>
-          <button
-            type="button"
-            className="btn btn-primary btn-small inline-flex items-center gap-1.5"
-            onClick={() => setCreateMentorOpen(true)}
-          >
-            <UserPlus size={14} aria-hidden="true" />
-            <span>Thêm mentor</span>
-          </button>
+          {view === 'mentors' && (
+            <button
+              type="button"
+              className="btn btn-primary btn-small inline-flex items-center gap-1.5"
+              onClick={() => setCreateMentorOpen(true)}
+            >
+              <UserPlus size={14} aria-hidden="true" />
+              <span>Thêm mentor</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -376,49 +408,31 @@ export function PlatformTrialsPage() {
 
       {!isLoadingPage && !trials.error && (
         <>
-          {/* Tier 2: 4 Clickable KPI Filter Cards (Compact & Punchy) */}
-          <div className="pa-ov-kpi-grid pa-tr-kpi-compact" role="group" aria-label="Tổng hợp theo giai đoạn dùng thử">
+          {view === 'survey' && (
+          <div className="pa-ov-kpi-grid pa-tr-kpi-compact pa-kpi-2" role="group" aria-label="Tổng hợp bài khảo sát">
             <button
               type="button"
               className="pa-ov-kpi-card pa-tr-kpi-btn is-tone-amber"
-              aria-pressed={tab === 'REQUESTED'}
-              onClick={() => toggleStageFromKpi('REQUESTED')}
+              aria-pressed={tab === 'TAKING'}
+              onClick={() => toggleSurveyTab('TAKING')}
             >
               <div className="pa-ov-kpi-top">
-                <span className="pa-ov-kpi-label">Chờ phân công</span>
+                <span className="pa-ov-kpi-label">Đang làm khảo sát</span>
                 <span className="pa-kpi-icon is-amber" aria-hidden="true">
                   <Clock size={16} />
                 </span>
               </div>
               <div className="pa-tr-kpi-val-row">
-                <span className="pa-ov-kpi-val">{requestedCount}</span>
-                {urgentRequestedCount > 0 ? (
-                  <span className="pa-tr-pill is-bad" style={{ fontSize: 12, padding: '2px 8px' }}>
-                    {urgentRequestedCount} gấp &lt;48h
+                <span className="pa-ov-kpi-val">{surveyCounts.TAKING}</span>
+                {takingTotals.urgent > 0 ? (
+                  <span className="pa-tr-pill is-warn" style={{ fontSize: 12, padding: '2px 8px' }}>
+                    {takingTotals.urgent} tổ chức sắp hoặc đã quá hạn
                   </span>
                 ) : (
-                  <span className="pa-tr-kpi-sub-neutral">0 chờ</span>
+                  <span className="pa-tr-kpi-sub-neutral">
+                    {takingTotals.submitted}/{takingTotals.participants} nhân viên đã nộp bài
+                  </span>
                 )}
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className="pa-ov-kpi-card pa-tr-kpi-btn is-tone-sky"
-              aria-pressed={tab === 'ASSIGNED'}
-              onClick={() => toggleStageFromKpi('ASSIGNED')}
-            >
-              <div className="pa-ov-kpi-top">
-                <span className="pa-ov-kpi-label">Đang chấm</span>
-                <span className="pa-kpi-icon is-sky" aria-hidden="true">
-                  <FlaskConical size={16} />
-                </span>
-              </div>
-              <div className="pa-tr-kpi-val-row">
-                <span className="pa-ov-kpi-val">{assignedCount}</span>
-                <span className="pa-tr-pill is-info" style={{ fontSize: 12, padding: '2px 8px' }}>
-                  {totalEvaluatingSubs} bài
-                </span>
               </div>
             </button>
 
@@ -426,7 +440,7 @@ export function PlatformTrialsPage() {
               type="button"
               className="pa-ov-kpi-card pa-tr-kpi-btn is-tone-green"
               aria-pressed={tab === 'REPORTED'}
-              onClick={() => toggleStageFromKpi('REPORTED')}
+              onClick={() => toggleSurveyTab('REPORTED')}
             >
               <div className="pa-ov-kpi-top">
                 <span className="pa-ov-kpi-label">Đã có báo cáo</span>
@@ -435,53 +449,100 @@ export function PlatformTrialsPage() {
                 </span>
               </div>
               <div className="pa-tr-kpi-val-row">
-                <span className="pa-ov-kpi-val">{reportedCount}</span>
-                <span className="pa-tr-pill is-ok" style={{ fontSize: 12, padding: '2px 8px' }}>
-                  {totalParticipants} nhân sự
+                <span className="pa-ov-kpi-val">{surveyCounts.REPORTED}</span>
+                <span className="pa-tr-kpi-sub-neutral">{reportedParticipants} nhân viên có kết quả</span>
+              </div>
+            </button>
+
+          </div>
+          )}
+
+          {view === 'mentors' && (
+          <div className="pa-ov-kpi-grid pa-tr-kpi-compact pa-kpi-3" role="group" aria-label="Tổng hợp mentor">
+            <button
+              type="button"
+              className="pa-ov-kpi-card pa-tr-kpi-btn is-tone-orange"
+              aria-pressed={learningTab === 'NO_MENTOR'}
+              onClick={() => showLearning('NO_MENTOR')}
+            >
+              <div className="pa-ov-kpi-top">
+                <span className="pa-ov-kpi-label">Chưa có mentor</span>
+                <span className="pa-kpi-icon is-orange" aria-hidden="true">
+                  <UserX size={16} />
                 </span>
+              </div>
+              <div className="pa-tr-kpi-val-row">
+                <span className="pa-ov-kpi-val">{learningCounts.NO_MENTOR}</span>
+                {waitingTotals.unattended > 0 ? (
+                  <span className="pa-tr-pill is-bad" style={{ fontSize: 12, padding: '2px 8px' }}>
+                    {waitingTotals.unattended} bài nộp chưa ai chấm được
+                  </span>
+                ) : (
+                  <span className="pa-tr-kpi-sub-neutral">tổ chức đang học chưa có mentor</span>
+                )}
               </div>
             </button>
 
             <button
               type="button"
-              className="pa-ov-kpi-card pa-tr-kpi-btn is-tone-orange"
+              className="pa-ov-kpi-card pa-tr-kpi-btn is-tone-sky"
+              aria-pressed={learningTab === 'WAITING'}
+              onClick={() => showLearning('WAITING')}
+            >
+              <div className="pa-ov-kpi-top">
+                <span className="pa-ov-kpi-label">Bài cuối cấp chờ chấm</span>
+                <span className="pa-kpi-icon is-sky" aria-hidden="true">
+                  <ClipboardCheck size={16} />
+                </span>
+              </div>
+              <div className="pa-tr-kpi-val-row">
+                <span className="pa-ov-kpi-val">{waitingTotals.all}</span>
+                <span className="pa-tr-kpi-sub-neutral">ở {learningCounts.WAITING} tổ chức đang học</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              className="pa-ov-kpi-card pa-tr-kpi-btn is-tone-green"
               aria-pressed={false}
-              onClick={() =>
-                mentorSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }
+              onClick={() => mentorSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             >
               <div className="pa-ov-kpi-top">
                 <span className="pa-ov-kpi-label">Mentor</span>
-                <span className="pa-kpi-icon is-orange" aria-hidden="true">
+                <span className="pa-kpi-icon is-jade" aria-hidden="true">
                   <Users size={16} />
                 </span>
               </div>
               <div className="pa-tr-kpi-val-row">
-                <span className="pa-ov-kpi-val">
-                  {freeMentors.length}
-                  <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--pa-ink-2)' }}>
-                    {' '}/ {mentorsList.length}
-                  </span>
-                </span>
-                <span className="pa-tr-pill is-ok" style={{ fontSize: 12, padding: '2px 8px' }}>
-                  {freeMentors.length} đang rảnh
+                <span className="pa-ov-kpi-val">{mentorsList.length}</span>
+                <span className="pa-tr-kpi-sub-neutral">
+                  {freeMentors.length} rảnh · {busyMentors.length} có bài chờ · {fullMentors.length} đã đủ{' '}
+                  {MENTOR_MAX_ORGANIZATIONS}
+                  {mentorsList.length > activeMentors.length ? ` · ${mentorsList.length - activeMentors.length} đã khóa` : ''}
                 </span>
               </div>
             </button>
           </div>
+          )}
 
-          {/* Tier 3: Unified Trials Worklist Table */}
-          <section className="pa-ov-panel" aria-labelledby="trials-worklist-heading">
-            <h2 id="trials-worklist-heading" className="sr-only">
-              Tổ chức dùng thử
-            </h2>
+          {/* Part 1: the survey (multiple choice scored by the system, no mentor) */}
+          {view === 'survey' && (
+          <section className="pa-ov-panel" aria-labelledby="trials-survey-heading">
+            <div className="pa-ov-panel-head" style={{ marginBottom: 12 }}>
+              <div>
+                <h2 id="trials-survey-heading" className="pa-ov-panel-title">
+                  Bài khảo sát
+                </h2>
+                <p className="pa-ov-panel-sub">
+                  Nhân viên làm bài trắc nghiệm có giám sát; hệ thống tự chấm và ra báo cáo khi mọi người nộp xong hoặc hết hạn.
+                </p>
+              </div>
+            </div>
 
             <div className="pa-tr-toolbar">
               <div className="pa-tr-toolbar-row">
-                <div className="pa-ov-tablist" role="tablist" aria-label="Lọc theo giai đoạn dùng thử">
-                  {TABS.map((t) => {
+                <div className="pa-ov-tablist" role="tablist" aria-label="Lọc theo tiến độ khảo sát">
+                  {SURVEY_TABS.map((t) => {
                     const isActive = tab === t.key;
-                    const count = countForTab(t.key);
                     return (
                       <button
                         key={t.key}
@@ -492,12 +553,7 @@ export function PlatformTrialsPage() {
                         onClick={() => setTab(t.key)}
                       >
                         <span>{t.label}</span>
-                        <span
-                          className={`pa-tr-tab-count ${t.key === 'REQUESTED' && count > 0 ? 'is-urgent' : ''
-                            }`}
-                        >
-                          {count}
-                        </span>
+                        <span className="pa-tr-tab-count">{surveyCounts[t.key]}</span>
                       </button>
                     );
                   })}
@@ -534,7 +590,7 @@ export function PlatformTrialsPage() {
                   </div>
 
                   <select
-                    aria-label="Lọc theo tiến độ xử lý"
+                    aria-label="Lọc theo hạn nộp bài"
                     value={slaFilter}
                     onChange={(e) => setSlaFilter(e.target.value as 'ALL' | 'URGENT')}
                     className="pa-tr-select"
@@ -542,138 +598,6 @@ export function PlatformTrialsPage() {
                     <option value="ALL">Mọi thời hạn</option>
                     <option value="URGENT">Sắp hết hạn hoặc quá hạn</option>
                   </select>
-
-                  {/* Mentor Filter Dropdown */}
-                  <div className="pa-tr-mentor-dropdown-wrap" ref={mentorDropdownRef}>
-                    <button
-                      type="button"
-                      className={`pa-tr-select-btn ${mentorFilter ? 'is-active' : ''}`}
-                      onClick={() => setMentorDropdownOpen((prev) => !prev)}
-                      aria-expanded={mentorDropdownOpen}
-                      aria-haspopup="listbox"
-                      aria-label={
-                        selectedMentorName
-                          ? `Mentor: ${selectedMentorName}`
-                          : `Lọc theo Mentor (${freeMentors.length} sẵn sàng)`
-                      }
-                    >
-                      <Users size={15} aria-hidden="true" />
-                      <span className="pa-tr-select-btn-text">
-                        {selectedMentorName ? selectedMentorName : `Mentor đang rảnh (${freeMentors.length})`}
-                      </span>
-                      <ChevronDown
-                        size={14}
-                        className={`pa-tr-select-chevron ${mentorDropdownOpen ? 'is-open' : ''}`}
-                        aria-hidden="true"
-                      />
-                    </button>
-
-                    {mentorFilter && (
-                      <button
-                        type="button"
-                        className="pa-tr-filter-clear-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMentorFilter('');
-                        }}
-                        title="Bỏ lọc Mentor"
-                        aria-label="Bỏ lọc Mentor"
-                      >
-                        <X size={13} />
-                      </button>
-                    )}
-
-                    {mentorDropdownOpen && (
-                      <div className="pa-tr-mentor-menu" role="listbox">
-                        <button
-                          type="button"
-                          className={`pa-tr-mentor-menu-item ${!mentorFilter ? 'is-selected' : ''}`}
-                          onClick={() => {
-                            setMentorFilter('');
-                            setMentorDropdownOpen(false);
-                          }}
-                        >
-                          <span>Tất cả Mentor ({mentorsList.length})</span>
-                          {!mentorFilter && <Check size={14} aria-hidden="true" />}
-                        </button>
-
-                        <div className="pa-tr-menu-header">
-                          <span className="pa-tr-strip-dot is-free" aria-hidden="true" />
-                          <span>SẴN SÀNG NHẬN VIỆC ({freeMentors.length})</span>
-                        </div>
-                        {freeMentors.map((m) => {
-                          const isSel = mentorFilter === m.userId;
-                          return (
-                            <button
-                              key={m.userId}
-                              type="button"
-                              className={`pa-tr-mentor-menu-item ${isSel ? 'is-selected' : ''}`}
-                              aria-label={`Lọc theo Mentor ${m.fullName} (${m.email})`}
-                              onClick={() => {
-                                setMentorFilter(m.userId);
-                                setMentorDropdownOpen(false);
-                              }}
-                            >
-                              <div className="pa-tr-menu-item-left">
-                                <span className="pa-tr-chip-avatar" aria-hidden="true">{initials(m.fullName)}</span>
-                                <div>
-                                  <div className="pa-tr-menu-item-name">{m.fullName}</div>
-                                  <div className="pa-tr-menu-item-email">{m.email}</div>
-                                </div>
-                              </div>
-                              <span className="pa-tr-pill is-ok" style={{ fontSize: 12, padding: '2px 7px' }}>0 DN</span>
-                            </button>
-                          );
-                        })}
-
-                        {busyMentors.length > 0 && (
-                          <>
-                            <div className="pa-tr-menu-header">
-                              <span className="pa-tr-strip-dot is-busy" aria-hidden="true" />
-                              <span>ĐANG CHẤM BÀI ({busyMentors.length})</span>
-                            </div>
-                            {busyMentors.map((m) => {
-                              const isSel = mentorFilter === m.userId;
-                              return (
-                                <button
-                                  key={m.userId}
-                                  type="button"
-                                  className={`pa-tr-mentor-menu-item ${isSel ? 'is-selected' : ''}`}
-                                  aria-label={`Lọc theo Mentor ${m.fullName} (${m.email})`}
-                                  onClick={() => {
-                                    setMentorFilter(m.userId);
-                                    setMentorDropdownOpen(false);
-                                  }}
-                                >
-                                  <div className="pa-tr-menu-item-left">
-                                    <span className="pa-tr-chip-avatar" aria-hidden="true">{initials(m.fullName)}</span>
-                                    <div>
-                                      <div className="pa-tr-menu-item-name">{m.fullName}</div>
-                                      <div className="pa-tr-menu-item-email">{m.email}</div>
-                                    </div>
-                                  </div>
-                                  <span className="pa-tr-pill is-info" style={{ fontSize: 12, padding: '2px 7px' }}>{m.activeTrials} DN</span>
-                                </button>
-                              );
-                            })}
-                          </>
-                        )}
-
-                        <div className="pa-tr-menu-footer">
-                          <button
-                            type="button"
-                            className="pa-tr-menu-link"
-                            onClick={() => {
-                              setMentorDropdownOpen(false);
-                              mentorSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }}
-                          >
-                            Bảng chi tiết đội ngũ ↓
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
 
                 {hasFilters && (
@@ -692,47 +616,35 @@ export function PlatformTrialsPage() {
                   <FlaskConical size={22} />
                 </div>
                 <p className="pa-ov-empty-text">
-                  Không có doanh nghiệp dùng thử phù hợp với bộ lọc hiện tại. Bấm đặt lại bộ lọc hoặc chọn trạng thái khác để xem toàn bộ danh sách.
+                  Không có doanh nghiệp dùng thử phù hợp với bộ lọc hiện tại.
                 </p>
                 {hasFilters && (
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-small"
-                    onClick={resetFilters}
-                  >
+                  <button type="button" className="btn btn-outline btn-small" onClick={resetFilters}>
                     Xem tất cả doanh nghiệp
                   </button>
                 )}
               </div>
             ) : (
-              <div
-                tabIndex={0}
-                role="region"
-                aria-label="Bảng yêu cầu thẩm định dùng thử"
-                className="pa-tr-table-scroll"
-              >
+              <div tabIndex={0} role="region" aria-label="Bảng bài khảo sát" className="pa-tr-table-scroll">
                 <table className="pa-tr-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '28%' }}>Tổ chức</th>
-                      <th style={{ width: '17%' }}>Đã nộp bài</th>
-                      <th style={{ width: '17%' }}>Hạn nộp</th>
+                      <th style={{ width: '34%' }}>Tổ chức</th>
+                      <th style={{ width: '22%' }}>Đã nộp bài</th>
+                      <th style={{ width: '18%' }}>Hạn nộp</th>
                       <th style={{ width: '14%' }}>Trạng thái</th>
-                      <th style={{ width: '14%' }}>Mentor</th>
-                      <th style={{ width: '10%' }} className="is-right">
+                      <th style={{ width: '12%' }} className="is-right">
                         Thao tác
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredItems.map((t) => {
-                      const sla = getSlaStatus(t);
-                      const stageMeta = ADMIN_STAGE[t.stage];
-                      const pct = Math.min(
-                        100,
-                        Math.round((t.submitted / Math.max(1, t.participants)) * 100),
-                      );
-                      const canAssign = t.stage === 'REQUESTED' || t.stage === 'ASSIGNED';
+                      const status = surveyStatusOf(t);
+                      const statusMeta = SURVEY_STATUS[status];
+                      const deadline = getDeadlineStatus(t);
+                      const pct = Math.min(100, Math.round((t.submitted / Math.max(1, t.participants)) * 100));
+                      const notSubmitted = Math.max(0, t.participants - t.submitted);
 
                       return (
                         <tr key={t.organizationId}>
@@ -740,10 +652,7 @@ export function PlatformTrialsPage() {
                             <div className="pa-tr-org-cell">
                               <CompanyAvatar name={t.organizationName} size={38} />
                               <div className="pa-tr-org-info">
-                                <Link
-                                  to={`/platform/organizations/${t.organizationId}`}
-                                  className="pa-tr-org-name"
-                                >
+                                <Link to={`/platform/organizations/${t.organizationId}`} className="pa-tr-org-name">
                                   {t.organizationName}
                                 </Link>
                                 {t.requestNote && (
@@ -769,10 +678,14 @@ export function PlatformTrialsPage() {
                                   style={{ width: `${pct}%` }}
                                 />
                               </div>
-                              <span
-                                className={`pa-tr-progress-sub ${t.reviewed > 0 ? 'is-done' : ''}`}
-                              >
-                                {t.reviewed > 0 ? `Đã chấm ${t.reviewed} bài` : 'Chưa chấm bài nào'}
+                              <span className={`pa-tr-progress-sub ${status === 'REPORTED' ? 'is-done' : ''}`}>
+                                {status === 'REPORTED'
+                                  ? notSubmitted > 0
+                                    ? `Hết hạn, ${notSubmitted} người không nộp`
+                                    : 'Mọi người đã nộp'
+                                  : status === 'TAKING'
+                                    ? `${notSubmitted} người chưa nộp`
+                                    : 'Chưa gửi yêu cầu khảo sát'}
                               </span>
                             </div>
                           </td>
@@ -788,56 +701,261 @@ export function PlatformTrialsPage() {
 
                           <td>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-                              <span className={`pa-tr-pill is-${stageMeta.tone}`}>
+                              <span className={`pa-tr-pill is-${statusMeta.tone}`}>
                                 <span className="pa-tr-pill-dot" aria-hidden="true" />
-                                <span>{stageMeta.label}</span>
+                                <span>{statusMeta.label}</span>
                               </span>
-                              {t.stage !== 'REPORTED' && (sla.tone === 'bad' || sla.tone === 'warn') && (
-                                <span className={`pa-tr-pill is-${sla.tone}`} style={{ fontSize: 12, padding: '1px 6px' }}>
-                                  {sla.label}
+                              {deadline && (
+                                <span className={`pa-tr-pill is-${deadline.tone}`} style={{ fontSize: 12, padding: '1px 6px' }}>
+                                  {deadline.label}
                                 </span>
                               )}
                             </div>
                           </td>
 
+                          <td className="is-right">
+                            <div className="pa-tr-actions-cell">
+                              <button type="button" className="pa-tr-detail-btn" onClick={() => openTrialDrawer(t, false)}>
+                                Chi tiết
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+          )}
+
+          {view === 'mentors' && (
+          <>
+          {/* Part 2: after the report the employees learn; the assigned mentor grades the end-of-level assignments */}
+          <section ref={learningSectionRef} className="pa-ov-panel" aria-labelledby="trials-learning-heading">
+            <div className="pa-ov-panel-head" style={{ marginBottom: 12 }}>
+              <div>
+                <h2 id="trials-learning-heading" className="pa-ov-panel-title">
+                  Mentor chấm bài học
+                </h2>
+                <p className="pa-ov-panel-sub">
+                  Tổ chức đã có báo cáo: nhân viên học 6 lĩnh vực × 3 cấp và nộp bài cuối cấp. Ở tổ chức dùng thử chỉ mentor được giao mới chấm được, nên tổ chức nào cũng cần một mentor.
+                </p>
+              </div>
+            </div>
+
+            <div className="pa-tr-toolbar">
+              <div className="pa-tr-toolbar-row">
+                <div className="pa-ov-tablist" role="tablist" aria-label="Lọc tổ chức đang học">
+                  {LEARNING_TABS.map((t) => {
+                    const isActive = learningTab === t.key;
+                    const count = learningCounts[t.key];
+                    return (
+                      <button
+                        key={t.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        className="pa-ov-tab pa-tr-tab-btn"
+                        onClick={() => setLearningTab(t.key)}
+                      >
+                        <span>{t.label}</span>
+                        <span className={`pa-tr-tab-count ${t.key === 'NO_MENTOR' && count > 0 ? 'is-urgent' : ''}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Mentor filter */}
+                <div className="pa-tr-mentor-dropdown-wrap" ref={mentorDropdownRef}>
+                  <button
+                    type="button"
+                    className={`pa-tr-select-btn ${mentorFilter ? 'is-active' : ''}`}
+                    onClick={() => setMentorDropdownOpen((prev) => !prev)}
+                    aria-expanded={mentorDropdownOpen}
+                    aria-haspopup="listbox"
+                    aria-label={selectedMentorName ? `Mentor: ${selectedMentorName}` : 'Lọc theo mentor'}
+                  >
+                    <Users size={15} aria-hidden="true" />
+                    <span className="pa-tr-select-btn-text">{selectedMentorName || 'Tất cả mentor'}</span>
+                    <ChevronDown
+                      size={14}
+                      className={`pa-tr-select-chevron ${mentorDropdownOpen ? 'is-open' : ''}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  {mentorFilter && (
+                    <button
+                      type="button"
+                      className="pa-tr-filter-clear-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMentorFilter('');
+                      }}
+                      title="Bỏ lọc mentor"
+                      aria-label="Bỏ lọc mentor"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+
+                  {mentorDropdownOpen && (
+                    <div className="pa-tr-mentor-menu" role="listbox">
+                      <button
+                        type="button"
+                        className={`pa-tr-mentor-menu-item ${!mentorFilter ? 'is-selected' : ''}`}
+                        onClick={() => {
+                          setMentorFilter('');
+                          setMentorDropdownOpen(false);
+                        }}
+                      >
+                        <span>Tất cả mentor ({mentorsList.length})</span>
+                        {!mentorFilter && <Check size={14} aria-hidden="true" />}
+                      </button>
+
+                      {[
+                        { key: 'busy', label: `CÓ BÀI CHỜ CHẤM (${busyMentors.length})`, dot: 'is-busy', items: busyMentors },
+                        { key: 'free', label: `ĐANG RẢNH (${freeMentors.length})`, dot: 'is-free', items: freeMentors },
+                      ]
+                        .filter((group) => group.items.length > 0)
+                        .map((group) => (
+                          <div key={group.key}>
+                            <div className="pa-tr-menu-header">
+                              <span className={`pa-tr-strip-dot ${group.dot}`} aria-hidden="true" />
+                              <span>{group.label}</span>
+                            </div>
+                            {group.items.map((m) => (
+                              <button
+                                key={m.userId}
+                                type="button"
+                                className={`pa-tr-mentor-menu-item ${mentorFilter === m.userId ? 'is-selected' : ''}`}
+                                aria-label={`Lọc theo mentor ${m.fullName} (${m.email})`}
+                                onClick={() => {
+                                  setMentorFilter(m.userId);
+                                  setMentorDropdownOpen(false);
+                                }}
+                              >
+                                <div className="pa-tr-menu-item-left">
+                                  <span className="pa-tr-chip-avatar" aria-hidden="true">{initials(m.fullName)}</span>
+                                  <div>
+                                    <div className="pa-tr-menu-item-name">{m.fullName}</div>
+                                    <div className="pa-tr-menu-item-email">{m.email}</div>
+                                  </div>
+                                </div>
+                                <span
+                                  className={`pa-tr-pill ${(m.waitingFinals ?? 0) > 0 ? 'is-info' : 'is-ok'}`}
+                                  style={{ fontSize: 12, padding: '2px 7px' }}
+                                >
+                                  {m.activeTrials} DN
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        ))}
+
+                      <div className="pa-tr-menu-footer">
+                        <button
+                          type="button"
+                          className="pa-tr-menu-link"
+                          onClick={() => {
+                            setMentorDropdownOpen(false);
+                            mentorSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }}
+                        >
+                          Bảng chi tiết đội ngũ ↓
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {filteredLearning.length === 0 ? (
+              <div className="pa-ov-empty-state" style={{ minHeight: 140 }}>
+                <div className="pa-ov-empty-icon" aria-hidden="true">
+                  <GraduationCap size={22} />
+                </div>
+                <p className="pa-ov-empty-text">
+                  {learningList.length === 0
+                    ? 'Chưa có tổ chức dùng thử nào có báo cáo, nên chưa có nhân viên học.'
+                    : 'Không có tổ chức nào khớp bộ lọc.'}
+                </p>
+              </div>
+            ) : (
+              <div tabIndex={0} role="region" aria-label="Bảng mentor chấm bài học" className="pa-tr-table-scroll">
+                <table className="pa-tr-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '32%' }}>Tổ chức</th>
+                      <th style={{ width: '20%' }}>Học</th>
+                      <th style={{ width: '16%' }}>Bài cuối cấp chờ chấm</th>
+                      <th style={{ width: '20%' }}>Mentor</th>
+                      <th style={{ width: '12%' }} className="is-right">
+                        Thao tác
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLearning.map((t) => {
+                      const waiting = t.waitingFinals ?? 0;
+                      const learners = t.learners ?? 0;
+                      return (
+                        <tr key={t.organizationId}>
+                          <td>
+                            <div className="pa-tr-org-cell">
+                              <CompanyAvatar name={t.organizationName} size={38} />
+                              <div className="pa-tr-org-info">
+                                <Link to={`/platform/organizations/${t.organizationId}`} className="pa-tr-org-name">
+                                  {t.organizationName}
+                                </Link>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td>
+                            <div style={{ display: 'grid', gap: 2, fontSize: 13.5 }}>
+                              <strong>{t.coursesPurchased ?? 0} khóa đã mua</strong>
+                              <span style={{ color: 'var(--pa-ink-2)', fontSize: 12.5 }}>
+                                {learners > 0 ? `${learners} nhân viên đang học` : 'Chưa ai bắt đầu học'}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td>
+                            {waiting > 0 ? (
+                              <span
+                                className={`pa-tr-pill ${t.mentorUserId ? 'is-info' : 'is-bad'}`}
+                                title={t.mentorUserId ? undefined : 'Chưa có mentor nên chưa ai chấm được các bài này.'}
+                              >
+                                {waiting} bài
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: 13, color: 'var(--pa-ink-3)' }}>Không có</span>
+                            )}
+                          </td>
+
                           <td>
                             <div className="pa-tr-mentor-cell">
-                              {t.stage === 'SETUP' ? (
-                                <span style={{ fontSize: 13.5, color: 'var(--pa-ink-2)' }}>
-                                  Chưa gửi yêu cầu
-                                </span>
-                              ) : t.mentorName ? (
-                                <>
-                                  <div className="pa-tr-mentor-person">
-                                    <span className="pa-tr-avatar" aria-hidden="true">
-                                      {initials(t.mentorName)}
-                                    </span>
-                                    <span>{t.mentorName}</span>
-                                  </div>
-                                  {canAssign && (
-                                    <button
-                                      type="button"
-                                      className="pa-tr-reassign-btn"
-                                      onClick={() => openTrialDrawer(t, true)}
-                                    >
-                                      Đổi Mentor
-                                    </button>
-                                  )}
-                                </>
+                              {t.mentorName ? (
+                                <div className="pa-tr-mentor-person">
+                                  <span className="pa-tr-avatar" aria-hidden="true">
+                                    {initials(t.mentorName)}
+                                  </span>
+                                  <span>{t.mentorName}</span>
+                                </div>
                               ) : (
                                 <>
                                   <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--pa-amber)' }}>
                                     Chưa phân công
                                   </span>
-                                  {canAssign && (
-                                    <button
-                                      type="button"
-                                      className="pa-tr-assign-btn"
-                                      onClick={() => openTrialDrawer(t, true)}
-                                    >
-                                      Phân công
-                                    </button>
-                                  )}
+                                  <button type="button" className="pa-tr-assign-btn" onClick={() => openTrialDrawer(t, true)}>
+                                    Phân công
+                                  </button>
                                 </>
                               )}
                             </div>
@@ -845,21 +963,9 @@ export function PlatformTrialsPage() {
 
                           <td className="is-right">
                             <div className="pa-tr-actions-cell">
-                              <button
-                                type="button"
-                                className="pa-tr-detail-btn"
-                                onClick={() => openTrialDrawer(t, false)}
-                              >
+                              <button type="button" className="pa-tr-detail-btn" onClick={() => openTrialDrawer(t, false)}>
                                 Chi tiết
                               </button>
-                              <Link
-                                to={`/platform/organizations/${t.organizationId}`}
-                                className="pa-tr-ext-link"
-                                aria-label={`Mở hồ sơ tổ chức ${t.organizationName}`}
-                                title="Mở hồ sơ tổ chức"
-                              >
-                                <ExternalLink size={15} aria-hidden="true" />
-                              </Link>
                             </div>
                           </td>
                         </tr>
@@ -883,7 +989,7 @@ export function PlatformTrialsPage() {
                   Mentor
                 </h2>
                 <p className="pa-ov-panel-sub">
-                  {activeMentors.length} chuyên gia sẵn sàng chấm bài tự luận. Đối chiếu khối lượng công việc và doanh nghiệp đang phụ trách.
+                  {activeMentors.length} mentor đang hoạt động. Mentor chấm bài cuối cấp (assignment mỗi cấp độ của từng lĩnh vực). Ở doanh nghiệp dùng thử, chỉ mentor được giao mới chấm được.
                 </p>
               </div>
 
@@ -949,8 +1055,8 @@ export function PlatformTrialsPage() {
                           <td>
                             <div className="pa-tr-load-wrap">
                               <div className="pa-tr-load-head">
-                                <strong>{m.activeTrials} doanh nghiệp</strong>
-                                <span>{loadMeta.label}</span>
+                                <strong>Phụ trách {m.activeTrials}/{MENTOR_MAX_ORGANIZATIONS} doanh nghiệp</strong>
+                                {loadMeta.tone === 'is-high' && <span>{loadMeta.label}</span>}
                               </div>
                               <div className="pa-tr-load-track" aria-hidden="true">
                                 <div
@@ -963,7 +1069,7 @@ export function PlatformTrialsPage() {
                               <div>
                                 <span
                                   className={`pa-tr-pill ${m.status === 'ACTIVE'
-                                      ? m.activeTrials === 0
+                                      ? (m.waitingFinals || 0) === 0
                                         ? 'is-ok'
                                         : 'is-info'
                                       : 'is-neutral'
@@ -972,9 +1078,9 @@ export function PlatformTrialsPage() {
                                   <span className="pa-tr-pill-dot" aria-hidden="true" />
                                   <span>
                                     {m.status === 'ACTIVE'
-                                      ? m.activeTrials === 0
+                                      ? (m.waitingFinals || 0) === 0
                                         ? 'Đang rảnh'
-                                        : 'Đang chấm bài'
+                                        : `${m.waitingFinals} bài chờ chấm`
                                       : 'Đã khóa'}
                                   </span>
                                 </span>
@@ -990,11 +1096,7 @@ export function PlatformTrialsPage() {
                             ) : (
                               <div className="pa-tr-mentor-org-summary">
                                 <div className="pa-tr-mentor-org-count">
-                                  <strong>{assignedTrials.length} doanh nghiệp</strong>
-                                  <span>
-                                    · {assignedTrials.reduce((sum, t) => sum + (t.submitted || 0), 0)}/
-                                    {assignedTrials.reduce((sum, t) => sum + (t.participants || 0), 0)} bài thi
-                                  </span>
+                                  <strong>Đang phụ trách {assignedTrials.length} doanh nghiệp</strong>
                                   <button
                                     type="button"
                                     className="pa-tr-mentor-view-all-link"
@@ -1044,7 +1146,7 @@ export function PlatformTrialsPage() {
                               aria-label={`Lọc bảng danh sách theo ${m.fullName}`}
                               onClick={() => {
                                 setMentorFilter((prev) => (prev === m.userId ? '' : m.userId));
-                                window.scrollTo({ top: 380, behavior: 'smooth' });
+                                learningSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                               }}
                             >
                               {isSelected ? 'Đang lọc' : 'Xem tổ chức'}
@@ -1058,6 +1160,8 @@ export function PlatformTrialsPage() {
               </div>
             )}
           </section>
+          </>
+          )}
         </>
       )}
 
@@ -1108,9 +1212,9 @@ function TrialDetailDrawer({
 }) {
   const [selectedMentorId, setSelectedMentorId] = useState(trial.mentorUserId ?? '');
   const assign = useAssignMentor();
-  const stageMeta = ADMIN_STAGE[trial.stage];
+  const stageMeta = SURVEY_STATUS[surveyStatusOf(trial)];
   const activeMentors = mentors.filter((m) => m.status === 'ACTIVE');
-  const canAssign = trial.stage === 'REQUESTED' || trial.stage === 'ASSIGNED';
+  const canAssign = canAssignMentor(trial);
 
   const handleAssign = () => {
     if (!selectedMentorId || selectedMentorId === trial.mentorUserId) return;
@@ -1184,12 +1288,12 @@ function TrialDetailDrawer({
             <strong>{trial.participants}</strong>
           </div>
           <div className="pa-tr-metric-box">
-            <span>Đã nộp bài</span>
+            <span>Đã nộp khảo sát</span>
             <strong style={{ color: 'var(--pa-accent-solid)' }}>{trial.submitted}</strong>
           </div>
           <div className="pa-tr-metric-box">
-            <span>Đã chấm</span>
-            <strong style={{ color: 'var(--pa-live)' }}>{trial.reviewed}</strong>
+            <span>Bài cuối cấp chờ chấm</span>
+            <strong style={{ color: 'var(--pa-live)' }}>{trial.waitingFinals ?? 0}</strong>
           </div>
         </div>
 
@@ -1222,7 +1326,7 @@ function TrialDetailDrawer({
         {/* Mentor Assignment */}
         <div className="pa-tr-drawer-box">
           <div className="pa-tr-drawer-heading">
-            <span>Chọn mentor</span>
+            <span>Mentor chấm bài học</span>
             {trial.mentorName && (
               <span style={{ color: 'var(--pa-live)' }}>Hiện tại: {trial.mentorName}</span>
             )}
@@ -1230,9 +1334,11 @@ function TrialDetailDrawer({
 
           {!canAssign ? (
             <p style={{ margin: 0, color: 'var(--pa-ink-2)', lineHeight: 1.5 }}>
-              {trial.stage === 'REPORTED'
-                ? 'Báo cáo đã công bố cho tổ chức nên không đổi được mentor.'
-                : 'Tổ chức đang thiết lập danh sách và chưa gửi yêu cầu chấm bài.'}
+              {trial.converted
+                ? 'Tổ chức đã lên gói chính thức nên không cần mentor nữa.'
+                : trial.stage === 'REPORTED'
+                ? 'Báo cáo đã công bố. Mentor đã phân công được giữ nguyên để chấm bài cuối cấp.'
+                : 'Tổ chức đang thiết lập danh sách và chưa gửi yêu cầu khảo sát.'}
             </p>
           ) : activeMentors.length === 0 ? (
             <p style={{ margin: 0, color: 'var(--pa-ink-2)', lineHeight: 1.5 }}>
@@ -1247,11 +1353,14 @@ function TrialDetailDrawer({
                   .map((m, idx) => {
                     const checked = selectedMentorId === m.userId;
                     const isRecommended = (m.activeTrials || 0) === 0;
+                    // Full = already 5 other organizations; the current mentor of this one stays selectable.
+                    const isFull = (m.activeTrials || 0) >= MENTOR_MAX_ORGANIZATIONS && m.userId !== trial.mentorUserId;
                     return (
                       <label
                         key={m.userId}
                         className={`pa-tr-mentor-radio ${checked ? 'is-selected' : ''} ${isRecommended ? 'is-recommended' : ''
                           }`}
+                        style={isFull ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
                       >
                         <div className="pa-tr-mentor-radio-left">
                           <input
@@ -1259,6 +1368,7 @@ function TrialDetailDrawer({
                             name="assign-mentor"
                             value={m.userId}
                             checked={checked}
+                            disabled={isFull}
                             autoFocus={focusAssign && idx === 0}
                             onChange={() => setSelectedMentorId(m.userId)}
                           />
@@ -1267,8 +1377,12 @@ function TrialDetailDrawer({
                             <div style={{ fontSize: 13, color: 'var(--pa-ink-2)' }}>{m.email}</div>
                           </div>
                         </div>
-                        <span className={`pa-tr-pill ${isRecommended ? 'is-ok' : 'is-info'}`}>
-                          {isRecommended ? 'Đang rảnh' : `Đang phụ trách ${m.activeTrials} tổ chức`}
+                        <span className={`pa-tr-pill ${isFull ? 'is-neutral' : isRecommended ? 'is-ok' : 'is-info'}`}>
+                          {isFull
+                            ? `Đã đủ ${MENTOR_MAX_ORGANIZATIONS} tổ chức`
+                            : isRecommended
+                              ? 'Đang rảnh'
+                              : `Phụ trách ${m.activeTrials}/${MENTOR_MAX_ORGANIZATIONS} tổ chức${m.waitingFinals ? ` · ${m.waitingFinals} bài chờ chấm` : ''}`}
                         </span>
                       </label>
                     );
@@ -1432,8 +1546,8 @@ function MentorAssignedTrialsDrawer({
   onClose: () => void;
   onSelectTrial: (trial: PlatformTrialItem) => void;
 }) {
-  const totalSubmitted = trials.reduce((sum, t) => sum + (t.submitted || 0), 0);
-  const totalParticipants = trials.reduce((sum, t) => sum + (t.participants || 0), 0);
+  const totalWaiting = trials.reduce((sum, t) => sum + (t.waitingFinals ?? 0), 0);
+  const totalLearners = trials.reduce((sum, t) => sum + (t.learners ?? 0), 0);
 
   return (
     <PlatformDrawer
@@ -1451,7 +1565,7 @@ function MentorAssignedTrialsDrawer({
       footer={
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <span style={{ fontSize: 13, color: 'var(--pa-ink-2)' }}>
-            Tổng cộng: <strong>{trials.length}</strong> doanh nghiệp · <strong>{totalSubmitted}/{totalParticipants}</strong> bài thi
+            Tổng cộng: <strong>{trials.length}</strong> doanh nghiệp · <strong>{totalWaiting}</strong> bài cuối cấp chờ chấm
           </span>
           <button type="button" className="pa-btn-neutral" onClick={onClose}>
             Đóng
@@ -1466,23 +1580,23 @@ function MentorAssignedTrialsDrawer({
             <strong>{trials.length}</strong>
           </div>
           <div className="pa-tr-metric-box">
-            <span>Bài đã nộp</span>
-            <strong>{totalSubmitted}</strong>
+            <span>Nhân viên đang học</span>
+            <strong>{totalLearners}</strong>
           </div>
           <div className="pa-tr-metric-box">
-            <span>Tổng nhân sự</span>
-            <strong>{totalParticipants}</strong>
+            <span>Bài chờ chấm</span>
+            <strong>{totalWaiting}</strong>
           </div>
         </div>
 
         <div className="pa-tr-drawer-heading" style={{ marginTop: 8 }}>
-          Danh sách doanh nghiệp đang thẩm định ({trials.length})
+          Doanh nghiệp được giao ({trials.length})
         </div>
 
         <div className="pa-tr-mentor-trials-list">
           {trials.map((t) => {
-            const pct = Math.min(100, Math.round((t.submitted / Math.max(1, t.participants)) * 100));
-            const stage = ADMIN_STAGE[t.stage];
+            const stage = SURVEY_STATUS[surveyStatusOf(t)];
+            const waiting = t.waitingFinals ?? 0;
             return (
               <div key={t.organizationId} className="pa-tr-mentor-trial-item">
                 <div className="pa-tr-mentor-trial-head">
@@ -1495,24 +1609,10 @@ function MentorAssignedTrialsDrawer({
                   </span>
                 </div>
 
-                <div className="pa-tr-mentor-trial-progress">
-                  <div className="pa-tr-progress-top" style={{ fontSize: 12 }}>
-                    <span>{t.submitted} / {t.participants} bài đã nộp</span>
-                    <strong>{pct}%</strong>
-                  </div>
-                  <div className="pa-tr-progress-track" style={{ height: 5 }}>
-                    <div
-                      className={`pa-tr-progress-fill ${pct >= 100 ? 'is-complete' : ''}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="pa-tr-mentor-trial-dates">
-                  <div className="pa-tr-date-line" style={{ fontSize: 12 }}>
-                    <Calendar size={13} aria-hidden="true" />
-                    <span>Hạn: {formatDateTimePlain(t.testDeadline)}</span>
-                  </div>
+                <div className="pa-tr-mentor-trial-dates" style={{ fontSize: 12.5, color: 'var(--pa-ink-2)' }}>
+                  {t.converted
+                    ? 'Đã lên gói chính thức: bài vào hàng chờ chung'
+                    : `${t.coursesPurchased ?? 0} khóa đã mua · ${t.learners ?? 0} nhân viên đang học · ${waiting} bài chờ chấm`}
                 </div>
 
                 <div className="pa-tr-mentor-trial-actions">
@@ -1521,7 +1621,7 @@ function MentorAssignedTrialsDrawer({
                     className="pa-btn-accent-subtle inline-flex items-center gap-1"
                     onClick={() => onSelectTrial(t)}
                   >
-                    <span>Xem hồ sơ thẩm định</span>
+                    <span>Xem chi tiết</span>
                     <ExternalLink size={12} aria-hidden="true" />
                   </button>
                   <Link
@@ -1529,7 +1629,7 @@ function MentorAssignedTrialsDrawer({
                     className="pa-tr-org-link-btn"
                     title="Mở hồ sơ tổ chức"
                   >
-                    <span>Tổ chức 360</span>
+                    <span>Hồ sơ tổ chức</span>
                     <ExternalLink size={12} aria-hidden="true" />
                   </Link>
                 </div>
