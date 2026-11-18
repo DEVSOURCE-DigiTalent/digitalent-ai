@@ -49,8 +49,13 @@ public class SubmitTrialRequestUseCase : IUseCase<SubmitTrialRequestUseCaseInput
         var when = $"hạn làm bài {TrialProgramRules.FormatVietnamTime(input.TestDeadline)}";
         if (first)
         {
+            // The mentor who will grade the end-of-level assignments once the employees learn is chosen right away.
+            var mentor = await _reader.AutoAssignMentorAsync(trial);
+            var mentorLine = mentor is { } m
+                ? $" Đã tự phân công mentor {m.Name}."
+                : " Chưa còn mentor trống, cần phân công tay ở trang Mentor.";
             _reader.Notify(await _reader.PlatformAdminUserIdsAsync(), TrialProgramRules.NotificationRequested,
-                "Đợt khảo sát đã bắt đầu", $"{organizationName}: {when}. Bài trắc nghiệm được chấm tự động.", trial.OrganizationId);
+                "Đợt khảo sát đã bắt đầu", $"{organizationName}: {when}. Bài trắc nghiệm được chấm tự động.{mentorLine}", trial.OrganizationId);
         }
 
         trial.Revision++;

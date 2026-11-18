@@ -114,6 +114,8 @@ public class TrialProgramReader
         if (completed == 0 || (completed != participants.Count && !(trial.TestDeadline <= Now))) return;
         trial.ReportPublishedAt = Now;
         trial.Revision++;
+        // The employees start learning now: make sure someone can grade their end-of-level assignments.
+        await AutoAssignMentorAsync(trial);
         Notify(new[] { trial.OwnerUserId }, TrialProgramRules.NotificationReported, "Đã có kết quả khảo sát",
             $"{completed}/{participants.Count} người đã hoàn thành. Xem tổng quan năng lực đội ngũ.", trial.OrganizationId);
         await _context.SaveChangesAsync();
@@ -443,6 +445,72 @@ public class TrialProgramReader
 
         return ($"Thiếu {gap} cấp độ (Hiện tại: {generalLabel} · Chuẩn: {targetLabel})",
             $"Đội ngũ hiện đạt mức {generalLabel}, thiếu hụt {gap} cấp so với chuẩn vị trí ({targetLabel}). Tỷ lệ nhân sự đạt chuẩn: {targetMetRate}%. Doanh nghiệp nên ưu tiên tổ chức đào tạo khóa {recCourse} về {domainName} để thu hẹp khoảng cách năng lực.");
+    }
+
+    /// <summary>
+    /// Gives a trial organization a mentor automatically: an active mentor under the limit
+    /// (<see cref="TrialProgramRules.MaxOrganizationsPerMentor"/>) with the fewest open trial organizations, then the
+    /// fewest waiting end-of-level assignments, then the one assigned longest ago. Notifies the mentor and the owner;
+    /// the caller saves. Returns the mentor, or null when the organization needs none or every mentor is full.
+    /// </summary>
+    public async Task<(Guid Id, string Name)?> AutoAssignMentorAsync(TrialWorkspace trial)
+    {
+        if (trial.MentorUserId != null || trial.ConvertedAt != null || trial.RequestedAt == null)
+        {
+            return null;
+        }
+
+        var mentors = await (
+                from user in _context.Users.AsNoTracking()
+                join userRole in _context.UserRoles.AsNoTracking() on user.Id equals userRole.UserId
+                join role in _context.Roles.AsNoTracking() on userRole.RoleId equals role.Id
+                where role.Code == Roles.Mentor && user.Status == Statuses.User.Active
+                select new { user.Id, user.DisplayName })
+            .Distinct()
+            .ToListAsync();
+        if (mentors.Count == 0)
+        {
+            return null;
+        }
+
+        var open = await _context.TrialWorkspaces.AsNoTracking()
+            .Where(t => t.MentorUserId != null && t.ConvertedAt == null && t.OrganizationId != trial.OrganizationId)
+            .Select(t => new { t.OrganizationId, MentorUserId = t.MentorUserId!.Value, t.MentorAssignedAt })
+            .ToListAsync();
+        var waiting = await GetPlatformTrialsUseCase.WaitingFinalsAsync(_context, open.Select(o => o.OrganizationId).ToList());
+        var pick = mentors
+            .Select(mentor =>
+            {
+                var mine = open.Where(o => o.MentorUserId == mentor.Id).ToList();
+                return new
+                {
+                    mentor.Id,
+                    mentor.DisplayName,
+                    Load = mine.Count,
+                    Waiting = mine.Sum(o => waiting.GetValueOrDefault(o.OrganizationId)),
+                    LastAssigned = mine.Max(o => o.MentorAssignedAt) ?? DateTimeOffset.MinValue,
+                };
+            })
+            .Where(m => m.Load < TrialProgramRules.MaxOrganizationsPerMentor)
+            .OrderBy(m => m.Load)
+            .ThenBy(m => m.Waiting)
+            .ThenBy(m => m.LastAssigned)
+            .ThenBy(m => m.DisplayName, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (pick == null)
+        {
+            return null;
+        }
+
+        trial.MentorUserId = pick.Id;
+        trial.MentorAssignedAt = Now;
+        trial.Revision++;
+        var organizationName = await OrganizationNameAsync(trial.OrganizationId);
+        Notify(new[] { pick.Id }, TrialProgramRules.NotificationMentorAssigned, "Bạn được phân công chấm bài dùng thử",
+            $"{organizationName}: chấm bài cuối cấp của nhân viên học thử.", trial.OrganizationId);
+        Notify(new[] { trial.OwnerUserId }, TrialProgramRules.NotificationMentorAssigned, "Đã có mentor chấm bài",
+            $"{pick.DisplayName} sẽ chấm bài cuối cấp của nhân viên học thử.", trial.OrganizationId);
+        return (pick.Id, pick.DisplayName);
     }
 
     /// <summary>Người nhận thông báo của nền tảng (quản trị nền tảng đang hoạt động).</summary>
