@@ -24,4 +24,12 @@ public class PlatformTrialItem
     public int Participants { get; set; }
     public int Submitted { get; set; }
     public int Reviewed { get; set; }
+    /// <summary>The trial was converted to a regular plan: it needs no mentor any more.</summary>
+    public bool Converted { get; set; }
+    /// <summary>Course finals of its employees waiting for a decision (graded by the mentor while it is a trial).</summary>
+    public int WaitingFinals { get; set; }
+    /// <summary>Paid courses the organization bought (once for every employee).</summary>
+    public int CoursesPurchased { get; set; }
+    /// <summary>Employees with at least one enrollment.</summary>
+    public int Learners { get; set; }
 }

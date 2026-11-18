@@ -11,7 +11,9 @@ public class MentorItem
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
-    /// <summary>Số doanh nghiệp đang chấm (đã phân công, chưa công bố).</summary>
+    /// <summary>Trial organizations assigned to the mentor that are not converted yet.</summary>
     public int ActiveTrials { get; set; }
+    /// <summary>Course finals waiting for a decision in those organizations.</summary>
+    public int WaitingFinals { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.TrialProgram;
 
-/// <summary>GET /platform/mentors — tài khoản mentor của nền tảng kèm số doanh nghiệp đang chấm.</summary>
+/// <summary>GET /platform/mentors — tài khoản mentor của nền tảng kèm doanh nghiệp đang phụ trách và bài cuối khóa chờ chấm.</summary>
 public class GetMentorsUseCase : IUseCase<GetMentorsUseCaseInput, GetMentorsUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
@@ -25,14 +25,18 @@ public class GetMentorsUseCase : IUseCase<GetMentorsUseCaseInput, GetMentorsUseC
                 orderby user.DisplayName
                 select new MentorItem { UserId = user.Id, FullName = user.DisplayName, Email = user.Email, Status = user.Status, CreatedAt = user.CreatedAt })
             .ToListAsync();
-        var load = await _context.TrialWorkspaces.AsNoTracking()
-            .Where(t => t.MentorUserId != null && t.ReportPublishedAt == null)
-            .GroupBy(t => t.MentorUserId!.Value)
-            .Select(g => new { g.Key, Count = g.Count() })
-            .ToDictionaryAsync(g => g.Key, g => g.Count);
+        // A mentor keeps a trial organization until it is converted: after the report its employees learn the Basic
+        // courses and only the assigned mentor grades their course finals.
+        var openTrials = await _context.TrialWorkspaces.AsNoTracking()
+            .Where(t => t.MentorUserId != null && t.ConvertedAt == null)
+            .Select(t => new { t.OrganizationId, MentorUserId = t.MentorUserId!.Value })
+            .ToListAsync();
+        var waiting = await GetPlatformTrialsUseCase.WaitingFinalsAsync(_context, openTrials.Select(t => t.OrganizationId).ToList());
         foreach (var mentor in mentors)
         {
-            mentor.ActiveTrials = load.GetValueOrDefault(mentor.UserId);
+            var organizations = openTrials.Where(t => t.MentorUserId == mentor.UserId).Select(t => t.OrganizationId).ToList();
+            mentor.ActiveTrials = organizations.Count;
+            mentor.WaitingFinals = organizations.Sum(id => waiting.GetValueOrDefault(id));
         }
 
         return new GetMentorsUseCaseOutput { Items = mentors };
