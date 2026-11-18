@@ -8,8 +8,8 @@ import { recordAudit } from './audit';
 import { readReferencePositionLevels } from './reference-positions';
 
 /**
- * Ceiling matrix of the organization (OW-05 "Phạm vi năng lực"), mirror of CapabilityCeilingsController:
- * Digital AI ceiling = 6 domains × 3 levels (18 courses) ⊇ organization ceiling ⊇ department ceilings, per domain.
+ * Matrix of OW-05 "Khung năng lực số", mirror of CapabilityCeilingsController: the whole company = every course it owns
+ * (Basic free, Intermediate / Advanced once bought); departments get their own level per domain, never above an owned course.
  */
 
 const P = PERMISSIONS;
@@ -81,9 +81,7 @@ export function ceilingMatrixDto(data: OrgData) {
   };
 
   const domains = CATEGORIES.slice().sort((a, b) => a.sortOrder - b.sortOrder);
-  const organizationCeiling = new Map(
-    domains.map((d) => [d.id, Math.min(maxLicensedLevel(data, d.id), saved?.organization[d.id] ?? Math.max(1, suggest(data.positions.map((position) => position.id), d.id)))]),
-  );
+  const organizationCeiling = new Map(domains.map((d) => [d.id, maxLicensedLevel(data, d.id)]));
 
   const activeEmployees = data.employees.filter((e) => e.status === 'ACTIVE');
   const departments = data.departments
@@ -99,10 +97,11 @@ export function ceilingMatrixDto(data: OrgData) {
       const ceilings = domains.map((d) => {
         const orgLevel = organizationCeiling.get(d.id)!;
         const isCustomized = own[d.id] !== undefined;
+        // A department may aim above the owned courses: set first, buy later.
         return {
           categoryId: d.id,
-          level: isCustomized ? Math.min(own[d.id], orgLevel) : orgLevel,
-          suggested: Math.min(suggest(positionIds, d.id), orgLevel),
+          level: isCustomized ? own[d.id] : orgLevel,
+          suggested: suggest(positionIds, d.id),
           isCustomized,
         };
       });
@@ -214,26 +213,13 @@ route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, u
   const department = data.departments.find((d) => d.id === params.id && d.status === 'ACTIVE');
   if (!department) throw notFound('Không tìm thấy phòng ban.');
 
-  const record = ceilingsOf(data);
-  if (!record) {
-    throw badRequest('Hãy lưu phạm vi doanh nghiệp trước khi thiết lập phạm vi cho phòng ban.', 'ORGANIZATION_CEILING_REQUIRED', 'ceilings');
-  }
+  const record: CapabilityCeilingRecord = ceilingsOf(data) ?? { organization: {}, departments: {}, updatedAt: '', updatedByName: '' };
 
   if (body.inherit === true) {
     delete record.departments[department.id];
   } else {
     const ceilings = readCeilings(body);
     if (ceilings.length === 0) throw badRequest('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.');
-    if (ceilings.some((item) => item.level > (record.organization[item.categoryId] ?? 0))) {
-      throw badRequest(
-        'Cấp độ áp dụng của phòng ban không được vượt mức doanh nghiệp đã thiết lập.',
-        'CEILING_ABOVE_ORGANIZATION',
-        'ceilings',
-      );
-    }
-    if (ceilings.some((item) => item.level > maxLicensedLevel(data, item.categoryId))) {
-      throw badRequest('Cần mua khóa học của cấp này trước khi mở rộng phạm vi phòng ban.', 'COURSE_LICENSE_REQUIRED', 'ceilings');
-    }
     const own = (record.departments[department.id] ??= {});
     for (const item of ceilings) own[item.categoryId] = item.level;
   }
@@ -241,6 +227,6 @@ route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, u
   stamp(record, session.fullName);
   data.capabilityCeilings = record;
   recordAudit(data, session, 'CAPABILITY_CEILING_UPDATED', 'Phạm vi năng lực', `Phạm vi phòng ban ${department.name}`,
-    body.inherit === true ? 'Kế thừa phạm vi doanh nghiệp' : undefined);
+    body.inherit === true ? 'Bỏ mức riêng, học theo chuẩn vị trí' : undefined);
   return ceilingMatrixDto(data);
 }), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu phạm vi phòng ban.' });

@@ -1,9 +1,9 @@
 import {
   Bell,
+  BookOpen,
   Bug,
   FileBarChart,
   FileCheck2,
-  GraduationCap,
   LayoutDashboard,
   MessageSquare,
   TrendingUp,
@@ -13,8 +13,7 @@ import type { SidebarConfig } from './types';
 
 /**
  * Manager sidebar — Pulse prototype (docs/ui-redesign/14-pulse-product-site, vai trò Manager).
- * Hai nhóm phẳng: việc quản lý đội và các công cụ khác. Chỉ màn hình thuộc phạm vi phòng ban;
- * việc tự học của quản lý mở từ menu tài khoản (cổng nhân viên Pulse), không nằm ở đây.
+ * Học tập của tôi mở cổng học Pulse của chính quản lý.
  *
  */
 export const MANAGER_SIDEBAR: SidebarConfig = [
@@ -28,7 +27,7 @@ export const MANAGER_SIDEBAR: SidebarConfig = [
 
   // ── CÁC CÔNG CỤ KHÁC ──
   { label: 'Các công cụ khác' },
-  { label: 'Đào tạo đội ngũ', icon: GraduationCap, screenId: 'MG-06', activeFor: ['MG-07'] },
+  { label: 'Học tập của tôi', icon: BookOpen, screenId: 'EM-01' },
   { label: 'Hoạt động', icon: Bell, screenId: 'SHR-03' },
   { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04' },
   { label: 'Báo lỗi', icon: Bug, screenId: 'SHR-05' },

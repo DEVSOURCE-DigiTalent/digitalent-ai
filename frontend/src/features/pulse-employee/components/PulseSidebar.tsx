@@ -92,11 +92,16 @@ const SIDEBAR_ITEMS: NavItem[] = [
   },
 ];
 
-export function PulseSidebar({ trialLearning = false }: { trialLearning?: boolean } = {}) {
+const MANAGER_TOOLS = new Set<string>([PULSE_PATHS.activity, PULSE_PATHS.feedbacks, PULSE_PATHS.bugReports]);
+
+export function PulseSidebar({ trialLearning = false, manager = false }: { trialLearning?: boolean; manager?: boolean } = {}) {
   useUiLanguage();
   const { pathname } = useLocation();
   const { data: unread } = useNotifications({ unreadOnly: true });
   const hasUnread = Boolean(unread && unread.length > 0);
+  const items = SIDEBAR_ITEMS.filter((item) =>
+    (!trialLearning || item.to !== PULSE_PATHS.today) && (!manager || !MANAGER_TOOLS.has(item.to)),
+  );
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
@@ -141,11 +146,11 @@ export function PulseSidebar({ trialLearning = false }: { trialLearning?: boolea
   return (
     <aside
       className={`pu-side-card${isCollapsed ? ' is-collapsed' : ' is-expanded'}`}
-      aria-label="Menu cá nhân nhân viên"
+      aria-label={manager ? translateUi('Học tập của tôi') : 'Menu cá nhân nhân viên'}
     >
       {/* ── Top Micro-bar: Nút Thu / Phóng tinh giản không chiếm diện tích ── */}
       <div className="pu-side-card-topbar">
-        {!isCollapsed && <span className="pu-side-card-brand">{translateUi("Nhân viên")}</span>}
+        {!isCollapsed && <span className="pu-side-card-brand">{translateUi(manager ? 'Học tập của tôi' : 'Nhân viên')}</span>}
         <button
           type="button"
           onClick={toggleCollapse}
@@ -158,9 +163,9 @@ export function PulseSidebar({ trialLearning = false }: { trialLearning?: boolea
       </div>
 
       {/* ── Navigation: Danh sách chức năng chuẩn form Personal ────────── */}
-      <nav className="pu-side-card-nav" aria-label="Cổng đào tạo nhân viên">
+      <nav className="pu-side-card-nav" aria-label={manager ? translateUi('Điều hướng học tập') : 'Cổng đào tạo nhân viên'}>
         <ul className="pu-side-card-list">
-          {(trialLearning ? SIDEBAR_ITEMS.filter((item) => item.to !== PULSE_PATHS.today) : SIDEBAR_ITEMS).map((item) => {
+          {items.map((item) => {
             const label = trialLearning && item.to === PULSE_PATHS.path ? 'Học thử' : item.label;
             const Icon = item.icon;
             const active = isItemActive(item);

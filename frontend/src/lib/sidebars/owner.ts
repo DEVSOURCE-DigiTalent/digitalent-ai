@@ -5,7 +5,7 @@ import {
   Bug,
   Compass,
   FileBarChart,
-  FlaskConical,
+  ClipboardCheck,
   LayoutDashboard,
   MessageSquare,
   TrendingUp,
@@ -21,7 +21,7 @@ export const OWNER_SIDEBAR: SidebarConfig = [
   // ── CHỦ DOANH NGHIỆP ──
   { label: 'Chủ doanh nghiệp' },
   { label: 'Tổng quan', icon: LayoutDashboard, screenId: 'OW-01' },
-  { label: 'Đánh giá đội ngũ', icon: FlaskConical, screenId: 'OW-T1' },
+  { label: 'Khảo sát năng lực số', icon: ClipboardCheck, screenId: 'OW-T1' },
   { label: 'Khung năng lực số', icon: Compass, screenId: 'OW-05', activeFor: ['OW-14', 'OW-15', 'OW-16', 'OW-17', 'OW-18'] },
   { label: 'Nhân sự', icon: Users, screenId: 'OW-02', activeFor: ['OW-03', 'OW-06', 'OW-07', 'OW-09', 'OW-10', 'OW-13'] },
   { label: 'Khoảng trống năng lực', icon: TrendingUp, screenId: 'OW-21', activeFor: ['OW-22', 'OW-19', 'OW-20'] },
@@ -31,7 +31,7 @@ export const OWNER_SIDEBAR: SidebarConfig = [
   // ── CÁC CÔNG CỤ KHÁC ──
   { label: 'Các công cụ khác' },
   { label: 'Chứng nhận', icon: Award, screenId: 'OW-46', activeFor: ['OW-47'] },
-  { label: 'Hoạt động', icon: Bell, screenId: 'SHR-03' },
+  { label: 'Thông báo', icon: Bell, screenId: 'SHR-03' },
   { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04' },
   { label: 'Báo lỗi', icon: Bug, screenId: 'SHR-05' },
 ];

@@ -6,14 +6,14 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
     roleName: 'Chủ doanh nghiệp',
     welcomeTitle: 'Lộ trình 5 bước Chuẩn hóa Năng lực Số',
     welcomeDescription:
-      'Hành trình triển khai: Bắt đầu từ trang Đánh giá đội ngũ để khảo sát 6 lĩnh vực số cho nhân sự, nhận diện khoảng trống năng lực thực tế của toàn đội ngũ, thiết lập phạm vi năng lực mục tiêu, trang bị khóa học và theo dõi báo cáo chu kỳ.',
+      'Hành trình triển khai: Bắt đầu từ trang Khảo sát năng lực số để khảo sát 6 lĩnh vực số cho nhân sự, nhận diện khoảng trống năng lực thực tế của toàn đội ngũ, thiết lập phạm vi năng lực mục tiêu, trang bị khóa học và theo dõi báo cáo chu kỳ.',
     steps: [
       {
         id: 'owner-step-1',
         title: 'Bước 1: Khảo sát & Đánh giá Năng lực Đội ngũ',
         description:
           'Khởi đầu quan trọng nhất: Tạo đợt đánh giá và gửi bài khảo sát 6 lĩnh vực số để đo lường năng lực thực tế ban đầu của toàn đội ngũ.',
-        badge: '1. Đánh giá đội ngũ',
+        badge: '1. Khảo sát năng lực số',
         targetSelector: '[data-tour="OW-T1"]',
         targetPosition: 'right',
         actionRoute: '/enterprise/trial',
@@ -72,8 +72,8 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
     checklist: [
       {
         id: 'task-owner-1',
-        title: '1. Đánh giá đội ngũ',
-        subtitle: 'Tạo đợt khảo sát năng lực số đầu vào cho nhân sự tại trang Đánh giá đội ngũ',
+        title: '1. Khảo sát năng lực số',
+        subtitle: 'Tạo đợt khảo sát năng lực số đầu vào cho nhân sự tại trang Khảo sát năng lực số',
         route: '/enterprise/trial',
         targetSelector: '[data-tour="OW-T1"]',
         badge: 'Ưu tiên 1',
@@ -118,19 +118,19 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
     roleName: 'Quản lý phòng ban',
     welcomeTitle: 'Không gian Điều hành Đội ngũ',
     welcomeDescription:
-      'Chào mừng bạn đến với Cổng Quản lý. Đây là trung tâm giúp bạn nắm bắt khoảng trống kỹ năng của cấp dưới, theo dõi quá trình học và thực hiện đánh giá minh chứng bài làm.',
+      'Theo dõi năng lực, tiến độ học và kết quả đánh giá của nhân viên trong phòng ban bạn phụ trách.',
     steps: [
       {
         id: 'manager-step-1',
-        title: 'Bảng Điều hành Phòng ban',
+        title: 'Biểu đồ năng lực phòng ban',
         description:
-          'Khu vực hiển thị các công việc nóng: bài thi cần duyệt quyết định, nhân viên cần hỗ trợ tháo gỡ khó khăn, và quy mô nhân sự phòng ban.',
-        badge: 'Hàng chờ nóng',
+          'So sánh kết quả đầu vào, mức hiện tại và mức áp dụng của phòng ban qua sáu lĩnh vực.',
+        badge: 'Tổng quan',
         targetSelector: '[data-tour="MG-01"]',
         targetPosition: 'right',
         actionRoute: '/enterprise/team',
         actionText: 'Xem tổng quan nhóm',
-        tips: 'Mẹo: Kiểm tra thẻ "Cần quyết định" để không làm chậm trễ tiến độ của nhân viên.',
+        tips: 'Chọn một lĩnh vực để xem mức năng lực và số nhân viên có dữ liệu.',
       },
       {
         id: 'manager-step-2',
@@ -146,36 +146,35 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       },
       {
         id: 'manager-step-3',
-        title: 'Chấm bài & Duyệt Đánh giá Minh chứng',
+        title: 'Kết quả bài làm',
         description:
-          'Chức năng trọng tâm của Quản lý: Xem lại video ghi hình thi có giám sát AI, kiểm tra phân tích gian lận, chấm tự luận và đưa ra quyết định Đạt / Cần cải thiện.',
-        badge: 'Đánh giá thực tế',
+          'Xem trạng thái bài đánh giá, kết quả đã công bố và chi tiết bài làm của nhân viên trong phòng ban.',
+        badge: 'Kết quả',
         targetSelector: '[data-tour="MG-13"]',
         targetPosition: 'right',
         actionRoute: '/enterprise/team/final-reviews',
-        actionText: 'Trải nghiệm chấm bài',
-        tips: 'Hệ thống AI tự động đánh dấu các khoảnh khắc cần lưu ý trong video giám sát.',
+        actionText: 'Xem kết quả bài làm',
       },
       {
         id: 'manager-step-4',
-        title: 'Đào tạo & Báo cáo Chu kỳ Đội ngũ',
+        title: 'Báo cáo chu kỳ phòng ban',
         description:
-          'Xem tiến độ hoàn thành các khóa học của nhóm và xuất báo cáo tăng trưởng năng lực theo từng đợt đào tạo.',
+          'Xem tiến độ theo khóa học và các kết quả đánh giá gần đây của phòng ban.',
         badge: 'Tiến độ & Báo cáo',
-        targetSelector: '[data-tour="MG-06"]',
+        targetSelector: '[data-tour="MG-14"]',
         targetPosition: 'right',
-        actionRoute: '/enterprise/team/training',
-        actionText: 'Xem tiến độ học tập',
+        actionRoute: '/enterprise/team/reports',
+        actionText: 'Mở báo cáo chu kỳ',
       },
     ],
     checklist: [
       {
         id: 'task-mgr-1',
-        title: 'Nắm bắt các đầu việc cần ưu tiên',
-        subtitle: 'Kiểm tra hàng chờ duyệt bài và nhân sự cần hỗ trợ',
+        title: 'So sánh năng lực phòng ban',
+        subtitle: 'Xem kết quả đầu vào và hiện tại so với mức áp dụng',
         route: '/enterprise/team',
         targetSelector: '[data-tour="MG-01"]',
-        badge: 'Ưu tiên',
+        badge: 'Tổng quan',
       },
       {
         id: 'task-mgr-2',
@@ -187,18 +186,18 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
       },
       {
         id: 'task-mgr-3',
-        title: 'Khám phá giao diện Thẩm định bài đánh giá có AI Proctoring',
-        subtitle: 'Trải nghiệm xem video giám sát và đưa ra quyết định',
+        title: 'Xem kết quả bài làm',
+        subtitle: 'Kiểm tra trạng thái đánh giá và kết quả đã công bố',
         route: '/enterprise/team/final-reviews',
         targetSelector: '[data-tour="MG-13"]',
         badge: 'Đánh giá',
       },
       {
         id: 'task-mgr-4',
-        title: 'Theo dõi tiến trình đào tạo của phòng ban',
+        title: 'Xem báo cáo chu kỳ phòng ban',
         subtitle: 'Kiểm tra mức độ hoàn thành các khóa học',
-        route: '/enterprise/team/training',
-        targetSelector: '[data-tour="MG-06"]',
+        route: '/enterprise/team/reports',
+        targetSelector: '[data-tour="MG-14"]',
         badge: 'Tiến độ',
       },
     ],

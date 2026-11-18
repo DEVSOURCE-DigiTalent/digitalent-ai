@@ -96,20 +96,20 @@ function DepartmentDirectory({ departmentId }: { departmentId: string }) {
               setSearch(''); setPositionId(''); setStatus(''); setPage(1);
             }}>{translateUi('Xóa bộ lọc')}</button>}
           />
-        </div> : <ul className="manager-directory__grid" data-paired={items.length === 4} role="list">
+        </div> : <ul className="manager-directory__grid" role="list">
           {items.map((row) => (
             <li key={row.id}>
               <Link className="manager-directory__person" to={MANAGER_PATHS.member(row.id)}>
                 <div className="manager-directory__identity">
                   <Initials name={row.fullName} />
                   <div><h2>{row.fullName}</h2><small>{row.employeeCode}</small></div>
-                  <span className="manager-directory__open"><ArrowUpRight size={17} aria-hidden="true" /></span>
                 </div>
                 <p className="manager-directory__position">{row.positionName || row.jobPositionName || translateUi('Chưa có vị trí')}</p>
                 {row.workEmail && <p className="manager-directory__email"><Mail size={14} aria-hidden="true" />{row.workEmail}</p>}
                 <span className="manager-directory__status" data-active={row.status === 'ACTIVE'}>
                   {translateUi(STATUS_LABELS[row.status as EmployeeStatus] ?? 'Chưa xác định')}
                 </span>
+                <span className="manager-directory__open"><ArrowUpRight size={17} aria-hidden="true" /></span>
               </Link>
             </li>
           ))}

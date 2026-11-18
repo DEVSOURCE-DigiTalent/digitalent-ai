@@ -6,7 +6,7 @@ import { OwnerAssessmentHeatmap } from './OwnerAssessmentHeatmap';
 import './owner-progress-tabs.css';
 
 const tabs = [
-  { id: 'assessment', label: 'Tiến độ đánh giá', Icon: ClipboardList },
+  { id: 'assessment', label: 'Khảo sát năng lực số', Icon: ClipboardList },
   { id: 'learning', label: 'Bản đồ doanh nghiệp', Icon: Network },
 ] as const;
 type TabId = typeof tabs[number]['id'];

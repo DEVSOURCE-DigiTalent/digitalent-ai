@@ -3,15 +3,22 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
+  BarChart3,
   BookOpen,
   Briefcase,
+  ChevronDown,
+  CalendarClock,
+  ChevronUp,
+  ClipboardCheck,
   Clock,
+  ListChecks,
   Search,
   Send,
   TrendingUp,
+  UserCheck,
   Users,
-  ChevronDown,
-  ChevronUp,
+  Video,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -36,14 +43,37 @@ import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilte
 import { OwnerSurveyAction } from '../components/OwnerSurveyAction';
 import { CompetencyReport, ParticipantStatus, Steps } from '../components/OwnerTrialUi';
 import { emptyRows, isRowEmpty, rowError } from '../lib/participant-rows';
-import { formatWhen, toLocalInput } from '../lib/trial-format';
+import { formatWhen, POSITION_STANDARD_PATH, toLocalInput } from '../lib/trial-format';
 import '../trial-program.css';
 import '../owner-team-assessment.css';
 import '@/features/organization/components/owner-filter-controls.css';
 
-const STEPS = ['Nhân sự tham gia', 'Hạn làm bài', 'Theo dõi bài làm', 'Báo cáo năng lực'];
+/**
+ * Three milestones: the owner acts in the first two; in the last one the team takes the test and the expert's
+ * results arrive on this page, so waiting and results are one step whose detail says where it stands.
+ */
+const STEP_LABELS = ['Chọn người làm bài', 'Đặt hạn, gửi lời mời', 'Làm bài & nhận kết quả'];
+const LIST_PAGE_SIZE = 10;
+/** Search and filters help from a handful of people on; pages start after LIST_PAGE_SIZE. */
+const LIST_TOOLS_MIN = 6;
+const NO_DEPARTMENT = '__no_department__';
 
-/** OW-T1 · Đánh giá đội ngũ: giao diện hiện đại, trải rộng toàn màn hình, ít chữ, không rườm rà */
+const isSubmitted = (p: TrialParticipant) => p.status === 'SUBMITTED' || p.status === 'REVIEWED';
+const isPastDeadline = (program: TrialProgram) => Boolean(program.testDeadline && Date.parse(program.testDeadline) <= Date.now());
+
+type ResultPhase = 'taking' | 'grading' | 'empty' | 'reported';
+
+/** Where step 3 stands: still taking the test, the expert is grading (everyone submitted or the deadline passed), nobody submitted, or results out. */
+function resultPhase(program: TrialProgram): ResultPhase {
+  if (program.stage === 'REPORTED') return 'reported';
+  const total = program.participants.length;
+  const submitted = program.participants.filter(isSubmitted).length;
+  const expired = isPastDeadline(program);
+  if (submitted > 0 && (submitted === total || expired)) return 'grading';
+  return expired && submitted === 0 ? 'empty' : 'taking';
+}
+
+/** OW-T1 · Khảo sát năng lực số: mời nhân viên làm bài, theo dõi bài nộp và đọc kết quả theo 6 lĩnh vực. */
 export function TrialProgramPage() {
   useUiLanguage();
   const { data, isLoading, error } = useTrialProgram();
@@ -56,19 +86,17 @@ export function TrialProgramPage() {
         background: `
           radial-gradient(circle 800px at 90% 5%, rgba(19, 123, 132, 0.08), transparent 60%),
           radial-gradient(circle 700px at 5% 35%, rgba(56, 189, 248, 0.07), transparent 60%),
-          radial-gradient(circle 900px at 50% 90%, rgba(99, 102, 241, 0.05), transparent 65%),
           #f8fafc
         `,
         fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* ── Tràn đều toàn màn hình, max 1920px ── */}
-      <div className="w-full px-5 sm:px-6 lg:px-8 xl:px-10 py-6 lg:py-8 relative z-10 max-w-[1920px] mx-auto space-y-6">
-        {isLoading && <PageLoading label="Đang tải bài đánh giá" />}
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 lg:py-8 relative z-10 max-w-[1600px] mx-auto space-y-6">
+        {isLoading && <PageLoading label="Đang tải khảo sát" />}
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50/80 p-6 text-center max-w-md mx-auto shadow-xs">
-            <p className="text-xs font-bold text-red-700">
-              {apiErrorMessage(error, 'Không thể tải thông tin đợt đánh giá.')}
+          <div className="rounded-2xl border border-red-200 bg-red-50/80 p-6 text-center max-w-md mx-auto">
+            <p className="text-sm font-semibold text-red-700">
+              {apiErrorMessage(error, 'Không thể tải thông tin khảo sát.')}
             </p>
           </div>
         )}
@@ -81,70 +109,105 @@ export function TrialProgramPage() {
 function TrialProgramView({ program }: { program: TrialProgram }) {
   useUiLanguage();
   const [setupStep, setSetupStep] = useState<0 | 1>(0);
-  const current = program.stage === 'SETUP' ? setupStep : program.stage === 'REPORTED' ? 3 : 2;
+  const [rows, setRows] = useState<TrialParticipantRow[]>(emptyRows());
   const [lastInvite, setLastInvite] = useState<TrialInviteResult | null>(null);
+
+  const setup = program.stage === 'SETUP';
+  const reported = program.stage === 'REPORTED';
+  const total = program.participants.length;
+  const submitted = program.participants.filter(isSubmitted).length;
+  const drafted = total + rows.filter((r) => !isRowEmpty(r) && rowError(r) === null).length;
+
+  const phase = resultPhase(program);
+  const phaseDetail: Record<ResultPhase, string> = {
+    taking: `${submitted}/${total} đã nộp`,
+    grading: 'Chuyên gia đang chấm',
+    empty: 'Hết hạn, chưa ai nộp',
+    reported: 'Đã có kết quả',
+  };
+  const steps = [
+    { label: STEP_LABELS[0], detail: setup ? (setupStep === 1 ? `${drafted} người` : undefined) : `${total} người` },
+    { label: STEP_LABELS[1], detail: !setup && program.testDeadline ? `Hạn ${formatWhen(program.testDeadline)}` : undefined },
+    { label: STEP_LABELS[2], detail: setup ? undefined : phaseDetail[phase] },
+  ];
+  const current = setup ? setupStep : 2;
 
   return (
     <div className="space-y-6">
-      {/* ── Header: Đẳng cấp, Tinh tế, Ít chữ ── */}
-      <div className="trial-page-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-slate-200/80 shadow-2xs mb-2">
-            <span className="size-2 rounded-full bg-teal-500 animate-pulse" />
-            <span className="text-[11px] font-semibold text-slate-700">{program.organizationName}</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#17243f]">
-            {program.stage === 'REPORTED' ? 'Kết quả đánh giá đội ngũ' : translateUi('Đánh giá đội ngũ')}
-          </h1>
-        </div>
+      <header className="trial-page-heading">
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#17243f]">
+          {translateUi(reported ? 'Kết quả khảo sát năng lực số' : 'Khảo sát năng lực số')}
+        </h1>
+        <p className="trial-page-lead">{translateUi('Đo năng lực số của nhân viên ở 6 lĩnh vực, để biết ai cần học gì.')}</p>
+      </header>
 
-        <div className="flex items-center gap-2.5">
-          <Link
-            to="/enterprise/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/90 hover:bg-white px-4 py-2.5 text-xs font-bold text-[#17243f] hover:text-[#137b84] transition-all shadow-2xs hover:shadow-xs hover:-translate-y-0.5"
-          >{translateUi("Về Tổng quan")}<ArrowRight className="size-3.5" />
-          </Link>
-          <span className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-800">
-            {program.stage === 'SETUP' ? translateUi('Chưa gửi') : program.stage === 'REPORTED' ? 'Đã chốt kết quả' : program.testDeadline && Date.parse(program.testDeadline) <= Date.now() ? translateUi('Đã hết hạn') : translateUi('Đang đánh giá')}
-          </span>
-        </div>
-      </div>
+      <Steps steps={steps} current={current} complete={reported} label="Tiến độ khảo sát" />
 
-      {/* ── Stepper: Thanh tiến trình gọn gàng ── */}
-      <div className="trial-journey"><Steps steps={STEPS} current={current} label={translateUi("Tiến trình đánh giá")} /></div>
-
-      {program.stage === 'SETUP' ? (
-        <div className="space-y-6">
-          <SetupView program={program} step={setupStep} onStepChange={setSetupStep} onInvited={setLastInvite} />
-        </div>
+      {setup ? (
+        <SetupView program={program} rows={rows} onRowsChange={setRows} step={setupStep} onStepChange={setSetupStep} onInvited={setLastInvite} />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <InviteResult result={lastInvite} />
-          <TrackView program={program} />
+          {reported ? <ReportedView program={program} /> : <TrackView program={program} />}
         </div>
       )}
     </div>
   );
 }
 
-/** Bước 1–2: danh sách nhân viên + hạn làm bài, gửi một lần. */
-function SetupView({ program, step, onStepChange, onInvited }: {
-  program: TrialProgram; step: 0 | 1; onStepChange: (step: 0 | 1) => void; onInvited: (result: TrialInviteResult) => void;
+/** What the employees will do and what the owner gets back, before anyone is invited. */
+function SurveyFacts({ program }: { program: TrialProgram }) {
+  useUiLanguage();
+  const perDomain = Math.round((program.choiceCount ?? 0) / 6);
+  const facts = [
+    program.choiceCount > 0 && {
+      Icon: ListChecks,
+      title: program.essayCount > 0 ? `${program.choiceCount} câu trắc nghiệm + ${program.essayCount} bài viết` : `${program.choiceCount} câu trắc nghiệm`,
+      note: `${perDomain} câu mỗi lĩnh vực`,
+    },
+    { Icon: Video, title: 'Làm trên máy tính', note: 'Bật camera, micro và chia sẻ màn hình khi làm bài' },
+    { Icon: UserCheck, title: 'Chuyên gia DigiTalent duyệt', note: 'Kết quả gửi về trang này' },
+    { Icon: BarChart3, title: 'Bạn nhận được', note: 'Mức năng lực của từng người ở 6 lĩnh vực' },
+  ].filter(Boolean) as { Icon: typeof Video; title: string; note: string }[];
+
+  return (
+    <dl className="trial-facts" aria-label={translateUi('Về bài khảo sát')}>
+      {facts.map(({ Icon, title, note }) => (
+        <div key={title}>
+          <Icon size={20} aria-hidden="true" />
+          <dt>{translateUi(title)}</dt>
+          <dd>{translateUi(note)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** Bước 1–2: danh sách người làm bài, rồi hạn nộp và gửi lời mời một lần. */
+function SetupView({ program, rows, onRowsChange, step, onStepChange, onInvited }: {
+  program: TrialProgram;
+  rows: TrialParticipantRow[];
+  onRowsChange: (rows: TrialParticipantRow[]) => void;
+  step: 0 | 1;
+  onStepChange: (step: 0 | 1) => void;
+  onInvited: (result: TrialInviteResult) => void;
 }) {
   useUiLanguage();
-  const [rows, setRows] = useState<TrialParticipantRow[]>(emptyRows());
   const [schedule, setSchedule] = useState(defaultSchedule);
   const [result, setResult] = useState<TrialInviteResult | null>(null);
   const invite = useInviteTrialParticipants();
   const request = useSubmitTrialRequest();
   const filled = rows.filter((r) => !isRowEmpty(r));
-  const invalid = filled.some((r) => rowError(r) !== null);
+  const invalidCount = filled.filter((r) => rowError(r) !== null).length;
+  const invalid = invalidCount > 0;
   const existing = program.participants.length;
   const scheduleError = validateSchedule(schedule);
   const busy = invite.isPending || request.isPending;
+  const nobody = existing + filled.length === 0;
+  const listHint = nobody ? 'Nhập ít nhất 1 người để tiếp tục.' : invalid ? `${invalidCount} dòng còn thiếu thông tin.` : null;
 
   const submit = async () => {
-    if (busy || invalid || scheduleError || existing + filled.length === 0) return;
+    if (busy || invalid || scheduleError || nobody) return;
     try {
       let invited = 0;
       if (filled.length > 0) {
@@ -154,320 +217,372 @@ function SetupView({ program, step, onStepChange, onInvited }: {
         invited = outcome.invited.length;
         const rejected = new Set(outcome.rejected.map((r) => r.email.toLowerCase()));
         const rejectedRows = filled.filter((r) => rejected.has(r.email.trim().toLowerCase()));
-        setRows(rejectedRows.length ? rejectedRows : emptyRows(1));
+        onRowsChange(rejectedRows.length ? rejectedRows : emptyRows(1));
         if (outcome.rejected.length) {
           onStepChange(0);
-          toast.warning(`Đã mời ${outcome.invited.length} người. Kiểm tra các dòng chưa hợp lệ trước khi bắt đầu khảo sát.`);
+          toast.warning(`Đã mời ${outcome.invited.length} người. Sửa các dòng chưa hợp lệ rồi gửi lại.`);
           return;
         }
       }
       if (existing + invited === 0) return;
       await request.mutateAsync(toRequest(schedule));
-      toast.success('Đã gửi lời mời và bắt đầu đợt đánh giá');
+      toast.success('Đã gửi lời mời. Nhân viên có thể bắt đầu làm bài.');
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Chưa gửi được.'));
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* ── Thẻ 1: Danh sách nhân sự ── */}
-      {step === 0 && <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Danh sách nhân sự tham gia")}</h2>
-            {existing > 0 && (
-              <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 text-[11px] font-bold">{translateUi("Đã mời ")}{existing}{translateUi(" người")}</span>
-            )}
+  if (step === 0) {
+    return (
+      <div className="space-y-5">
+        <SurveyFacts program={program} />
+        <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 pb-3">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">{translateUi('Danh sách người làm bài')}</h2>
+            {existing > 0 && <span className="text-[13px] font-semibold text-slate-600">{translateUi(`Đã mời ${existing} người`)}</span>}
           </div>
-        </div>
-        <ParticipantsEditor
-          rows={rows}
-          onChange={setRows}
-          departments={program.departments}
-        />
-        <InviteResult result={result} />
-      </section>}
-
-      {/* ── Hạn làm bài ── */}
-      {step === 1 && <section className="mx-auto w-full max-w-[45rem] rounded-2xl border border-slate-200/90 bg-white/95 p-4 shadow-xs sm:p-5">
-        <div className="mb-3 border-b border-slate-100 pb-3">
-          <h2 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Hạn hoàn thành đánh giá")}</h2>
-        </div>
-        <ScheduleFields value={schedule} onChange={setSchedule} />
-      </section>}
-
-      {/* ── Nút kích hoạt ── */}
-      <div className={step === 1 ? "mx-auto flex w-full max-w-[45rem] flex-wrap items-center justify-end gap-3" : "flex flex-wrap items-center justify-end gap-3 pt-2"}>
-        {step === 0 ? (
-          <button type="button" className="rounded-xl bg-[#137b84] px-5 py-3 text-sm font-bold text-white disabled:opacity-40"
-            disabled={busy || invalid || existing + filled.length === 0} onClick={() => onStepChange(1)}>
-            {translateUi('Tiếp tục đặt hạn')}
+          <ParticipantsEditor rows={rows} onChange={onRowsChange} departments={program.departments} />
+          <InviteResult result={result} />
+        </section>
+        <div className="trial-setup-footer">
+          {listHint && <p role="status">{translateUi(listHint)}</p>}
+          <button type="button" className="trial-primary-button" disabled={busy || invalid || nobody} onClick={() => onStepChange(1)}>
+            {translateUi('Tiếp tục đặt hạn')}<ArrowRight size={16} aria-hidden="true" />
           </button>
-        ) : <>
-        <button type="button" className="mr-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-teal-800"
-          disabled={busy} onClick={() => onStepChange(0)}>{translateUi('Quay lại danh sách')}</button>
-        {scheduleError && <p role="status" className="basis-full text-xs font-semibold text-amber-700 sm:order-last sm:text-right">{scheduleError}</p>}
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#137b84] to-[#0d9488] hover:from-[#0e5968] hover:to-[#0f766e] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#137b84]/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-          disabled={busy || invalid || !!scheduleError || existing + filled.length === 0}
-          onClick={submit}
-        >
-          <Send className="size-4" />
-          {busy ? translateUi('Đang xử lý…') : translateUi('Gửi lời mời & bắt đầu đánh giá')}
+        </div>
+      </div>
+    );
+  }
+
+  const deadline = scheduleError ? null : toRequest(schedule).testDeadline;
+  return (
+    <div className="mx-auto w-full max-w-[45rem] space-y-4">
+      <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 shadow-xs sm:p-5">
+        <h2 className="mb-3 border-b border-slate-100 pb-3 text-base sm:text-lg font-bold text-slate-900">{translateUi('Hạn nộp bài')}</h2>
+        <ScheduleFields value={schedule} onChange={setSchedule} />
+      </section>
+      <p className="trial-send-summary" aria-live="polite">
+        <Send size={16} aria-hidden="true" />
+        <span>
+          {filled.length > 0
+            ? <>{translateUi('Gửi email mời tới')} <strong>{filled.length} {translateUi('người')}</strong></>
+            : <><strong>{existing} {translateUi('người')}</strong> {translateUi('đã được mời')}</>}
+          {deadline && <> · {translateUi('làm bài đến')} <strong>{formatWhen(deadline)}</strong></>}
+        </span>
+      </p>
+      <div className="trial-setup-footer">
+        <button type="button" className="trial-secondary-button mr-auto" disabled={busy} onClick={() => onStepChange(0)}>{translateUi('Quay lại danh sách')}</button>
+        {scheduleError && <p role="status">{translateUi(scheduleError)}</p>}
+        <button type="button" className="trial-primary-button" disabled={busy || invalid || !!scheduleError || nobody} onClick={submit}>
+          <Send size={16} aria-hidden="true" />
+          {busy ? translateUi('Đang gửi…') : translateUi('Gửi lời mời & bắt đầu khảo sát')}
         </button>
-        </>}
       </div>
     </div>
   );
 }
 
-/** Bước 3–4: theo dõi bài làm, mời thêm, đổi lịch; bảng năng lực khi có kết quả. */
-function TrackView({ program }: { program: TrialProgram }) {
+type StatusGroup = 'all' | 'submitted' | 'pending' | 'inactive';
+type StatusSegment = { key: Exclude<StatusGroup, 'all'>; count: number };
+const GROUP_LABELS: Record<Exclude<StatusGroup, 'all'>, string> = { submitted: 'Đã nộp', pending: 'Chưa nộp', inactive: 'Chưa kích hoạt' };
+
+/**
+ * Tiến độ nộp bài và chú thích trong một dải: mỗi nhóm có nhãn + số người ngay trên đoạn màu của mình (rộng theo số người).
+ * Bấm một nhóm để lọc danh sách bên dưới, bấm lại để bỏ lọc.
+ */
+function StatusStrip({ segments, value, onChange }: { segments: StatusSegment[]; value: StatusGroup; onChange: (group: StatusGroup) => void }) {
   useUiLanguage();
-  const [adding, setAdding] = useState(false);
-  const [resent, setResent] = useState<TrialInviteResult | null>(null);
-  const [search, setSearch] = useState('');
-  const [submissionFilter, setSubmissionFilter] = useState('all');
-  const [sort, setSort] = useState<'name' | 'department' | 'status' | 'submitted'>('name');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
-  const count = (statuses: string[]) => program.participants.filter((p) => statuses.includes(p.status)).length;
-  const reported = program.stage === 'REPORTED';
-  const [showParticipants, setShowParticipants] = useState(!reported);
-
-  const filteredParticipants = program.participants.filter((p) => {
-    const hasSubmitted = p.status === 'SUBMITTED' || p.status === 'REVIEWED';
-    if (submissionFilter !== 'all' && hasSubmitted !== (submissionFilter === 'submitted')) return false;
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      p.fullName.toLowerCase().includes(q) ||
-      p.email.toLowerCase().includes(q) ||
-      (p.departmentName && p.departmentName.toLowerCase().includes(q)) ||
-      (p.positionName && p.positionName.toLowerCase().includes(q))
-    );
-  });
-  const sortedParticipants = [...filteredParticipants].sort((a, b) => {
-    if (sort === 'submitted') return (b.submittedAt ?? '').localeCompare(a.submittedAt ?? '');
-    if (sort === 'status') {
-      const status = (p: TrialParticipant) => !reported && p.status === 'REVIEWED' ? 'SUBMITTED' : p.status;
-      return status(a).localeCompare(status(b)) || a.fullName.localeCompare(b.fullName, 'vi');
-    }
-    if (sort === 'department') return (a.departmentName ?? '').localeCompare(b.departmentName ?? '', 'vi') || a.fullName.localeCompare(b.fullName, 'vi');
-    return a.fullName.localeCompare(b.fullName, 'vi');
-  });
-  const pageCount = Math.max(1, Math.ceil(sortedParticipants.length / pageSize));
-  const activePage = Math.min(page, pageCount);
-  const visibleParticipants = sortedParticipants.slice((activePage - 1) * pageSize, activePage * pageSize);
-
-  const report = program.report && program.report.assessed > 0 ? program.report : null;
-  const reportView = report && (
-    <CompetencyReport report={report} participantCount={program.participants.length} nextSteps={reported && <SetupFramework />} />
-  );
-  const participationStats = [
-    { label: 'Nhân sự tham gia', value: program.participants.length },
-    { label: 'Đã kích hoạt', value: count(['ACTIVE', 'SUBMITTED', 'REVIEWED']) },
-    { label: 'Hoàn thành bài làm', value: count(['SUBMITTED', 'REVIEWED']) },
-  ];
-
   return (
-    <div className="space-y-4 sm:space-y-5">
-      {reported && reportView}
-      <section className="rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:px-5" aria-label={translateUi('Tiến độ đánh giá')}>
-        <dl className="grid grid-cols-3 gap-2">
-          {participationStats.map(({ label, value }) => (
-            <div key={label}>
-              <dt className="text-xs font-medium text-slate-600">{translateUi(label)}</dt>
-              <dd className="mt-0.5 text-xl font-bold tabular-nums text-slate-900">{value}</dd>
-            </div>
-          ))}
-        </dl>
-        <div className="mt-3 border-t border-slate-100 pt-3">
-          <span className="inline-flex flex-wrap items-center gap-2 text-sm text-slate-700">
-            <Clock size={16} className="text-teal-700" />{translateUi("Hạn hoàn thành bài đánh giá")}<strong className="font-bold text-slate-900">{program.testDeadline ? formatWhen(program.testDeadline) : 'Chưa đặt thời hạn'}</strong>
-          </span>
-          {!reported && <SurveyDeadline program={program} />}
-        </div>
-      </section>
-
-      <OwnerSurveyAction program={program} />
-
-      {(!program.report || program.report.assessed === 0) && <div className="trial-live-report" role="status"><span className="trial-live-report__dot" /><div><strong>{program.testDeadline && Date.parse(program.testDeadline) <= Date.now() ? 'Đã hết hạn · Chưa có bài nộp' : 'Đang chờ bài nộp đầu tiên'}</strong><p>{program.testDeadline && Date.parse(program.testDeadline) <= Date.now() ? 'Có thể điều chỉnh thời hạn để tiếp tục nhận bài.' : 'Tổng quan sẽ xuất hiện tại đây ngay khi có kết quả.'}</p></div></div>}
-      {!reported && reportView}
-
-      {/* ── DANH SÁCH NHÂN VIÊN THAM GIA ĐÁNH GIÁ (COLLAPSIBLE / HIỂN THỊ PHỤ) ── */}
-      <section className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-xs overflow-hidden transition-all">
-        <button
-          type="button"
-          onClick={() => setShowParticipants((v) => !v)}
-          aria-expanded={showParticipants}
-          aria-controls="trial-participant-list"
-          className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 sm:p-6 text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="size-11 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 shadow-2xs shrink-0">
-              <Users size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Tiến độ tham gia")}</h3>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
-              {showParticipants ? (
-                <>
-                  <ChevronUp size={15} />{translateUi(" Thu gọn danh sách")}</>
-              ) : (
-                <>
-                  <ChevronDown size={15} />{translateUi(" Mở rộng danh sách")}</>
-              )}
-            </span>
-          </div>
+    <div className="trial-status-strip" role="group" aria-label={translateUi('Lọc danh sách theo trạng thái')} data-filtered={value !== 'all' || undefined}>
+      {segments.map(({ key, count }) => (
+        <button key={key} type="button" className="trial-status-strip__item" data-group={key} aria-pressed={value === key}
+          disabled={count === 0 && value !== key} style={{ flexGrow: count }}
+          title={translateUi(value === key ? 'Bấm lại để xem tất cả' : 'Bấm để lọc danh sách')}
+          onClick={() => onChange(value === key ? 'all' : key)}>
+          <span className="trial-status-strip__label">{translateUi(GROUP_LABELS[key])} <strong>{count}</strong></span>
+          <span className="trial-status-strip__bar" aria-hidden="true" />
         </button>
-
-        <TrialDisclosure open={showParticipants} id="trial-participant-list">
-          <div className="p-5 sm:p-6 pt-0 border-t border-slate-100 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                <label className="owner-filter-search w-full sm:w-80">
-                  <Search className="size-4" aria-hidden="true" />
-                  <input
-                    type="text"
-                    aria-label={translateUi("Tìm nhân viên hoặc phòng ban")}
-                    placeholder={translateUi("Tìm tên, email, phòng ban hoặc vị trí...")}
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                    className="w-full text-sm"
-                  />
-                </label>
-                <OwnerFilterSelect icon="filter"
-                  label={translateUi('Trạng thái bài làm')}
-                  value={submissionFilter}
-                  onChange={(value) => { setSubmissionFilter(value); setPage(1); }}
-                  options={[
-                    { value: 'all', label: translateUi('Mọi trạng thái') },
-                    { value: 'submitted', label: translateUi('Đã làm bài') },
-                    { value: 'pending', label: translateUi('Chưa làm bài') },
-                  ]}
-                />
-                <OwnerFilterSelect icon="sort" label={translateUi("Sắp xếp danh sách nhân viên")} value={sort} onChange={(value) => { setSort(value as typeof sort); setPage(1); }} options={[{ value: 'name', label: 'Tên nhân viên' }, { value: 'department', label: 'Phòng ban' }, { value: 'status', label: 'Trạng thái' }, { value: 'submitted', label: 'Nộp gần nhất' }]} />
-              </div>
-              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                <span className="text-xs text-slate-500 tabular-nums whitespace-nowrap">
-                  {filteredParticipants.length ? `${(activePage - 1) * pageSize + 1}–${Math.min(activePage * pageSize, filteredParticipants.length)} / ${filteredParticipants.length}` : '0 người'}
-                </span>
-                <OwnerFilterSelect label={translateUi("Số nhân viên mỗi trang")} value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setPage(1); }} options={[5, 10, 15, 25, 50].map((size) => ({ value: String(size), label: `${size} / trang` }))} />
-                {!reported && (
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#137b84] hover:bg-[#0e5968] text-white font-bold text-xs transition-colors shadow-2xs cursor-pointer shrink-0"
-                    onClick={() => setAdding((v) => !v)}
-                  >
-                    {adding ? translateUi('Đóng') : '+ Mời thêm'}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {adding && <AddParticipants program={program} onDone={() => setAdding(false)} />}
-            <InviteResult result={resent} />
-
-            <div className="overflow-x-auto rounded-xl border border-slate-200/80">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200/80">
-                  <tr>
-                    <th className="py-3 px-3.5">{translateUi("Nhân viên")}</th>
-                    <th className="py-3 px-3">{translateUi("Phòng ban · Vị trí")}</th>
-                    <th className="py-3 px-3 text-center">{translateUi("Trạng thái")}</th>
-                    <th className="py-3 px-3">{translateUi("Thời điểm nộp")}</th>
-                    {!reported && <th className="py-3 px-3.5 text-center w-28">{translateUi("Thao tác")}</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {filteredParticipants.length === 0 ? (
-                    <tr>
-                      <td colSpan={reported ? 4 : 5} className="py-8 text-center text-slate-400">{translateUi("Không tìm thấy nhân viên nào phù hợp")}</td>
-                    </tr>
-                  ) : (
-                    visibleParticipants.map((p) => {
-                      const initials = p.fullName
-                        .trim()
-                        .split(/\s+/)
-                        .slice(-2)
-                        .map((w) => w[0])
-                        .join('')
-                        .toUpperCase();
-
-                      return (
-                        <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3 px-3.5">
-                            <div className="flex items-center gap-2.5">
-                              <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-[#137b84] to-[#0e5968] text-white font-bold text-xs shadow-2xs shrink-0">
-                                {initials}
-                              </div>
-                              <div>
-                                <strong className="text-slate-900 block font-semibold text-xs sm:text-sm">
-                                  {p.fullName}{p.isOwner ? ' (bạn)' : ''}
-                                </strong>
-                                <span className="text-xs text-slate-500 block font-mono">{p.email}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-3">
-                            <span className="text-slate-700 font-medium text-xs sm:text-sm">
-                              {[p.departmentName, p.positionName].filter(Boolean).join(' · ') || '—'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-center">
-                            <ParticipantStatus status={!reported && p.status === 'REVIEWED' ? 'SUBMITTED' : p.status} />
-                          </td>
-                          <td className="py-3 px-3 text-slate-600 text-xs sm:text-sm">
-                            {p.submittedAt ? formatWhen(p.submittedAt) : '—'}
-                          </td>
-                          {!reported && (
-                            <td className="py-3 px-3.5 text-center">
-                              {p.invitationId && <ResendButton participant={p} onResent={setResent} />}
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {filteredParticipants.length > pageSize && (
-              <div className="tp-participant-pagination" aria-label={translateUi("Phân trang danh sách nhân viên")}>
-                <div>
-                  <button type="button" disabled={activePage === 1} onClick={() => setPage(activePage - 1)}>{translateUi("Trước")}</button>
-                  <strong>{translateUi("Trang ")}{activePage}/{pageCount}</strong>
-                  <button type="button" disabled={activePage === pageCount} onClick={() => setPage(activePage + 1)}>{translateUi("Sau")}</button>
-                </div>
-              </div>
-            )}
-          </div>
-        </TrialDisclosure>
-      </section>
+      ))}
     </div>
   );
 }
 
-function SetupFramework() {
+/** Bước 3, chờ kết quả: ai đã nộp, hạn nộp, mời thêm, khi nào có kết quả; kết quả tạm thời khi đã có bài chấm. */
+function TrackView({ program }: { program: TrialProgram }) {
+  useUiLanguage();
+  const total = program.participants.length;
+  const submitted = program.participants.filter(isSubmitted).length;
+  const notActivated = program.participants.filter((p) => p.status === 'INVITED' || p.status === 'INVITE_EXPIRED').length;
+  const notSubmitted = total - submitted - notActivated;
+  const expired = isPastDeadline(program);
+  const phase = resultPhase(program);
+  const report = program.report && program.report.assessed > 0 ? program.report : null;
+  const [editingDeadline, setEditingDeadline] = useState(false);
+  const [group, setGroup] = useState<StatusGroup>('all');
+  const segments: StatusSegment[] = [
+    { key: 'submitted', count: submitted },
+    { key: 'pending', count: notSubmitted },
+    { key: 'inactive', count: notActivated },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <section aria-labelledby="trial-progress-title" className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+          <div>
+            <h2 id="trial-progress-title" className="text-base sm:text-lg font-bold text-slate-900">{translateUi('Tiến độ làm bài')}</h2>
+            <p className="mt-1 inline-flex flex-wrap items-center gap-1.5 text-sm text-slate-700">
+              <Clock size={15} className="text-teal-700" aria-hidden="true" />
+              {translateUi('Hạn nộp:')} <strong className="font-semibold text-slate-900">{program.testDeadline ? formatWhen(program.testDeadline) : translateUi('Chưa đặt')}</strong>
+              {expired && <span className="tp-badge bad">{translateUi('Đã hết hạn')}</span>}
+            </p>
+          </div>
+          <button type="button" className="trial-secondary-button" aria-expanded={editingDeadline} aria-controls="trial-deadline-editor"
+            onClick={() => setEditingDeadline((open) => !open)}>
+            <CalendarClock size={15} aria-hidden="true" />
+            {editingDeadline ? translateUi('Đóng') : translateUi('Đổi hạn nộp')}
+          </button>
+        </div>
+        <SurveyDeadline program={program} open={editingDeadline} onSaved={() => setEditingDeadline(false)} />
+        <StatusStrip segments={segments} value={group} onChange={setGroup} />
+        {phase !== 'empty' && (
+          <p className="trial-next-note" data-phase={phase}>
+            {phase === 'grading' ? <UserCheck size={16} aria-hidden="true" /> : <ClipboardCheck size={16} aria-hidden="true" />}
+            <span>{translateUi(phase === 'grading'
+              ? 'Chuyên gia DigiTalent đang chấm bài. Kết quả chính thức sẽ hiện ngay trên trang này.'
+              : 'Khi mọi người nộp xong hoặc hết hạn, hệ thống sẽ trả kết quả đánh giá.')}</span>
+          </p>
+        )}
+        <ParticipantList program={program} closed={false} group={group} onGroupChange={setGroup} />
+      </section>
+
+      <OwnerSurveyAction program={program} />
+
+      {/* Results only count papers the expert has graded; until then the note above says when they come. */}
+      {report ? (
+        <CompetencyReport report={report} participantCount={total} provisional />
+      ) : phase === 'empty' ? (
+        <div className="trial-live-report" role="status">
+          <span className="trial-live-report__dot" aria-hidden="true" />
+          <p>{translateUi('Chưa có bài nộp nào. Đổi hạn nộp để nhân viên tiếp tục làm bài.')}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Bước 3, đã có kết quả: bảng kết quả lên đầu, việc nên làm tiếp; danh sách người làm bài chỉ còn khi không ai nộp. */
+function ReportedView({ program }: { program: TrialProgram }) {
+  useUiLanguage();
+  const [showList, setShowList] = useState(false);
+  const total = program.participants.length;
+  const submitted = program.participants.filter(isSubmitted).length;
+  const report = program.report && program.report.assessed > 0 ? program.report : null;
+
+  return (
+    <div className="space-y-5">
+      {report
+        ? <CompetencyReport report={report} participantCount={total} />
+        : <div className="trial-live-report" role="status"><span className="trial-live-report__dot" aria-hidden="true" /><p>{translateUi('Đợt khảo sát đã kết thúc mà không có bài nộp nào.')}</p></div>}
+      <NextSteps />
+      <OwnerSurveyAction program={program} />
+      {/* With results the per-person table already lists who took part; the participant list stays only when nobody submitted. */}
+      {!report && <section className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-xs overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowList((v) => !v)}
+          aria-expanded={showList}
+          aria-controls="trial-participant-list"
+          className="w-full flex items-center justify-between gap-3 p-5 sm:p-6 text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="size-11 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 shrink-0">
+              <Users size={20} aria-hidden="true" />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900">{translateUi('Danh sách người làm bài')}</h3>
+              <p className="mt-0.5 text-[13px] text-slate-600">{translateUi(`${submitted}/${total} người đã nộp`)}</p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-bold text-slate-700">
+            {showList ? <><ChevronUp size={15} aria-hidden="true" />{translateUi('Thu gọn')}</> : <><ChevronDown size={15} aria-hidden="true" />{translateUi('Xem')}</>}
+          </span>
+        </button>
+        <TrialDisclosure open={showList} id="trial-participant-list">
+          <div className="px-5 pb-5 sm:px-6 sm:pb-6"><ParticipantList program={program} closed /></div>
+        </TrialDisclosure>
+      </section>}
+    </div>
+  );
+}
+
+/** Danh sách người làm bài: chưa nộp lên đầu khi đang khảo sát, đã nộp lên đầu khi đã có kết quả. */
+function ParticipantList({ program, closed, group, onGroupChange }: {
+  program: TrialProgram;
+  closed: boolean;
+  /** Set by the status strip above the list (survey still open); without it the list keeps its own status menu. */
+  group?: StatusGroup;
+  onGroupChange?: (group: StatusGroup) => void;
+}) {
+  useUiLanguage();
+  const [adding, setAdding] = useState(false);
+  const [resent, setResent] = useState<TrialInviteResult | null>(null);
+  const [search, setSearch] = useState('');
+  const [ownFilter, setOwnFilter] = useState<StatusGroup>('all');
+  const filter = group ?? ownFilter;
+  const setFilter = onGroupChange ?? setOwnFilter;
+  const [department, setDepartment] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagedFilter, setPagedFilter] = useState(filter);
+  if (pagedFilter !== filter) { setPagedFilter(filter); setPage(1); }
+
+  // Same three groups as the progress bar; once the survey is closed, everyone who did not submit is one group.
+  const groupOf = (p: TrialParticipant) => (isSubmitted(p) ? 'submitted' : closed || p.status === 'ACTIVE' ? 'pending' : 'inactive');
+  const departmentOf = (p: TrialParticipant) => p.departmentName?.trim() || NO_DEPARTMENT;
+  const departmentCounts = program.participants.reduce((counts, p) =>
+    counts.set(departmentOf(p), (counts.get(departmentOf(p)) ?? 0) + 1), new Map<string, number>());
+  const departmentNames = [...departmentCounts.keys()].sort((a, b) =>
+    Number(a === NO_DEPARTMENT) - Number(b === NO_DEPARTMENT) || a.localeCompare(b, 'vi'));
+  const activeDepartment = departmentCounts.has(department) ? department : '';
+  const inDepartment = program.participants.filter((p) => !activeDepartment || departmentOf(p) === activeDepartment);
+  const groupCount = (group: string) => inDepartment.filter((p) => groupOf(p) === group).length;
+
+  const order = (p: TrialParticipant) => (isSubmitted(p) ? (closed ? 0 : 2) : p.status === 'ACTIVE' ? 1 : closed ? 2 : 0);
+  const query = search.trim().toLowerCase();
+  const rows = inDepartment
+    .filter((p) => filter === 'all' || groupOf(p) === filter)
+    .filter((p) => !query || [p.fullName, p.email, p.departmentName, p.positionName].some((v) => v?.toLowerCase().includes(query)))
+    .sort((a, b) => order(a) - order(b) || a.fullName.localeCompare(b.fullName, 'vi'));
+  const pageCount = Math.max(1, Math.ceil(rows.length / LIST_PAGE_SIZE));
+  const activePage = Math.min(page, pageCount);
+  const visible = rows.slice((activePage - 1) * LIST_PAGE_SIZE, activePage * LIST_PAGE_SIZE);
+  const showTools = program.participants.length >= LIST_TOOLS_MIN;
+  const groupLabel = (key: Exclude<StatusGroup, 'all'>) => translateUi(closed && key === 'pending' ? 'Không nộp bài' : GROUP_LABELS[key]);
+  const groups: Exclude<StatusGroup, 'all'>[] = closed ? ['submitted', 'pending'] : ['submitted', 'pending', 'inactive'];
+
+  return (
+    <div className="mt-5 space-y-3 border-t border-slate-100 pt-4">
+      {(showTools || !closed) && (
+        <div className="trial-list-toolbar">
+          {showTools && (
+            <div className="trial-list-toolbar__fields">
+              <label className="owner-filter-search">
+                <Search className="size-4" aria-hidden="true" />
+                <input
+                  type="text"
+                  aria-label={translateUi('Tìm người làm bài')}
+                  placeholder={translateUi('Tìm tên, email, phòng ban...')}
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                />
+              </label>
+              {!onGroupChange && (
+                <OwnerFilterSelect
+                  icon="filter"
+                  label={translateUi('Lọc theo trạng thái')}
+                  value={filter}
+                  onChange={(value) => setFilter(value as StatusGroup)}
+                  options={[
+                    { value: 'all', label: `${translateUi('Tất cả trạng thái')} (${inDepartment.length})` },
+                    ...groups.map((key) => ({ value: key, label: `${groupLabel(key)} (${groupCount(key)})` })),
+                  ]}
+                />
+              )}
+              {departmentNames.length > 1 && (
+                <OwnerFilterSelect
+                  icon="filter"
+                  label={translateUi('Lọc theo phòng ban')}
+                  value={activeDepartment}
+                  onChange={(value) => { setDepartment(value); setPage(1); }}
+                  options={[
+                    { value: '', label: `${translateUi('Tất cả phòng ban')} (${program.participants.length})` },
+                    ...departmentNames.map((name) => ({
+                      value: name,
+                      label: `${name === NO_DEPARTMENT ? translateUi('Chưa có phòng ban') : name} (${departmentCounts.get(name)})`,
+                    })),
+                  ]}
+                />
+              )}
+            </div>
+          )}
+          {onGroupChange && filter !== 'all' && (
+            <button type="button" className="trial-filter-chip" aria-label={`${translateUi('Bỏ lọc')} ${groupLabel(filter)}`} onClick={() => setFilter('all')}>
+              {groupLabel(filter)} ({groupCount(filter)})
+              <X size={14} aria-hidden="true" />
+            </button>
+          )}
+          {!closed && (
+            <button type="button" className="trial-secondary-button ml-auto" aria-expanded={adding} onClick={() => setAdding((v) => !v)}>
+              {adding ? translateUi('Đóng') : translateUi('+ Mời thêm')}
+            </button>
+          )}
+        </div>
+      )}
+
+      {adding && <AddParticipants program={program} onDone={() => setAdding(false)} />}
+      <InviteResult result={resent} />
+
+      <div className="relative overflow-x-auto rounded-xl border border-slate-200/80">
+        <table className="w-full border-collapse text-left text-[13px]">
+          <thead className="border-b border-slate-200/80 bg-slate-50/80 font-bold text-slate-600">
+            <tr>
+              <th className="py-3 px-3.5">{translateUi('Nhân viên')}</th>
+              <th className="hidden py-3 px-3 sm:table-cell">{translateUi('Phòng ban')}</th>
+              <th className="hidden py-3 px-3 sm:table-cell">{translateUi('Vị trí')}</th>
+              <th className="py-3 px-3 text-center">{translateUi('Trạng thái')}</th>
+              <th className="hidden py-3 px-3 sm:table-cell">{translateUi('Nộp lúc')}</th>
+              {!closed && <th className="py-3 px-3.5 text-center"><span className="sr-only">{translateUi('Thao tác')}</span></th>}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 bg-white">
+            {rows.length === 0 ? (
+              <tr><td colSpan={closed ? 5 : 6} className="py-8 text-center text-slate-500">{translateUi('Không tìm thấy người phù hợp')}</td></tr>
+            ) : visible.map((p) => (
+              <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
+                <td className="py-3 px-3.5">
+                  <strong className="block text-sm font-semibold text-slate-900">{p.fullName}{p.isOwner ? translateUi(' (bạn)') : ''}</strong>
+                  <span className="block text-xs text-slate-600">{p.email}</span>
+                  <span className="mt-0.5 block text-xs text-slate-600 sm:hidden">{[p.departmentName, p.positionName].filter(Boolean).join(' · ')}</span>
+                </td>
+                <td className="hidden py-3 px-3 text-slate-700 sm:table-cell">{p.departmentName || '—'}</td>
+                <td className="hidden py-3 px-3 text-slate-700 sm:table-cell">{p.positionName || '—'}</td>
+                <td className="py-3 px-3 text-center">
+                  <ParticipantStatus status={!closed && p.status === 'REVIEWED' ? 'SUBMITTED' : p.status} closed={closed} />
+                </td>
+                <td className="hidden py-3 px-3 text-slate-700 sm:table-cell">{p.submittedAt ? formatWhen(p.submittedAt) : '—'}</td>
+                {!closed && (
+                  <td className="py-3 px-3.5 text-center">
+                    {p.invitationId && <ResendButton participant={p} onResent={setResent} />}
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {pageCount > 1 && (
+        <div className="tp-participant-pagination" aria-label={translateUi('Phân trang danh sách người làm bài')}>
+          <div>
+            <button type="button" disabled={activePage === 1} onClick={() => setPage(activePage - 1)}>{translateUi('Trước')}</button>
+            <strong>{translateUi('Trang ')}{activePage}/{pageCount}</strong>
+            <button type="button" disabled={activePage === pageCount} onClick={() => setPage(activePage + 1)}>{translateUi('Sau')}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NextSteps() {
   useUiLanguage();
   const actions = [
-    { to: '/enterprise/setup?tab=ceilings', label: '1. Cài đặt chuẩn vị trí', Icon: Briefcase },
-    { to: '/enterprise/skill-gap', label: '2. Báo cáo khoảng trống', Icon: TrendingUp },
-    { to: '/enterprise/courses', label: '3. Trang bị khóa học', Icon: BookOpen },
+    { to: POSITION_STANDARD_PATH, label: '1. Đặt chuẩn vị trí', Icon: Briefcase },
+    { to: '/enterprise/skill-gap', label: '2. Xem khoảng trống năng lực', Icon: TrendingUp },
+    { to: '/enterprise/courses', label: '3. Chọn khóa học', Icon: BookOpen },
   ];
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-      <h3 className="text-base font-bold text-slate-900">{translateUi('Lộ trình tiếp theo')}</h3>
+      <h3 className="text-base font-bold text-slate-900">{translateUi('Bước tiếp theo')}</h3>
       <div className="mt-3 grid gap-2 lg:grid-cols-3">
         {actions.map(({ to, label, Icon }) => (
           <Link key={to} to={to} className="group flex items-center gap-2 rounded-xl border border-teal-100 bg-teal-50/50 px-3 py-2.5 text-sm font-semibold text-teal-900 transition-colors hover:bg-teal-100 motion-reduce:transition-none">
@@ -481,14 +596,14 @@ function SetupFramework() {
   );
 }
 
-/** Gửi lại email mời cho nhân viên chưa kích hoạt. */
+/** Gửi lại email mời cho người chưa kích hoạt tài khoản. */
 function ResendButton({ participant, onResent }: { participant: TrialParticipant; onResent: (result: TrialInviteResult) => void }) {
   useUiLanguage();
   const resend = useResendTrialInvitation();
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors disabled:opacity-40 cursor-pointer"
+      className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
       disabled={resend.isPending}
       onClick={() =>
         resend.mutate(participant.invitationId!, {
@@ -500,7 +615,7 @@ function ResendButton({ participant, onResent }: { participant: TrialParticipant
         })
       }
     >
-      {resend.isPending ? translateUi('Đang gửi…') : translateUi('Gửi lại')}
+      {resend.isPending ? translateUi('Đang gửi…') : translateUi('Gửi lại lời mời')}
     </button>
   );
 }
@@ -525,25 +640,14 @@ function AddParticipants({ program, onDone }: { program: TrialProgram; onDone: (
     });
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-4 sm:p-5 space-y-4 mb-4 shadow-2xs">
-      <div className="flex items-center justify-between pb-2 border-b border-slate-200/70">
-        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">{translateUi("Mời thêm nhân viên tham gia")}</h3>
-        <button
-          type="button"
-          onClick={onDone}
-          className="text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
-        >{translateUi("Đóng")}</button>
-      </div>
-      <ParticipantsEditor
-        rows={rows}
-        onChange={setRows}
-        departments={program.departments}
-      />
+    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-4 sm:p-5 space-y-4">
+      <h3 className="text-sm font-bold text-slate-900">{translateUi('Mời thêm người làm bài')}</h3>
+      <ParticipantsEditor rows={rows} onChange={setRows} departments={program.departments} />
       <InviteResult result={result} />
-      <div className="flex justify-end pt-2">
+      <div className="flex justify-end">
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-5 py-2 text-xs font-bold text-white shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="trial-primary-button"
           disabled={invite.isPending || filled.length === 0 || filled.some((r) => rowError(r) !== null)}
           onClick={send}
         >
@@ -570,31 +674,46 @@ function scheduleDate(s: Schedule) {
 }
 
 function validateSchedule(s: Schedule): string | null {
-  if (!s.deadline) return 'Chọn hạn làm bài.';
+  if (!s.deadline) return 'Chọn hạn nộp bài.';
   const deadline = scheduleDate(s).getTime();
   if (!Number.isFinite(deadline)) return 'Chọn ngày giờ hợp lệ.';
-  if (deadline <= Date.now() + 30 * 60_000) return 'Hạn làm bài cần sau ít nhất 30 phút.';
-  if (deadline > Date.now() + 60 * 86400000) return 'Hạn làm bài tối đa 60 ngày.';
+  if (deadline <= Date.now() + 30 * 60_000) return 'Hạn nộp cần sau ít nhất 30 phút.';
+  if (deadline > Date.now() + 60 * 86400000) return 'Hạn nộp tối đa 60 ngày.';
   return null;
 }
 
-const toRequest = (s: Schedule) => {
-  const deadline = scheduleDate(s);
-  return {
-    testDeadline: deadline.toISOString(),
-  };
-};
+const toRequest = (s: Schedule) => ({ testDeadline: scheduleDate(s).toISOString() });
 
-function SurveyDeadline({ program }: { program: TrialProgram }) {
+/** Form đổi hạn nộp, mở bằng nút "Đổi hạn nộp" ở đầu khung tiến độ; mỗi lần mở bắt đầu từ hạn hiện tại. */
+function SurveyDeadline({ program, open, onSaved }: { program: TrialProgram; open: boolean; onSaved: () => void }) {
   useUiLanguage();
-  const [editing, setEditing] = useState(false);
   const [schedule, setSchedule] = useState<Schedule>({ deadline: toLocalInput(program.testDeadline) });
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setSchedule({ deadline: toLocalInput(program.testDeadline) });
+  }
   const request = useSubmitTrialRequest();
   const error = validateSchedule(schedule);
-  return <div className="mt-3">
-    <button type="button" className="text-xs font-bold text-teal-700" aria-expanded={editing} onClick={() => { setSchedule({deadline:toLocalInput(program.testDeadline)}); setEditing(!editing); }}>{editing ? translateUi('Thu gọn') : translateUi('Điều chỉnh thời hạn')}</button>
-    <TrialDisclosure open={editing}><div className="flex flex-wrap items-end gap-3 pt-4">{editing && <ScheduleFields value={schedule} onChange={setSchedule} />}<button type="button" className="rounded-xl bg-teal-700 px-4 py-2 text-xs font-bold text-white disabled:opacity-40" disabled={!!error || request.isPending} onClick={() => request.mutate(toRequest(schedule),{onSuccess:()=>{setEditing(false);toast.success('Đã cập nhật hạn khảo sát.');},onError:(failure)=>toast.error(apiErrorMessage(failure,'Chưa cập nhật được thời hạn.'))})}>{request.isPending ? translateUi('Đang lưu…') : translateUi('Lưu thời hạn')}</button>{error && <span role="status" className="text-xs text-amber-700">{translateUi(error)}</span>}</div></TrialDisclosure>
-  </div>;
+  return (
+    <div id="trial-deadline-editor">
+      <TrialDisclosure open={open}>
+        <div className="trial-deadline-editor">
+          {open && <ScheduleFields value={schedule} onChange={setSchedule} />}
+          <div className="trial-deadline-editor__actions">
+            <button type="button" className="trial-primary-button" disabled={!!error || request.isPending}
+              onClick={() => request.mutate(toRequest(schedule), {
+                onSuccess: () => { onSaved(); toast.success('Đã đổi hạn nộp.'); },
+                onError: (failure) => toast.error(apiErrorMessage(failure, 'Chưa đổi được hạn nộp.')),
+              })}>
+              {request.isPending ? translateUi('Đang lưu…') : translateUi('Lưu hạn mới')}
+            </button>
+            {error && <span role="status" className="text-[13px] text-amber-800">{translateUi(error)}</span>}
+          </div>
+        </div>
+      </TrialDisclosure>
+    </div>
+  );
 }
 
 function ScheduleFields({ value, onChange }: { value: Schedule; onChange: (v: Schedule) => void }) {
@@ -606,7 +725,7 @@ function InviteResult({ result }: { result: TrialInviteResult | null }) {
   if (!result) return null;
   const links = result.invited.filter((i) => i.debugLink);
   return (
-    <div className="space-y-2 text-xs">
+    <div className="space-y-2 text-[13px]">
       {result.rejected.length > 0 && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-800 space-y-1" role="alert">
           {result.rejected.map((r) => (
@@ -618,13 +737,11 @@ function InviteResult({ result }: { result: TrialInviteResult | null }) {
       )}
       {links.length > 0 && (
         <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3 text-blue-900 space-y-1">
-          <strong className="block text-[11px] uppercase tracking-wider text-blue-800">{translateUi("Link kích hoạt tài khoản thử nghiệm:")}</strong>
+          <strong className="block text-xs font-bold text-blue-800">{translateUi('Link kích hoạt tài khoản (môi trường thử nghiệm):')}</strong>
           {links.map((i) => (
             <div key={i.email} className="truncate">
               <span className="font-semibold">{i.email}:</span>{' '}
-              <a href={i.debugLink!} className="text-blue-700 underline font-mono text-[11px]">
-                {i.debugLink}
-              </a>
+              <a href={i.debugLink!} className="text-blue-700 underline text-xs">{i.debugLink}</a>
             </div>
           ))}
         </div>

@@ -57,29 +57,28 @@
 .manager-directory__search input { width: 100%; min-width: 0; outline: none; background: transparent; }
 .manager-directory__search:focus-within { border-color: var(--po-accent); box-shadow: 0 0 0 3px var(--po-tint); }
 .manager-directory__search input::placeholder { color: var(--po-muted); }
-.manager-directory__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; margin: 0; padding: 0; }
-@container (min-width: 600px) {
-  .manager-directory__grid[data-paired='true'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .manager-directory__grid[data-paired='true'] .manager-directory__person { padding: clamp(18px, 2cqw, 32px); gap: 12px; }
+.manager-directory__grid {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--po-line);
+  border-radius: 14px;
+  background: var(--po-surface);
 }
 .manager-directory__grid > li { display: grid; min-width: 0; }
+.manager-directory__grid > li + li { border-top: 1px solid var(--po-line); }
 .manager-directory__person {
   --card-accent: var(--po-accent-strong);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(140px, 1.3fr) minmax(90px, 1fr) minmax(88px, 1.1fr) auto auto;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
-  padding: 17px;
-  border: 1px solid var(--po-line);
-  border-radius: 17px;
-  background: radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--card-accent) 10%, transparent), transparent 72%), var(--po-surface);
+  padding: 12px 16px;
   color: var(--po-ink);
-  box-shadow: 0 4px 14px #17243f08;
 }
-.manager-directory__grid > li:nth-child(3n + 2) .manager-directory__person { --card-accent: #376294; }
-.manager-directory__grid > li:nth-child(3n + 3) .manager-directory__person { --card-accent: #6a50a0; }
-.manager-directory__identity { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; }
+.manager-directory__identity { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; width: 100%; }
 .manager-directory__identity .pm-initials, .manager-directory__open {
   display: grid;
   place-items: center;
@@ -98,7 +97,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: auto;
+  justify-self: start;
   padding: 4px 8px;
   border-radius: 8px;
   background: var(--po-raised);
@@ -108,7 +107,7 @@
 }
 .manager-directory__status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ''; }
 .manager-directory__status[data-active='true'] { background: var(--po-tint); color: var(--po-accent-strong); }
-.manager-directory__person:hover { border-color: var(--card-accent); box-shadow: 0 9px 24px #17243f14; }
+.manager-directory__person:hover { background: var(--po-raised); }
 .manager-directory__person:hover .manager-directory__open { background: var(--card-accent); color: var(--po-surface); }
 .manager-directory__pagination {
   display: flex;
@@ -134,8 +133,6 @@
 .manager-directory__popup button:focus-visible { outline-offset: -2px; }
 .manager-directory :is(.manager-directory__page-controls button, .manager-directory__reset):hover:not(:disabled) { background: var(--po-tint); }
 
-html[data-theme='dark'] .manager-directory__grid > li:nth-child(3n + 2) .manager-directory__person { --card-accent: #a7d4fb; }
-html[data-theme='dark'] .manager-directory__grid > li:nth-child(3n + 3) .manager-directory__person { --card-accent: #d1bfff; }
 
 @container (max-width: 590px) {
   .manager-directory__toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -150,9 +147,8 @@ html[data-theme='dark'] .manager-directory__grid > li:nth-child(3n + 3) .manager
   .manager-directory__grid { animation: manager-directory-reveal 240ms ease-out both; }
   .manager-directory__popup { animation: manager-directory-popup 160ms ease-out both; }
   .manager-directory__trigger svg { transition: transform 160ms ease-out; }
-  .manager-directory__person { transition: transform 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out; }
+  .manager-directory__person { transition: background-color 180ms ease-out; }
   .manager-directory__open { transition: background-color 180ms ease-out, color 180ms ease-out; }
-  .manager-directory__person:hover { transform: translateY(-3px); }
 }
 @keyframes manager-directory-popup {
   from { opacity: 0; scale: .96; }
@@ -161,4 +157,12 @@ html[data-theme='dark'] .manager-directory__grid > li:nth-child(3n + 3) .manager
 @keyframes manager-directory-reveal {
   from { opacity: 0; translate: 0 5px; }
   to { opacity: 1; translate: 0 0; }
+}
+
+@container (max-width: 735px) {
+  .manager-directory__person { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+  .manager-directory__identity { grid-column: 1; }
+  .manager-directory__open { grid-column: 2; grid-row: 1; }
+  .manager-directory__position, .manager-directory__email { grid-column: 1 / -1; }
+  .manager-directory__status { grid-column: 1 / -1; }
 }

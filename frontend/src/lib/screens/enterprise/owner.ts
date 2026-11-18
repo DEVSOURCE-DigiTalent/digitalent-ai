@@ -13,7 +13,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   // ── Tổng quan ──
   {
     id: 'OW-01',
-    title: 'Tổng quan tổ chức',
+    title: 'Tổng quan',
     path: '/enterprise/dashboard',
     roles: OWNER_ROLES,
     priority: 'P0',
@@ -22,7 +22,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   // ── Dùng thử (docs/specs/2026-10-27-enterprise-trial-assessment.md) ──
   {
     id: 'OW-T1',
-    title: 'Đánh giá đội ngũ',
+    title: 'Khảo sát năng lực số',
     path: '/enterprise/trial',
     roles: OWNER_ROLES,
     permission: P.TRIAL_MANAGE,
@@ -43,7 +43,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   // ── Thiết lập ──
   {
     id: 'OW-05',
-    title: 'Thiết lập kiến trúc năng lực',
+    title: 'Khung năng lực số',
     path: '/enterprise/setup',
     roles: OWNER_ROLES,
     permission: P.POSITION_REQUIREMENT_READ,
@@ -53,7 +53,7 @@ export const OWNER_SCREENS: ScreenDef[] = [
   // ── Tổ chức ──
   {
     id: 'OW-02',
-    title: 'Thành viên',
+    title: 'Nhân sự',
     path: '/enterprise/members',
     roles: OWNER_ROLES,
     permission: P.USER_READ,

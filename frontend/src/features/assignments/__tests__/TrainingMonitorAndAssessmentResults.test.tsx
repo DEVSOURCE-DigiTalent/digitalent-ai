@@ -122,34 +122,6 @@ describe('TrainingMonitorPage & AssessmentResultsOverviewPage (Agent 1 - Phase H
       fireEvent.click(screen.getByRole('combobox', { name: 'Lọc theo trạng thái' }));
       expect(screen.getByRole('option', { name: 'Đang hiệu lực' })).toBeInTheDocument();
     });
-
-    it('adapts title and hides org department breakdown when in manager scope', () => {
-      vi.spyOn(assignmentHooks, 'useAssignmentSummary').mockReturnValue({
-        data: {
-          total: 10,
-          notStarted: 2,
-          inProgress: 5,
-          readyForAssessment: 1,
-          completed: 2,
-          overdue: 0,
-          dueSoon: 0,
-          completionRate: 20,
-          byDepartment: [{ departmentId: 'dept-1', name: 'Phòng Kỹ thuật', total: 10, completed: 2, overdue: 0, averageProgress: 50 }],
-        },
-        isLoading: false,
-      } as any);
-
-      vi.spyOn(departmentHooks, 'useDepartments').mockReturnValue({ data: { items: [] }, isLoading: false } as any);
-      vi.spyOn(jobPositionHooks, 'useJobPositions').mockReturnValue({ data: { items: [] }, isLoading: false } as any);
-      vi.spyOn(assignmentHooks, 'useAssignments').mockReturnValue({ data: { items: [] }, isLoading: false } as any);
-
-      renderWithClient(<TrainingMonitorPage isManagerScope={true} />);
-
-      // In manager scope
-      expect(screen.getByText('Tiến độ đào tạo nhóm')).toBeInTheDocument();
-      // Should not render "Theo phòng ban" breakdown
-      expect(screen.queryByText('Tiến độ theo phòng ban')).not.toBeInTheDocument();
-    });
   });
 
   describe('OW-34: AssessmentResultsOverviewPage', () => {

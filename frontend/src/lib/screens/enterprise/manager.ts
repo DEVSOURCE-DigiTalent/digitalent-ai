@@ -53,22 +53,6 @@ export const MANAGER_SCREENS: ScreenDef[] = [
     permission: P.SKILL_GAP_READ,
     priority: 'P0',
   },
-  {
-    id: 'MG-06',
-    title: 'Tiến độ đào tạo nhóm',
-    path: '/enterprise/team/training',
-    roles: MANAGER_ROLES,
-    permission: P.LEARNING_PROGRESS_READ,
-    priority: 'P0',
-  },
-  {
-    id: 'MG-07',
-    title: 'Chi tiết phân công đào tạo',
-    path: '/enterprise/team/training/:assignmentId',
-    roles: MANAGER_ROLES,
-    permission: P.LEARNING_PROGRESS_READ,
-    priority: 'P1',
-  },
   // ── Kết quả đánh giá trước khi học và bài cuối khóa của phòng ban ──
   {
     id: 'MG-13',

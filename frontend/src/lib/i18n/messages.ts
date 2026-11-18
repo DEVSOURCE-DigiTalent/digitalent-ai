@@ -117,6 +117,8 @@ CHỦ DOANH NGHIỆP|BUSINESS OWNER
 CÁC CÔNG CỤ KHÁC|OTHER TOOLS
 Các công cụ khác|Other tools
 Đánh giá đội ngũ|Team assessment
+Khảo sát năng lực số|Digital skills survey
+Kết quả khảo sát năng lực số|Digital skills survey results
 Đánh Giá Năng Lực Đội Ngũ|Team competency assessment
 Khung năng lực số|Digital competency framework
 Nhân sự|People
@@ -159,6 +161,8 @@ Chuyển giao diện sáng|Switch to light mode
 Chuyển giao diện tối|Switch to dark mode
 Đăng xuất|Sign out
 Học tập của tôi|My learning
+Điều hướng học tập|Learning navigation
+Về không gian quản lý|Back to team workspace
 Quản lý|Manager
 Nhân viên|Employee
 Quản trị viên|Administrator
@@ -405,6 +409,34 @@ Giải quyết vấn đề|Problem solving
 Khai thác dữ liệu và thông tin|Data and information literacy
 Lĩnh vực|Domain
 Lĩnh vực năng lực|Competency domains
+Năng lực số của phòng ban|Department digital competency
+Năng lực qua sáu lĩnh vực|Competency across six domains
+Mức áp dụng phòng ban|Department benchmark
+Mức cần đạt|Required level
+Chú giải biểu đồ|Chart legend
+Chưa đạt Cơ bản|Below foundation
+Mức trung bình|Average level
+Hiện hoặc ẩn đường biểu đồ|Show or hide chart lines
+Chênh lệch với mục tiêu|Difference from target
+Số người theo mức hiện tại|Employees by current level
+Còn thiếu|Below target
+Vượt mục tiêu|Above target
+Đạt mục tiêu|At target
+Dữ liệu|Data
+Sáng tạo nội dung|Content creation
+Ứng dụng AI|AI applications
+Tìm kiếm, đánh giá và quản lý dữ liệu, thông tin và nội dung số.|Find, evaluate, and manage digital data, information, and content.
+Trao đổi, chia sẻ thông tin và phối hợp qua công cụ số.|Communicate, share information, and collaborate using digital tools.
+Tạo, biên tập nội dung số và sử dụng nguồn tài liệu đúng bản quyền.|Create and edit digital content while respecting copyright.
+Bảo vệ thiết bị, dữ liệu cá nhân và quyền riêng tư trên môi trường số.|Protect devices, personal data, and privacy online.
+Xử lý sự cố và chọn công cụ số phù hợp với công việc.|Troubleshoot and choose digital tools suited to the task.
+Sử dụng và đánh giá kết quả từ công cụ AI một cách có trách nhiệm.|Use AI tools and evaluate their output responsibly.
+Đầu vào|Baseline
+có dữ liệu|with data
+nhân viên đang làm việc|active employees
+Xem chi tiết từng năng lực|View individual competencies
+Đầu vào và hiện tại là mức trung bình của những người có dữ liệu ở từng lĩnh vực. Đường mức áp dụng lấy theo cấu hình phòng ban.|Baseline and current levels are averages of employees with data in each domain. The benchmark comes from department settings.
+Đầu vào lấy từ khảo sát năng lực có kết quả. Mức hiện tại gồm các kết quả đã xác nhận, kể cả sau khi hoàn thành khóa học.|Baseline comes from the competency assessment. The current level includes confirmed results, including completed courses.
 Chọn để cài đặt vị trí|Select to configure positions
 Thiết lập kiến trúc năng lực|Competency architecture
 Kiến trúc năng lực doanh nghiệp|Organizational competency architecture

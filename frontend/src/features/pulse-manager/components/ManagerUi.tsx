@@ -46,12 +46,12 @@ export function KpiRow({ items, label }: { items: KpiItem[]; label: string }) {
   );
 }
 
-export function ManagerPageHeader({ title, subtitle, scope, actions, featured }: {
-  title: string; subtitle?: string; scope?: string; actions?: ReactNode; featured?: boolean;
+export function ManagerPageHeader({ title, subtitle, scope, actions }: {
+  title: string; subtitle?: string; scope?: string; actions?: ReactNode;
 }) {
   useUiLanguage();
   return (
-    <header className="manager-page-heading" data-featured={featured || undefined}>
+    <header className="manager-page-heading">
       <div>
         {scope && <span className="manager-page-heading__scope"><Building2 size={14} aria-hidden="true" />{scope}</span>}
         <h1>{translateUi(title)}</h1>
