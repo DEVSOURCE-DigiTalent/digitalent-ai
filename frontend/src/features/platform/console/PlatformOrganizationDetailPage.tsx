@@ -42,8 +42,8 @@ export function PlatformOrganizationDetailPage() {
     <>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--pa-accent)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#5cc2b8' }} />
             Quản trị nền tảng / Hồ sơ tổ chức 360
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '8px 0 4px' }}>

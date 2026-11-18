@@ -93,7 +93,7 @@ interface RevenueColumnCardProps {
 }
 
 /**
- * Primary Revenue Column Chart (<BarChart>) using Solid Clay-Orange bars (#b85c24).
+ * Primary Revenue Column Chart (<BarChart>) using teal bars (#18727a), the owner portal accent.
  * Supports switching between Time-series buckets (from course orders) and Course breakdown.
  */
 export function RevenueColumnCard({
@@ -290,8 +290,8 @@ export function RevenueColumnCard({
                   <Bar
                     dataKey="revenue"
                     name="Doanh thu"
-                    fill="#b85c24"
-                    activeBar={{ fill: '#9e4b19', stroke: '#7c2d12', strokeWidth: 1.5 }}
+                    fill="#18727a"
+                    activeBar={{ fill: '#135e66', stroke: '#0f4f53', strokeWidth: 1.5 }}
                     radius={[6, 6, 0, 0]}
                     maxBarSize={48}
                   />
@@ -337,8 +337,8 @@ export function RevenueColumnCard({
                   <Bar
                     dataKey="revenue"
                     name="Doanh thu"
-                    fill="#b85c24"
-                    activeBar={{ fill: '#9e4b19', stroke: '#7c2d12', strokeWidth: 1.5 }}
+                    fill="#18727a"
+                    activeBar={{ fill: '#135e66', stroke: '#0f4f53', strokeWidth: 1.5 }}
                     radius={[6, 6, 0, 0]}
                     maxBarSize={48}
                   />
