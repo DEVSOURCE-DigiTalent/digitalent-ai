@@ -16,6 +16,7 @@ import {
 import { PlatformDrawer } from '../components/PlatformDrawer';
 import { CompanyAvatar } from '../components/CompanyAvatar';
 import { OrganizationDetailContent } from './components/OrganizationDetailContent';
+import { organizationHeaderLine } from './components/organization-header';
 import { PlatformOrganizationsSkeleton } from './components/OrganizationsSkeleton';
 import {
   Building2,
@@ -154,7 +155,7 @@ export function PlatformOrganizationsPage() {
           </div>
           <div className="pa-org-kpi-val-row">
             <span className="pa-org-kpi-val">{formatNumber(totalCount)}</span>
-            <span className="pa-org-kpi-sub">{formatNumber(trialCount)} dùng thử · {formatNumber(paidCount)} đã mua khóa</span>
+            <span className="pa-org-kpi-sub">doanh nghiệp</span>
           </div>
         </div>
 
@@ -271,22 +272,14 @@ export function PlatformOrganizationsPage() {
                 <thead>
                   <tr>
                     <th>Tổ chức</th>
-                    <th>Trạng thái và khóa đã mua</th>
-                    <th>Khóa đang học</th>
-                    <th className="num">{translateUi('Nhân viên đang học')}</th>
+                    <th>Trạng thái</th>
+                    <th title="Khóa Trung cấp và Nâng cao (khóa Cơ bản miễn phí)">Khóa đã mua</th>
                     <th>{translateUi('Ngày đăng ký')}</th>
                     <th style={{ width: 56 }}><span className="sr-only">{translateUi('Thao tác')}</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.items.map((o) => {
-                    const pCount = o.participantCount ?? (o as unknown as { membersCount?: number }).membersCount ?? 0;
-                    const eCount = o.employeeCount ?? (o as unknown as { seatLimit?: number }).seatLimit ?? 10;
-                    const pct = Math.min(100, Math.round((pCount / Math.max(eCount, 1)) * 100));
-                    const levels = o.coursesInUseByLevel ?? [0, 0, 0];
-                    const c0 = levels[0] ?? 0;
-                    const c1 = levels[1] ?? 0;
-                    const c2 = levels[2] ?? 0;
 
                     return (
                       <tr
@@ -308,42 +301,11 @@ export function PlatformOrganizationsPage() {
                           <PlanCell organization={o} />
                         </td>
                         <td>
-                          {c0 + c1 + c2 === 0 ? (
-                            <span className="pa-cell-sub">Chưa học khóa nào</span>
+                          {o.coursesPurchased > 0 ? (
+                            <strong style={{ fontSize: 13 }}>{formatNumber(o.coursesPurchased)} khóa trả phí</strong>
                           ) : (
-                            <div className="pa-org-level-wrap">
-                              {c0 > 0 && <span className="pa-org-level-pill is-basic">Cơ bản · {c0}</span>}
-                              {c1 > 0 && <span className="pa-org-level-pill is-inter">Trung cấp · {c1}</span>}
-                              {c2 > 0 && <span className="pa-org-level-pill is-adv">Nâng cao · {c2}</span>}
-                            </div>
+                            <span className="pa-cell-sub">Chưa mua</span>
                           )}
-                        </td>
-                        <td className="num">
-                          <div className="pa-org-ratio-wrap">
-                            <div>
-                              <strong style={{ color: '#0f172a', fontSize: 13 }}>{pCount}</strong>
-                              <span style={{ color: '#64748b', fontSize: 12 }}> / {eCount}</span>
-                            </div>
-                            <div
-                              className="pa-org-ratio-track"
-                              title={translateUi(`Tỷ lệ kích hoạt: ${pct}%`)}
-                              aria-hidden="true"
-                            >
-                              <div
-                                className={`pa-org-ratio-fill ${pct > 80 ? 'is-high' : ''}`}
-                                style={{ width: `${Math.max(pct > 0 ? 8 : 0, pct)}%` }}
-                              />
-                            </div>
-                            {o.stage === 'PAID' && pCount === 0 ? (
-                              <small className="pa-cell-sub" style={{ fontSize: 12, color: 'var(--pa-amber)' }}>
-                                Đã mua, chưa ai học
-                              </small>
-                            ) : (
-                              <small className="pa-cell-sub" style={{ fontSize: 12 }}>
-                                {pct}% nhân viên
-                              </small>
-                            )}
-                          </div>
                         </td>
                         <td>{formatDate(o.createdAt)}</td>
                         <td>
@@ -383,7 +345,7 @@ export function PlatformOrganizationsPage() {
         title={selectedOrg?.name ?? translateUi('Chi tiết tổ chức')}
         subtitle={
           selectedOrg
-            ? `${selectedOrg.ownerEmail || translateUi('Chưa có chủ doanh nghiệp')}${selectedOrg.code && selectedOrg.code.length <= 20 ? ` · Mã: ${selectedOrg.code}` : ''}`
+            ? translateUi(organizationHeaderLine(selectedOrg))
             : translateUi('Chi tiết doanh nghiệp')
         }
         avatar={selectedOrg ? <CompanyAvatar name={selectedOrg.name} size={40} /> : undefined}
@@ -430,7 +392,7 @@ export function PlatformOrganizationsPage() {
           ) : undefined
         }
       >
-        {drawerOrgId && <OrganizationDetailContent orgId={drawerOrgId} isDrawer />}
+        {drawerOrgId && <OrganizationDetailContent orgId={drawerOrgId} />}
       </PlatformDrawer>
 
       <Footer />
@@ -464,21 +426,6 @@ function PlanCell({ organization: o }: { organization: PlatformOrganization }) {
         )}
       </div>
 
-      <small className="pa-cell-sub" style={{ fontSize: 12, color: '#475569' }}>
-        {isPaid && o.coursesPurchased > 0 ? (
-          <>
-            <strong>{formatNumber(o.coursesPurchased)} khóa đã mua</strong>
-            {o.planRenewsAt && <span> · Hạn {formatDate(o.planRenewsAt)}</span>}
-          </>
-        ) : isPaid ? (
-          <>
-            <span>Gói chính thức</span>
-            {o.planRenewsAt && <span> · Hạn {formatDate(o.planRenewsAt)}</span>}
-          </>
-        ) : (
-          <span>{o.seatLimit ? `Tối đa ${o.seatLimit} nhân sự` : 'Chưa mua khóa'}</span>
-        )}
-      </small>
     </div>
   );
 }
