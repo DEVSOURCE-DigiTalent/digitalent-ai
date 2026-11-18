@@ -227,6 +227,12 @@ export interface PlatformTrialItem {
   learners?: number;
 }
 
+export interface AutoAssignMentorsResult {
+  assigned: { organizationId: string; organizationName: string; mentorUserId: string; mentorName: string }[];
+  /** Organizations left without a mentor because every mentor is full. */
+  remaining: number;
+}
+
 export interface MentorItem {
   userId: string;
   fullName: string;
@@ -323,6 +329,8 @@ export const trialProgramService = {
   platformTrials: () => apiClient.get<ApiResponse<{ items: PlatformTrialItem[] }>>('/platform/trials'),
   assignMentor: (organizationId: string, mentorUserId: string) =>
     apiClient.put<ApiResponse<unknown>>(`/platform/trials/${organizationId}/mentor`, { mentorUserId }),
+  /** Gives a mentor to every trial organization that has none (when a mentor still has room). */
+  autoAssignMentors: () => apiClient.post<ApiResponse<AutoAssignMentorsResult>>('/platform/trials/auto-assign'),
   mentors: () => apiClient.get<ApiResponse<{ items: MentorItem[] }>>('/platform/mentors'),
   createMentor: (input: { fullName: string; email: string; password: string }) =>
     apiClient.post<ApiResponse<{ mentor: MentorItem }>>('/platform/mentors', input),
