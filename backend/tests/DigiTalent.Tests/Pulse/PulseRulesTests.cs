@@ -11,15 +11,34 @@ public class PulseRulesTests
     private static readonly DateTimeOffset Now = new(2026, 10, 14, 8, 0, 0, TimeSpan.Zero);
 
     [Theory]
-    [InlineData(1, 0, 3, PulseCourseZone.OutsidePath)]   // vị trí không yêu cầu lĩnh vực
-    [InlineData(1, 3, 3, PulseCourseZone.Path)]
-    [InlineData(3, 3, 3, PulseCourseZone.Path)]
-    [InlineData(3, 3, 2, PulseCourseZone.AboveCeiling)]  // mục tiêu Nâng cao nhưng phòng ban chỉ mở tới Trung cấp
-    [InlineData(3, 2, 3, PulseCourseZone.Optional)]      // trên mục tiêu, trong trần
-    [InlineData(3, 2, 2, PulseCourseZone.AboveCeiling)]
-    [InlineData(1, 2, 0, PulseCourseZone.AboveCeiling)]  // phòng ban không mở lĩnh vực
-    public void ZoneOf_CapsThePositionTargetByTheDepartmentCeiling(int tier, int target, int ceiling, string expected) =>
-        PulseRules.ZoneOf(tier, target, ceiling).Should().Be(expected);
+    [InlineData(1, 1, true, PulseCourseZone.Path)]
+    [InlineData(3, 3, true, PulseCourseZone.Path)]
+    [InlineData(3, 3, false, PulseCourseZone.Path)]          // bắt buộc nhưng chưa mua: vẫn trên lộ trình, chờ doanh nghiệp mua
+    [InlineData(2, 1, true, PulseCourseZone.Optional)]       // trên mức yêu cầu, doanh nghiệp đã có khóa: học vượt
+    [InlineData(3, 2, true, PulseCourseZone.Optional)]
+    [InlineData(3, 2, false, PulseCourseZone.AboveCeiling)]  // trên mức yêu cầu và chưa mua: chưa mở
+    [InlineData(1, 0, true, PulseCourseZone.Optional)]       // phòng ban không yêu cầu lĩnh vực: Cơ bản vẫn học vượt được
+    public void ZoneOf_RequiresUpToTheMinimumLevel_AndOpensEveryOwnedCourseAboveIt(int tier, int required, bool available, string expected) =>
+        PulseRules.ZoneOf(tier, required, available).Should().Be(expected);
+
+    [Fact]
+    public void NextSteps_SuggestsLearningBeyondTheRequirement_OnlyWhenTheRequiredCoursesHaveNothingLeft()
+    {
+        var domain = new PulseDomainState { CategoryId = Guid.NewGuid(), Number = 1, Target = 1 };
+        PulseCourseState State(int tier, string zone, string slot) => new()
+        {
+            Course = new PulseCourseRef { CourseId = Guid.NewGuid(), Code = $"M1-{tier}", CategoryId = domain.CategoryId, Tier = tier },
+            Domain = domain,
+            Zone = zone,
+            SlotStatus = slot,
+        };
+        var required = State(1, PulseCourseZone.Path, PulseSlotStatus.ToLearn);
+        var beyond = State(2, PulseCourseZone.Optional, PulseSlotStatus.PreAssessment);
+        new PulseLearnerSnapshot { Courses = new[] { required, beyond } }.NextSteps().Should().Equal(required);
+
+        var done = State(1, PulseCourseZone.Path, PulseSlotStatus.Completed);
+        new PulseLearnerSnapshot { Courses = new[] { done, beyond } }.NextSteps().Should().Equal(beyond);
+    }
 
     [Fact]
     public void ProgressPercent_CountsReadingAndTheReviewQuizOfEveryModule()

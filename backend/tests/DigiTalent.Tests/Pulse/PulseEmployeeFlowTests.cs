@@ -1,3 +1,4 @@
+using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Application.UseCases.Learning.CourseAssignments;
@@ -74,17 +75,76 @@ public class PulseEmployeeFlowTests
         await world.Context.SaveChangesAsync();
         world.Context.ChangeTracker.Clear();
 
+        // The department level is the minimum the company requires, also above the position standard (Sáng tạo nội dung: 3 > 1).
         var capped = await uc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
+        overview.Domains.Should().OnlyContain(d => !d.RequiredByDepartment, "phòng ban chưa đặt mức: theo chuẩn vị trí");
+        capped.Domains.Should().OnlyContain(d => d.RequiredByDepartment);
         capped.Domains.Select(d => d.Ceiling).Should().Equal(3, 2, 3, 1, 2, 1);
-        capped.Domains.Select(d => d.PathTop).Should().Equal(3, 2, 1, 1, 2, 1);
-        capped.Courses.Where(c => c.Zone == PulseCourseZone.AboveCeiling).Select(c => c.Code).Should().BeEquivalentTo("M2-A", "M4-I", "M4-A", "M5-A", "M6-I", "M6-A");
+        capped.Domains.Select(d => d.PathTop).Should().Equal(3, 2, 3, 1, 2, 1);
+        // Only Basic is free and nothing is bought: higher levels above the requirement stay closed, except a course
+        // already assigned to the employee (M4-I), which stays open as learning beyond the requirement.
+        capped.Courses.Where(c => c.Zone == PulseCourseZone.AboveCeiling).Select(c => c.Code).Should().BeEquivalentTo("M2-A", "M4-A", "M5-A", "M6-I", "M6-A");
         var alreadyStarted = capped.Courses.Single(c => c.Code == "M4-I");
+        alreadyStarted.Zone.Should().Be(PulseCourseZone.Optional);
         alreadyStarted.BlockReason.Should().BeNull();
         alreadyStarted.SlotStatus.Should().Be(PulseSlotStatus.InProgress);
         capped.Courses.Single(c => c.Code == "M2-A").SlotStatus.Should().Be(PulseSlotStatus.AboveCeiling);
-        capped.Courses.Where(c => c.Zone == PulseCourseZone.Optional).Select(c => c.Code).Should().Equal("M3-I", "M3-A");
-        capped.Stats.PathCourses.Should().Be(10);
-        capped.Stats.AboveCeilingCourses.Should().Be(6);
+        capped.Courses.Single(c => c.Code == "M3-A").Zone.Should().Be(PulseCourseZone.Path, "phòng ban yêu cầu Nâng cao");
+        capped.Courses.Where(c => c.Zone == PulseCourseZone.Optional).Select(c => c.Code).Should().Equal("M4-I");
+        capped.Stats.PathCourses.Should().Be(12);
+        capped.Stats.AboveCeilingCourses.Should().Be(5);
+
+        // Once the owner buys the Advanced AI course, every employee sees it (and the Intermediate one it includes).
+        var platformCourses = await world.Context.PlatformCourses.AsNoTracking().ToListAsync();
+        var advancedAi = platformCourses.FirstOrDefault(c => CourseCodes.Canonical(c.Code) == "M6-A");
+        if (advancedAi == null)
+        {
+            advancedAi = new PlatformCourse { Code = "M6-A", Level = 3, Title = "M6-A", SalesStatus = Statuses.PlatformCourseSales.Open };
+            world.Context.PlatformCourses.Add(advancedAi);
+        }
+        world.Context.CourseOrders.Add(new CourseOrder { OrganizationId = employee.OrganizationId, CourseId = advancedAi.Id, Amount = 399000 });
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+
+        var bought = await uc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
+        bought.Courses.Where(c => c.Zone == PulseCourseZone.Optional).Select(c => c.Code).Should().BeEquivalentTo("M4-I", "M6-I", "M6-A");
+        var beyond = bought.Courses.Single(c => c.Code == "M6-I");
+        beyond.Access.Should().Be(PulseCourseAccess.Purchased);
+        beyond.SlotStatus.Should().Be(PulseSlotStatus.AfterPriorLevel, "học vượt vẫn đi từ cấp dưới lên: M6-F trước");
+        bought.Courses.Where(c => c.Zone == PulseCourseZone.AboveCeiling).Select(c => c.Code).Should().BeEquivalentTo("M2-A", "M4-A", "M5-A");
+        bought.NextSteps.Should().OnlyContain(c => c.Zone == PulseCourseZone.Path, "khóa bắt buộc được nhắc trước khóa học vượt");
+    }
+
+    [Fact]
+    public async Task TrialAssessmentResult_OnlyInformsThePurchase_AndRecognizesNoCourse()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var uc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
+        var before = await uc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
+
+        // The mentor rates the employee Advanced in every domain in the trial assessment.
+        var employee = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
+        var assessment = new TrialAssessment
+        {
+            OrganizationId = employee.OrganizationId, EmployeeId = employee.Id,
+            ChoiceScore = 18, ChoiceTotal = 18, SubmittedAt = world.Clock.Now.AddDays(-1), EssayBasic = "Trial survey response",
+        };
+        world.Context.TrialAssessments.Add(assessment);
+        world.Context.TrialAssessmentDomains.AddRange(before.Domains.Select(d => new TrialAssessmentDomain
+        {
+            TrialAssessmentId = assessment.Id, CategoryId = d.CategoryId,
+            BasicCorrect = 1, BasicTotal = 1, IntermediateCorrect = 1, IntermediateTotal = 1, AdvancedCorrect = 1, AdvancedTotal = 1,
+            SuggestedLevel = 3, MentorLevel = 3,
+        }));
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+
+        var after = await uc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
+        after.PlacementTest!.HasTaken.Should().BeTrue();
+        after.Courses.Should().NotContain(c => c.ApprovedVia == PulseApprovedVia.PlacementTest);
+        after.Courses.Where(c => c.Approved).Select(c => c.Code).Should().BeEquivalentTo(before.Courses.Where(c => c.Approved).Select(c => c.Code));
+        after.Domains.Select(d => d.Verified).Should().Equal(before.Domains.Select(d => d.Verified));
+        after.Courses.Single(c => c.Code == "M1-F").SlotStatus.Should().Be(PulseSlotStatus.PreAssessment, "bỏ qua phần học chỉ qua bài kiểm tra đầu vào của khóa");
     }
 
     [Fact]

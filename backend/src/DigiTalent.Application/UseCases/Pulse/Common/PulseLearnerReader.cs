@@ -24,10 +24,17 @@ public sealed class PulseDomainState
     public string Name { get; init; } = string.Empty;
     /// <summary>Mục tiêu vị trí (0 = vị trí không yêu cầu lĩnh vực).</summary>
     public int Target { get; init; }
-    /// <summary>Phạm vi năng lực doanh nghiệp đặt cho phòng ban của nhân viên (0..3).</summary>
+    /// <summary>Mức hiệu lực của phòng ban (mức riêng đã đặt, chưa đặt thì suy từ chuẩn vị trí của tổ chức), 0..3.</summary>
     public int Ceiling { get; init; } = PulseRules.MaxLevel;
-    /// <summary>Đỉnh lộ trình = min(mục tiêu, phạm vi); 0 = lĩnh vực ngoài lộ trình.</summary>
-    public int PathTop => Target == 0 ? 0 : Math.Min(Target, Ceiling);
+    /// <summary>Mức chủ doanh nghiệp đặt riêng cho phòng ban của nhân viên; null = chưa đặt, theo mục tiêu vị trí.</summary>
+    public int? DepartmentLevel { get; init; }
+    /// <summary>Mức tối thiểu đến từ mức chủ doanh nghiệp đặt cho phòng ban (không phải chuẩn vị trí).</summary>
+    public bool RequiredByDepartment => Target > 0 && DepartmentLevel.HasValue;
+    /// <summary>
+    /// Mức tối thiểu doanh nghiệp yêu cầu = đỉnh phần bắt buộc của lộ trình: mức phòng ban đã đặt, chưa đặt thì mục tiêu vị
+    /// trí; 0 = không yêu cầu. Khóa doanh nghiệp đã có ở cấp cao hơn là học vượt.
+    /// </summary>
+    public int PathTop => Target == 0 ? 0 : DepartmentLevel ?? Target;
     /// <summary>Mức đã xác nhận = max(cấp khóa được công nhận, minh chứng thực tế được duyệt).</summary>
     public int Verified { get; init; }
     public string Source { get; init; } = PulseLevelSource.None;
@@ -119,20 +126,26 @@ public sealed class PulseLearnerSnapshot
         Courses.FirstOrDefault(c => c.Course.CategoryId == categoryId && c.Course.Tier == tier);
 
     /// <summary>
-    /// Việc nên làm tiếp trên lộ trình, theo thứ tự: nộp bài cuối của khóa đã học xong, học tiếp khóa đang dở (bắt đầu
-    /// sớm nhất trước), làm bài đánh giá trước khi học, rồi bắt đầu học khóa chưa đạt bài đánh giá. Chỉ khóa trong
-    /// lộ trình (khóa tùy chọn không được nhắc).
+    /// Việc nên làm tiếp, theo thứ tự: nộp bài cuối của khóa đã học xong, học tiếp khóa đang dở (bắt đầu sớm nhất trước),
+    /// làm bài kiểm tra đầu vào, rồi bắt đầu học khóa chưa đạt. Khóa bắt buộc trước; chỉ khi phần bắt buộc không còn việc
+    /// thì mới gợi ý khóa học vượt (doanh nghiệp đã có khóa, cao hơn mức yêu cầu).
     /// </summary>
     public IReadOnlyList<PulseCourseState> NextSteps(int count = 3)
     {
+        var required = Steps(Courses.Where(c => c.InPath)).Take(count).ToList();
+        return required.Count > 0
+            ? required
+            : Steps(Courses.Where(c => c.Zone == PulseCourseZone.Optional)).Take(count).ToList();
+    }
+
+    private static IEnumerable<PulseCourseState> Steps(IEnumerable<PulseCourseState> courses)
+    {
         static DateTimeOffset Started(PulseCourseState c) => c.Enrollment?.StartedAt ?? c.Enrollment?.CreatedAt ?? DateTimeOffset.MaxValue;
-        var path = Courses.Where(c => c.InPath).ToList();
-        return path.Where(c => c.SlotStatus == PulseSlotStatus.FinalReady).OrderBy(Started)
-            .Concat(path.Where(c => c.SlotStatus == PulseSlotStatus.InProgress).OrderBy(Started))
-            .Concat(path.Where(c => c.SlotStatus == PulseSlotStatus.PreAssessment).OrderBy(c => c.Domain.Number).ThenBy(c => c.Course.Tier))
-            .Concat(path.Where(c => c.SlotStatus == PulseSlotStatus.ToLearn).OrderBy(c => c.Domain.Number).ThenBy(c => c.Course.Tier))
-            .Take(count)
-            .ToList();
+        var list = courses.ToList();
+        return list.Where(c => c.SlotStatus == PulseSlotStatus.FinalReady).OrderBy(Started)
+            .Concat(list.Where(c => c.SlotStatus == PulseSlotStatus.InProgress).OrderBy(Started))
+            .Concat(list.Where(c => c.SlotStatus == PulseSlotStatus.PreAssessment).OrderBy(c => c.Domain.Number).ThenBy(c => c.Course.Tier))
+            .Concat(list.Where(c => c.SlotStatus == PulseSlotStatus.ToLearn).OrderBy(c => c.Domain.Number).ThenBy(c => c.Course.Tier));
     }
 
     public PulseCourseState? NextCourse() => NextSteps(1).FirstOrDefault();
@@ -141,8 +154,9 @@ public sealed class PulseLearnerSnapshot
 /// <summary>
 /// Dựng <see cref="PulseLearnerSnapshot"/> cho nhân viên đang đăng nhập:
 ///   - Lĩnh vực = competency_categories của tổ chức có khóa PUBLISHED; mỗi (lĩnh vực, cấp) một khóa (PulseCatalogReader).
-///   - Mục tiêu vị trí = mức yêu cầu lớn nhất trong lĩnh vực của bộ yêu cầu ACTIVE; phạm vi = phạm vi hiệu lực của phòng ban
-///     (CapabilityCeilingReader); lộ trình = Cơ bản → min(mục tiêu, phạm vi).
+///   - Mục tiêu vị trí = mức yêu cầu lớn nhất trong lĩnh vực của bộ yêu cầu ACTIVE. Mức tối thiểu doanh nghiệp yêu cầu = mức
+///     chủ doanh nghiệp đặt cho phòng ban (CapabilityCeilingReader), chưa đặt thì mục tiêu vị trí; phần bắt buộc của lộ trình
+///     = Cơ bản → mức đó. Mọi khóa doanh nghiệp đã có (Cơ bản miễn phí, khóa đã mua) ở cấp cao hơn là học vượt, mở để học.
 ///   - Khóa được công nhận = lượt học COMPLETED của bất kỳ phiên bản nào của mã khóa (bài cuối khóa được duyệt, bài đánh
 ///     giá trước khi học đạt, hoặc luồng học trước).
 ///   - Bài đánh giá trước khi học bắt buộc trước khi học một khóa chưa bắt đầu (một bài cho mỗi mã khóa).
@@ -229,7 +243,8 @@ public class PulseLearnerReader
                 RequiredLevel = targets.GetValueOrDefault(row.CategoryId, row.Requirement.RequiredLevel),
             })).ToList();
         }
-        var ceilings = await _ceilings.EffectiveForDepartmentAsync(organizationId, employee.DepartmentId, categoryIds);
+        var departmentLevels = await _ceilings.ForDepartmentAsync(organizationId, employee.DepartmentId, categoryIds);
+        var ceilings = departmentLevels.ToDictionary(row => row.Key, row => row.Value.Level);
 
         // Khung năng lực & Lộ trình của nhân viên:
         // 1. Nếu vị trí công việc đã có requirements cụ thể trong PositionRequirementSets ACTIVE thì lấy theo vị trí.
@@ -261,7 +276,9 @@ public class PulseLearnerReader
             .Select(r => r.Code)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // Bài đánh giá phân loại năng lực đầu vào (TrialAssessment) của nhân viên
+        // Bài đánh giá dùng thử (TrialAssessment) của nhân viên: chỉ để doanh nghiệp quyết định mua khóa, chỉ hiển thị. Kết
+        // quả không công nhận khóa nào và không đổi mức đã xác nhận; muốn bỏ qua phần học, nhân viên làm bài kiểm tra đầu
+        // vào (PulseSkipTest) của từng khóa.
         var placementTest = await _context.TrialAssessments
             .AsNoTracking()
             .Where(a => a.EmployeeId == employee.Id)
@@ -279,16 +296,6 @@ public class PulseLearnerReader
         var placementLevels = placementDomains.ToDictionary(
             d => d.CategoryId,
             d => (d.MentorLevel ?? (placementHasResult ? TrialAssessmentResults.SuggestedLevelOf(d) : 0)));
-
-        var placementApprovedCodes = courses
-            .Where(c => placementLevels.TryGetValue(c.CategoryId, out var lvl) && lvl >= c.Tier)
-            .Select(c => c.Code)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var code in placementApprovedCodes)
-        {
-            approvedCodes.Add(code);
-        }
 
         var placementInfo = new PulsePlacementTestInfo(
             HasTaken: placementTest != null,
@@ -382,7 +389,8 @@ public class PulseLearnerReader
             var source = verified == 0 ? PulseLevelSource.None
                 : courseLevel >= evidenceLevel ? PulseLevelSource.Course
                 : PulseLevelSource.PracticalEvidence;
-            var pathTop = target == 0 ? 0 : Math.Min(target, ceiling);
+            int? departmentLevel = departmentLevels.TryGetValue(category.Id, out var level) && level.IsCustom ? level.Level : null;
+            var pathTop = target == 0 ? 0 : departmentLevel ?? target;
             var status = pathTop == 0 ? PulseDomainStatus.OutsidePath
                 : verified >= pathTop ? PulseDomainStatus.Met
                 : verified == 0 ? PulseDomainStatus.Pending
@@ -395,6 +403,7 @@ public class PulseLearnerReader
                 Name = DisplayName(category.Name),
                 Target = target,
                 Ceiling = ceiling,
+                DepartmentLevel = departmentLevel,
                 Verified = verified,
                 Source = source,
                 Status = status,
@@ -413,9 +422,16 @@ public class PulseLearnerReader
             .Select(course =>
             {
                 var domain = domains.First(d => d.CategoryId == course.CategoryId);
-                var zone = awaitingFramework ? PulseCourseZone.Optional : PulseRules.ZoneOf(course.Tier, domain.Target, domain.Ceiling);
                 var enrollment = enrollmentByCode.GetValueOrDefault(course.Code);
+                var purchased = IsUnlocked(course.Code)
+                    || courses.Any(higher => higher.CategoryId == course.CategoryId
+                                             && higher.Tier > course.Tier
+                                             && IsUnlocked(higher.Code));
                 var approved = approvedCodes.Contains(course.Code);
+                // Khóa mở cho nhân viên: Cơ bản miễn phí, khóa doanh nghiệp đã mua, khóa đã được giao, hoặc khóa nhân viên đã
+                // đạt (bài cuối khóa / luồng học trước) — khóa đã đạt luôn hiện trên lộ trình.
+                var available = course.Tier == 1 || purchased || enrollment != null || approved;
+                var zone = awaitingFramework ? PulseCourseZone.Optional : PulseRules.ZoneOf(course.Tier, domain.PathTop, available);
                 var prior = courses.FirstOrDefault(c => c.CategoryId == course.CategoryId && c.Tier == course.Tier - 1);
                 var prereqApproved = course.Tier == 1 || prior == null || approvedCodes.Contains(prior.Code);
                 var pre = preByCode.GetValueOrDefault(course.Code);
@@ -438,10 +454,6 @@ public class PulseLearnerReader
                     : approved || started || entryDone || !entryOffered || awaitingFramework ? PulsePreStatus.NotNeeded
                     : !hasPosition || zone is PulseCourseZone.OutsidePath or PulseCourseZone.AboveCeiling || !prereqApproved ? PulsePreStatus.Locked
                     : PulsePreStatus.Required;
-                var purchased = IsUnlocked(course.Code)
-                    || courses.Any(higher => higher.CategoryId == course.CategoryId
-                                             && higher.Tier > course.Tier
-                                             && IsUnlocked(higher.Code));
                 var access = course.Tier == 1 ? PulseCourseAccess.FreeFull
                     : (enrollment != null || purchased) ? PulseCourseAccess.Purchased
                     : PulseCourseAccess.Preview;
@@ -462,7 +474,6 @@ public class PulseLearnerReader
                 var allPassed = modules.Count > 0 && PulseModuleReader.CountPassed(modules, moduleProgress) == modules.Count;
                 var finalStatus = PulseRules.FinalStatusOf(enrollment, courseSubmissions, allPassed, now);
                 var approvedVia = !approved ? null
-                    : placementApprovedCodes.Contains(course.Code) ? PulseApprovedVia.PlacementTest
                     : pre?.Decision == Statuses.FinalSubmissionDecision.Passed ? PulseApprovedVia.PreAssessment
                     : courseSubmissions.Any(s => s.Decision == Statuses.FinalSubmissionDecision.Passed) ? PulseApprovedVia.Final
                     : PulseApprovedVia.Legacy;

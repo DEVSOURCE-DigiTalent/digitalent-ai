@@ -260,12 +260,19 @@ public class CapabilityCeilingReader
     /// Cơ bản). Toàn doanh nghiệp không có mức chọn tay: khóa chưa mua vẫn nằm trên lộ trình và bị khóa bởi quyền học
     /// (<see cref="CourseOwnership"/>).
     /// </summary>
-    public async Task<Dictionary<Guid, int>> EffectiveForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds)
+    public async Task<Dictionary<Guid, int>> EffectiveForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds) =>
+        (await ForDepartmentAsync(organizationId, departmentId, categoryIds)).ToDictionary(row => row.Key, row => row.Value.Level);
+
+    /// <summary>
+    /// Như <see cref="EffectiveForDepartmentAsync"/>, kèm cờ cho biết mức là mức riêng chủ doanh nghiệp đã đặt cho phòng ban
+    /// (mức tối thiểu doanh nghiệp yêu cầu nhân viên phòng ban đạt) hay chỉ là mức suy ra từ chuẩn vị trí.
+    /// </summary>
+    public async Task<Dictionary<Guid, DepartmentDomainLevel>> ForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds)
     {
         var ids = categoryIds.Distinct().ToList();
         if (ids.Count == 0)
         {
-            return new Dictionary<Guid, int>();
+            return new Dictionary<Guid, DepartmentDomainLevel>();
         }
 
         var departmentRows = departmentId == null
@@ -290,9 +297,12 @@ public class CapabilityCeilingReader
         }
 
         return ids.ToDictionary(id => id, id => departmentRows.TryGetValue(id, out var custom)
-            ? Clamp(custom)
-            : Math.Max(1, suggested.GetValueOrDefault(id)));
+            ? new DepartmentDomainLevel(Clamp(custom), IsCustom: true)
+            : new DepartmentDomainLevel(Math.Max(1, suggested.GetValueOrDefault(id)), IsCustom: false));
     }
 
     private static int Clamp(int level) => Math.Clamp(level, 0, CapabilityCeiling.MaxLevel);
 }
+
+/// <summary>Mức của một lĩnh vực cho một phòng ban; <paramref name="IsCustom"/> = chủ doanh nghiệp đã đặt riêng cho phòng ban.</summary>
+public sealed record DepartmentDomainLevel(int Level, bool IsCustom);

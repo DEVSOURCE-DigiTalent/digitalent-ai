@@ -1,0 +1,8 @@
+
+.cap-marks { display: inline-grid; gap: 4px; color: var(--po-ink); }
+.cap-marks__track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; width: 60px; }
+.cap-marks__track i { height: 6px; border-radius: 3px; background: var(--po-line); }
+.cap-marks__track i[data-filled='true'] { background: #167a8e; }
+.cap-marks[data-target='true'] .cap-marks__track i[data-filled='true'] { border: 1px solid #426480; background: #d5e6f0; }
+.cap-marks[data-missing='true'] .cap-marks__track i { border: 1px dashed var(--po-muted); background: transparent; opacity: .68; }
+.cap-marks__label { font-size: 12px; line-height: 1.35; font-weight: 680; }

@@ -159,6 +159,32 @@ describe('PulseFinalReviewsPage (MG-13, mock #/review)', () => {
     expect(screen.getByText(/Lần nộp cuối mở/)).toBeTruthy();
   });
 
+  it('paginates filtered results and keeps the first visible item in view when page size changes', async () => {
+    const items = Array.from({ length: 12 }, (_, index) => item({
+      submissionId: 'result-' + index,
+      employeeName: 'Nhân viên số ' + (index + 1),
+    }));
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue(items)));
+    renderPage();
+
+    const row = (number: number) => screen.getByRole('button', { name: new RegExp('Xem chi tiết · Nhân viên số ' + number + ' ·') });
+    fireEvent.click(await screen.findByRole('button', { name: 'Trang 3' }));
+    expect(screen.getByRole('button', { name: 'Trang 3' })).toHaveAttribute('aria-current', 'page');
+    fireEvent.click(row(11));
+    expect(row(11)).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Số dòng mỗi trang' }));
+    fireEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: '10' }));
+    expect(screen.getByRole('button', { name: 'Trang 2' })).toHaveAttribute('aria-current', 'page');
+    expect(row(11)).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('status')).toHaveTextContent('11–12 / 12');
+
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'nhan vien so 1' } });
+    expect(row(1)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('1–4 / 4');
+    expect(screen.queryByRole('navigation', { name: 'Phân trang' })).not.toBeInTheDocument();
+  });
+
   it('records a decision only with a choice and a reason of at least 10 characters', async () => {
     vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue(ok(queue([item()])));
     const decide = vi.spyOn(pulseReviewService, 'decide').mockResolvedValue(ok({ submissionId: 'sub-1', decision: 'PASSED', status: 'APPROVED', enrollmentStatus: 'COMPLETED' }));

@@ -5,7 +5,7 @@
   --ent-primary: #15516b;
   --ent-accent: #15516b;
   --ent-accent-soft: #dcecf3;
-  --manager-header: linear-gradient(105deg, #e5f1f6, #f9fcfd 68%, #e7f5f5);
+  --manager-header: linear-gradient(90deg, #a6cbdc 0%, #d0e6ef 37%, #edf6f9 73%, #f7fbfc 100%);
   --manager-gradient: linear-gradient(125deg, #0a2f48, #126079);
 }
 

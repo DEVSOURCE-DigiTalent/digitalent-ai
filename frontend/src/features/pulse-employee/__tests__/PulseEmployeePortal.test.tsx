@@ -48,6 +48,7 @@ const domain = (overrides: Partial<PulseDomain> = {}): PulseDomain => ({
   target: 3,
   ceiling: 3,
   pathTop: 3,
+  requiredByDepartment: false,
   verified: 0,
   source: 'NONE',
   status: 'GAP',
@@ -315,6 +316,80 @@ describe('enterprise trial learning', () => {
     getMine.mockResolvedValue(ok({ ...mine, status: 'SUBMITTED', submittedAt: '2026-10-29T03:00:00Z' }));
     renderAt(PULSE_PATHS.path, null, routes);
     expect(await screen.findByRole('status', { name: 'Đang chờ công bố kết quả' })).toBeInTheDocument();
+  });
+});
+
+describe('PulsePathPage roadmap', () => {
+  // Phòng Operations: Khai thác dữ liệu cần Trung cấp (đang ở Cơ bản), Giao tiếp cần Cơ bản (đã đạt).
+  // Doanh nghiệp đã mua M1-A và M2-I (học vượt), chưa mua M2-A.
+  const roadmapOverview = () => {
+    const learning = course({ courseId: 'i1', code: 'M1-I', title: 'Chiến lược tìm kiếm', tier: 2, slotStatus: 'IN_PROGRESS' });
+    return overview({
+      domains: [
+        domain({ pathTop: 2, requiredByDepartment: true, verified: 1, status: 'GAP', gap: 1 }),
+        domain({ categoryId: 'cat-2', number: 2, code: 'TT02_D2', name: 'Giao tiếp và hợp tác', target: 2, pathTop: 1, requiredByDepartment: true, verified: 1, status: 'MET', gap: 0, competencies: [] }),
+      ],
+      courses: [
+        course({ courseId: 'f1', code: 'M1-F', slotStatus: 'COMPLETED', finalStatus: 'APPROVED', approved: true, approvedVia: 'FINAL', progressPercent: 100 }),
+        learning,
+        course({ courseId: 'a1', code: 'M1-A', title: 'Quản trị dữ liệu nâng cao', tier: 3, zone: 'OPTIONAL', inPath: false, access: 'PURCHASED', slotStatus: 'AFTER_PRIOR_LEVEL', enrollmentId: null }),
+        course({ courseId: 'f2', code: 'M2-F', title: 'Giao tiếp số cơ bản', categoryId: 'cat-2', domainNumber: 2, slotStatus: 'COMPLETED', approved: true, approvedVia: 'FINAL' }),
+        course({ courseId: 'i2', code: 'M2-I', title: 'Hợp tác trực tuyến', categoryId: 'cat-2', domainNumber: 2, tier: 2, zone: 'OPTIONAL', inPath: false, access: 'PURCHASED', slotStatus: 'TO_LEARN', enrollmentId: null }),
+        course({ courseId: 'x2', code: 'M2-A', title: 'Lãnh đạo cộng tác số', categoryId: 'cat-2', domainNumber: 2, tier: 3, zone: 'ABOVE_CEILING', inPath: false, access: 'PREVIEW', slotStatus: 'ABOVE_CEILING', canWork: false, enrollmentId: null }),
+      ],
+      nextCourse: learning,
+      nextSteps: [learning],
+    });
+  };
+
+  it('flags the unmet domain and opens every bought course above it', async () => {
+    signIn({ enterpriseTrialStatus: null });
+    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(roadmapOverview()));
+
+    renderAt(PULSE_PATHS.path, null, <Route path={PULSE_PATHS.path} element={<PulsePathPage />} />);
+
+    // Không còn thẻ nhiệm vụ ưu tiên / tóm tắt mức tối thiểu ở đầu trang, tiêu chí chi tiết hay dải yêu cầu trong lĩnh vực:
+    // lĩnh vực chưa đạt hiện bằng viền vàng + nhãn "Bắt buộc" trên khóa còn thiếu.
+    const data = await screen.findByRole('article', { name: /Lĩnh vực 01/ });
+    expect(screen.queryByText('Nhiệm vụ ưu tiên tiếp theo')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Lĩnh vực chưa đạt mức tối thiểu' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Mục tiêu:/)).not.toBeInTheDocument();
+    expect(within(data).getByText('Lĩnh vực ưu tiên')).toBeInTheDocument();
+    expect(screen.queryByText(/Tiêu chuẩn năng lực chi tiết/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/yêu cầu tối thiểu/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/học vượt được/)).not.toBeInTheDocument();
+    // Không hiện mã khóa / mã lĩnh vực (M1-I, M1…): nhân viên chỉ thấy tên khóa và cấp độ.
+    expect(within(data).queryByText(/\bM1(-[FIA])?\b/)).not.toBeInTheDocument();
+    expect(within(data).getAllByText(/^Khóa Trung cấp/).length).toBeGreaterThan(0);
+    expect(within(data).getByText('Bắt buộc')).toBeInTheDocument();
+    expect(within(data).getByText('Quản trị dữ liệu nâng cao')).toBeInTheDocument();
+    expect(within(data).getByText('Mở khi đạt Trung cấp')).toBeInTheDocument();
+
+    const communication = screen.getByRole('article', { name: /Lĩnh vực 02/ });
+    expect(within(communication).getByText('Đạt mức yêu cầu')).toBeInTheDocument();
+    expect(within(communication).getByRole('link', { name: /Học vượt/ })).toHaveAttribute('href', PULSE_PATHS.course('i2'));
+    expect(within(communication).queryByText('Lãnh đạo cộng tác số')).not.toBeInTheDocument();
+  });
+
+  it('suggests learning beyond the requirement once every minimum is met', async () => {
+    signIn({ enterpriseTrialStatus: null });
+    const base = roadmapOverview();
+    const beyond = base.courses.find((c) => c.code === 'M2-I')!;
+    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok({
+      ...base,
+      domains: base.domains.map((d) => ({ ...d, verified: d.pathTop, status: 'MET' as const, gap: 0 })),
+      courses: base.courses.map((c) => (c.code === 'M1-I' ? { ...c, approved: true, slotStatus: 'COMPLETED' as const } : c)),
+      nextCourse: beyond,
+      nextSteps: [beyond],
+    }));
+
+    renderAt(PULSE_PATHS.path, null, <Route path={PULSE_PATHS.path} element={<PulsePathPage />} />);
+
+    const communication = await screen.findByRole('article', { name: /Lĩnh vực 02/ });
+    expect(within(screen.getByRole('article', { name: /Lĩnh vực 01/ })).getByText('Đạt mức yêu cầu')).toBeInTheDocument();
+    expect(within(communication).getByText('Đạt mức yêu cầu')).toBeInTheDocument();
+    expect(within(communication).getByRole('link', { name: /Học vượt/ })).toHaveAttribute('href', PULSE_PATHS.course('i2'));
+    expect(screen.queryByText('Gợi ý học vượt')).not.toBeInTheDocument();
   });
 });
 

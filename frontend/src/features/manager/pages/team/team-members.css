@@ -21,10 +21,10 @@
 .manager-directory__picker { position: relative; min-width: 0; }
 .manager-directory__toolbar .manager-directory__picker { width: clamp(145px, 16cqw, 240px); }
 .manager-directory__trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: start; }
-.manager-directory__trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.manager-directory__trigger span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .manager-directory__trigger svg { flex: none; color: var(--po-accent-strong); }
 .manager-directory .manager-directory__trigger[aria-expanded='true'] { background: var(--po-tint); border-color: var(--po-accent); }
-.manager-directory__trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
+.manager-directory__trigger[aria-expanded='true'] .manager-directory__chevron { transform: rotate(180deg); }
 .manager-directory__popup {
   position: absolute;
   z-index: 5;
@@ -59,9 +59,9 @@
 .manager-directory__search input::placeholder { color: var(--po-muted); }
 .manager-directory__grid {
   display: grid;
-  gap: 0;
   margin: 0;
   padding: 0;
+  overflow: hidden;
   border: 1px solid var(--po-line);
   border-radius: 14px;
   background: var(--po-surface);
@@ -75,7 +75,7 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
-  padding: 12px 16px;
+  padding: 16px;
   color: var(--po-ink);
 }
 .manager-directory__identity { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; width: 100%; }
@@ -107,7 +107,7 @@
 }
 .manager-directory__status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ''; }
 .manager-directory__status[data-active='true'] { background: var(--po-tint); color: var(--po-accent-strong); }
-.manager-directory__person:hover { background: var(--po-raised); }
+.manager-directory__person:is(:hover, :focus-visible) { background: var(--po-raised); }
 .manager-directory__person:hover .manager-directory__open { background: var(--card-accent); color: var(--po-surface); }
 .manager-directory__pagination {
   display: flex;
@@ -130,6 +130,7 @@
 .manager-directory__page-controls button { display: grid; place-items: center; padding: 0; width: 42px; }
 .manager-directory__page-controls button:disabled { opacity: .45; }
 .manager-directory :is(button:not(:disabled), a):focus-visible { outline: 2px solid var(--po-accent); outline-offset: 2px; }
+.manager-directory .manager-directory__person:focus-visible { outline-offset: -2px; }
 .manager-directory__popup button:focus-visible { outline-offset: -2px; }
 .manager-directory :is(.manager-directory__page-controls button, .manager-directory__reset):hover:not(:disabled) { background: var(--po-tint); }
 
@@ -146,7 +147,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .manager-directory__grid { animation: manager-directory-reveal 240ms ease-out both; }
   .manager-directory__popup { animation: manager-directory-popup 160ms ease-out both; }
-  .manager-directory__trigger svg { transition: transform 160ms ease-out; }
+  .manager-directory__chevron { transition: transform 160ms ease-out; }
   .manager-directory__person { transition: background-color 180ms ease-out; }
   .manager-directory__open { transition: background-color 180ms ease-out, color 180ms ease-out; }
 }

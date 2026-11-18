@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { ArrowUpRight, Check, ChevronDown, ChevronLeft, ChevronRight, Mail, Search } from 'lucide-react';
+import { ArrowUpRight, Check, ChevronDown, ChevronLeft, ChevronRight, Filter, Mail, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/shared';
 import { PageLoading, SectionLoading } from '@/components/shared/LoadingState';
@@ -71,11 +71,11 @@ function DepartmentDirectory({ departmentId }: { departmentId: string }) {
           <input type="search" aria-label={searchLabel} placeholder={searchLabel} value={search}
             onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
         </label>
-        <DirectoryPicker label={translateUi('Lọc theo vị trí công việc')} value={positionId}
+        <DirectoryPicker filterIcon label={translateUi('Lọc theo vị trí công việc')} value={positionId}
           options={[{ value: '', label: translateUi('Tất cả vị trí') },
             ...(positions.data?.items ?? []).map(({ id, name }) => ({ value: id, label: name }))]}
           onChange={(value) => { setPositionId(value); setPage(1); }} />
-        <DirectoryPicker label={translateUi('Lọc theo trạng thái')} value={status}
+        <DirectoryPicker filterIcon label={translateUi('Lọc theo trạng thái')} value={status}
           options={[{ value: '', label: translateUi('Mọi trạng thái') },
             ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label: translateUi(label) }))]}
           onChange={(value) => { setStatus(value); setPage(1); }} />
@@ -137,11 +137,12 @@ function DepartmentDirectory({ departmentId }: { departmentId: string }) {
   );
 }
 
-function DirectoryPicker({ label, value, options, onChange, placement = 'below' }: {
+function DirectoryPicker({ label, value, options, onChange, filterIcon = false, placement = 'below' }: {
   label: string;
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
+  filterIcon?: boolean;
   placement?: 'above' | 'below';
 }) {
   const [open, setOpen] = useState(false);
@@ -171,8 +172,9 @@ function DirectoryPicker({ label, value, options, onChange, placement = 'below' 
     }}>
     <button ref={trigger} type="button" className="manager-directory__trigger" aria-label={label}
       aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen(!open)}>
+      {filterIcon && <Filter size={15} aria-hidden="true" />}
       <span>{options.find((option) => option.value === value)?.label ?? label}</span>
-      <ChevronDown size={16} aria-hidden="true" />
+      <ChevronDown className="manager-directory__chevron" size={16} aria-hidden="true" />
     </button>
     {open && <div id={id} role="group" aria-label={label} className="manager-directory__popup">
       {options.map((option) => (
