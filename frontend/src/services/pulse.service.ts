@@ -11,7 +11,7 @@ import type { ApiResponse } from '../types/api';
 export type PulseDomainStatus = 'PENDING' | 'GAP' | 'MET' | 'OUTSIDE_PATH';
 export type PulseLevelSource = 'NONE' | 'COURSE' | 'PRACTICAL_EVIDENCE';
 export type PulseCourseAccess = 'FREE_FULL' | 'PURCHASED' | 'PREVIEW';
-/** Vùng của khóa trên lộ trình: mục tiêu vị trí giới hạn bởi phạm vi năng lực của phòng ban. */
+/** Vùng của khóa: PATH bắt buộc (tới mức tối thiểu doanh nghiệp yêu cầu), OPTIONAL học vượt (doanh nghiệp đã có khóa), ABOVE_CEILING chưa mua. */
 export type PulseCourseZone = 'PATH' | 'OPTIONAL' | 'ABOVE_CEILING' | 'OUTSIDE_PATH';
 export type PulseBlockReason =
   | 'NO_POSITION'
@@ -107,10 +107,15 @@ export interface PulseDomain {
   name: string;
   /** Mục tiêu vị trí; 0 = vị trí không yêu cầu lĩnh vực. */
   target: number;
-  /** Phạm vi năng lực doanh nghiệp đặt cho phòng ban. */
+  /** Mức hiệu lực của phòng ban: mức riêng đã đặt, chưa đặt thì suy từ chuẩn vị trí của tổ chức. */
   ceiling: number;
-  /** Đỉnh lộ trình = min(mục tiêu, phạm vi); 0 = ngoài lộ trình. */
+  /**
+   * Mức tối thiểu doanh nghiệp yêu cầu = đỉnh phần bắt buộc của lộ trình: mức chủ doanh nghiệp đặt cho phòng ban,
+   * chưa đặt thì mục tiêu vị trí; 0 = không yêu cầu. Khóa doanh nghiệp đã có ở cấp cao hơn là học vượt (zone OPTIONAL).
+   */
   pathTop: number;
+  /** true = mức tối thiểu do chủ doanh nghiệp đặt cho phòng ban; false = theo chuẩn vị trí. */
+  requiredByDepartment: boolean;
   verified: number;
   source: PulseLevelSource;
   status: PulseDomainStatus;
