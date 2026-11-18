@@ -1,7 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, Building2, Check, ChevronDown, Info, Layers3, LockKeyhole, MousePointer2, Users, X } from 'lucide-react';
+import { ArrowRight, Building2, Check, Info, Layers3, LockKeyhole, MousePointer2, Users, X } from 'lucide-react';
 import { useDialogFocus } from '@/hooks/use-dialog-focus';
 import './capability-ceiling-guide.css';
 
@@ -37,27 +37,27 @@ export function CapabilityCeilingGuide({ open, onClose }: { open: boolean; onClo
       </header>
       <div className="ceiling-guide__body">
         <section className="ceiling-guide__section">
-          <h3><span>01</span>{translateUi(" Phạm vi áp dụng")}</h3>
-          <div className="ceiling-guide__hierarchy"><span><Users size={16} />{translateUi("Phòng ban")}</span><b>≤</b><span><Building2 size={16} />{translateUi("Doanh nghiệp")}</span><b>≤</b><span><Layers3 size={16} />{translateUi("Danh mục 3 cấp")}</span></div>
-          <p>{translateUi("Cấp độ áp dụng của phòng ban không vượt mức doanh nghiệp đã thiết lập. Khi thu hẹp phạm vi chung, các phòng ban vượt mức sẽ được điều chỉnh tương ứng.")}</p>
+          <h3><span>01</span>{translateUi(" Khóa học của doanh nghiệp")}</h3>
+          <div className="ceiling-guide__levels">
+            <div><span>{translateUi("CẤP 1")}</span><strong>{translateUi("Cơ bản")}</strong><small><Check size={13} />{translateUi("Miễn phí")}</small></div>
+            <div><span>{translateUi("CẤP 2")}</span><strong>{translateUi("Trung cấp")}</strong><small><LockKeyhole size={13} />{translateUi("Mua một lần")}</small></div>
+            <div><span>{translateUi("CẤP 3")}</span><strong>{translateUi("Nâng cao")}</strong><small><LockKeyhole size={13} />{translateUi("Mua một lần")}</small></div>
+          </div>
+          <p>{translateUi("Đây là mọi khóa doanh nghiệp đã có. Mỗi khóa mua một lần cho cả doanh nghiệp: mọi nhân viên đều học được, không giới hạn số người. Ở đây không cần cài đặt gì; khóa chưa mua có thể thêm vào giỏ.")}</p>
         </section>
         <section className="ceiling-guide__section">
-          <h3><span>02</span>{translateUi(" Khóa học & quyền học")}</h3>
-          <div className="ceiling-guide__levels">
-            <div><span>{translateUi("CẤP 1 · F")}</span><strong>{translateUi("Cơ bản")}</strong><small><Check size={13} />{translateUi("Miễn phí")}</small></div>
-            <div><span>{translateUi("CẤP 2 · I")}</span><strong>{translateUi("Trung cấp")}</strong><small><LockKeyhole size={13} />{translateUi("Cần mua khóa học")}</small></div>
-            <div><span>{translateUi("CẤP 3 · A")}</span><strong>{translateUi("Nâng cao")}</strong><small><LockKeyhole size={13} />{translateUi("Cần mua khóa học")}</small></div>
-          </div>
-          <p>{translateUi("Mỗi ô ứng với một khóa học. Mua khóa để mở quyền chọn cấp độ, sau đó chọn mức và lưu thay đổi.")}</p>
-          <div className="ceiling-guide__note"><Info size={16} /><span>{translateUi("Mỗi khóa chỉ mua một lần cho cả doanh nghiệp: mọi nhân viên đều học được, không giới hạn số người. Chuẩn vị trí có thể thiết lập trước khi mua.")}</span></div>
+          <h3><span>02</span>{translateUi(" Năng lực từng phòng ban")}</h3>
+          <div className="ceiling-guide__hierarchy"><span><Users size={16} />{translateUi("Đặt mức cho phòng ban")}</span><b>→</b><span><Building2 size={16} />{translateUi("Mua khóa còn thiếu ở phần 1")}</span></div>
+          <p>{translateUi("Chọn một phòng ban ở cột bên trái, rồi bấm vào mức cao nhất nhân viên phòng đó cần đạt ở mỗi lĩnh vực. Họ học từ Cơ bản tới mức đó. Đặt được cả cấp chưa mua: nhân viên thấy khóa trên lộ trình và học được khi doanh nghiệp mua ở phần 1.")}</p>
+          <div className="ceiling-guide__note"><Info size={16} /><span>{translateUi("Mức có nhãn \"Đề xuất\" là gợi ý theo Thông tư 02 cho các vị trí trong phòng ban; bấm \"Dùng mức đề xuất\" để áp dụng nhanh.")}</span></div>
         </section>
         <section className="ceiling-guide__section">
           <h3><span>03</span>{translateUi(" Thao tác nhanh")}</h3>
           <div className="ceiling-guide__steps">
-            <div><MousePointer2 size={16} /><strong>{translateUi("Ô đã mở")}</strong><span>{translateUi("Chọn cấp độ ")}<ArrowRight size={12} />{translateUi(" Lưu thay đổi")}</span></div>
-            <div><LockKeyhole size={16} /><strong>{translateUi("Ô chưa mua")}</strong><span>{translateUi("Chọn nhiều khóa vào giỏ")}</span></div>
-            <div><Info size={16} /><strong>{translateUi("Nút thông tin")}</strong><span>{translateUi("Xem khóa học & trạng thái mua")}</span></div>
-            <div><ChevronDown size={16} /><strong>{translateUi("Tên lĩnh vực")}</strong><span>{translateUi("Mở cài đặt chuẩn vị trí")}</span></div>
+            <div><MousePointer2 size={16} /><strong>{translateUi("Ô của một cấp")}</strong><span>{translateUi("Chọn mức ")}<ArrowRight size={12} />{translateUi(" Lưu thay đổi")}</span></div>
+            <div><LockKeyhole size={16} /><strong>{translateUi("Ô chưa mua (phần 1)")}</strong><span>{translateUi("Thêm vào giỏ, mua nhiều khóa một lần")}</span></div>
+            <div><Info size={16} /><strong>{translateUi("Nút thông tin")}</strong><span>{translateUi("Xem nội dung khóa học")}</span></div>
+            <div><Users size={16} /><strong>{translateUi("Cột phòng ban")}</strong><span>{translateUi("Tìm và chuyển giữa các phòng ban")}</span></div>
           </div>
         </section>
       </div>

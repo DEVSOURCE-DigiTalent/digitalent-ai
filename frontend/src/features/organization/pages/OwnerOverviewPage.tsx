@@ -9,7 +9,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useOrganizationOverview } from '@/hooks/use-organization';
-import { useCapabilityDashboard } from '@/hooks/use-analytics';
+import { useLearningNeeds } from '@/hooks/use-skill-gaps';
 import { OwnerProgressTabs } from '../components/OwnerProgressTabs';
 import { SendAnnouncementModal } from '../components/SendAnnouncementModal';
 import { PULSE_TOKENS } from '../owner-theme';
@@ -20,9 +20,10 @@ export function OwnerOverviewPage() {
   useUiLanguage();
   const [announcing, setAnnouncing] = useState(false);
   const { data: orgData, isLoading: orgLoading, isError: orgError } = useOrganizationOverview();
-  const { data: capData, isLoading: capLoading } = useCapabilityDashboard();
+  // Same query as OW-21, so the number here always matches the skill gap page.
+  const needs = useLearningNeeds({ pageIndex: 1, pageSize: 1 });
 
-  if (orgLoading || capLoading) {
+  if (orgLoading) {
     return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label={translateUi("Đang tải tổng quan")} /></div>;
   }
 
@@ -40,7 +41,26 @@ export function OwnerOverviewPage() {
   const posItem = orgData.setup.find((s) => s.key === 'positions');
   const departmentCount = deptItem ? parseInt(deptItem.detail) || 0 : 0;
   const positionCount = posItem ? parseInt(posItem.detail) || 0 : 0;
-  const averageCoverage = capData?.kpis.averageCoverage ?? 0;
+  const people = orgData.members;
+  const coverage = needs.data?.overview;
+  const metrics = [
+    {
+      to: '/enterprise/members', label: 'Nhân sự', Icon: Users, tone: 'border-teal-200/70 bg-teal-50 text-[#137b84]',
+      value: String(people.active + people.pending + people.inactive), unit: 'người', progress: null,
+      note: [people.pending ? `${people.pending} chờ kích hoạt` : '', people.inactive ? `${people.inactive} đã khóa` : ''].filter(Boolean).join(' · ') || 'Đều đang hoạt động',
+    },
+    {
+      to: '/enterprise/members', label: 'Phòng ban', Icon: Building2, tone: 'border-sky-200/70 bg-sky-50 text-[#0284c7]',
+      value: String(departmentCount), unit: 'phòng ban', progress: null, note: `${positionCount} vị trí công việc`,
+    },
+    {
+      // Share of staff already compared with their position standard; the rest still waits for the survey.
+      to: '/enterprise/skill-gap', label: 'Đã có kết quả năng lực', Icon: TrendingUp, tone: 'border-indigo-200/70 bg-indigo-50 text-[#6366f1]',
+      value: coverage ? `${coverage.assessedEmployees}/${coverage.employees}` : '—', unit: 'người',
+      progress: coverage?.employees ? coverage.assessedEmployees / coverage.employees : null,
+      note: !coverage ? 'Xem khoảng trống năng lực' : coverage.waitingEmployees ? `${coverage.waitingEmployees} người chờ khảo sát` : 'Cả đội đã có kết quả',
+    },
+  ];
 
   return (
     <div
@@ -61,11 +81,8 @@ export function OwnerOverviewPage() {
         {/* ── Page Header: Sáng, Tinh tế, Đẳng cấp ── */}
         <div className="owner-overview__header mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 border border-slate-200/80 shadow-2xs mb-2">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] font-semibold text-slate-700">{orgData.name}</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#17243f]">{translateUi("Tổng quan doanh nghiệp")}</h1>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#17243f]">{translateUi("Tổng quan")}</h1>
+            <p className="mt-1 text-sm text-slate-600">{orgData.name}</p>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -85,104 +102,33 @@ export function OwnerOverviewPage() {
 
         {/* ── Content Stack: Tràn đều, Khớp đẹp với độ rộng màn hình ── */}
         <div className="flex flex-col gap-6">
-          {/* 1. Hàng Thẻ Chỉ số Điều hành: Tràn đều 3 cột ── */}
+          {/* 1. Ba chỉ số chính: mỗi ô là một lối tắt tới trang chi tiết của nó. */}
           <div className="owner-overview__metrics grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {/* KPI 1: Nhân sự */}
-            <div className="group rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-xs p-5 shadow-xs hover:shadow-[0_12px_28px_rgba(19,123,132,0.1)] hover:border-teal-300 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-teal-500/8 to-transparent rounded-bl-full pointer-events-none" />
-              <div className="flex items-center justify-between text-xs mb-3">
-                <span className="font-bold uppercase tracking-wider text-[11px] text-[#64748b]">{translateUi('Nhân sự')}</span>
-                <div className="size-9 rounded-xl bg-gradient-to-br from-teal-50 to-emerald-100/70 text-[#137b84] flex items-center justify-center border border-teal-200/60 shadow-2xs group-hover:scale-105 transition-transform">
-                  <Users className="size-4" />
+            {metrics.map(({ to, label, Icon, value, unit, note, progress, tone }) => (
+              <Link
+                key={label}
+                to={to}
+                className="group rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-[0_12px_28px_rgba(19,123,132,0.1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-semibold text-slate-600">{translateUi(label)}</span>
+                  <span className={`grid size-9 place-items-center rounded-xl border ${tone}`}><Icon className="size-4" aria-hidden="true" /></span>
                 </div>
-              </div>
-              <div className="flex items-baseline justify-between mt-1">
-                <span className="text-3xl sm:text-4xl font-black tabular-nums text-[#17243f]">
-                  {orgData.members.active + orgData.members.pending + orgData.members.inactive}
-                </span>
-                {/* Mini Bars */}
-                <div className="flex items-end gap-1.5 h-6">
-                  {[40, 55, 70, 60, 85, 75, 100].map((h, i) => (
-                    <div
-                      key={i}
-                      style={{ height: `${h}%` }}
-                      className={`w-1.5 rounded-xs transition-all duration-300 ${
-                        i === 6
-                          ? 'bg-gradient-to-t from-[#137b84] to-[#14b8a6]'
-                          : 'bg-teal-100/70 group-hover:bg-teal-200/60'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* KPI 2: Cấu trúc */}
-            <div className="group rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-xs p-5 shadow-xs hover:shadow-[0_12px_28px_rgba(2,132,199,0.1)] hover:border-sky-300 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-sky-500/8 to-transparent rounded-bl-full pointer-events-none" />
-              <div className="flex items-center justify-between text-xs mb-3">
-                <span className="font-bold uppercase tracking-wider text-[11px] text-[#64748b]">{translateUi("Phòng ban & Vị trí")}</span>
-                <div className="size-9 rounded-xl bg-gradient-to-br from-sky-50 to-blue-100/70 text-[#0284c7] flex items-center justify-center border border-sky-200/60 shadow-2xs group-hover:scale-105 transition-transform">
-                  <Building2 className="size-4" />
-                </div>
-              </div>
-              <div className="flex items-baseline justify-between mt-1">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl sm:text-4xl font-black tabular-nums text-[#17243f]">
-                    {departmentCount}
+                <p className="mt-2 flex items-baseline gap-1.5">
+                  <span className="text-3xl sm:text-4xl font-black tabular-nums text-[#17243f]">{value}</span>
+                  {unit && <span className="text-sm font-semibold text-slate-600">{translateUi(unit)}</span>}
+                </p>
+                {progress != null && (
+                  <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+                    <span className="block h-full rounded-full bg-[#137b84]" style={{ width: `${Math.round(progress * 100)}%` }} />
                   </span>
-                  <span className="text-xs font-semibold text-[#64748b]">
-                    {translateUi('phòng ban')} · {positionCount}{translateUi(" vị trí")}</span>
-                </div>
-                {/* Mini Bars */}
-                <div className="flex items-end gap-1.5 h-6">
-                  {[30, 45, 60, 50, 70, 85, 90].map((h, i) => (
-                    <div
-                      key={i}
-                      style={{ height: `${h}%` }}
-                      className={`w-1.5 rounded-xs transition-all duration-300 ${
-                        i === 6
-                          ? 'bg-gradient-to-t from-[#0284c7] to-[#38bdf8]'
-                          : 'bg-sky-100/70 group-hover:bg-sky-200/60'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* KPI 3: Độ phủ Chuẩn */}
-            <div className="group rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-xs p-5 shadow-xs hover:shadow-[0_12px_28px_rgba(99,102,241,0.1)] hover:border-indigo-300 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-indigo-500/8 to-transparent rounded-bl-full pointer-events-none" />
-              <div className="flex items-center justify-between text-xs mb-3">
-                <span className="font-bold uppercase tracking-wider text-[11px] text-[#64748b]">{translateUi("Độ phủ Chuẩn Năng lực")}</span>
-                <div className="size-9 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-100/70 text-[#6366f1] flex items-center justify-center border border-indigo-200/60 shadow-2xs group-hover:scale-105 transition-transform">
-                  <TrendingUp className="size-4" />
-                </div>
-              </div>
-              <div className="flex items-baseline justify-between mt-1">
-                <div className="flex items-baseline gap-0.5">
-                  <span className="text-3xl sm:text-4xl font-black tabular-nums text-[#17243f]">
-                    {averageCoverage}
-                  </span>
-                  <span className="text-sm font-bold text-[#64748b]">%</span>
-                </div>
-                {/* Mini Bars */}
-                <div className="flex items-end gap-1.5 h-6">
-                  {[20, 30, 45, 40, 65, 60, 75].map((h, i) => (
-                    <div
-                      key={i}
-                      style={{ height: `${h}%` }}
-                      className={`w-1.5 rounded-xs transition-all duration-300 ${
-                        i === 6
-                          ? 'bg-gradient-to-t from-[#6366f1] to-[#818cf8]'
-                          : 'bg-indigo-100/70 group-hover:bg-indigo-200/60'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+                )}
+                <p className="mt-2 flex items-center justify-between gap-2 text-[13px] text-slate-600">
+                  <span>{translateUi(note)}</span>
+                  <ArrowRight className="size-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-[#137b84] motion-reduce:transition-none" aria-hidden="true" />
+                </p>
+              </Link>
+            ))}
           </div>
 
           <OwnerProgressTabs />

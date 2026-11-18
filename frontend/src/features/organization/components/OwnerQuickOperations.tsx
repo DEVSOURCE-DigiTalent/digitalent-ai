@@ -11,7 +11,7 @@ export function OwnerQuickOperations() {
   useUiLanguage();
   const operations = [
     {
-      title: 'Đánh giá đội ngũ',
+      title: 'Khảo sát năng lực số',
       to: '/enterprise/trial',
       icon: ClipboardCheck,
       color: 'bg-gradient-to-br from-teal-50 to-emerald-100/80 text-[#137b84] border-teal-200/70',

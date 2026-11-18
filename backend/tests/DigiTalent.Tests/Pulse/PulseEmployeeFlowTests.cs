@@ -36,7 +36,7 @@ public class PulseEmployeeFlowTests
         overview.Reviewer!.Name.Should().Be("Mentor DigiTalent");
         overview.Reviewer.Role.Should().Be("Mentor DigiTalent");
         overview.Domains.Select(d => d.Target).Should().Equal(3, 2, 1, 3, 2, 1);
-        overview.Domains.Select(d => d.PathTop).Should().Equal(new[] { 3, 2, 1, 3, 2, 1 }, "chưa lưu trần: trần = gợi ý từ yêu cầu vị trí, không thấp hơn mục tiêu");
+        overview.Domains.Select(d => d.PathTop).Should().Equal(new[] { 3, 2, 1, 3, 2, 1 }, "phòng ban chưa đặt mức riêng: lộ trình đi tới chuẩn vị trí");
         overview.Domains.Should().OnlyContain(d => d.Status == PulseDomainStatus.Pending || d.Number == 2, "chưa có bài nào được chấm; M2-F đã xong ở luồng cũ");
         overview.Domains.Sum(d => d.Competencies.Count).Should().Be(21);
         overview.Stats.RequiredCompetencies.Should().Be(21);
@@ -55,23 +55,22 @@ public class PulseEmployeeFlowTests
         overview.Courses.Single(c => c.Code == "M4-I").PreStatus.Should().Be(PulsePreStatus.NotNeeded, "đã bắt đầu học trước khi có bài đánh giá");
         overview.NextSteps.Select(c => c.Code).Should().Equal("M4-I", "M1-F", "M2-I");
 
-        // Doanh nghiệp mở Giao tiếp và Giải quyết vấn đề tới Trung cấp; phòng OPS chỉ mở AI ở Cơ bản.
+        // Chủ doanh nghiệp đặt mức riêng cho phòng OPS: Giao tiếp, Giải quyết vấn đề tới Trung cấp; An toàn, AI ở Cơ bản.
+        // A company-wide row has no effect any more: the whole company means every course it owns.
         var employee = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
         var categories = overview.Domains.Select(d => d.CategoryId).ToList();
-        var levels = new short[] { 3, 2, 3, 1, 2, 3 };
+        var levels = new short[] { 3, 2, 3, 1, 2, 1 };
+        world.Context.CapabilityCeilings.Add(new CapabilityCeiling
+        {
+            OrganizationId = employee.OrganizationId, CompetencyCategoryId = categories[0], CeilingLevel = 1,
+        });
         world.Context.CapabilityCeilings.AddRange(categories.Select((id, i) => new CapabilityCeiling
         {
             OrganizationId = employee.OrganizationId,
+            DepartmentId = employee.DepartmentId,
             CompetencyCategoryId = id,
             CeilingLevel = levels[i],
         }));
-        world.Context.CapabilityCeilings.Add(new CapabilityCeiling
-        {
-            OrganizationId = employee.OrganizationId,
-            DepartmentId = employee.DepartmentId,
-            CompetencyCategoryId = categories[5],
-            CeilingLevel = 1,
-        });
         await world.Context.SaveChangesAsync();
         world.Context.ChangeTracker.Clear();
 

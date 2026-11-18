@@ -189,11 +189,9 @@ public class CapabilityCeilingReader
             }).ToList();
 
             var maxAllowed = domainCourses.Where(c => c.IsUnlocked).Select(c => c.Level).DefaultIfEmpty(1).Max();
-            // Chưa lưu phạm vi: mặc định ở mức Cơ bản (1 - khóa học miễn phí).
-            // Đã lưu phạm vi: không được vượt quá số cấp đã mở bản quyền (maxAllowed).
-            var ceiling = orgRows.TryGetValue(domain.Id, out var row)
-                ? Math.Min((int)row.CeilingLevel, maxAllowed)
-                : 1;
+            // Toàn doanh nghiệp = mọi khóa doanh nghiệp đã có (Cơ bản miễn phí + khóa đã mua), dùng được ở mọi phòng ban.
+            // Chủ doanh nghiệp không chọn mức chung; chỉ phòng ban mới được đặt mức riêng (không vượt khóa đã mua).
+            var ceiling = maxAllowed;
             organizationCeilings[domain.Id] = ceiling;
 
             output.Domains.Add(new CeilingDomainDto
@@ -221,11 +219,12 @@ public class CapabilityCeilingReader
             {
                 var orgCeiling = organizationCeilings[domain.Id];
                 var isCustom = custom != null && custom.ContainsKey(domain.Id);
+                // A department may aim above the owned courses (set first, buy later); the suggestion is not capped either.
                 return new CeilingValueDto
                 {
                     CategoryId = domain.Id,
-                    Level = isCustom ? Math.Min(custom![domain.Id], orgCeiling) : orgCeiling,
-                    Suggested = Math.Min(Suggest(positions, domain.Id), orgCeiling),
+                    Level = isCustom ? Clamp(custom![domain.Id]) : orgCeiling,
+                    Suggested = Suggest(positions, domain.Id),
                     IsCustomized = isCustom,
                 };
             }).ToList();
@@ -256,9 +255,10 @@ public class CapabilityCeilingReader
     }
 
     /// <summary>
-    /// Phạm vi hiệu lực của một phòng ban theo lĩnh vực, cùng quy tắc với ma trận OW-05: thiết lập riêng của phòng ban (không
-    /// vượt phạm vi doanh nghiệp) → phạm vi doanh nghiệp đã lưu → chưa lưu thì gợi ý từ yêu cầu vị trí của tổ chức (ít nhất
-    /// Cơ bản). Không có phòng ban thì là phạm vi doanh nghiệp. Dùng cho lộ trình của nhân viên (Pulse).
+    /// Mức trần của lộ trình nhân viên theo lĩnh vực (Pulse): mức riêng chủ doanh nghiệp đã đặt cho phòng ban; phòng ban chưa
+    /// đặt riêng (hoặc nhân viên chưa có phòng ban) thì theo chuẩn vị trí của tổ chức (mức cao nhất các vị trí cần, ít nhất
+    /// Cơ bản). Toàn doanh nghiệp không có mức chọn tay: khóa chưa mua vẫn nằm trên lộ trình và bị khóa bởi quyền học
+    /// (<see cref="CourseOwnership"/>).
     /// </summary>
     public async Task<Dictionary<Guid, int>> EffectiveForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds)
     {
@@ -268,23 +268,16 @@ public class CapabilityCeilingReader
             return new Dictionary<Guid, int>();
         }
 
-        var rows = await _context.CapabilityCeilings
-            .AsNoTracking()
-            .Where(c => c.OrganizationId == organizationId
-                        && ids.Contains(c.CompetencyCategoryId)
-                        && (c.DepartmentId == null || c.DepartmentId == departmentId))
-            .Select(c => new { c.DepartmentId, c.CompetencyCategoryId, c.CeilingLevel })
-            .ToListAsync();
-        var organizationRows = rows
-            .Where(r => r.DepartmentId == null)
-            .ToDictionary(r => r.CompetencyCategoryId, r => (int)r.CeilingLevel);
         var departmentRows = departmentId == null
             ? new Dictionary<Guid, int>()
-            : rows.Where(r => r.DepartmentId == departmentId).ToDictionary(r => r.CompetencyCategoryId, r => (int)r.CeilingLevel);
+            : await _context.CapabilityCeilings
+                .AsNoTracking()
+                .Where(c => c.OrganizationId == organizationId && c.DepartmentId == departmentId && ids.Contains(c.CompetencyCategoryId))
+                .ToDictionaryAsync(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel);
 
-        var unsaved = ids.Where(id => !organizationRows.ContainsKey(id)).ToList();
+        var unset = ids.Where(id => !departmentRows.ContainsKey(id)).ToList();
         var suggested = new Dictionary<Guid, int>();
-        if (unsaved.Count > 0)
+        if (unset.Count > 0)
         {
             var templateCodes = JobPositionCatalog.Positions.Keys.ToArray();
             var positionIds = await _context.JobPositions.AsNoTracking()
@@ -292,15 +285,13 @@ public class CapabilityCeilingReader
                     && (p.DepartmentId != null || !templateCodes.Contains(p.Code)))
                 .Select(p => p.Id).ToListAsync();
             var targets = await new PositionTargetsReader(_context).LoadAsync(organizationId, positionIds);
-            suggested = targets.Values.SelectMany(t => t.Levels).Where(t => unsaved.Contains(t.Key))
+            suggested = targets.Values.SelectMany(t => t.Levels).Where(t => unset.Contains(t.Key))
                 .GroupBy(t => t.Key).ToDictionary(g => g.Key, g => Clamp(g.Max(t => t.Value)));
         }
 
-        return ids.ToDictionary(id => id, id =>
-        {
-            var organization = organizationRows.TryGetValue(id, out var saved) ? saved : Math.Max(1, suggested.GetValueOrDefault(id));
-            return departmentRows.TryGetValue(id, out var custom) ? Math.Min(custom, organization) : organization;
-        });
+        return ids.ToDictionary(id => id, id => departmentRows.TryGetValue(id, out var custom)
+            ? Clamp(custom)
+            : Math.Max(1, suggested.GetValueOrDefault(id)));
     }
 
     private static int Clamp(int level) => Math.Clamp(level, 0, CapabilityCeiling.MaxLevel);

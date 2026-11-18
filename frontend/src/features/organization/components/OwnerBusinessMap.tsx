@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Award, BookOpen, Building2, FlaskConical, Layers3, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, Award, BookOpen, Building2, ClipboardCheck, Layers3, TrendingUp, Users } from 'lucide-react';
 import { useReportsOverview } from '@/hooks/use-analytics';
 import { useCertificates } from '@/hooks/use-learning';
 import { useOrganizationOverview } from '@/hooks/use-organization';
@@ -11,7 +11,7 @@ import './owner-business-map.css';
 
 const branches = [
   { id: 'people', label: 'Cơ cấu đội ngũ', icon: Users, path: '/enterprise/members', tone: 'blue' },
-  { id: 'assessment', label: 'Đánh giá đội ngũ', icon: FlaskConical, path: '/enterprise/trial', tone: 'blue' },
+  { id: 'assessment', label: 'Khảo sát năng lực số', icon: ClipboardCheck, path: '/enterprise/trial', tone: 'blue' },
   { id: 'standards', label: 'Khung năng lực số', icon: Layers3, path: '/enterprise/setup', tone: 'violet' },
   { id: 'courses', label: 'Khóa học', icon: BookOpen, path: '/enterprise/courses', tone: 'teal' },
   { id: 'certificates', label: 'Chứng nhận', icon: Award, path: '/enterprise/certificates', tone: 'violet' },

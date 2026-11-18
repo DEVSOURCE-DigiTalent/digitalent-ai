@@ -150,7 +150,7 @@ describe('enterprise trial dashboard UI', () => {
 });
 
 describe('trial sidebar', () => {
-  // Since bb63ee0 a trial owner uses the full owner menu; the trial itself is its "Đánh giá đội ngũ" entry (OW-T1).
+  // Since bb63ee0 a trial owner uses the full owner menu; the trial itself is its "Khảo sát năng lực số" entry (OW-T1).
   it('gives a trial owner the owner menu with the team assessment entry', () => {
     const owner = {
       id: 'owner-1', email: 'owner@example.test', fullName: 'Owner', roles: ['OWNER'], permissions: [],
@@ -161,6 +161,6 @@ describe('trial sidebar', () => {
     expect(sidebarFor(owner)).toBe(OWNER_SIDEBAR);
     expect(sidebarFor({ ...owner, roles: ['OWNER', 'EMPLOYEE'] })).toBe(OWNER_SIDEBAR);
     expect(sidebarFor({ ...owner, enterpriseTrialStatus: 'converted' })).toBe(OWNER_SIDEBAR);
-    expect(OWNER_SIDEBAR.find((item) => item.screenId === 'OW-T1')?.label).toBe('Đánh giá đội ngũ');
+    expect(OWNER_SIDEBAR.find((item) => item.screenId === 'OW-T1')?.label).toBe('Khảo sát năng lực số');
   });
 });

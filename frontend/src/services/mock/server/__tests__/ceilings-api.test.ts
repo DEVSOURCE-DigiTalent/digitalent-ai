@@ -56,15 +56,14 @@ describe('capability ceilings (Phạm vi năng lực)', () => {
     expect(department(matrix, 'dep-kd').ceilings.map((c) => c.level)).toEqual([3, 2, 3, 2, 1, 2]);
   });
 
-  it('blocks a department ceiling above the organization ceiling', async () => {
+  it('lets a department aim above the owned courses (set first, buy later)', async () => {
     asUser('mock-owner');
-    const result = await failure(
-      call('put', '/capability-ceilings/departments/dep-kd', { ceilings: [{ categoryId: 'cat-5', level: 2 }] }),
-    );
-    expect(result).toEqual({ status: 400, codes: ['CEILING_ABOVE_ORGANIZATION'] });
+    const matrix = await call('put', '/capability-ceilings/departments/dep-kd', { ceilings: [{ categoryId: 'cat-5', level: 2 }] });
+    expect(matrix.domains.find((domain) => domain.categoryId === 'cat-5')?.organizationCeiling).toBe(1);
+    expect(department(matrix, 'dep-kd').ceilings[4]).toMatchObject({ level: 2, isCustomized: true });
   });
 
-  it('lowers department ceilings when the organization ceiling drops', async () => {
+  it('keeps every owned course for the company when the legacy organization endpoint lowers departments', async () => {
     asUser('mock-owner');
     const ceilings = ['cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'].map((categoryId) => ({
       categoryId,
@@ -72,7 +71,7 @@ describe('capability ceilings (Phạm vi năng lực)', () => {
     }));
     const matrix = await call('put', '/capability-ceilings/organization', { ceilings });
 
-    expect(levels(matrix)).toEqual([2, 2, 1, 2, 1, 2]);
+    expect(levels(matrix)).toEqual([3, 2, 3, 2, 1, 2]);
     expect(matrix.adjustedDepartmentCount).toBe(1); // Marketing had Sáng tạo nội dung at 3
     expect(department(matrix, 'dep-mkt').ceilings[2].level).toBe(1);
   });

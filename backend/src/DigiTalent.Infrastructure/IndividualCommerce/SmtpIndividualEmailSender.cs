@@ -6,6 +6,7 @@ using DigiTalent.Application.IndividualCommerce;
 using DigiTalent.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DigiTalent.Infrastructure.Email;
 
 namespace DigiTalent.Infrastructure.IndividualCommerce;
 
@@ -106,7 +107,7 @@ public class SmtpIndividualEmailSender : IIndividualEmailSender
             };
             mailMessage.To.Add(recipientEmail);
 
-            await client.SendMailAsync(mailMessage, cancellationToken);
+            await client.SendWithTimeoutAsync(mailMessage, cancellationToken);
 
             outboxItem.Status = EmailOutboxStatuses.Sent;
             outboxItem.SentAt = DateTimeOffset.UtcNow;

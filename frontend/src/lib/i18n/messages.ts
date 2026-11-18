@@ -117,6 +117,8 @@ CHỦ DOANH NGHIỆP|BUSINESS OWNER
 CÁC CÔNG CỤ KHÁC|OTHER TOOLS
 Các công cụ khác|Other tools
 Đánh giá đội ngũ|Team assessment
+Khảo sát năng lực số|Digital skills survey
+Kết quả khảo sát năng lực số|Digital skills survey results
 Đánh Giá Năng Lực Đội Ngũ|Team competency assessment
 Khung năng lực số|Digital competency framework
 Nhân sự|People
