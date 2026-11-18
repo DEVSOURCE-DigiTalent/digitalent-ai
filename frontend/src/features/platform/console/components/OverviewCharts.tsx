@@ -404,13 +404,12 @@ export function OrganizationDonutCard({ data, trials }: OrganizationDonutCardPro
   ], [data.paidOrganizationCount, data.suspendedOrganizationCount, data.trialOrganizationCount]);
 
   const trialSlices = useMemo<DonutSliceDatum[]>(() => {
-    const requested = trials.filter((t) => t.stage === 'REQUESTED').length;
-    const assigned = trials.filter((t) => t.stage === 'ASSIGNED').length;
+    // Survey progress only: the mentor is given automatically when the survey starts, so it is not a stage here.
+    const taking = trials.filter((t) => t.stage === 'REQUESTED' || t.stage === 'ASSIGNED').length;
     const reported = trials.filter((t) => t.stage === 'REPORTED').length;
     const setup = trials.filter((t) => t.stage === 'SETUP').length;
     return [
-      { key: 'requested', label: 'Chờ phân công mentor', value: requested, color: '#b45309', to: '/platform/trials' },
-      { key: 'assigned', label: 'Đang chấm', value: assigned, color: '#b85c24', to: '/platform/trials' },
+      { key: 'taking', label: 'Đang làm khảo sát', value: taking, color: '#b45309', to: '/platform/trials' },
       { key: 'reported', label: 'Đã có báo cáo', value: reported, color: '#15803d', to: '/platform/trials' },
       { key: 'setup', label: 'Chưa gửi yêu cầu', value: setup, color: '#64748b', to: '/platform/trials' },
     ];

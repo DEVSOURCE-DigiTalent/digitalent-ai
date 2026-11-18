@@ -56,7 +56,12 @@ public class TrialProgramFlowTests
         {
             TestDeadline = world.Clock.Now.AddDays(2),
         });
-        request.Stage.Should().Be(TrialProgramRules.StageRequested);
+        // Starting the survey gives the organization a mentor right away (the only mentor of the test world).
+        request.Stage.Should().Be(TrialProgramRules.StageAssigned);
+        var mentorUser = await world.UserAsync("mentor@digitalent.ai");
+        (await world.Context.TrialWorkspaces.AsNoTracking().SingleAsync()).MentorUserId.Should().Be(mentorUser.Id);
+        (await world.Context.Notifications.CountAsync(n => n.RecipientUserId == mentorUser.Id && n.Type == TrialProgramRules.NotificationMentorAssigned))
+            .Should().Be(1);
         var platform = await world.UserAsync("platform@digitalent.ai");
         (await world.Context.Notifications.CountAsync(n => n.RecipientUserId == platform.Id && n.Type == TrialProgramRules.NotificationRequested))
             .Should().Be(1);
@@ -242,6 +247,55 @@ public class TrialProgramFlowTests
         (await new GetMentorsUseCase(world.Context).ExecuteAsync(new GetMentorsUseCaseInput())).Items.Single(m => m.UserId == mentor.Id)
             .ActiveTrials.Should().Be(0);
         (await again.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("TRIAL_CONVERTED");
+    }
+
+    [Fact]
+    public async Task Mentors_are_assigned_automatically_to_the_least_busy_one_and_the_rest_with_one_click()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var owner = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var busy = await world.UserAsync("mentor@digitalent.ai");
+        var mentorRole = await world.Context.Roles.SingleAsync(r => r.Code == Roles.Mentor);
+        var free = new User { Email = "mentor2@digitalent.ai", DisplayName = "Mentor Rảnh", PasswordHash = "x" };
+        free.UserRoles.Add(new UserRole { RoleId = mentorRole.Id, AssignedAt = world.Clock.Now });
+        var locked = new User { Email = "mentor3@digitalent.ai", DisplayName = "Mentor Khóa", PasswordHash = "x", Status = Statuses.User.Locked };
+        locked.UserRoles.Add(new UserRole { RoleId = mentorRole.Id, AssignedAt = world.Clock.Now });
+        world.Context.Users.AddRange(free, locked);
+
+        // mentor@ already has two trial organizations; three more asked for a survey and have no mentor yet.
+        TrialWorkspace Trial(string code, Guid? mentor, int requestedDaysAgo)
+        {
+            var org = new DigiTalent.Domain.Entities.Organization { Code = code, Name = $"Dùng thử {code}", Status = Statuses.Organization.Active };
+            world.Context.Organizations.Add(org);
+            var trial = new TrialWorkspace
+            {
+                OrganizationId = org.Id, OwnerUserId = owner.Id, PolicyJson = "{}", MentorUserId = mentor,
+                MentorAssignedAt = mentor == null ? null : world.Clock.Now.AddDays(-5),
+                StartedAt = world.Clock.Now.AddDays(-6), EndsAt = world.Clock.Now.AddDays(30), RequestedAt = world.Clock.Now.AddDays(-requestedDaysAgo),
+            };
+            world.Context.TrialWorkspaces.Add(trial);
+            return trial;
+        }
+        Trial("TRIAL-B1", busy.Id, 5);
+        Trial("TRIAL-B2", busy.Id, 5);
+        var first = Trial("TRIAL-W1", null, 3);
+        var second = Trial("TRIAL-W2", null, 2);
+        var third = Trial("TRIAL-W3", null, 1);
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+
+        var platform = await TrialAsAsync(world, "mentor@digitalent.ai", Roles.PlatformAdmin);
+        var result = await platform.AutoAssign.ExecuteAsync(new AutoAssignTrialMentorsUseCaseInput());
+
+        // Oldest request first: the free mentor takes it, then loads are 2 vs 1, then 2 vs 2 → the one assigned longest ago.
+        result.Remaining.Should().Be(0);
+        result.Assigned.Select(a => (a.OrganizationId, a.MentorUserId)).Should().Equal(
+            (first.OrganizationId, free.Id), (second.OrganizationId, free.Id), (third.OrganizationId, busy.Id));
+        result.Assigned.Should().NotContain(a => a.MentorUserId == locked.Id);
+        (await world.Context.TrialWorkspaces.CountAsync(t => t.MentorUserId == null && t.RequestedAt != null)).Should().Be(0);
+
+        // Nothing left to do on a second click.
+        (await platform.AutoAssign.ExecuteAsync(new AutoAssignTrialMentorsUseCaseInput())).Assigned.Should().BeEmpty();
     }
 
     [Fact]
@@ -567,7 +621,8 @@ public class TrialProgramFlowTests
         ReviewTrialEssaysWithAiUseCase AiReview,
         PublishTrialReportUseCase Publish,
         JoinTrialAsParticipantUseCase Join,
-        PulseReviewScope ReviewScope);
+        PulseReviewScope ReviewScope,
+        AutoAssignTrialMentorsUseCase AutoAssign);
 
     private static async Task<TrialUseCases> TrialAsAsync(PulseTestWorld world, string email, string role)
     {
@@ -610,6 +665,7 @@ public class TrialProgramFlowTests
             new ReviewTrialEssaysWithAiUseCase(context, reader, ai),
             new PublishTrialReportUseCase(context, reader),
             new JoinTrialAsParticipantUseCase(context, reader),
-            new PulseReviewScope(context, new DigiTalent.Application.Common.Authorization.EmployeeScope(context, current.Object), current.Object));
+            new PulseReviewScope(context, new DigiTalent.Application.Common.Authorization.EmployeeScope(context, current.Object), current.Object),
+            new AutoAssignTrialMentorsUseCase(context, reader, Mock.Of<IAuditService>()));
     }
 }

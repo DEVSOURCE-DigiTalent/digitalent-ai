@@ -36,6 +36,16 @@ public class PlatformTrialsController : ControllerBase
         return Ok(ApiResponse<AssignTrialMentorUseCaseOutput>.Ok(result, "Đã phân công mentor."));
     }
 
+    // POST api/v1/platform/trials/auto-assign — every trial organization without a mentor gets one (when a mentor is free)
+    [HttpPost("trials/auto-assign")]
+    [HasPermission(Permissions.Platform.TrialManage)]
+    public async Task<ActionResult<ApiResponse<AutoAssignTrialMentorsUseCaseOutput>>> AutoAssignMentors(
+        [FromServices] IUseCase<AutoAssignTrialMentorsUseCaseInput, AutoAssignTrialMentorsUseCaseOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new AutoAssignTrialMentorsUseCaseInput());
+        return Ok(ApiResponse<AutoAssignTrialMentorsUseCaseOutput>.Ok(result, "Đã tự phân công mentor."));
+    }
+
     // GET api/v1/platform/mentors
     [HttpGet("mentors")]
     [HasPermission(Permissions.Platform.TrialManage)]

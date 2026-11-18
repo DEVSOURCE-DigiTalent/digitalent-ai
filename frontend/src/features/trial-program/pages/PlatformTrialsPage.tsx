@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   useAssignMentor,
+  useAutoAssignMentors,
   useCreateMentor,
   useMentors,
   usePlatformTrials,
@@ -12,7 +13,7 @@ import { LoadError } from '@/features/platform/components/pulse-ui';
 import { errorMessage, initials } from '@/features/platform/components/pulse-format';
 import { PlatformDrawer } from '@/features/platform/components/PlatformDrawer';
 import { PlatformTrialsSkeleton } from './PlatformTrialsSkeleton';
-import { MENTOR_MAX_ORGANIZATIONS, isTrialLearning, trialNeedsMentor } from '../lib/trial-mentor';
+import { MENTOR_MAX_ORGANIZATIONS, isTrialMentorScope, trialNeedsMentor } from '../lib/trial-mentor';
 import {
   Calendar,
   Check,
@@ -86,7 +87,7 @@ function getDeadlineStatus(t: PlatformTrialItem) {
   return null;
 }
 
-const isLearning = isTrialLearning;
+const isLearning = isTrialMentorScope;
 const needsMentor = trialNeedsMentor;
 
 /** The mentor can be set or changed before the report; after it, only set once (the backend refuses a change). */
@@ -196,6 +197,7 @@ export function PlatformMentorsPage() {
 function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
   const trials = usePlatformTrials();
   const mentors = useMentors();
+  const autoAssign = useAutoAssignMentors();
 
   const [tab, setTab] = useState<SurveyTab>('ALL');
   const [learningTab, setLearningTab] = useState<LearningTab>('ALL');
@@ -354,6 +356,26 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
     return result;
   }, [learningList, learningTab, mentorFilter]);
 
+  // Organizations that started the survey and still have no mentor (the automatic choice found none free).
+  const withoutMentor = useMemo(() => trialsList.filter(needsMentor).length, [trialsList]);
+  const runAutoAssign = () =>
+    autoAssign.mutate(undefined, {
+      onSuccess: (result) => {
+        const done = result?.assigned.length ?? 0;
+        const left = result?.remaining ?? 0;
+        if (done === 0 && left > 0) {
+          toast.warning(`Mọi mentor đã đủ ${MENTOR_MAX_ORGANIZATIONS} tổ chức. Thêm mentor rồi thử lại.`);
+          return;
+        }
+        toast.success(
+          left > 0
+            ? `Đã phân công ${done} tổ chức. Còn ${left} tổ chức chưa có mentor trống.`
+            : `Đã phân công mentor cho ${done} tổ chức.`,
+        );
+      },
+      onError: (err) => toast.error(errorMessage(err)),
+    });
+
   const showLearning = (target: LearningTab) => {
     setLearningTab((prev) => (prev === target ? 'ALL' : target));
     learningSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -478,7 +500,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                     {waitingTotals.unattended} bài nộp chưa ai chấm được
                   </span>
                 ) : (
-                  <span className="pa-tr-kpi-sub-neutral">tổ chức đang học chưa có mentor</span>
+                  <span className="pa-tr-kpi-sub-neutral">tổ chức chưa có mentor</span>
                 )}
               </div>
             </button>
@@ -497,7 +519,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
               </div>
               <div className="pa-tr-kpi-val-row">
                 <span className="pa-ov-kpi-val">{waitingTotals.all}</span>
-                <span className="pa-tr-kpi-sub-neutral">ở {learningCounts.WAITING} tổ chức đang học</span>
+                <span className="pa-tr-kpi-sub-neutral">ở {learningCounts.WAITING} tổ chức</span>
               </div>
             </button>
             <button
@@ -737,12 +759,24 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
             <div className="pa-ov-panel-head" style={{ marginBottom: 12 }}>
               <div>
                 <h2 id="trials-learning-heading" className="pa-ov-panel-title">
-                  Mentor chấm bài học
+                  Tổ chức và mentor phụ trách
                 </h2>
                 <p className="pa-ov-panel-sub">
-                  Tổ chức đã có báo cáo: nhân viên học 6 lĩnh vực × 3 cấp và nộp bài cuối cấp. Ở tổ chức dùng thử chỉ mentor được giao mới chấm được, nên tổ chức nào cũng cần một mentor.
+                  Mentor được tự phân công khi chủ doanh nghiệp bắt đầu khảo sát và chấm bài cuối cấp khi nhân viên học (sau khi có báo cáo). Tổ chức nào chưa có mentor là do lúc đó mọi mentor đã đủ {MENTOR_MAX_ORGANIZATIONS} tổ chức.
                 </p>
               </div>
+              {withoutMentor > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-small inline-flex items-center gap-1.5"
+                  onClick={runAutoAssign}
+                  disabled={autoAssign.isPending}
+                  title="Giao mentor đang ít việc nhất cho từng tổ chức chưa có mentor"
+                >
+                  <UserPlus size={14} aria-hidden="true" />
+                  <span>{autoAssign.isPending ? 'Đang phân công…' : `Tự phân công (${withoutMentor})`}</span>
+                </button>
+              )}
             </div>
 
             <div className="pa-tr-toolbar">
@@ -882,17 +916,17 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                 </div>
                 <p className="pa-ov-empty-text">
                   {learningList.length === 0
-                    ? 'Chưa có tổ chức dùng thử nào có báo cáo, nên chưa có nhân viên học.'
+                    ? 'Chưa có tổ chức dùng thử nào bắt đầu khảo sát.'
                     : 'Không có tổ chức nào khớp bộ lọc.'}
                 </p>
               </div>
             ) : (
-              <div tabIndex={0} role="region" aria-label="Bảng mentor chấm bài học" className="pa-tr-table-scroll">
+              <div tabIndex={0} role="region" aria-label="Bảng tổ chức và mentor phụ trách" className="pa-tr-table-scroll">
                 <table className="pa-tr-table">
                   <thead>
                     <tr>
                       <th style={{ width: '32%' }}>Tổ chức</th>
-                      <th style={{ width: '20%' }}>Học</th>
+                      <th style={{ width: '20%' }}>Nhân viên đang học</th>
                       <th style={{ width: '16%' }}>Bài cuối cấp chờ chấm</th>
                       <th style={{ width: '20%' }}>Mentor</th>
                       <th style={{ width: '12%' }} className="is-right">
@@ -918,12 +952,23 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                           </td>
 
                           <td>
-                            <div style={{ display: 'grid', gap: 2, fontSize: 13.5 }}>
-                              <strong>{t.coursesPurchased ?? 0} khóa đã mua</strong>
-                              <span style={{ color: 'var(--pa-ink-2)', fontSize: 12.5 }}>
-                                {learners > 0 ? `${learners} nhân viên đang học` : 'Chưa ai bắt đầu học'}
-                              </span>
-                            </div>
+                            {t.stage === 'REPORTED' ? (
+                              learners > 0 ? (
+                                <span style={{ fontSize: 13.5 }}>
+                                  <strong>{learners} nhân viên</strong> đang học
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: 13, color: 'var(--pa-ink-3)' }}>Chưa ai bắt đầu học</span>
+                              )
+                            ) : (
+                              // Still taking the survey: nothing to learn or grade yet.
+                              <div style={{ display: 'grid', gap: 2, fontSize: 13.5 }}>
+                                <strong style={{ color: 'var(--pa-amber)' }}>Đang làm khảo sát</strong>
+                                <span style={{ color: 'var(--pa-ink-2)', fontSize: 12.5 }}>
+                                  {t.submitted}/{t.participants} người đã nộp
+                                </span>
+                              </div>
+                            )}
                           </td>
 
                           <td>
@@ -1613,7 +1658,7 @@ function MentorAssignedTrialsDrawer({
                 <div className="pa-tr-mentor-trial-dates" style={{ fontSize: 12.5, color: 'var(--pa-ink-2)' }}>
                   {t.converted
                     ? 'Đã lên gói chính thức: bài vào hàng chờ chung'
-                    : `${t.coursesPurchased ?? 0} khóa đã mua · ${t.learners ?? 0} nhân viên đang học · ${waiting} bài chờ chấm`}
+                    : `${t.learners ?? 0} nhân viên đang học · ${waiting} bài chờ chấm`}
                 </div>
 
                 <div className="pa-tr-mentor-trial-actions">

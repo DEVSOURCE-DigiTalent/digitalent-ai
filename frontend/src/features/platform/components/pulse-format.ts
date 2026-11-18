@@ -106,6 +106,7 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   PULSE_FINAL_DECIDED: 'Chấm bài cuối khóa',
   PULSE_PRE_ASSESSMENT_DECIDED: 'Duyệt bài đầu vào',
   TRIAL_MENTOR_ASSIGNED: 'Phân công mentor',
+  TRIAL_MENTOR_AUTO_ASSIGNED: 'Tự phân công mentor',
   TRIAL_CREATED: 'Tạo đợt dùng thử',
   TRIAL_FEEDBACK_SUBMITTED: 'Gửi góp ý dùng thử',
   MENTOR_CREATED: 'Tạo tài khoản mentor',

@@ -257,7 +257,7 @@ public class OwnerSurveyFlowTests
 
 
         var live = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
-        live.Stage.Should().Be(TrialProgramRules.StageRequested);
+        live.Stage.Should().Be(TrialProgramRules.StageAssigned); // mentor given automatically when the survey started
         live.Report!.Employees.Should().ContainSingle().Which.AssessmentId.Should().Be(assessment.Id);
         live.Report.Summary.Should().OnlyContain(domain => domain.Counts.Sum() == 1);
         live.Report.Summary.Single(d => d.CategoryId == categories[0].CategoryId).Counts.Should().Equal(0, 0, 1, 0);
@@ -280,7 +280,7 @@ public class OwnerSurveyFlowTests
         world.Context.TrialAssessments.Add(assessment);
         await world.Context.SaveChangesAsync();
         var live = await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
-        live.Stage.Should().Be(TrialProgramRules.StageRequested);
+        live.Stage.Should().Be(TrialProgramRules.StageAssigned); // mentor given automatically when the survey started
         live.Report!.Assessed.Should().Be(1);
         live.Report.PublishedAt.Should().BeNull();
         live.ReportPublishedAt.Should().BeNull();
