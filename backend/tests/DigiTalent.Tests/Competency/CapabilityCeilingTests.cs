@@ -15,7 +15,10 @@ using Xunit;
 
 namespace DigiTalent.Tests.Competency;
 
-/// <summary>Trần nhà (OW-05): trần phòng ban ≤ trần doanh nghiệp ≤ trần Digital AI, xét từng lĩnh vực.</summary>
+/// <summary>
+/// Khung năng lực (OW-05): toàn doanh nghiệp = mọi khóa đã có (Cơ bản + khóa đã mua); phòng ban đặt mức riêng, không vượt
+/// khóa đã có, xét từng lĩnh vực.
+/// </summary>
 public class CapabilityCeilingTests : IDisposable
 {
     private readonly AppDbContext _context;
@@ -83,48 +86,69 @@ public class CapabilityCeilingTests : IDisposable
         });
 
     [Fact]
-    public async Task Get_BeforeSaving_ShowsSuggestionAndDigitalAiCeiling()
+    public async Task Get_WholeCompanyIsEveryOwnedCourse_AndDepartmentsUseItUntilTheyGetTheirOwnLevel()
     {
         var output = await new GetCapabilityCeilingsUseCase(_currentUser.Object, _reader).ExecuteAsync(new GetCapabilityCeilingsUseCaseInput());
 
-        output.IsConfigured.Should().BeFalse();
         output.PlatformCourseCount.Should().Be(6);
-        output.Domains.Select(d => d.OrganizationCeiling).Should().Equal(1, 1);
+        output.Domains.Select(d => d.OrganizationCeiling).Should().Equal(3, 3);
         output.Departments.Single().IsCustomized.Should().BeFalse();
+        output.Departments.Single().Ceilings.Select(c => c.Level).Should().Equal(3, 3);
+
+        // Nothing bought for AI: only its free Basic course is owned.
+        var aiCourseIds = await _context.PlatformCourses.Where(c => c.Code.StartsWith("M6-")).Select(c => c.Id).ToListAsync();
+        _context.CourseOrders.RemoveRange(_context.CourseOrders.Where(o => aiCourseIds.Contains(o.CourseId)));
+        await _context.SaveChangesAsync();
+        var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(_orgId);
+        matrix.Domains.Select(d => d.OrganizationCeiling).Should().Equal(3, 1);
     }
 
     [Fact]
-    public async Task UpdateDepartment_BeforeOrganization_IsRejected()
+    public async Task UpdateDepartment_NeedsNoCompanyLevelFirst()
     {
-        var action = () => SaveDepartment(1);
+        var output = await SaveDepartment(2);
 
-        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("ORGANIZATION_CEILING_REQUIRED");
+        output.Departments.Single().Ceilings.Single(c => c.CategoryId == _dataId)
+            .Should().BeEquivalentTo(new { Level = 2, IsCustomized = true });
     }
 
     [Fact]
-    public async Task UpdateDepartment_AboveOrganization_IsRejected()
+    public async Task UpdateDepartment_CanAimAboveTheOwnedCourses_SetFirstBuyLater()
     {
-        await SaveOrganization(data: 2, ai: 3);
+        var advanced = await _context.PlatformCourses.SingleAsync(c => c.Code == "M1-A");
+        _context.CourseOrders.RemoveRange(_context.CourseOrders.Where(o => o.CourseId == advanced.Id));
+        await _context.SaveChangesAsync();
 
-        var action = () => SaveDepartment(3);
+        var output = await SaveDepartment(3);
 
-        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("CEILING_ABOVE_ORGANIZATION");
+        output.Domains.Single(d => d.CategoryId == _dataId).OrganizationCeiling.Should().Be(2, "M1-A is not bought yet");
+        output.Departments.Single().Ceilings.Single(c => c.CategoryId == _dataId)
+            .Should().BeEquivalentTo(new { Level = 3, IsCustomized = true });
     }
 
     [Fact]
-    public async Task UpdateDepartment_UsesTheSameEffectiveOrganizationCeilingAsTheMatrix()
+    public async Task UpdateDepartment_UnknownDomain_IsRejected()
     {
-        await SaveOrganization(data: 2, ai: 1);
+        var action = () => DepartmentUseCase().ExecuteAsync(new UpdateDepartmentCeilingsUseCaseInput
+        {
+            DepartmentId = _deptId,
+            Ceilings = { new CeilingInputItem { CategoryId = Guid.NewGuid(), Level = 1 } },
+        });
+
+        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("CATEGORY_NOT_IN_MATRIX");
+    }
+
+    [Fact]
+    public async Task UpdateDepartment_KeepsItsLevelWhileTheCompanyOwnsOnlyBasic()
+    {
         var dataCourseIds = await _context.PlatformCourses.Where(c => c.Code.StartsWith("M1-")).Select(c => c.Id).ToListAsync();
         _context.CourseOrders.RemoveRange(_context.CourseOrders.Where(o => dataCourseIds.Contains(o.CourseId)));
         await _context.SaveChangesAsync();
 
         var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(_orgId);
         matrix.Domains.Single(d => d.CategoryId == _dataId).OrganizationCeiling.Should().Be(1);
-        (await FluentActions.Invoking(() => SaveDepartment(2)).Should().ThrowAsync<BadRequestException>())
-            .Which.Errors.Single().Code.Should().Be("CEILING_ABOVE_ORGANIZATION");
-        var saved = await SaveDepartment(1);
-        saved.Departments.Single().Ceilings.Single(c => c.CategoryId == _dataId).Level.Should().Be(1);
+        var saved = await SaveDepartment(2);
+        saved.Departments.Single().Ceilings.Single(c => c.CategoryId == _dataId).Level.Should().Be(2);
     }
 
     [Fact]
@@ -136,11 +160,12 @@ public class CapabilityCeilingTests : IDisposable
 
         var output = await SaveOrganization(data: 1, ai: 2);
 
+        // Legacy endpoint (no longer used by OW-05): it still lowers department levels, the company keeps every owned course.
         output.AdjustedDepartmentCount.Should().Be(1);
-        output.OrganizationCourseCount.Should().Be(3);
+        output.OrganizationCourseCount.Should().Be(6);
         var ceilings = output.Departments.Single().Ceilings;
         ceilings.Single(c => c.CategoryId == _dataId).Should().BeEquivalentTo(new { Level = 1, IsCustomized = true });
-        ceilings.Single(c => c.CategoryId == _aiId).Should().BeEquivalentTo(new { Level = 2, IsCustomized = false });
+        ceilings.Single(c => c.CategoryId == _aiId).Should().BeEquivalentTo(new { Level = 3, IsCustomized = false });
     }
 
     [Fact]
@@ -159,11 +184,14 @@ public class CapabilityCeilingTests : IDisposable
     {
         var legacyCourse = await _context.PlatformCourses.SingleAsync(c => c.Code == "M1-I");
         legacyCourse.Code = "A1-I";
+        var advanced = await _context.PlatformCourses.SingleAsync(c => c.Code == "M1-A");
+        _context.CourseOrders.RemoveRange(_context.CourseOrders.Where(o => o.CourseId == advanced.Id));
         await _context.SaveChangesAsync();
 
         var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(_orgId);
         matrix.Domains.Single(d => d.CategoryId == _dataId).Courses.Single(c => c.Code == "M1-I")
             .IsUnlocked.Should().BeTrue();
+        matrix.Domains.Single(d => d.CategoryId == _dataId).OrganizationCeiling.Should().Be(2, "the order on the A-code owns M1-I");
 
         var saved = await SaveOrganization(data: 2, ai: 1);
         saved.Domains.Single(d => d.CategoryId == _dataId).OrganizationCeiling.Should().Be(2);
@@ -250,13 +278,12 @@ public class CapabilityCeilingTests : IDisposable
     [Fact]
     public async Task UpdateDepartment_Inherit_DropsOwnCeilings()
     {
-        await SaveOrganization(data: 2, ai: 2);
         await SaveDepartment(1);
 
         var output = await DepartmentUseCase().ExecuteAsync(new UpdateDepartmentCeilingsUseCaseInput { DepartmentId = _deptId, Inherit = true });
 
         output.Departments.Single().IsCustomized.Should().BeFalse();
-        output.Departments.Single().CourseCount.Should().Be(4);
+        output.Departments.Single().CourseCount.Should().Be(6, "back to every course the company owns");
         (await _context.CapabilityCeilings.CountAsync(c => c.DepartmentId == _deptId)).Should().Be(0);
     }
 

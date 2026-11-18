@@ -1,59 +1,80 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { X, Info, Building2, Users, ChevronDown, Check, Search, ArrowRight, Layers3, Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit } from 'lucide-react';
 import {
-  useCapabilityCeilings,
-  useUpdateDepartmentCeilings,
-  useUpdateOrganizationCeilings,
-} from '@/hooks/use-capability-ceilings';
+  ArrowRight, BookOpenCheck, BrainCircuit, Check, ChevronDown, ChevronLeft, ChevronRight, Database, Flag, HelpCircle, Info, Layers3,
+  Lightbulb, Lock, MessagesSquare, PenTool, ShieldCheck, ShoppingCart, Sparkles, Users, X,
+} from 'lucide-react';
+import { useCapabilityCeilings, useUpdateDepartmentCeilings } from '@/hooks/use-capability-ceilings';
+import { useJobPosition } from '@/hooks/use-job-positions';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { organizationErrorMessage } from '@/lib/organization-errors';
 import { SectionLoading } from '@/components/shared/LoadingState';
-import type { CapabilityCeilings, CeilingCourse, CeilingDomain } from '@/services/capability-ceiling.service';
+import type { CeilingCourse, CeilingDepartment, CeilingDomain, CeilingLevel } from '@/services/capability-ceiling.service';
 import { CoursePositionStandardPanel } from './CoursePositionStandardPanel';
-import { DomainPositionStandardPanel } from './DomainPositionStandardPanel';
 import { CapabilityCeilingGuide } from './CapabilityCeilingGuide';
+import { OwnerFilterSelect } from './OwnerFilterSelect';
 import './capability-ceiling.css';
+import './capability-matrix.css';
 import './owner-filter-controls.css';
 
-/** Phạm vi đang xem: cả doanh nghiệp hoặc id của một phòng ban. */
-const ALL = 'all';
-const DOMAIN_ICONS = [Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit];
-
+/**
+ * OW-05 · Khung năng lực số, two views kept apart:
+ * - "Khóa học của doanh nghiệp" (buying): every course the company owns (Basic free, Intermediate / Advanced once bought),
+ *   where it is used, and the courses departments need but the company has not bought yet. The cart lives here.
+ * - "Năng lực từng phòng ban" (setting): a department list on the side, and per domain the highest level the selected
+ *   department must reach. A level may be set before its course is bought (set first, buy later).
+ */
+type View = 'courses' | 'departments';
 type Levels = Record<string, number>;
-type MatrixSelection = { kind: 'domain'; categoryId: string } | { kind: 'course'; categoryId: string; level: number };
+type CourseSelection = { categoryId: string; level: number };
+type CartItem = { code: string; title: string; level: number; domainName: string; price: number };
+
+const DOMAIN_ICONS = [Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit];
+const LEVEL_NAMES = ['—', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
+const NEED_BADGES = 3;
+
+const isOwned = (course: CeilingCourse) => Boolean(course.courseId) && (course.level === 1 || course.isUnlocked === true);
+const money = (value: number) => `${value.toLocaleString('vi-VN')} đ`;
+const courseCode = (course: CeilingCourse, domain: CeilingDomain) => course.code || `M${domain.sortOrder}-${course.level === 2 ? 'I' : 'A'}`;
+
+/** Two letters for a department badge, without the "Phòng" / "Ban" prefix: "Phòng Tài chính - Kế toán" → "TC". */
+function initialsOf(name: string): string {
+  const words = name.replace(/^(phòng|ban|bộ phận)\s+/iu, '').split(/[\s&,-]+/u).filter(Boolean);
+  return words.slice(0, 2).map((word) => word[0]).join('').toLocaleUpperCase('vi') || '?';
+}
+
+/** Levels the owner set for a department (only the domains set on purpose). */
+function ownLevels(department: CeilingDepartment | undefined): Levels {
+  return Object.fromEntries((department?.ceilings ?? []).filter((c) => c.isCustomized).map((c) => [c.categoryId, c.level]));
+}
 
 const sameLevels = (a: Levels, b: Levels) =>
   Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((key) => a[key] === b[key]);
 
-function organizationLevels(matrix: CapabilityCeilings): Levels {
-  return Object.fromEntries(matrix.domains.map((d) => [d.categoryId, d.organizationCeiling]));
-}
-
-function departmentLevels(matrix: CapabilityCeilings, departmentId: string): Levels {
-  const department = matrix.departments.find((d) => d.departmentId === departmentId);
-  return Object.fromEntries((department?.ceilings ?? []).map((c) => [c.categoryId, c.level]));
+function viewFromQuery(tab: string | null, positionId: string | null): View {
+  if (positionId || tab === 'departments' || tab === 'positions') return 'departments';
+  return 'courses';
 }
 
 export function CapabilityCeilingMatrix() {
   useUiLanguage();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialPositionId = searchParams.get('positionId');
   const { data: matrix, isLoading, isError } = useCapabilityCeilings();
+  // A link from an employee's position opens the department of that position.
+  const { data: initialPosition } = useJobPosition(initialPositionId ?? '');
   const { can } = usePermission();
   const canEdit = can(PERMISSIONS.POSITION_REQUIREMENT_MANAGE);
-  const saveOrganization = useUpdateOrganizationCeilings();
   const saveDepartment = useUpdateDepartmentCeilings();
-  const [scope, setScope] = useState<string>(ALL);
+  const [view, setView] = useState<View>(() => viewFromQuery(searchParams.get('tab'), initialPositionId));
+  const [departmentId, setDepartmentId] = useState('');
   const [drafts, setDrafts] = useState<Record<string, Levels>>({});
   const [showGuide, setShowGuide] = useState(false);
-  const [isDeptMenuOpen, setIsDeptMenuOpen] = useState(false);
-  const [deptSearch, setDeptSearch] = useState('');
-  const [selectedToBuy, setSelectedToBuy] = useState<Map<string, { code: string; title: string; level: number; domainName: string; price: number }>>(new Map());
+  const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
   const [actionHost, setActionHost] = useState<HTMLElement | null>(null);
   const [actionDock, setActionDock] = useState<HTMLDivElement | null>(null);
   const matrixRoot = useRef<HTMLElement | null>(null);
@@ -61,10 +82,9 @@ export function CapabilityCeilingMatrix() {
     matrixRoot.current = element;
     if (element) setActionHost(element.closest<HTMLElement>('.enterprise-shell') ?? document.body);
   }, []);
-  const [selection, setSelection] = useState<MatrixSelection | null>(null);
-  const [closingSelection, setClosingSelection] = useState<MatrixSelection | null>(null);
-  const [closedInitialPanel, setClosedInitialPanel] = useState(false);
-  const [panelVisible, setPanelVisible] = useState(Boolean(initialPositionId));
+  const [selection, setSelection] = useState<CourseSelection | null>(null);
+  const [closingSelection, setClosingSelection] = useState<CourseSelection | null>(null);
+  const [panelVisible, setPanelVisible] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openFrame = useRef<number | null>(null);
 
@@ -73,6 +93,7 @@ export function CapabilityCeilingMatrix() {
     if (openFrame.current) cancelAnimationFrame(openFrame.current);
   }, []);
 
+  // Keep the page content clear of the floating save / cart bars.
   useEffect(() => {
     const root = matrixRoot.current?.closest<HTMLElement>('.blueprint-page') ?? matrixRoot.current;
     if (!actionDock || !root) return;
@@ -89,469 +110,375 @@ export function CapabilityCeilingMatrix() {
     };
   }, [actionDock]);
 
-  const department = matrix?.departments.find((d) => d.departmentId === scope);
-  const activeScope = scope === ALL || department ? scope : ALL;
+  const departments = useMemo(() => matrix?.departments ?? [], [matrix?.departments]);
+  const toneOf = useMemo(() => new Map(departments.map((d, index) => [d.departmentId, index % 6])), [departments]);
+  const department = departments.find((d) => d.departmentId === departmentId)
+    ?? departments.find((d) => d.departmentId === initialPosition?.departmentId)
+    ?? departments[0];
+  const departmentIndex = Math.max(0, departments.findIndex((d) => d.departmentId === department?.departmentId));
+  // The next department without its own levels, after the current one (wrapping), for a quick "do the next one".
+  const nextUnset = [...departments.slice(departmentIndex + 1), ...departments.slice(0, departmentIndex)].find((d) => !d.isCustomized);
 
-  const filteredDepartments = useMemo(() => {
-    if (!matrix?.departments) return [];
-    if (!deptSearch.trim()) return matrix.departments;
-    const q = deptSearch.toLowerCase().trim();
-    return matrix.departments.filter((d) => d.name.toLowerCase().includes(q));
-  }, [matrix?.departments, deptSearch]);
-
-  const saved = useMemo(() => {
-    if (!matrix) return {};
-    return activeScope === ALL ? organizationLevels(matrix) : departmentLevels(matrix, activeScope);
-  }, [matrix, activeScope]);
-
-  const toggleSelectToBuy = (course: CeilingCourse, domain: CeilingDomain) => {
+  const cartItem = (course: CeilingCourse, domain: CeilingDomain): CartItem => {
+    const code = courseCode(course, domain);
+    return { code, title: course.title || `Khóa học ${code}`, level: course.level, domainName: domain.name, price: course.price || (course.level === 3 ? 699000 : 399000) };
+  };
+  const toggleCart = (course: CeilingCourse, domain: CeilingDomain) => {
     if (!course.courseId) {
       toast.error('Khóa học này chưa có trong danh mục để mua.');
       return;
     }
-    const code = course.code || `M${domain.sortOrder}-${course.level === 2 ? 'I' : 'A'}`;
-    const deselect = selectedToBuy.has(code);
+    const item = cartItem(course, domain);
+    const remove = cart.has(item.code);
     // The updater stays pure: StrictMode runs it twice, so a toast inside it would show twice.
-    setSelectedToBuy((prev) => {
-      const next = new Map(prev);
-      if (deselect) {
-        next.delete(code);
-      } else {
-        next.set(code, {
-          code,
-          title: course.title || `Khóa học ${code}`,
-          level: course.level,
-          domainName: domain.name,
-          price: course.price || (course.level === 3 ? 699000 : 399000),
-        });
-      }
+    setCart((previous) => {
+      const next = new Map(previous);
+      if (remove) next.delete(item.code);
+      else next.set(item.code, item);
       return next;
     });
-    if (deselect) {
-      toast.info(`Đã bỏ chọn khóa ${code}`);
-    } else {
-      toast.success(`Đã chọn khóa ${code} để mua bản quyền`, {
-        description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.',
-      });
-    }
+    if (remove) toast.info(`Đã bỏ chọn khóa ${item.code}`);
+    else toast.success(`Đã chọn khóa ${item.code} để mua bản quyền`, { description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.' });
   };
 
   if (isLoading) {
-    return (
-      <section className="cc-root">
-        <SectionLoading label={translateUi("Đang tải ma trận năng lực")} />
-      </section>
-    );
+    return <section className="cc-root"><SectionLoading label={translateUi('Đang tải khung năng lực')} /></section>;
   }
-
   if (isError || !matrix) {
-    return (
-      <section className="cc-root">
-        <p className="cc-note">{translateUi("Chưa tải được ma trận phạm vi năng lực. Vui lòng thử lại sau.")}</p>
-      </section>
-    );
+    return <section className="cc-root"><p className="cc-note">{translateUi('Chưa tải được khung năng lực. Vui lòng thử lại sau.')}</p></section>;
   }
 
-  const orgSaved = organizationLevels(matrix);
-  const current = drafts[activeScope] ?? saved;
-  const dirty = Boolean(drafts[activeScope]) && !sameLevels(current, saved);
-  const needsInitialSave = activeScope === ALL && !matrix.isConfigured;
-  const saving = saveOrganization.isPending || saveDepartment.isPending;
-  const orgCeiling = activeScope === ALL ? current : orgSaved;
-  const activeSelection = selection ?? (!closedInitialPanel && initialPositionId && matrix.domains[0] ? { kind: 'domain' as const, categoryId: matrix.domains[0].categoryId } : null);
-  const renderedSelection = activeSelection ?? closingSelection;
-  const activeDomain = matrix.domains.find((item) => item.categoryId === renderedSelection?.categoryId);
-  const activeCourse = renderedSelection?.kind === 'course' ? activeDomain?.courses.find((item) => item.level === renderedSelection.level) : undefined;
-  const suggestedLevels: Levels = Object.fromEntries(matrix.domains.map((domain) => [
-    domain.categoryId,
-    Math.min(domain.maxAllowedCeiling ?? 1, Math.max(1, domain.suggestedCeiling)),
-  ]));
-  const hasApplicableSuggestion = activeScope === ALL && !sameLevels(current, suggestedLevels);
+  const activeDepartmentId = department?.departmentId ?? '';
+  const saved = ownLevels(department);
+  const current = drafts[activeDepartmentId] ?? saved;
+  const dirty = view === 'departments' && Boolean(drafts[activeDepartmentId]) && !sameLevels(current, saved);
+  const saving = saveDepartment.isPending;
+  const suggestionOf = (domain: CeilingDomain) => Math.min(3, department?.ceilings.find((c) => c.categoryId === domain.categoryId)?.suggested ?? 0);
+  const suggested: Levels = Object.fromEntries(matrix.domains.map((d) => [d.categoryId, suggestionOf(d)]).filter(([, level]) => Number(level) > 0));
+  const canSuggest = Object.keys(suggested).length > 0 && !sameLevels({ ...current, ...suggested }, current);
 
-  const setDraft = (levels: Levels | null) =>
-    setDrafts((all) => {
-      const next = { ...all };
-      if (levels && !sameLevels(levels, saved)) next[activeScope] = levels;
-      else delete next[activeScope];
-      return next;
-    });
+  const courses = matrix.domains.flatMap((domain) => domain.courses.filter((c) => c.courseId).map((course) => ({ domain, course })));
+  const ownedCount = courses.filter(({ course }) => isOwned(course)).length;
+  const courseTotal = courses.length;
+  const boughtCount = courses.filter(({ course }) => course.level > 1 && isOwned(course)).length;
+  const freeCount = ownedCount - boughtCount;
+  const customizedCount = departments.filter((d) => d.isCustomized).length;
+  const levelOf = (d: CeilingDepartment, domain: CeilingDomain) => d.ceilings.find((c) => c.categoryId === domain.categoryId)?.level ?? 0;
+  const usedBy = (domain: CeilingDomain, level: number) => departments.filter((d) => levelOf(d, domain) >= level);
+  // Courses a department aims at but the company has not bought yet: what to buy next.
+  const neededBy = (domain: CeilingDomain, level: number) => departments.filter((d) => d.isCustomized && levelOf(d, domain) >= level);
+  const needed = courses.filter(({ domain, course }) => !isOwned(course) && neededBy(domain, course.level).length > 0);
+  const neededPrice = needed.reduce((sum, { domain, course }) => sum + cartItem(course, domain).price, 0);
+  const neededInCart = needed.every(({ domain, course }) => cart.has(courseCode(course, domain)));
+  const departmentNeeds = department
+    ? matrix.domains.flatMap((domain) => domain.courses.filter((c) => c.courseId && !isOwned(c) && c.level <= (current[domain.categoryId] ?? 0)))
+    : [];
+  const setDomains = Object.keys(current).length;
+
+  const setDraft = (levels: Levels | null) => setDrafts((all) => {
+    const next = { ...all };
+    if (levels && !sameLevels(levels, saved)) next[activeDepartmentId] = levels;
+    else delete next[activeDepartmentId];
+    return next;
+  });
 
   const pick = (domain: CeilingDomain, level: number) => {
-    if (!canEdit || saving || (activeScope !== ALL && !matrix.isConfigured)) return;
-    const courseAtLevel = domain.courses.find((c) => c.level === level);
-    if (level > 1 && (courseAtLevel?.isUnlocked !== true || level > (domain.maxAllowedCeiling ?? 1))) {
-      if (!courseAtLevel) return;
-      toggleSelectToBuy(courseAtLevel, domain);
-      return;
-    }
-
-    const target = level;
-    if (activeScope !== ALL && target > (orgSaved[domain.categoryId] ?? 0)) {
-      toast.error('Cấp độ áp dụng của phòng ban không được vượt mức doanh nghiệp đã thiết lập.');
-      return;
-    }
-    if (activeScope === ALL && target > (domain.maxAllowedCeiling ?? 1)) return;
-    setDraft({ ...current, [domain.categoryId]: target });
+    if (!canEdit || saving || !department) return;
+    // A level may be set before its course is bought; buying happens in "Khóa học của doanh nghiệp".
+    if (!domain.courses.some((c) => c.level === level && c.courseId)) return;
+    setDraft({ ...current, [domain.categoryId]: level });
   };
 
-  const applySuggestion = () => {
-    setDraft(suggestedLevels);
+  const addNeededToCart = () => {
+    setCart((previous) => {
+      const next = new Map(previous);
+      for (const { domain, course } of needed) next.set(courseCode(course, domain), cartItem(course, domain));
+      return next;
+    });
+    toast.success(`Đã thêm ${needed.length} khóa phòng ban cần vào giỏ`);
   };
 
   const save = async () => {
+    if (!department) return;
     const ceilings = Object.entries(current).map(([categoryId, level]) => ({ categoryId, level }));
-    if (activeScope === ALL && ceilings.some(({ categoryId, level }) => level > (matrix.domains.find((item) => item.categoryId === categoryId)?.maxAllowedCeiling ?? 1))) {
-      toast.error('Có cấp chưa mua khóa học. Chọn khóa để mua trước khi mở rộng phạm vi.');
-      return;
-    }
-    if (activeScope !== ALL && ceilings.some(({ categoryId, level }) => level > (orgSaved[categoryId] ?? 0))) {
-      toast.error('Cấp độ áp dụng của phòng ban không được vượt mức doanh nghiệp đã thiết lập.');
-      return;
-    }
     try {
-      if (activeScope === ALL) {
-        const result = await saveOrganization.mutateAsync(ceilings);
-        const adjustedCount = (result as { adjustedDepartmentCount?: number } | null | undefined)?.adjustedDepartmentCount ?? 0;
-        if (adjustedCount > 0) {
-          toast.info(`Đã lưu phạm vi doanh nghiệp. Đã điều chỉnh ${adjustedCount} phòng ban theo phạm vi mới.`);
-        } else {
-          toast.success('Đã lưu phạm vi năng lực của doanh nghiệp.');
-        }
-      } else {
-        await saveDepartment.mutateAsync({ departmentId: activeScope, data: { inherit: false, ceilings } });
-        toast.success(`Đã lưu phạm vi năng lực cho ${department?.name ?? 'phòng ban'}.`);
-      }
+      await saveDepartment.mutateAsync({ departmentId: department.departmentId, data: { inherit: false, ceilings } });
+      toast.success(`Đã lưu mức năng lực cho ${department.name}.`);
       setDraft(null);
     } catch (error) {
-      toast.error(organizationErrorMessage(error, 'Chưa lưu được phạm vi năng lực.'));
+      toast.error(organizationErrorMessage(error, 'Chưa lưu được mức năng lực.'));
     }
   };
 
-  const inherit = async () => {
-    if (activeScope === ALL) return;
+  const clearDepartment = async () => {
+    if (!department) return;
     try {
-      await saveDepartment.mutateAsync({ departmentId: activeScope, data: { inherit: true, ceilings: [] } });
+      await saveDepartment.mutateAsync({ departmentId: department.departmentId, data: { inherit: true, ceilings: [] } });
       setDraft(null);
-      toast.success(`${department?.name ?? 'Phòng ban'} dùng lại phạm vi doanh nghiệp.`);
+      toast.success(`Đã bỏ mức đã đặt của ${department.name}.`);
     } catch (error) {
-      toast.error(organizationErrorMessage(error, 'Chưa lưu được phạm vi năng lực.'));
+      toast.error(organizationErrorMessage(error, 'Chưa lưu được mức năng lực.'));
     }
   };
 
-  const blockedDepartments = activeScope !== ALL && !matrix.isConfigured;
+  const closePanelNow = () => {
+    setSelection(null);
+    setClosingSelection(null);
+    setPanelVisible(false);
+  };
+  const switchView = (next: View) => {
+    setView(next);
+    closePanelNow();
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', next);
+    params.delete('positionId');
+    setSearchParams(params, { replace: true });
+  };
+
+  // Course details open inline under their row ("Khóa học của doanh nghiệp" only).
+  const renderedSelection = selection ?? closingSelection;
+  const activeDomain = matrix.domains.find((item) => item.categoryId === renderedSelection?.categoryId);
+  const activeCourse = activeDomain?.courses.find((item) => item.level === renderedSelection?.level);
   const panelDuration = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 380;
-  const openSelection = (next: MatrixSelection) => {
+  const inspect = (domain: CeilingDomain, level: number) => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     if (openFrame.current) cancelAnimationFrame(openFrame.current);
-    setClosedInitialPanel(true);
+    if (panelVisible && selection?.categoryId === domain.categoryId && selection.level === level) {
+      setClosingSelection(selection);
+      setPanelVisible(false);
+      setSelection(null);
+      closeTimer.current = setTimeout(() => setClosingSelection(null), panelDuration());
+      return;
+    }
     // Update the requested content immediately; animation must never queue a click.
-    const sameRow = renderedSelection?.categoryId === next.categoryId;
+    const sameRow = renderedSelection?.categoryId === domain.categoryId;
     setClosingSelection(null);
-    setSelection(next);
+    setSelection({ categoryId: domain.categoryId, level });
     setPanelVisible(Boolean(sameRow));
     if (!sameRow) openFrame.current = requestAnimationFrame(() => {
       openFrame.current = requestAnimationFrame(() => setPanelVisible(true));
     });
   };
   const closeSelection = () => {
-    if (!activeSelection) return;
+    if (!selection) return;
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    if (openFrame.current) cancelAnimationFrame(openFrame.current);
-    setClosingSelection(activeSelection);
+    setClosingSelection(selection);
     setPanelVisible(false);
     setSelection(null);
-    setClosedInitialPanel(true);
     closeTimer.current = setTimeout(() => setClosingSelection(null), panelDuration());
   };
-  const inspect = (domain: CeilingDomain, level: number) => {
-    if (panelVisible && activeSelection?.kind === 'course' && activeSelection.categoryId === domain.categoryId && activeSelection.level === level) closeSelection();
-    else openSelection({ kind: 'course', categoryId: domain.categoryId, level });
-  };
-  const inspectDomain = (domain: CeilingDomain) => {
-    if (panelVisible && activeSelection?.kind === 'domain' && activeSelection.categoryId === domain.categoryId) closeSelection();
-    else openSelection({ kind: 'domain', categoryId: domain.categoryId });
-  };
 
-  const showSaveBar = canEdit && (dirty || needsInitialSave);
-  const showCart = selectedToBuy.size > 0;
+  // Buying and setting stay apart: the cart lives in the courses view, the save bar in the departments view.
+  const showSaveBar = canEdit && dirty;
+  const showCart = view === 'courses' && cart.size > 0;
 
-  return (
-    <section ref={bindMatrix} className="cc-root" aria-labelledby="cc-title">
-      {/* ── Tiêu đề súc tích & Nút Hướng dẫn nổi ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50 via-white to-sky-50 px-5 py-4">
-        <div className="flex items-center gap-3">
-          <h2 id="cc-title" className="text-xl sm:text-2xl font-black tracking-[-0.03em] section-gradient">{translateUi("Phạm vi năng lực số")}</h2>
-          {matrix.isConfigured ? (
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">{translateUi("Đã lưu")}</span>
-          ) : (
-            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">{translateUi("Gợi ý · Chưa lưu")}</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => navigate('/enterprise/courses')}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
-          >
-            <span>{translateUi("Danh mục khóa học →")}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowGuide(true)}
-            className="cc-guide-trigger"
-            aria-haspopup="dialog"
-          >
-            <Info className="size-3.5 text-slate-500" />
-            <span>{translateUi("Quy tắc & Hướng dẫn")}</span>
-          </button>
+  const coursePanel = (domain: CeilingDomain) => {
+    const isOpen = selection?.categoryId === domain.categoryId && panelVisible;
+    if (renderedSelection?.categoryId !== domain.categoryId || !activeDomain || !activeCourse) return null;
+    const DomainIcon = DOMAIN_ICONS[domain.sortOrder - 1] ?? Layers3;
+    return (
+      <div id={`course-detail-${domain.categoryId}`} className={`cc-inline-panel cx-inline-panel${isOpen ? ' is-open' : ''}`} inert={!isOpen}>
+        <div className="cc-inline-panel__inner">
+          <div className="cc-inline-panel__surface">
+            <div className="cc-domain-panel" data-domain={domain.sortOrder}>
+              <button type="button" className="cc-domain-panel__header" onClick={closeSelection} aria-label={translateUi(`Thu gọn ${domain.name}`)} aria-expanded={isOpen}>
+                <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
+                <span className="cc-domain-panel__heading"><small>{translateUi('Khóa học')}</small><strong>{translateUi(domain.name)}</strong></span>
+                <span className="cc-domain-panel__collapse">{translateUi('Thu gọn ')}<ChevronDown size={16} aria-hidden="true" /></span>
+              </button>
+              <CoursePositionStandardPanel
+                domain={activeDomain}
+                course={activeCourse}
+                isSelectedToBuy={cart.has(courseCode(activeCourse, activeDomain))}
+                scopeLabel="doanh nghiệp"
+                onSelectToBuy={() => toggleCart(activeCourse, activeDomain)}
+              />
+            </div>
+          </div>
         </div>
       </div>
+    );
+  };
 
-      {/* ── Ma trận trung tâm (Clean & Rõ ràng) ── */}
-      <div className="cc-grid">
-        <div className="cc-card cc-card--studio">
-          {/* ── Bộ chọn phạm vi tối giản, hiện đại (Segmented Scope Control) ── */}
-          <div className="cc-scope-toolbar">
-            <div className="cc-scope-controls">
-            <span className="cc-scope-label"><Layers3 size={15} aria-hidden="true" />{translateUi("Phạm vi áp dụng")}</span>
-            <div className="cc-scope-switch">
-              {/* Nút 1: Toàn doanh nghiệp */}
-              <button
-                type="button"
-                onClick={() => {
-                  setScope(ALL);
-                  setIsDeptMenuOpen(false);
-                }}
-                className={`cc-scope-option${activeScope === ALL ? ' is-active' : ''}`}
-                aria-pressed={activeScope === ALL}
-              >
-                <Building2 className="size-3.5 text-emerald-700" />
-                <span>{translateUi("Toàn doanh nghiệp")}</span>
-                {drafts[ALL] && <span className="size-1.5 rounded-full bg-amber-500" title={translateUi("Chưa lưu")} />}
-              </button>
+  const domainHeader = (domain: CeilingDomain, note?: string) => {
+    const DomainIcon = DOMAIN_ICONS[domain.sortOrder - 1] ?? Layers3;
+    return (
+      <span className="cx-domain" role="rowheader">
+        <span className="cx-domain__icon" aria-hidden="true"><DomainIcon size={18} /></span>
+        <span className="cx-domain__copy">
+          <small>{translateUi(`Lĩnh vực ${domain.sortOrder}`)}{note && <em>{translateUi(note)}</em>}</small>
+          <strong>{translateUi(domain.name)}</strong>
+        </span>
+      </span>
+    );
+  };
 
-              {/* Nút 2: Theo phòng ban (có Popover chọn) */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (activeScope === ALL && matrix.departments.length > 0) {
-                      setScope(matrix.departments[0].departmentId);
-                    }
-                    setIsDeptMenuOpen(!isDeptMenuOpen);
-                  }}
-                  className={`cc-scope-option${activeScope !== ALL ? ' is-active' : ''}`}
-                  aria-expanded={isDeptMenuOpen}
-                >
-                  <Users className="size-3.5 text-emerald-700" />
-                  <span className="max-w-[170px] sm:max-w-[210px] truncate">
-                    {activeScope !== ALL && department ? department.name : translateUi('Chọn phòng ban')}
-                  </span>
-                  {activeScope !== ALL && department?.isCustomized && (
-                    <span className="rounded bg-emerald-100 px-1.5 py-0.2 text-[9.5px] font-bold text-emerald-800">{translateUi("Thiết lập riêng")}</span>
+  return (
+    <section ref={bindMatrix} className="cc-root cx-root" aria-label={translateUi('Khung năng lực số')}>
+      {/* ── Hai phần của trang, đánh số theo thứ tự nên làm ── */}
+      <div className="cx-tabs" role="tablist" aria-label={translateUi('Phần của khung năng lực')}>
+        <button type="button" role="tab" id="cx-tab-courses" aria-controls="cx-panel-courses" aria-selected={view === 'courses'} className="cx-tab" onClick={() => switchView('courses')}>
+          <span className="cx-tab__step" aria-hidden="true">1</span>
+          <span className="cx-tab__copy"><strong>{translateUi('Khóa học của doanh nghiệp')}</strong></span>
+          <BookOpenCheck size={22} className="cx-tab__icon" aria-hidden="true" />
+        </button>
+        <button type="button" role="tab" id="cx-tab-departments" aria-controls="cx-panel-departments" aria-selected={view === 'departments'} className="cx-tab" onClick={() => switchView('departments')}>
+          <span className="cx-tab__step" aria-hidden="true">2</span>
+          <span className="cx-tab__copy"><strong>{translateUi('Năng lực từng phòng ban')}</strong></span>
+          <Users size={22} className="cx-tab__icon" aria-hidden="true" />
+        </button>
+        <button type="button" className="cx-help" onClick={() => setShowGuide(true)} aria-haspopup="dialog">
+          <HelpCircle size={15} aria-hidden="true" />{translateUi('Cách hoạt động')}
+        </button>
+      </div>
+
+      {view === 'courses' ? (
+        <div className="cx-panel" role="tabpanel" id="cx-panel-courses" aria-labelledby="cx-tab-courses">
+          <div className="cx-hero">
+            <ProgressRing value={ownedCount} total={courseTotal} />
+            <div className="cx-hero__copy">
+              <h3>{translateUi(`Doanh nghiệp đã có ${ownedCount} trên ${courseTotal} khóa`)}</h3>
+              <ul className="cx-hero__legend">
+                <li><i data-tone="free" />{translateUi('Cơ bản miễn phí')} <strong>{freeCount}</strong></li>
+                <li><i data-tone="bought" />{translateUi('Đã mua')} <strong>{boughtCount}</strong></li>
+                <li><i data-tone="missing" />{translateUi('Chưa mua')} <strong>{courseTotal - ownedCount}</strong></li>
+              </ul>
+            </div>
+            {needed.length > 0 ? (
+              <div className="cx-callout" data-tone="need">
+                <span className="cx-callout__icon" aria-hidden="true"><ShoppingCart size={18} /></span>
+                <div>
+                  <strong>{translateUi(`Phòng ban đang cần ${needed.length} khóa chưa mua`)}</strong>
+                  <span>{translateUi(`Tổng ${money(neededPrice)} · nhân viên chỉ học được sau khi mua`)}</span>
+                  {canEdit && (
+                    <button type="button" onClick={addNeededToCart} disabled={neededInCart}>
+                      {neededInCart ? translateUi('Đã có trong giỏ') : translateUi(`Thêm cả ${needed.length} vào giỏ`)}
+                      {!neededInCart && <ArrowRight size={14} aria-hidden="true" />}
+                    </button>
                   )}
-                  {activeScope !== ALL && drafts[activeScope] && (
-                    <span className="size-1.5 rounded-full bg-amber-500" title={translateUi("Chưa lưu")} />
-                  )}
-                  <ChevronDown className={`size-3 text-slate-400 transition-transform duration-200 ${isDeptMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Popover danh sách phòng ban */}
-                {isDeptMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setIsDeptMenuOpen(false)} />
-                    <div className="absolute left-0 sm:left-auto sm:right-0 top-full z-30 mt-2 w-80 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xl">
-                      <div className="flex items-center justify-between px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                        <span>{translateUi("Phòng ban (")}{matrix.departments.length})</span>
-                        <span>{translateUi("Mức áp dụng")}</span>
-                      </div>
-
-                      {matrix.departments.length > 4 && (
-                        <div className="pt-2 pb-1">
-                          <label className="owner-filter-search">
-                          <Search className="size-4" aria-hidden="true" />
-                          <input
-                            type="text"
-                            aria-label={translateUi("Tìm phòng ban trong danh sách")}
-                            placeholder={translateUi("Tìm kiếm phòng ban...")}
-                            value={deptSearch}
-                            onChange={(e) => setDeptSearch(e.target.value)}
-                            className="w-full text-sm"
-                            onClick={(e) => e.stopPropagation()}
-                            autoFocus
-                          />
-                          </label>
-                        </div>
-                      )}
-
-                      <div className="mt-1 max-h-64 overflow-y-auto space-y-1 pr-1">
-                        {filteredDepartments.map((d) => {
-                          const isSelected = activeScope === d.departmentId;
-                          const hasDraft = Boolean(drafts[d.departmentId]);
-                          return (
-                            <button
-                              key={d.departmentId}
-                              type="button"
-                              onClick={() => {
-                                setScope(d.departmentId);
-                                setIsDeptMenuOpen(false);
-                                setDeptSearch('');
-                              }}
-                              className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors ${
-                                isSelected
-                                  ? 'bg-emerald-50 text-emerald-900 font-bold border border-emerald-200/60'
-                                  : 'text-slate-700 hover:bg-slate-50 border border-transparent'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                {isSelected ? (
-                                  <Check className="size-3.5 text-emerald-600 shrink-0" />
-                                ) : (
-                                  <span className="size-1.5 rounded-full bg-slate-300 shrink-0 ml-1 mr-1" />
-                                )}
-                                <span className="truncate">{d.name}</span>
-                                {hasDraft && <span className="size-1.5 rounded-full bg-amber-500 shrink-0" title={translateUi("Chưa lưu")} />}
-                              </div>
-
-                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                d.isCustomized
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : 'bg-slate-100 text-slate-500'
-                              }`}>
-                                {d.isCustomized ? translateUi('Thiết lập riêng') : 'Kế thừa DN'}
-                              </span>
-                            </button>
-                          );
-                        })}
-                        {filteredDepartments.length === 0 && (
-                          <p className="py-4 text-center text-xs text-slate-400">{translateUi("Không tìm thấy phòng ban")}</p>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
+                </div>
               </div>
-            </div>
-            </div>
-
-            {/* Dòng trạng thái ngữ cảnh tinh tế */}
-            <div className="cc-scope-status">
-              <span className={`size-2 rounded-full shrink-0 ${activeScope === ALL ? 'bg-emerald-500' : department?.isCustomized ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-              <span className="font-medium text-slate-600">
-                {activeScope === ALL
-                  ? translateUi('Phạm vi chung toàn doanh nghiệp')
-                  : department?.isCustomized
-                    ? translateUi(`${department.name} · Thiết lập riêng`)
-                    : translateUi(`${department?.name ?? 'Phòng ban'} · Kế thừa doanh nghiệp`)}
-              </span>
-            </div>
+            ) : (
+              <div className="cx-callout" data-tone="ok">
+                <span className="cx-callout__icon" aria-hidden="true"><Check size={18} /></span>
+                <div>
+                  <strong>{translateUi('Đủ khóa cho mọi mức phòng ban đã đặt')}</strong>
+                  <Link to="/enterprise/courses" className="cx-link">{translateUi('Danh mục khóa học')}<ArrowRight size={14} aria-hidden="true" /></Link>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Ma trận màu xanh */}
-          <div className="cc-mx" role="group" aria-label={translateUi("Ma trận năng lực nhân cấp độ")}>
-            <div className="cc-mx-domain-heading"><Layers3 size={16} aria-hidden="true" /><span>{translateUi("Lĩnh vực năng lực")}<small>{translateUi("Chọn để cài đặt vị trí")}</small></span></div>
-            {matrix.levels.map((level) => (
-              <div key={level.level} className="hd">
-                <span className="cc-level-marker" aria-hidden="true">{String(level.level).padStart(2, '0')}</span>
-                <span className="cc-level-copy"><small>{translateUi("Cấp ")}{level.level}</small><strong>{translateUi(level.name)}</strong></span>
-              </div>
+          <div className="cx-grid" role="table" aria-label={translateUi('Khóa học theo lĩnh vực và cấp')}>
+            <GridHead levels={matrix.levels} />
+            {matrix.domains.map((domain) => (
+              <Fragment key={domain.categoryId}>
+                <div className="cx-row" role="row" data-domain={domain.sortOrder}>
+                  {domainHeader(domain)}
+                  {domain.courses.map((course) => (
+                    <CourseCell key={course.level} domain={domain} course={course} inCart={cart.has(courseCode(course, domain))}
+                      usedBy={usedBy(domain, course.level)} neededBy={neededBy(domain, course.level)} toneOf={toneOf}
+                      departmentCount={departments.length} canBuy={canEdit}
+                      onToggleCart={() => toggleCart(course, domain)} onInspect={() => inspect(domain, course.level)} />
+                  ))}
+                </div>
+                {coursePanel(domain)}
+              </Fragment>
             ))}
-            {matrix.domains.map((domain) => {
-              const routeLevel = current[domain.categoryId] ?? 0;
-              const dnLevel = orgCeiling[domain.categoryId] ?? 0;
-              const isSelected = activeSelection?.categoryId === domain.categoryId && panelVisible;
-              const isRendered = renderedSelection?.categoryId === domain.categoryId;
-              const DomainIcon = DOMAIN_ICONS[domain.sortOrder - 1] ?? Layers3;
-              return (
-                <Fragment key={domain.categoryId}>
-                <DomainRow
-                  domain={domain}
-                  routeLevel={routeLevel}
-                  dnLevel={dnLevel}
-                  isDepartment={activeScope !== ALL}
-                  selectedDomain={isSelected && activeSelection?.kind === 'domain'}
-                  editable={canEdit}
-                  selectedToBuy={selectedToBuy}
-                  onPick={pick}
-                  onInspect={inspect}
-                  onDomainClick={inspectDomain}
-                  onToggleBuy={toggleSelectToBuy}
-                />
-                {isRendered && activeDomain && (
-                  <div
-                    id={`course-position-standard-${domain.categoryId}`}
-                    className={`cc-inline-panel${isSelected ? ' is-open' : ''}`}
-                    inert={!isSelected}
-                  >
-                    <div className="cc-inline-panel__inner">
-                      <div className="cc-inline-panel__surface">
-                        <div className="cc-domain-panel" data-domain={domain.sortOrder}>
-                        <button type="button" className="cc-domain-panel__header" onClick={closeSelection} aria-label={translateUi(`Thu gọn ${domain.name}`)} aria-expanded={isSelected} aria-controls={`domain-panel-content-${domain.categoryId}`}>
-                          <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
-                          <span className="cc-domain-panel__heading"><small>{activeCourse ? translateUi('KHÓA HỌC & SUẤT HỌC') : activeScope === ALL ? translateUi('CHUẨN VỊ TRÍ THEO LĨNH VỰC') : translateUi('CHUẨN VỊ TRÍ CỦA PHÒNG BAN')}</small><strong>{translateUi(domain.name)}</strong></span>
-                          <span className="cc-domain-panel__collapse">{translateUi("Thu gọn ")}<ChevronDown size={16} aria-hidden="true" /></span>
-                        </button>
-                        <div id={`domain-panel-content-${domain.categoryId}`}>
-                        {activeCourse ? <CoursePositionStandardPanel
-                          domain={activeDomain}
-                          course={activeCourse}
-                          isSelectedToBuy={Boolean(activeCourse.code && selectedToBuy.has(activeCourse.code))}
-                          scopeLabel={activeScope === ALL ? 'doanh nghiệp' : 'phòng ban'}
-                          onSelectToBuy={() => toggleSelectToBuy(activeCourse, activeDomain)}
-                        /> : <DomainPositionStandardPanel
-                          key={activeScope + activeDomain.categoryId}
-                          domain={activeDomain}
-                          domains={matrix.domains}
-                          departmentId={activeScope === ALL ? undefined : activeScope}
-                          initialPositionId={initialPositionId}
-                          canEdit={canEdit}
-                        />}
-                        </div>
-                        </div>
-                      </div>
-                    </div>
+          </div>
+        </div>
+      ) : (
+        <div className="cx-panel" role="tabpanel" id="cx-panel-departments" aria-labelledby="cx-tab-departments">
+          {departments.length === 0 ? (
+            <div className="cx-empty">
+              <Users size={22} aria-hidden="true" />
+              <p>{translateUi('Chưa có phòng ban nào. Tạo phòng ban để đặt mức năng lực cho từng nhóm nhân viên.')}</p>
+              <Link to="/enterprise/members" className="cx-link">{translateUi('Đến Nhân sự')}<ArrowRight size={14} aria-hidden="true" /></Link>
+            </div>
+          ) : (
+            <div className="cx-dept-layout">
+              {/* One picker (search inside) instead of listing every department: works for 5 or 60. */}
+              <div className="cx-dept-bar">
+                <div className="cx-dept-bar__pick">
+                  <span className="cx-dept-bar__label">{translateUi('Phòng ban')}</span>
+                  <div className="cx-dept-bar__control">
+                    <button type="button" className="cx-dept-bar__step" aria-label={translateUi('Phòng ban trước')} disabled={departments.length < 2}
+                      onClick={() => setDepartmentId(departments[(departmentIndex - 1 + departments.length) % departments.length].departmentId)}><ChevronLeft size={16} aria-hidden="true" /></button>
+                    <OwnerFilterSelect
+                      label={translateUi('Chọn phòng ban')}
+                      value={activeDepartmentId}
+                      onChange={setDepartmentId}
+                      className="cx-dept-select"
+                      options={departments.map((d) => ({
+                        value: d.departmentId,
+                        label: `${d.name} · ${translateUi(`${d.employeeCount} người`)} · ${translateUi(d.isCustomized ? 'Đã đặt' : 'Chưa đặt')}${drafts[d.departmentId] ? ` · ${translateUi('chưa lưu')}` : ''}`,
+                      }))}
+                    />
+                    <button type="button" className="cx-dept-bar__step" aria-label={translateUi('Phòng ban sau')} disabled={departments.length < 2}
+                      onClick={() => setDepartmentId(departments[(departmentIndex + 1) % departments.length].departmentId)}><ChevronRight size={16} aria-hidden="true" /></button>
                   </div>
-                )}
-                </Fragment>
-              );
-            })}
-          </div>
-
-          {/* Chú giải ngắn gọn */}
-          <div className="cc-legend" aria-label={translateUi("Chú giải trạng thái khóa học")}>
-            <span className="cc-legend__title">{translateUi("Trạng thái")}</span>
-            <span className="cc-legend__chip"><i className="route" />{translateUi("Trong phạm vi áp dụng")}</span>
-            {activeScope !== ALL && <span className="cc-legend__chip"><i className="dn" />{translateUi("Trong phạm vi doanh nghiệp")}</span>}
-            <span className="cc-legend__chip"><i className="licensed" />{translateUi("Đã mở · ngoài phạm vi")}</span>
-            <span className="cc-legend__chip"><i className="locked" />{translateUi("Chưa mua")}</span>
-            <span className="cc-legend__chip cc-legend__chip--cart"><i className="cart" />{translateUi("Đã chọn vào giỏ")}</span>
-          </div>
-
-          {/* Nút hành động */}
-          {canEdit && (
-            <div className="cc-actions">
-              <div className="cc-interaction-guide" aria-label={translateUi("Cách thao tác")}>
-                {blockedDepartments ? <span className="cc-interaction-guide__notice"><Info size={15} />{translateUi("Lưu phạm vi doanh nghiệp trước khi thiết lập phạm vi phòng ban.")}</span> : <span><Check size={14} /><strong>{translateUi("Chọn ô")}</strong><ArrowRight size={12} />{translateUi("Chọn cấp & lưu")}</span>}
-                <span><Info size={14} /><strong>ⓘ</strong>{translateUi("Khóa học & quyền học")}</span>
-                <span><ChevronDown size={14} /><strong>{translateUi("Tên lĩnh vực")}</strong>{translateUi("Cài đặt vị trí")}</span>
-              </div>
-              <div className="btns">
-                {hasApplicableSuggestion && (
-                  <button type="button" className="cc-btn" onClick={applySuggestion} disabled={saving}>{translateUi("Áp dụng mức đề xuất")}</button>
-                )}
-                {activeScope !== ALL && department?.isCustomized && (
-                  <button type="button" className="cc-btn cc-btn--inherit" onClick={inherit} disabled={saving} aria-busy={saving} title={translateUi("Đưa phòng ban về dùng phạm vi chung của doanh nghiệp")}>
-                    <span className="cc-inherit-icon" aria-hidden="true"><Building2 size={15} /></span>
-                    <span>{saving ? 'Đang áp dụng…' : translateUi('Kế thừa phạm vi doanh nghiệp')}</span>
-                    <ArrowRight size={14} className="cc-inherit-arrow" aria-hidden="true" />
+                </div>
+                <div className="cx-dept-bar__progress">
+                  <span><strong>{customizedCount}/{departments.length}</strong> {translateUi('phòng ban đã đặt mức')}</span>
+                  <span className="cx-dept-bar__meter" aria-hidden="true"><span style={{ width: `${(customizedCount / departments.length) * 100}%` }} /></span>
+                </div>
+                {nextUnset && (
+                  <button type="button" className="cx-dept-bar__next" onClick={() => setDepartmentId(nextUnset.departmentId)}>
+                    {translateUi('Phòng ban chưa đặt tiếp theo')}<ArrowRight size={14} aria-hidden="true" />
                   </button>
                 )}
               </div>
+
+              <div className="cx-dept-main">
+                {department && (
+                  <div className="cx-dept-hero" data-tone={toneOf.get(department.departmentId)}>
+                    <span className="cx-dept-hero__badge" aria-hidden="true">{initialsOf(department.name)}</span>
+                    <div className="cx-dept-hero__copy">
+                      <h3>{department.name}</h3>
+                      <p>{translateUi(setDomains > 0
+                        ? `Bấm vào mức cao nhất nhân viên ${department.name} cần đạt ở mỗi lĩnh vực. Họ học từ Cơ bản tới mức đó.`
+                        : `${department.name} chưa đặt mức. Bấm vào mức cần đạt ở từng lĩnh vực.`)}</p>
+                      {canEdit && (canSuggest || department.isCustomized) && (
+                        <div className="cx-dept-hero__actions">
+                          {canSuggest && <button type="button" className="cc-btn" onClick={() => setDraft({ ...current, ...suggested })} disabled={saving}><Sparkles size={14} aria-hidden="true" />{translateUi('Dùng mức đề xuất')}</button>}
+                          {department.isCustomized && <button type="button" className="cc-btn" onClick={clearDepartment} disabled={saving}>{translateUi('Bỏ mức đã đặt')}</button>}
+                        </div>
+                      )}
+                    </div>
+                    <dl className="cx-dept-hero__stats">
+                      <div><dt>{translateUi('Nhân viên')}</dt><dd>{department.employeeCount}</dd></div>
+                      <div><dt>{translateUi('Lĩnh vực đã đặt')}</dt><dd>{setDomains}<span>/{matrix.domains.length}</span></dd></div>
+                      <div data-tone={departmentNeeds.length ? 'need' : undefined}>
+                        <dt>{translateUi('Khóa cần mua')}</dt>
+                        <dd>{departmentNeeds.length}</dd>
+                        {departmentNeeds.length > 0 && <button type="button" onClick={() => switchView('courses')}>{translateUi('Mua ở phần 1')}<ArrowRight size={12} aria-hidden="true" /></button>}
+                      </div>
+                    </dl>
+                  </div>
+                )}
+
+                <div className="cx-grid cx-grid--levels" role="table" aria-label={translateUi(`Mức năng lực của ${department?.name ?? 'phòng ban'}`)}>
+                  <GridHead levels={matrix.levels} />
+                  {matrix.domains.map((domain) => {
+                    const level = current[domain.categoryId];
+                    return (
+                      <div key={domain.categoryId} className="cx-row" role="row" data-domain={domain.sortOrder}>
+                        {domainHeader(domain, level ? undefined : ' · chưa đặt')}
+                        <div className="cx-range" role="group" aria-label={translateUi(`Mức của ${domain.name}`)}>
+                          {domain.courses.map((course) => (
+                            <LevelCell key={course.level} domain={domain} course={course} level={level} suggested={suggestionOf(domain)}
+                              editable={canEdit && !saving} onPick={() => pick(domain, course.level)} />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {actionHost && (showSaveBar || showCart) && createPortal(
         <div ref={setActionDock} className="cc-root cc-action-dock" role="region" aria-label={translateUi('Thao tác khung năng lực')}>
@@ -559,80 +486,36 @@ export function CapabilityCeilingMatrix() {
             <div className="cc-save-bar">
               <div className="cc-save-indicator" aria-hidden="true" />
               <div className="cc-save-copy" role="status">
-                <strong>{dirty ? 'Thay đổi phạm vi năng lực chưa được lưu' : 'Phạm vi năng lực gợi ý chưa được lưu'}</strong>
-                <span>{activeScope === ALL ? translateUi('Toàn doanh nghiệp') : department?.name ?? translateUi('Phòng ban')}{translateUi(" · Lưu để áp dụng cấp độ đang hiển thị.")}</span>
+                <strong>{translateUi(`Mức năng lực của ${department?.name ?? 'phòng ban'} chưa được lưu`)}</strong>
+                <span>{translateUi('Lưu để nhân viên học theo mức mới.')}</span>
               </div>
               <div className="cc-save-buttons">
-                {dirty && <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={saving}>{translateUi("Hủy thay đổi")}</button>}
-                <button type="button" className="cc-btn primary" onClick={save} disabled={saving || blockedDepartments}>
-                  {saving ? translateUi('Đang lưu…') : translateUi('Lưu thay đổi')}
-                </button>
+                <button type="button" className="cc-btn" onClick={() => setDraft(null)} disabled={saving}>{translateUi('Hủy thay đổi')}</button>
+                <button type="button" className="cc-btn primary" onClick={save} disabled={saving}>{saving ? translateUi('Đang lưu…') : translateUi('Lưu thay đổi')}</button>
               </div>
             </div>
           )}
-
           {showCart && (
             <div className="cc-cart-bar">
               <div className="cc-cart-summary">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white font-bold text-base shadow-sm">
-                  {selectedToBuy.size}
-                </span>
+                <span className="cx-cart-count"><ShoppingCart size={16} aria-hidden="true" />{cart.size}</span>
                 <div className="min-w-0">
-                  <h4 className="font-bold text-slate-900 text-sm">{translateUi("Giỏ khóa học · ")}{selectedToBuy.size}{translateUi(" khóa")}</h4>
+                  <h4 className="font-bold text-slate-900 text-sm">{translateUi('Giỏ khóa học · ')}{cart.size}{translateUi(' khóa')} · {money([...cart.values()].reduce((sum, item) => sum + item.price, 0))}</h4>
                   <div className="cc-cart-items">
-                    {Array.from(selectedToBuy.values()).map((item) => (
-                      <span
-                        key={item.code}
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-0.5 text-xs font-semibold text-slate-800 border border-amber-200"
-                      >
-                        <span className="font-bold text-amber-800">{item.code}</span>
-                        <span className="text-slate-400">·</span>
-                        <span className="text-slate-600 max-w-[140px] truncate">{translateUi(item.domainName)}</span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedToBuy((prev) => {
-                              const next = new Map(prev);
-                              next.delete(item.code);
-                              return next;
-                            });
-                          }}
-                          className="ml-0.5 grid size-3.5 place-items-center rounded-full text-slate-400 hover:bg-amber-200 hover:text-slate-800"
-                          title={translateUi("Bỏ chọn khóa này")}
-                        >
-                          <X className="size-3" />
-                        </button>
+                    {[...cart.values()].map((item) => (
+                      <span key={item.code} className="cx-cart-item">
+                        <span>{translateUi(LEVEL_NAMES[item.level])} · {translateUi(item.domainName)}</span>
+                        <button type="button" onClick={() => setCart((previous) => { const next = new Map(previous); next.delete(item.code); return next; })}
+                          title={translateUi('Bỏ chọn khóa này')} aria-label={translateUi(`Bỏ ${item.code} khỏi giỏ`)}><X className="size-3" /></button>
                       </span>
                     ))}
                   </div>
                 </div>
               </div>
-
               <div className="cc-cart-buttons">
-                <button
-                  type="button"
-                  onClick={() => setSelectedToBuy(new Map())}
-                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-                >{translateUi("Hủy chọn tất cả")}</button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const codes = Array.from(selectedToBuy.keys()).join(',');
-                    navigate(`/enterprise/courses?selected=${encodeURIComponent(codes)}`);
-                  }}
-                  className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors"
-                >{translateUi("Xem trên danh mục")}</button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const codes = Array.from(selectedToBuy.keys()).join(',');
-                    navigate(`/enterprise/courses/checkout?courses=${encodeURIComponent(codes)}`);
-                  }}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:brightness-105 transition-all"
-                >
-                  <span>Thanh toán & Ký online ({selectedToBuy.size})</span>
-                  <ArrowRight className="size-4" />
+                <button type="button" className="cc-btn" onClick={() => setCart(new Map())}>{translateUi('Hủy chọn tất cả')}</button>
+                <button type="button" className="cc-btn primary" onClick={() => navigate(`/enterprise/courses/checkout?courses=${encodeURIComponent([...cart.keys()].join(','))}`)}>
+                  <span>{translateUi(`Thanh toán & Ký online (${cart.size})`)}</span><ArrowRight className="size-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -641,117 +524,137 @@ export function CapabilityCeilingMatrix() {
         actionHost,
       )}
 
-      {/* ── Modal Popup nổi: Quy tắc & Hướng dẫn ── */}
       <CapabilityCeilingGuide open={showGuide} onClose={() => setShowGuide(false)} />
     </section>
   );
 }
 
-function DomainRow({
-  domain,
-  routeLevel,
-  dnLevel,
-  isDepartment,
-  selectedDomain,
-  editable,
-  selectedToBuy,
-  onPick,
-  onInspect,
-  onDomainClick,
-  onToggleBuy,
-}: {
+/** Owned share of the 18 courses as a ring; the number is ink, the colour is only on the ring. */
+function ProgressRing({ value, total }: { value: number; total: number }) {
+  const radius = 32;
+  const length = 2 * Math.PI * radius;
+  const share = total ? value / total : 0;
+  return (
+    <div className="cx-ring" role="img" aria-label={translateUi(`Đã có ${value}/${total} khóa`)}>
+      <svg viewBox="0 0 80 80" width="88" height="88" aria-hidden="true">
+        <circle cx="40" cy="40" r={radius} className="cx-ring__track" />
+        <circle cx="40" cy="40" r={radius} className="cx-ring__value" strokeDasharray={`${share * length} ${length}`} transform="rotate(-90 40 40)" />
+      </svg>
+      <span><strong>{value}</strong>/{total}</span>
+    </div>
+  );
+}
+
+/** Column headings with the level drawn as filled dots (●○○ → ●●●), darker for higher levels. */
+function GridHead({ levels }: { levels: CeilingLevel[] }) {
+  useUiLanguage();
+  return (
+    <div className="cx-grid__head" role="row">
+      <span role="columnheader">{translateUi('Lĩnh vực')}</span>
+      {levels.map((level) => (
+        <span key={level.level} role="columnheader" className="cx-level-head" data-level={level.level}>
+          {translateUi(level.name)}
+          <span className="cx-level-head__dots" aria-hidden="true">{[1, 2, 3].map((dot) => <i key={dot} data-on={dot <= level.level || undefined} />)}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * "Khóa học của doanh nghiệp": owned course (who uses it) or a course still to buy. A course departments aim at shows
+ * their badges (same colours as in the department list), at most three and "+n".
+ */
+function CourseCell({ domain, course, inCart, usedBy, neededBy, toneOf, departmentCount, canBuy, onToggleCart, onInspect }: {
   domain: CeilingDomain;
-  routeLevel: number;
-  dnLevel: number;
-  isDepartment: boolean;
-  selectedDomain: boolean;
-  editable: boolean;
-  selectedToBuy?: Map<string, { code: string; title: string; level: number; domainName: string; price: number }>;
-  onPick: (domain: CeilingDomain, level: number) => void;
-  onInspect: (domain: CeilingDomain, level: number) => void;
-  onDomainClick: (domain: CeilingDomain) => void;
-  onToggleBuy?: (course: CeilingCourse, domain: CeilingDomain) => void;
+  course: CeilingCourse;
+  inCart: boolean;
+  usedBy: CeilingDepartment[];
+  neededBy: CeilingDepartment[];
+  toneOf: Map<string, number>;
+  departmentCount: number;
+  canBuy: boolean;
+  onToggleCart: () => void;
+  onInspect: () => void;
 }) {
   useUiLanguage();
-  const DomainIcon = DOMAIN_ICONS[domain.sortOrder - 1] ?? Layers3;
+  const levelName = translateUi(LEVEL_NAMES[course.level]);
+  const code = course.code ?? `cấp ${course.level}`;
+  if (!course.courseId) {
+    return <div className="cx-cell-wrap" role="cell"><div className="cx-cell" data-state="none"><span className="cx-cell__level">{levelName}</span><span className="cx-cell__status">{translateUi('Chưa có khóa')}</span></div></div>;
+  }
+  if (isOwned(course)) {
+    const users = departmentCount === 0 ? translateUi('Cả doanh nghiệp')
+      : usedBy.length === departmentCount ? translateUi('Mọi phòng ban')
+      : usedBy.length === 0 ? translateUi('Chưa phòng ban nào')
+      : translateUi(`${usedBy.length}/${departmentCount} phòng ban`);
+    return (
+      <div className="cx-cell-wrap" role="cell">
+        <button type="button" className="cx-cell" data-state="owned" data-level={course.level} aria-label={translateUi(`Xem khóa ${code}`)}
+          title={`${course.code ?? ''} · ${course.title ?? ''}`.trim()} onClick={onInspect}>
+          <span className="cx-cell__level">{levelName}</span>
+          <span className="cx-cell__status"><Check size={15} aria-hidden="true" />{translateUi(course.level === 1 ? 'Miễn phí' : 'Đã mua')}</span>
+          <span className="cx-cell__note" title={usedBy.map((d) => d.name).join(', ')}>{translateUi('Dùng ở: ')}{users}</span>
+        </button>
+      </div>
+    );
+  }
+  const needed = neededBy.length > 0 && !inCart;
   return (
-    <>
-      <button type="button" data-domain={domain.sortOrder} className={`rl${selectedDomain ? ' is-selected' : ''}`} aria-expanded={selectedDomain} aria-controls={`course-position-standard-${domain.categoryId}`} aria-label={translateUi(`${selectedDomain ? 'Đóng' : 'Mở'} cài đặt vị trí cho lĩnh vực ${domain.name}`)} onClick={() => onDomainClick(domain)}>
-        <span className="cc-domain-icon" aria-hidden="true"><DomainIcon size={18} /></span>
-        <span className="cc-domain-copy"><span className="cc-domain-title">{translateUi(domain.name)}</span>
-        <small><span className="cc-domain-level">{isDepartment ? `PB ${routeLevel} · DN ${dnLevel}` : translateUi(`DN · Cấp ${dnLevel}`)}</span><span className="cc-domain-hint">{selectedDomain ? 'Đóng cài đặt' : translateUi('Cài đặt vị trí')}</span></small></span>
-        <ChevronDown className={`cc-domain-chevron${selectedDomain ? ' is-open' : ''}`} size={15} aria-hidden="true" />
-      </button>
-      {domain.courses.map((course) => {
-        const isLocked = course.level > 1 && course.isUnlocked !== true;
-        const inRoute = !isLocked && course.level <= routeLevel;
-        const inOrg = !isLocked && course.level <= dnLevel;
-        const isSelectedToBuy = Boolean(course.code && selectedToBuy?.has(course.code));
-        const state = isSelectedToBuy
-          ? 'đã chọn mua, bấm để bỏ chọn'
-          : inRoute
-          ? 'trong lộ trình đang xem'
-          : inOrg
-          ? 'trong phạm vi doanh nghiệp'
-          : isLocked
-          ? 'chưa mua khóa, bấm để chọn mua cùng khóa khác'
-          : 'bấm để chọn cấp độ năng lực';
-        const className = `cc-cell${isSelectedToBuy ? ' selected-to-buy' : isLocked ? ' is-locked' : inRoute ? ' route' : inOrg ? ' dn' : ' licensed'}${course.courseId ? '' : ' empty'}`;
-        const label = course.courseId && course.code ? (
-          isSelectedToBuy ? (
-            <span className="flex items-center justify-center gap-1 font-bold">
-              <Check className="size-3.5 text-amber-700 stroke-[3]" />
-              <span>{course.code}</span>
+    <div className="cx-cell-wrap" role="cell">
+      <button type="button" className="cx-cell" data-state={inCart ? 'cart' : needed ? 'needed' : 'locked'} aria-pressed={inCart} disabled={!canBuy}
+        aria-label={translateUi(`${domain.name}, cấp ${course.level}: ${inCart ? 'đã chọn mua, bấm để bỏ chọn' : 'chưa mua khóa, bấm để chọn mua cùng khóa khác'}.`)}
+        onClick={onToggleCart}>
+        <span className="cx-cell__level">{levelName}</span>
+        <span className="cx-cell__status">{inCart ? <><ShoppingCart size={14} aria-hidden="true" />{translateUi('Trong giỏ')}</> : <><Lock size={13} aria-hidden="true" />{translateUi('Chưa mua')}</>}</span>
+        {needed ? (
+          <span className="cx-need" title={translateUi(`Cần cho: ${neededBy.map((d) => d.name).join(', ')}`)}>
+            <span className="cx-need__label">{translateUi('Cần cho')}</span>
+            <span className="cx-need__badges">
+              {neededBy.slice(0, NEED_BADGES).map((d) => <i key={d.departmentId} data-tone={toneOf.get(d.departmentId)}>{initialsOf(d.name)}</i>)}
+              {neededBy.length > NEED_BADGES && <i data-more>+{neededBy.length - NEED_BADGES}</i>}
             </span>
-          ) : isLocked ? (
-            `🔒 ${course.code}`
-          ) : (
-            course.code
-          )
-        ) : (
-          'Chưa có khóa'
-        );
-        const title = `${course.courseId && course.code ? `${course.code} · ${course.title}` : 'Chưa có khóa học'}: ${state}`;
-        const handleClick = () => onPick(domain, course.level);
+          </span>
+        ) : null}
+        <span className="cx-cell__note">{inCart ? translateUi('Bấm để bỏ khỏi giỏ') : `${money(course.price ?? 0)} · ${translateUi('Thêm vào giỏ')}`}</span>
+      </button>
+      <button type="button" className="cx-cell__info" aria-label={translateUi(`Xem khóa ${code}`)} title={translateUi('Xem khóa học')} onClick={onInspect}><Info size={14} /></button>
+    </div>
+  );
+}
 
-        if (editable && isLocked && onToggleBuy) return (
-          <div key={course.level} className="cc-purchase-cell">
-            <button
-              type="button"
-              className={className}
-              title={translateUi(title)}
-              aria-pressed={isSelectedToBuy}
-              aria-label={translateUi(`${domain.name}, cấp ${course.level}: ${state}.`)}
-              onClick={() => onToggleBuy(course, domain)}
-            >
-              {translateUi(label)}<small>{isSelectedToBuy ? 'Đã chọn mua' : translateUi('Chọn mua +')}</small>
-            </button>
-            <button type="button" className="cc-purchase-cell__detail" aria-label={translateUi(`Xem khóa ${course.code ?? `cấp ${course.level}`}`)} title={translateUi("Khóa học & quyền học")} onClick={() => onInspect(domain, course.level)}><Info size={13} /></button>
-          </div>
-        );
-
-        return editable ? (
-          <div key={course.level} className="cc-purchase-cell cc-course-cell">
-          <button
-            type="button"
-            className={className}
-            title={translateUi(title)}
-            aria-label={translateUi(`Thiết lập phạm vi ${domain.name}: cấp ${course.level}`)}
-            aria-pressed={!isLocked && course.level === routeLevel}
-            disabled={!course.courseId}
-            onClick={handleClick}
-          >
-            {translateUi(label)}
-            {!isLocked && course.level === routeLevel && <small className="cc-current-ceiling"><Check size={11} />{translateUi(" Mức đang chọn")}</small>}
-          </button>
-          <button type="button" className="cc-purchase-cell__detail" disabled={!course.courseId} aria-label={translateUi(`Xem khóa ${course.code ?? `cấp ${course.level}`}`)} title={translateUi("Khóa học & quyền học")} onClick={() => onInspect(domain, course.level)}><Info size={13} /></button>
-          </div>
-        ) : (
-          <div key={course.level} className={className} title={translateUi(title)}>
-            {translateUi(label)}
-          </div>
-        );
-      })}
-    </>
+/**
+ * "Năng lực từng phòng ban": one level of a domain inside a joined range control: the levels up to the chosen one are
+ * filled like a progress bar and the chosen one carries a flag. A level whose course is not bought can still be set.
+ */
+function LevelCell({ domain, course, level, suggested, editable, onPick }: {
+  domain: CeilingDomain;
+  course: CeilingCourse;
+  level: number | undefined;
+  suggested: number;
+  editable: boolean;
+  onPick: () => void;
+}) {
+  useUiLanguage();
+  const levelName = translateUi(LEVEL_NAMES[course.level]);
+  if (!course.courseId) {
+    return <div className="cx-step" data-state="none"><span className="cx-step__level">{levelName}</span><span className="cx-step__status">{translateUi('Chưa có khóa')}</span></div>;
+  }
+  const state = !level ? 'idle' : course.level < level ? 'included' : course.level === level ? 'selected' : 'above';
+  const owned = isOwned(course);
+  return (
+    <button type="button" className="cx-step" data-state={state} aria-pressed={state === 'selected'} disabled={!editable}
+      aria-label={translateUi(`Đặt mức ${domain.name}: ${LEVEL_NAMES[course.level]}${owned ? '' : ' (chưa mua)'}`)} onClick={onPick}>
+      <span className="cx-step__level">{levelName}</span>
+      <span className="cx-step__status">
+        {state === 'selected' ? <><Flag size={14} aria-hidden="true" />{translateUi('Mức cần đạt')}</>
+          : state === 'included' ? <><Check size={14} aria-hidden="true" />{translateUi('Đã gồm')}</>
+          : translateUi('Chọn')}
+      </span>
+      <span className="cx-step__tags">
+        {!owned && <span className="cx-step__tag" data-tag="locked"><Lock size={11} aria-hidden="true" />{translateUi('Chưa mua')}</span>}
+        {suggested === course.level && state !== 'selected' && <span className="cx-step__tag" data-tag="suggest"><Sparkles size={11} aria-hidden="true" />{translateUi('Đề xuất')}</span>}
+      </span>
+    </button>
   );
 }

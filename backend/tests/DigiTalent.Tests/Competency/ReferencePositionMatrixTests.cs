@@ -54,11 +54,11 @@ public sealed class ReferencePositionMatrixTests : IDisposable
         var reader = new CapabilityCeilingReader(_db, new PulseCatalogReader(_db), Service);
         var matrix = await reader.ReadAsync<GetCapabilityCeilingsUseCaseOutput>(org);
 
-        // The SALES_CRM sample (data 2, AI 1) drives the suggestion; a department never goes above the
-        // organization ceiling, which stays at Basic until higher-level courses are bought.
+        // The SALES_CRM sample (data 2, AI 1) drives the suggestion. A department may aim above the courses the company
+        // owns (only Basic here): set first, buy later.
         matrix.Departments.Single().HasSuggestion.Should().BeTrue();
         matrix.Domains.Select(d => d.SuggestedCeiling).Should().Equal(2, 1);
-        matrix.Departments.Single().Ceilings.Select(c => c.Suggested).Should().Equal(1, 1);
+        matrix.Departments.Single().Ceilings.Select(c => c.Suggested).Should().Equal(2, 1);
 
         var changed = await Service.GetAsync();
         changed.Levels["SALES_CRM"][0] = 3;
