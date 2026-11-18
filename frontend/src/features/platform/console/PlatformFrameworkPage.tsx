@@ -125,7 +125,6 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
   const currentCatalogVersion = ov?.currentVersionNo ?? f.currentCatalogVersionNo ?? f.currentVersionNo;
   // f.courseCount chỉ đếm khóa của phiên bản đang dùng; ov.courseCount còn tính khóa phiên bản cũ.
   const totalCourses = f.courseCount ?? ov?.courseCount ?? 0;
-  const draftEditedCourseCount = ov?.draftEditedCourseCount ?? 0;
   const publishedDate = ov?.currentVersionPublishedAt;
   const draftCatalogVersion = ov?.draftVersionNo ?? f.draftCatalogVersionNo;
   const draftNewCourseCount = ov?.draftNewCourseCount ?? f.draftCourseCount ?? 0;
@@ -139,7 +138,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
     publish.mutate(note.trim() || undefined, {
       onSuccess: (result) => {
         setNote('');
-        toast.success(`Đã công bố mô tả lĩnh vực cho khung v${result.currentVersionNo}.`);
+        toast.success(`Đã công bố mô tả lĩnh vực (lần ${result.currentVersionNo}).`);
       },
       onError: (err) => toast.error(errorMessage(err)),
     });
@@ -223,10 +222,10 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
       </header>
 
       {/* Tier 1: Version Status Strip (Aligned with Backend Overview & Catalog) */}
-      <div className="pa-ov-version-bar" role="region" aria-label="Trạng thái phiên bản khung chuẩn">
+      <div className="pa-ov-version-bar" role="region" aria-label="Trạng thái phiên bản khóa học">
         <div className="pa-ov-version-item">
           <span className="pa-status-dot is-live" aria-hidden="true" />
-          <span className="pa-ov-version-label">{translateUi('Phiên bản đang dùng')}</span>
+          <span className="pa-ov-version-label">{translateUi('Phiên bản khóa học đang dùng')}</span>
           <strong className="pa-ov-version-val">
             v{currentCatalogVersion}
           </strong>
@@ -241,7 +240,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
           {draftCatalogVersion !== null ? (
             <>
               <span className="pa-status-dot is-amber" style={{ background: '#d97706' }} aria-hidden="true" />
-              <span className="pa-ov-version-label">{translateUi('Bản nháp đang soạn')}</span>
+              <span className="pa-ov-version-label">{translateUi('Bản nháp khóa học')}</span>
               <strong className="pa-ov-version-val">v{draftCatalogVersion}</strong>
               <span className="pa-ov-version-meta">
                 {draftNewCourseCount > 0
@@ -259,7 +258,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
           ) : (
             <>
               <span className="pa-status-dot" aria-hidden="true" />
-              <span className="pa-ov-version-label">{translateUi('Bản nháp')}</span>
+              <span className="pa-ov-version-label">{translateUi('Bản nháp khóa học')}</span>
               <span className="pa-ov-version-meta">{translateUi('Không có bản nháp đang mở.')}</span>
               <Link to="/platform/versions" className="pa-ov-version-link">
                 <span>{translateUi('Tạo bản nháp mới')}</span>
@@ -270,8 +269,8 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
         </div>
       </div>
 
-      {/* Tier 2: 4 Core Enterprise KPI Cards (Compact) */}
-      <div className="pa-ov-kpi-grid pa-kpi-compact" role="region" aria-label="Chỉ số tổng hợp khung năng lực">
+      {/* Tier 2: 3 KPI cards about the framework itself (course versions live in the strip above) */}
+      <div className="pa-ov-kpi-grid pa-kpi-compact pa-kpi-3" role="region" aria-label="Chỉ số tổng hợp khung năng lực">
         {/* KPI 1: Lĩnh vực trụ cột */}
         <div className="pa-ov-kpi-card is-tone-sky">
           <div className="pa-ov-kpi-top">
@@ -312,25 +311,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
           <div className="pa-ov-kpi-sub">
             {tooShort.length > 0
               ? `${tooShort.length} mô tả dưới ${DESCRIPTION_MIN} ký tự`
-              : translateUi('Mô tả các lĩnh vực đủ độ dài')}
-          </div>
-        </div>
-
-        {/* KPI 4: Trạng thái biên soạn & công bố */}
-        <div className={`pa-ov-kpi-card ${draftCatalogVersion !== null ? 'is-tone-amber' : 'is-tone-green'}`}>
-          <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">{translateUi(draftCatalogVersion !== null ? 'Bản nháp khóa học' : 'Phiên bản khóa học')}</span>
-            <div className="pa-kpi-icon-box" aria-hidden="true">
-              {draftCatalogVersion !== null ? <Sparkles size={18} /> : <ShieldCheck size={18} />}
-            </div>
-          </div>
-          <div className="pa-ov-kpi-val">
-            {draftCatalogVersion !== null ? `v${draftCatalogVersion}` : `v${currentCatalogVersion}`}
-          </div>
-          <div className="pa-ov-kpi-sub">
-            {draftCatalogVersion !== null
-              ? `Bản nháp: ${draftNewCourseCount} khóa mới, ${draftEditedCourseCount} khóa đã sửa`
-              : translateUi('Không có bản nháp, đang dùng bản đã công bố')}
+              : translateUi(`Mỗi lĩnh vực có mô tả từ ${DESCRIPTION_MIN} ký tự`)}
           </div>
         </div>
       </div>
@@ -474,7 +455,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
                 <span>
                   {publish.isPending
                     ? translateUi('Đang công bố…')
-                    : translateUi(`Công bố khung v${f.currentVersionNo + 1}`)}
+                    : translateUi(`Công bố mô tả lĩnh vực (lần ${f.currentVersionNo + 1})`)}
                 </span>
               </button>
             </div>
@@ -505,7 +486,7 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
                   {translateUi('Lịch sử công bố')}
                 </h2>
                 <p className="pa-ov-panel-sub">
-                  Các mốc phiên bản đã được công bố chính thức và áp dụng cho toàn hệ thống.
+                  Các lần công bố mô tả lĩnh vực, áp dụng cho toàn hệ thống.
                 </p>
               </div>
             </div>
@@ -517,10 +498,10 @@ function FrameworkView({ framework: f, overviewData: ov, isRefreshing, onRefresh
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span className="pa-fw-release-badge">
-                      Khung v{r.versionNo}
+                      Lần {r.versionNo}
                     </span>
                     <strong style={{ fontSize: 13.5, color: '#0f172a' }}>
-                      {r.releaseNote || 'Công bố định kỳ tiêu chuẩn'}
+                      {r.releaseNote || translateUi('Không có ghi chú')}
                     </strong>
                   </div>
                   <small style={{ fontSize: 12.5, color: '#475569', marginTop: 4, display: 'block' }}>
