@@ -29,15 +29,6 @@ export const remainingRequired = (overview: PulseOverview, domain: PulseDomain):
 
 export const isBeyond = (course: PulseCourseSummary): boolean => course.zone === 'OPTIONAL';
 
-/**
- * Cấp cao nhất nhân viên học được trong lĩnh vực: khóa cao nhất doanh nghiệp đã có (Cơ bản miễn phí, khóa đã mua hoặc
- * đã được giao); khóa bắt buộc chưa mua không tính. 0 = chưa có khóa nào.
- */
-export const openLevel = (overview: PulseOverview, domain: PulseDomain): number =>
-  visibleCourses(overview, domain)
-    .filter((c) => c.slotStatus !== 'PURCHASE_NEEDED')
-    .reduce((top, c) => Math.max(top, c.tier), 0);
-
 /** "Phòng Kế toán" từ "Kế toán" hoặc "Phòng Kế toán"; null khi chưa có phòng ban. */
 export function departmentTitle(name: string | null | undefined): string | null {
   const trimmed = name?.trim();

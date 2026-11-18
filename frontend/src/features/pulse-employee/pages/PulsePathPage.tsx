@@ -2,19 +2,15 @@ import { useState } from 'react';
 import { translateUi } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import {
-  AlertTriangle,
   Award,
   BookOpen,
   Check,
-  ChevronDown,
   ChevronRight,
   Clock,
   Compass,
-  FileText,
   GitBranch,
   LayoutGrid,
   Lock,
-  Rocket,
   ShoppingCart,
   Sparkles,
   Target,
@@ -32,9 +28,6 @@ import {
   departmentTitle,
   isBeyond,
   meetsRequirement,
-  openLevel,
-  remainingRequired,
-  requirementSource,
   roadmapDomains,
   visibleCourses,
 } from '../lib/requirement';
@@ -46,8 +39,8 @@ const domainAnchor = (categoryId: string) => `pu-domain-${categoryId}`;
 
 /**
  * Lộ trình Năng lực Chuẩn hóa (EM-02)
- * 1. Khối tiêu đề (chức danh & đơn vị công tác) + thẻ nhiệm vụ ưu tiên tiếp theo
- * 2. Tóm tắt mức tối thiểu doanh nghiệp yêu cầu (vàng khi còn lĩnh vực chưa đạt)
+ * 1. Khối tiêu đề (chức danh & đơn vị công tác) — không còn thẻ nhiệm vụ ưu tiên / tóm tắt mức tối thiểu riêng:
+ *    lĩnh vực ưu tiên và mức tối thiểu từng lĩnh vực đã hiện ngay trong Mindmap / Ma trận bên dưới
  * 3. Bộ điều khiển góc nhìn: [Bản đồ Hành trình (Mindmap)] và [Bảng Ma trận (Matrix)]
  * 4. Mindmap: mỗi lĩnh vực hiện mọi khóa doanh nghiệp đã có — bắt buộc tới mức tối thiểu, cao hơn là học vượt
  * 5. Quick Syllabus Drawer: xem đề cương & điều kiện miễn học 1-click
@@ -57,7 +50,6 @@ export function PulsePathPage() {
   const trial = useIsEnterpriseTrial();
   const [selectedCourse, setSelectedCourse] = useState<PulseCourseSummary | null>(null);
   const [viewMode, setViewMode] = useState<'mindmap' | 'matrix'>('mindmap');
-  const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set());
 
   if (isLoading) return <PageSkeleton blocks={[100, 240, 400]} />;
   if (error || !data) return <LoadError message={translateUi(pulseErrorMessage(error, 'Không tải được lộ trình của bạn.'))} onRetry={() => refetch()} />;
@@ -66,27 +58,10 @@ export function PulsePathPage() {
 
   const domains = roadmapDomains(data);
 
-  const toggleCriteria = (categoryId: string) => {
-    setExpandedCriteria((prev) => {
-      const next = new Set(prev);
-      if (next.has(categoryId)) next.delete(categoryId);
-      else next.add(categoryId);
-      return next;
-    });
-  };
-
-  const showDomain = (categoryId: string) => {
-    setViewMode('mindmap');
-    requestAnimationFrame(() => document.getElementById(domainAnchor(categoryId))?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-  };
-
   return (
     <div className="pu-path-container">
-      {/* 1. Tiêu đề riêng biệt & Thẻ nhiệm vụ ưu tiên tiếp theo */}
-      <PathHeaderSection overview={data} domains={domains} onSelectCourse={setSelectedCourse} />
-
-      {/* 2. Mức tối thiểu doanh nghiệp yêu cầu */}
-      <RequirementSummary overview={data} domains={domains} onShowDomain={showDomain} />
+      {/* 1. Tiêu đề: chức danh & đơn vị công tác */}
+      <PathHeaderSection overview={data} />
 
       {/* 3. Thanh điều hướng góc nhìn & Chú giải */}
       <div className="pu-path-controls-bar">
@@ -126,8 +101,6 @@ export function PulsePathPage() {
         <MindmapJourney
           overview={data}
           domains={domains}
-          expandedCriteria={expandedCriteria}
-          onToggleCriteria={toggleCriteria}
           onSelectCourse={setSelectedCourse}
         />
       ) : (
@@ -138,7 +111,7 @@ export function PulsePathPage() {
                 Bảng ma trận lộ trình năng lực số · {data.person.positionName ?? 'Vị trí'}
               </h2>
               <p className="pu-matrix-sub">
-                Mỗi lĩnh vực: khóa bắt buộc tới mức tối thiểu doanh nghiệp yêu cầu, các khóa doanh nghiệp đã mua ở cấp cao hơn để học vượt.
+                Mỗi lĩnh vực: khóa bắt buộc tới mức tối thiểu doanh nghiệp yêu cầu.
               </p>
             </div>
           </header>
@@ -162,35 +135,15 @@ export function PulsePathPage() {
   );
 }
 
-/* ── 1. Page Header: Title Block + Priority Mission ───── */
-function PathHeaderSection({
-  overview,
-  domains,
-  onSelectCourse,
-}: {
-  overview: PulseOverview;
-  domains: PulseDomain[];
-  onSelectCourse: (course: PulseCourseSummary) => void;
-}) {
-  const { person, nextSteps } = overview;
+/* ── 1. Page Header: Title Block ───── */
+function PathHeaderSection({ overview }: { overview: PulseOverview }) {
+  const { person } = overview;
   const position = person.positionName ?? 'Vị trí công việc';
-  const nextCourse = nextSteps[0];
-
   const orgSub = [departmentTitle(person.departmentName), person.organizationName].filter(Boolean).join(' · ');
-
-  // Lĩnh vực và cấp độ của khóa học ưu tiên tiếp theo
-  const nextStationIdx = nextCourse ? domains.findIndex((d) => d.categoryId === nextCourse.categoryId) : -1;
-  const nextDomain = nextStationIdx >= 0 ? domains[nextStationIdx] : null;
-  const stationLabel = nextStationIdx >= 0 ? `Lĩnh vực ${pad2(nextStationIdx + 1)}` : null;
-
-  const isPreTest = nextCourse?.slotStatus === 'PRE_ASSESSMENT' || nextCourse?.canStartPreAssessment;
-  const isInProgress = nextCourse?.slotStatus === 'IN_PROGRESS';
-  const isWaitingReview = nextCourse?.slotStatus === 'PRE_REVIEW' || nextCourse?.slotStatus === 'IN_REVIEW';
-  const nextIsBeyond = nextCourse ? isBeyond(nextCourse) : false;
 
   return (
     <header className="pu-path-header-group">
-      {/* Khối 1: Tiêu đề riêng biệt trên cùng (Không bọc khung, hiển thị trực tiếp trên nền) */}
+      {/* Tiêu đề hiển thị trực tiếp trên nền (không bọc khung) */}
       <div className="pu-path-title-block">
         <div className="pu-path-badge-pill">
           <Award size={13} className="text-blue-700" />
@@ -199,187 +152,7 @@ function PathHeaderSection({
         <h1 className="pu-path-main-title">{position}</h1>
         <p className="pu-path-sub-title">{orgSub || 'Công ty Cổ phần Công nghệ DigiTalent Việt Nam'}</p>
       </div>
-
-      {/* Khối 2: Thẻ Nhiệm vụ ưu tiên tiếp theo (Chuẩn bộ màu Xanh thương hiệu) */}
-      {nextCourse && (
-        <div className={`pu-priority-mission-card${nextIsBeyond ? ' beyond' : ''}`}>
-          <div className="pu-pmission-indicator">
-            {nextIsBeyond ? <Rocket size={18} className="pu-beyond-icon" /> : <Sparkles size={18} className="text-blue-700" />}
-          </div>
-
-          <div className="pu-pmission-main">
-            <div className="pu-pmission-header-line">
-              <span className="pu-pmission-kicker">{nextIsBeyond ? 'Gợi ý học vượt' : 'Nhiệm vụ ưu tiên tiếp theo'}</span>
-              {stationLabel && nextDomain && (
-                <span className="pu-pmission-station-chip">
-                  {stationLabel}: {nextDomain.name} · {levelName(nextCourse.tier)}
-                </span>
-              )}
-            </div>
-
-            <h2
-              className="pu-pmission-course-title"
-              onClick={() => onSelectCourse(nextCourse)}
-              title="Bấm để xem nhanh đề cương khóa học"
-            >
-              {toSentenceCase(nextCourse.title)}
-            </h2>
-
-            <p className="pu-pmission-explanation">
-              {isPreTest
-                ? 'Làm bài kiểm tra đánh giá năng lực đầu vào (~20 phút). Đạt kết quả sẽ được xét miễn học ngay toàn bộ khóa học này.'
-                : isInProgress
-                  ? `Khóa học đang học dở dang (đã hoàn thành ${nextCourse.progressPercent}%). Hãy tiếp tục bài học tiếp theo để hoàn thành khóa học.`
-                  : isWaitingReview
-                    ? 'Bài kiểm tra của bạn đã nộp thành công và đang chờ xác nhận kết quả.'
-                    : nextIsBeyond
-                      ? 'Bạn đã đạt mọi mức tối thiểu doanh nghiệp yêu cầu. Khóa này doanh nghiệp đã mua: học vượt để phát triển thêm, việc này được khuyến khích.'
-                      : 'Khóa bắt buộc tiếp theo để đạt mức tối thiểu doanh nghiệp yêu cầu.'}
-            </p>
-          </div>
-
-          <div className="pu-pmission-action-group">
-            {isPreTest ? (
-              <Link
-                to={PULSE_PATHS.preAssessment(nextCourse.courseId)}
-                className="pu-pmission-cta-btn primary pretest"
-              >
-                <Zap size={14} />
-                <span>Đánh giá đầu vào ngay</span>
-                <ChevronRight size={14} className="pu-arrow-icon" />
-              </Link>
-            ) : isInProgress ? (
-              <Link
-                to={PULSE_PATHS.course(nextCourse.courseId)}
-                className="pu-pmission-cta-btn primary study"
-              >
-                <BookOpen size={14} />
-                <span>Tiếp tục học ngay</span>
-                <ChevronRight size={14} className="pu-arrow-icon" />
-              </Link>
-            ) : (
-              <Link
-                to={PULSE_PATHS.course(nextCourse.courseId)}
-                className="pu-pmission-cta-btn primary default"
-              >
-                <span>Bắt đầu học ngay</span>
-                <ChevronRight size={14} className="pu-arrow-icon" />
-              </Link>
-            )}
-
-            <button
-              type="button"
-              className="pu-pmission-cta-btn secondary"
-              onClick={() => onSelectCourse(nextCourse)}
-              title="Xem đề cương khóa học"
-            >
-              <FileText size={13} />
-              <span>Xem đề cương</span>
-            </button>
-          </div>
-        </div>
-      )}
     </header>
-  );
-}
-
-/* ── 2. Mức tối thiểu doanh nghiệp yêu cầu ─────────────────────────────── */
-function RequirementSummary({
-  overview,
-  domains,
-  onShowDomain,
-}: {
-  overview: PulseOverview;
-  domains: PulseDomain[];
-  onShowDomain: (categoryId: string) => void;
-}) {
-  const required = domains.filter((d) => d.pathTop > 0);
-  if (required.length === 0) return null;
-
-  const unmet = required.filter((d) => !meetsRequirement(d));
-  const beyondOpen = overview.courses.filter((c) => isBeyond(c) && !c.approved).length;
-  const department = departmentTitle(overview.person.departmentName);
-  const byDepartment = required.some((d) => d.requiredByDepartment);
-  const who = byDepartment && department ? `doanh nghiệp yêu cầu cho ${department}` : 'doanh nghiệp yêu cầu';
-  const beyondNote = beyondOpen > 0
-    ? `${beyondOpen} khóa doanh nghiệp đã mua ở cấp cao hơn luôn mở để bạn học vượt. Học vượt là định hướng riêng của bạn và được khuyến khích.`
-    : 'Khi doanh nghiệp mua thêm khóa ở cấp cao hơn, khóa sẽ mở ngay để bạn học vượt.';
-
-  if (unmet.length === 0) {
-    return (
-      <section className="pu-req-summary met" aria-label="Mức tối thiểu doanh nghiệp yêu cầu">
-        <span className="pu-req-summary-icon" aria-hidden="true"><Check size={18} strokeWidth={3} /></span>
-        <div className="pu-req-summary-body">
-          <strong className="pu-req-summary-title">Bạn đã đạt mọi mức tối thiểu {who}.</strong>
-          <p className="pu-req-summary-note">{beyondNote}</p>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="pu-req-summary gap" role="status" aria-label="Lĩnh vực chưa đạt mức tối thiểu">
-      <span className="pu-req-summary-icon" aria-hidden="true"><AlertTriangle size={18} /></span>
-      <div className="pu-req-summary-body">
-        <strong className="pu-req-summary-title">
-          Còn {unmet.length}/{required.length} lĩnh vực chưa đạt mức tối thiểu {who}
-        </strong>
-        <ul className="pu-req-summary-chips" aria-label="Lĩnh vực cần đạt">
-          {unmet.map((d) => (
-            <li key={d.categoryId}>
-              <button type="button" className="pu-req-chip" onClick={() => onShowDomain(d.categoryId)}>
-                <span className="pu-req-chip-num">{pad2(domains.indexOf(d) + 1)}</span>
-                <span className="pu-req-chip-name">{d.name}</span>
-                <span className="pu-req-chip-level">Cần {levelName(d.pathTop)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        <p className="pu-req-summary-note">{beyondNote}</p>
-      </div>
-    </section>
-  );
-}
-
-/** Dải yêu cầu của một lĩnh vực: ai đặt, mức tối thiểu, đã đạt hay còn khóa bắt buộc nào. */
-function RequirementBar({ overview, domain }: { overview: PulseOverview; domain: PulseDomain }) {
-  const openTop = openLevel(overview, domain);
-  const openChip = openTop > domain.pathTop ? (
-    <span className="pu-req-open" title="Khóa doanh nghiệp đã mua ở cấp cao hơn mức tối thiểu: bạn tự chọn học vượt, việc này được khuyến khích">
-      <Rocket size={12} aria-hidden="true" /> Doanh nghiệp mở tới <strong>{levelName(openTop)}</strong> · học vượt được
-    </span>
-  ) : null;
-
-  if (domain.pathTop === 0) {
-    return (
-      <div className="pu-req-bar neutral">
-        <Rocket size={14} aria-hidden="true" />
-        <span className="pu-req-text">
-          {departmentTitle(overview.person.departmentName) ?? 'Phòng ban của bạn'} không đặt mức bắt buộc cho lĩnh vực này. Các khóa dưới đây là học vượt.
-        </span>
-        {openChip}
-      </div>
-    );
-  }
-
-  const met = meetsRequirement(domain);
-  const remaining = remainingRequired(overview, domain);
-  return (
-    <div className={`pu-req-bar ${met ? 'met' : 'gap'}`}>
-      {met ? <Check size={14} strokeWidth={3} aria-hidden="true" /> : <AlertTriangle size={14} aria-hidden="true" />}
-      <span className="pu-req-text">
-        {requirementSource(domain, overview.person)} yêu cầu tối thiểu <strong>{levelName(domain.pathTop)}</strong>
-      </span>
-      <LevelDots level={domain.pathTop} />
-      {openChip}
-      <span className="pu-req-status">
-        {met
-          ? 'Đã đạt'
-          : remaining.length > 0
-            ? `Chưa đạt · còn ${remaining.length} khóa bắt buộc: ${remaining.map((c) => toSentenceCase(c.title)).join(', ')}`
-            : 'Chưa đạt'}
-      </span>
-    </div>
   );
 }
 
@@ -387,14 +160,10 @@ function RequirementBar({ overview, domain }: { overview: PulseOverview; domain:
 function MindmapJourney({
   overview,
   domains,
-  expandedCriteria,
-  onToggleCriteria,
   onSelectCourse,
 }: {
   overview: PulseOverview;
   domains: PulseDomain[];
-  expandedCriteria: Set<string>;
-  onToggleCriteria: (categoryId: string) => void;
   onSelectCourse: (course: PulseCourseSummary) => void;
 }) {
   return (
@@ -483,9 +252,6 @@ function MindmapJourney({
                 </div>
               </div>
 
-              {/* Mức tối thiểu doanh nghiệp yêu cầu cho lĩnh vực */}
-              <RequirementBar overview={overview} domain={domain} />
-
               {/* Dòng chảy các khóa học trong lĩnh vực (L1 -> L2 -> L3) */}
               <div className="pu-station-courses-flow">
                 {domainCourses.map((course, idx) => (
@@ -503,59 +269,6 @@ function MindmapJourney({
                   </div>
                 ))}
               </div>
-
-              {/* Danh mục Tiêu chí Chuẩn hóa Lĩnh vực (Thu gọn tinh tế) */}
-              {domain.competencies.length > 0 && (
-                <div className="pu-station-criteria-area">
-                  <button
-                    type="button"
-                    className="pu-criteria-toggle-btn"
-                    onClick={() => onToggleCriteria(domain.categoryId)}
-                    aria-expanded={expandedCriteria.has(domain.categoryId)}
-                  >
-                    <FileText size={12} />
-                    <span>
-                      Tiêu chuẩn năng lực chi tiết ({domain.competencies.length} tiêu chí)
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`pu-criteria-chevron ${
-                        expandedCriteria.has(domain.categoryId) ? 'open' : ''
-                      }`}
-                    />
-                  </button>
-
-                  {expandedCriteria.has(domain.categoryId) && (
-                    <div className="pu-criteria-tags-flow">
-                      {domain.competencies.map((comp) => {
-                        const isMet = domain.verified >= comp.requiredLevel;
-                        return (
-                          <div
-                            key={comp.code}
-                            className={`pu-crit-pill ${isMet ? 'met' : 'gap'}`}
-                            title={`${comp.name} · Mức yêu cầu: ${levelName(comp.requiredLevel)}`}
-                          >
-                            <span className="pu-crit-name">{comp.name}</span>
-                            <span className="pu-crit-level">
-                              ({levelName(comp.requiredLevel)})
-                            </span>
-                            {isMet ? (
-                              <span className="pu-crit-status met">
-                                <Check size={9} strokeWidth={3} /> Đạt
-                              </span>
-                            ) : (
-                              <span className="pu-crit-status gap">Cần học</span>
-                            )}
-                            {comp.core && (
-                              <span className="pu-crit-core">Cốt lõi</span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </article>
         );
@@ -607,15 +320,11 @@ function StationCourseCard({
         <span className="pu-scard-level">
           Khóa {levelName(course.tier)} <LevelDots level={course.tier} />
         </span>
-        {beyond ? (
-          <span className="pu-scard-zone beyond" title="Cao hơn mức tối thiểu doanh nghiệp yêu cầu, doanh nghiệp đã mua: được khuyến khích">
-            <Rocket size={10} /> Học vượt
-          </span>
-        ) : requirementGap ? (
+        {requirementGap && !beyond && (
           <span className="pu-scard-zone required" title="Cần đạt để đủ mức tối thiểu doanh nghiệp yêu cầu">
             Bắt buộc
           </span>
-        ) : null}
+        )}
         {isDone && (
           <span className="pu-scard-badge done">
             <Check size={10} strokeWidth={3} /> Đã đạt
@@ -712,16 +421,6 @@ function StationCourseCard({
             {beyond ? 'Học vượt →' : 'Bắt đầu học →'}
           </Link>
         )}
-
-        <button
-          type="button"
-          className="pu-scard-syllabus-btn"
-          onClick={() => onSelectCourse(course)}
-          title="Xem nhanh đề cương khóa học"
-        >
-          <FileText size={12} />
-          <span>Đề cương</span>
-        </button>
       </div>
     </div>
   );

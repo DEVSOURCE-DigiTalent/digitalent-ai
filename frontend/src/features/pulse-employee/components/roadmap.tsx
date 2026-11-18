@@ -1,6 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, Check, Clock, FileText, Lock, Rocket, ShieldCheck, Target, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, Clock, Lock, ShieldCheck, Target, Zap } from 'lucide-react';
 import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
 import { courseLabel, courseStatusText, courseTone, doneLabel, showsProgress } from '../lib/course-state';
 import { capNote, levelName, pad2 } from '../lib/labels';
@@ -55,27 +55,18 @@ export function RoadmapPlan({
               <th scope="col" className="pu-matrix-col-domain">
                 <div className="pu-matrix-th-content">
                   <span className="pu-matrix-th-title">{translateUi("Lĩnh vực Năng lực")}</span>
-                  <span className="pu-matrix-th-sub">Khung 6 lĩnh vực chuẩn hóa</span>
                 </div>
               </th>
-              {[1, 2, 3].map((level) => {
-                const subDescriptions = [
-                  'Nền tảng ứng dụng',
-                  'Độc lập tác nghiệp',
-                  'Tối ưu & Chuyên sâu',
-                ];
-                return (
-                  <th scope="col" key={level} className={`pu-matrix-col-tier lv${level}`}>
-                    <div className="pu-matrix-th-content">
-                      <div className="pu-matrix-th-badge">
-                        <span>{levelName(level)}</span>
-                        <LevelDots level={level} />
-                      </div>
-                      <span className="pu-matrix-th-sub">{subDescriptions[level - 1]}</span>
+              {[1, 2, 3].map((level) => (
+                <th scope="col" key={level} className={`pu-matrix-col-tier lv${level}`}>
+                  <div className="pu-matrix-th-content">
+                    <div className="pu-matrix-th-badge">
+                      <span>{levelName(level)}</span>
+                      <LevelDots level={level} />
                     </div>
-                  </th>
-                );
-              })}
+                  </div>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -255,10 +246,6 @@ function PlanCell({
             <span className={`pu-mcard-badge ${requirementGap ? 'attention' : 'target'}`} title="Mức tối thiểu doanh nghiệp yêu cầu">
               <Target size={10} />{translateUi(" Mức yêu cầu")}</span>
           )}
-          {beyond && (
-            <span className="pu-mcard-badge beyond" title="Cao hơn mức tối thiểu, doanh nghiệp đã mua: được khuyến khích">
-              <Rocket size={10} />{translateUi(" Học vượt")}</span>
-          )}
         </div>
       </div>
 
@@ -329,18 +316,6 @@ function PlanCell({
           >
             <span>{beyond ? 'Học vượt →' : 'Vào học →'}</span>
           </Link>
-        )}
-
-        {onSelectCourse && (
-          <button
-            type="button"
-            className="pu-mcard-syllabus-btn"
-            onClick={() => onSelectCourse(course)}
-            title="Xem nhanh đề cương khóa học"
-          >
-            <FileText size={11} />
-            <span>Đề cương</span>
-          </button>
         )}
       </div>
     </div>

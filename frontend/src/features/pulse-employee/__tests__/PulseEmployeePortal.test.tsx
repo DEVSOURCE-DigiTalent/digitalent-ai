@@ -342,28 +342,28 @@ describe('PulsePathPage roadmap', () => {
     });
   };
 
-  it('shows the department minimum, flags the unmet domain and opens every bought course above it', async () => {
+  it('flags the unmet domain and opens every bought course above it', async () => {
     signIn({ enterpriseTrialStatus: null });
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(roadmapOverview()));
 
     renderAt(PULSE_PATHS.path, null, <Route path={PULSE_PATHS.path} element={<PulsePathPage />} />);
 
-    const summary = await screen.findByRole('status', { name: 'Lĩnh vực chưa đạt mức tối thiểu' });
-    expect(within(summary).getByText('Còn 1/2 lĩnh vực chưa đạt mức tối thiểu doanh nghiệp yêu cầu cho Phòng Operations')).toBeInTheDocument();
-    expect(within(summary).getByRole('button', { name: /Khai thác dữ liệu và thông tin/ })).toBeInTheDocument();
+    // Không còn thẻ nhiệm vụ ưu tiên / tóm tắt mức tối thiểu ở đầu trang, tiêu chí chi tiết hay dải yêu cầu trong lĩnh vực:
+    // lĩnh vực chưa đạt hiện bằng viền vàng + nhãn "Bắt buộc" trên khóa còn thiếu.
+    const data = await screen.findByRole('article', { name: /Lĩnh vực 01/ });
+    expect(screen.queryByText('Nhiệm vụ ưu tiên tiếp theo')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Lĩnh vực chưa đạt mức tối thiểu' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Mục tiêu:/)).not.toBeInTheDocument();
-
-    const data = screen.getByRole('article', { name: /Lĩnh vực 01/ });
-    expect(within(data).getByText(/Phòng Operations yêu cầu tối thiểu/)).toBeInTheDocument();
-    expect(within(data).getByText('Chưa đạt · còn 1 khóa bắt buộc: Chiến lược tìm kiếm')).toBeInTheDocument();
+    expect(within(data).getByText('Lĩnh vực ưu tiên')).toBeInTheDocument();
+    expect(screen.queryByText(/Tiêu chuẩn năng lực chi tiết/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/yêu cầu tối thiểu/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/học vượt được/)).not.toBeInTheDocument();
     // Không hiện mã khóa / mã lĩnh vực (M1-I, M1…): nhân viên chỉ thấy tên khóa và cấp độ.
     expect(within(data).queryByText(/\bM1(-[FIA])?\b/)).not.toBeInTheDocument();
     expect(within(data).getAllByText(/^Khóa Trung cấp/).length).toBeGreaterThan(0);
     expect(within(data).getByText('Bắt buộc')).toBeInTheDocument();
     expect(within(data).getByText('Quản trị dữ liệu nâng cao')).toBeInTheDocument();
     expect(within(data).getByText('Mở khi đạt Trung cấp')).toBeInTheDocument();
-    expect(within(data).getByText('Nâng cao', { selector: '.pu-req-open strong' })).toBeInTheDocument();
-    expect(within(screen.getByRole('article', { name: /Lĩnh vực 02/ })).getByText('Trung cấp', { selector: '.pu-req-open strong' })).toBeInTheDocument();
 
     const communication = screen.getByRole('article', { name: /Lĩnh vực 02/ });
     expect(within(communication).getByText('Đạt mức yêu cầu')).toBeInTheDocument();
@@ -385,9 +385,11 @@ describe('PulsePathPage roadmap', () => {
 
     renderAt(PULSE_PATHS.path, null, <Route path={PULSE_PATHS.path} element={<PulsePathPage />} />);
 
-    expect(await screen.findByText('Bạn đã đạt mọi mức tối thiểu doanh nghiệp yêu cầu cho Phòng Operations.')).toBeInTheDocument();
-    expect(screen.getByText(/2 khóa doanh nghiệp đã mua ở cấp cao hơn luôn mở để bạn học vượt/)).toBeInTheDocument();
-    expect(screen.getByText('Gợi ý học vượt')).toBeInTheDocument();
+    const communication = await screen.findByRole('article', { name: /Lĩnh vực 02/ });
+    expect(within(screen.getByRole('article', { name: /Lĩnh vực 01/ })).getByText('Đạt mức yêu cầu')).toBeInTheDocument();
+    expect(within(communication).getByText('Đạt mức yêu cầu')).toBeInTheDocument();
+    expect(within(communication).getByRole('link', { name: /Học vượt/ })).toHaveAttribute('href', PULSE_PATHS.course('i2'));
+    expect(screen.queryByText('Gợi ý học vượt')).not.toBeInTheDocument();
   });
 });
 
