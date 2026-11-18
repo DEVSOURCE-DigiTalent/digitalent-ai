@@ -14,7 +14,7 @@ public class UpdatePlatformCatalogPricesUseCaseValidator : AbstractValidator<Upd
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.CourseId).NotEmpty();
-            item.RuleFor(i => i.PricePerSeat).InclusiveBetween(0, 1_000_000_000).WithMessage("Giá mỗi suất không hợp lệ.");
+            item.RuleFor(i => i.Price).InclusiveBetween(0, 1_000_000_000).WithMessage("Giá khóa học không hợp lệ.");
             item.RuleFor(i => i.SalesStatus).Must(Statuses.PlatformCourseSales.IsValid).WithMessage("Trạng thái bán không hợp lệ.");
         });
     }

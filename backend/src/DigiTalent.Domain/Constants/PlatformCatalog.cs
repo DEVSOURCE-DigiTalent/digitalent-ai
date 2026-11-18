@@ -14,12 +14,6 @@ public static class PlatformCatalog
     /// <summary>Framework of the Circular 02/2025 standard (the six TT02 domains).</summary>
     public const string Tt02FrameworkCode = "TT02_2025";
 
-    /// <summary>course_seat_orders.kind</summary>
-    public static class SeatOrderKind
-    {
-        public const string Purchase = "PURCHASE";
-        public const string AdminGrant = "ADMIN_GRANT";
-    }
 
     /// <summary>platform_catalog_courses.change_kind</summary>
     public static class ChangeKind
@@ -76,7 +70,7 @@ public static class PlatformCatalog
         "Kết luận có căn cứ",
     };
 
-    /// <summary>Default price per seat of a new course (VND); Basic is always free.</summary>
+    /// <summary>Default price of a new course for a whole organization (VND); Basic is always free.</summary>
     public const long DefaultIntermediatePrice = 399_000;
     public const long DefaultAdvancedPrice = 699_000;
 

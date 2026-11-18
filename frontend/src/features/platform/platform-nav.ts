@@ -58,7 +58,7 @@ export const PLATFORM_NAV_GROUPS: readonly PlatformNavGroup[] = [
         label: 'Tổ chức',
         glyph: '',
         icon: Building2,
-        description: 'Trạng thái, suất học và nhân viên của từng tổ chức',
+        description: 'Trạng thái, khóa đã mua và nhân viên của từng tổ chức',
       },
       {
         to: '/platform/users',
@@ -103,7 +103,7 @@ export const PLATFORM_NAV_GROUPS: readonly PlatformNavGroup[] = [
         label: 'Giá và đơn hàng',
         glyph: '',
         icon: ReceiptText,
-        description: 'Giá mỗi suất và lịch sử mua suất',
+        description: 'Giá khóa học và lịch sử mua khóa',
       },
     ],
   },

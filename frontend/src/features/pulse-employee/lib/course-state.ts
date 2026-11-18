@@ -52,8 +52,8 @@ export function courseStatusText(course: PulseCourseSummary, courses: PulseCours
       return 'Lần nộp đầu chưa đạt. Xem nhận xét và chờ mở lần nộp cuối.';
     case 'NEEDS_SUPPORT':
       return 'Người hướng dẫn sẽ sắp xếp hỗ trợ trước khi lộ trình tiếp tục.';
-    case 'SEAT_NEEDED':
-      return 'Cần học khóa này. Cấp độ có phí cần suất học do chủ doanh nghiệp phân bổ; bạn xem trước được đề cương.';
+    case 'PURCHASE_NEEDED':
+      return 'Cần học khóa này. Doanh nghiệp chưa mua khóa có phí này; bạn xem trước được đề cương.';
     case 'AFTER_PRIOR_LEVEL':
       return `${optional}Mở khi ${prior?.code ?? 'khóa cấp trước'} đạt. Khóa này cũng bắt đầu bằng bài đánh giá trước khi học.`;
     case 'ABOVE_CEILING':

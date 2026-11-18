@@ -8,7 +8,7 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// Truy cập một khóa trong lộ trình của nhân viên: tìm trạng thái khóa (bản trong danh mục hoặc bản nhân viên đang
-/// học), mở lượt học cho khóa Cơ bản khi đủ điều kiện (§8: không cần suất), và chặn với thông báo theo lý do.
+/// học), mở lượt học cho khóa Cơ bản khi đủ điều kiện (§8: miễn phí), và chặn với thông báo theo lý do.
 /// </summary>
 public class PulseCourseWorkspace
 {
@@ -45,7 +45,7 @@ public class PulseCourseWorkspace
 
     /// <summary>
     /// Lượt học (được theo dõi) để ghi tiến độ. Khóa Cơ bản tự mở lượt học khi nhân viên đủ điều kiện;
-    /// khóa có phí chỉ dùng lượt học đã có (suất đã kích hoạt). Lượt NOT_STARTED chuyển sang IN_PROGRESS.
+    /// khóa có phí cần doanh nghiệp đã mua khóa. Lượt NOT_STARTED chuyển sang IN_PROGRESS.
     /// </summary>
     public async Task<Enrollment> EnsureEnrollmentAsync(PulseLearnerSnapshot snapshot, PulseCourseState state)
     {
@@ -91,7 +91,7 @@ public class PulseCourseWorkspace
         PulseBlockReason.PriorLevelRequired => "Cần đạt khóa ở cấp trước của cùng lĩnh vực trước.",
         PulseBlockReason.PreAssessmentRequired => "Hãy làm bài kiểm tra đầu vào (trắc nghiệm, tự chấm) của khóa này trước. Đạt 80% thì bỏ qua phần học và mở bài đánh giá cuối khóa; chưa đạt thì học tuần tự từng mô-đun.",
         PulseBlockReason.PreAssessmentPending => "Bài đánh giá trước khi học đang chờ chấm. Khóa mở để học nếu bài chưa đạt.",
-        PulseBlockReason.SeatRequired => "Khóa học có phí cần suất học do chủ doanh nghiệp phân bổ trước khi mở toàn bộ nội dung.",
+        PulseBlockReason.PurchaseRequired => "Khóa học có phí: doanh nghiệp cần mua khóa học để mở toàn bộ nội dung cho nhân viên.",
         PulseBlockReason.PreviousModuleRequired => "Hãy đạt câu hỏi ôn tập của mô đun trước.",
         PulseBlockReason.SlidesNotViewed => "Hãy đọc hết các trang nội dung của mô đun trước khi làm câu hỏi ôn tập.",
         PulseBlockReason.ReviewRequired => "Hãy mở lại trang nội dung của câu chưa đúng trước khi làm lần tiếp theo.",
@@ -107,7 +107,7 @@ public class PulseCourseWorkspace
         PulsePreStatus.NotYet => "Mỗi khóa có một bài đánh giá trước khi học. Bài của bạn chưa đạt — hãy học khóa rồi làm bài cuối khóa.",
         PulsePreStatus.NotNeeded => "Khóa này không cần bài đánh giá trước khi học: khóa đã được công nhận hoặc bạn đã bắt đầu học.",
         PulsePreStatus.Required => "Bài đánh giá đầu vào có tự luận đã được thay bằng bài kiểm tra đầu vào trắc nghiệm (tự chấm, không cần người chấm). Hãy làm bài kiểm tra đầu vào của khóa.",
-        _ => state.BlockReason is { } reason && reason is not PulseBlockReason.PreAssessmentRequired and not PulseBlockReason.SeatRequired
+        _ => state.BlockReason is { } reason && reason is not PulseBlockReason.PreAssessmentRequired and not PulseBlockReason.PurchaseRequired
             ? BlockMessage(reason)
             : "Bài đánh giá trước khi học của khóa này chưa mở.",
     };

@@ -21,19 +21,21 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { useCourseCatalog, usePurchaseCourseSeats } from '@/hooks/use-assignments';
+import { useCourseCatalog, usePurchaseCourse } from '@/hooks/use-assignments';
 import { useOrganization } from '@/hooks/use-organization';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { PULSE_TOKENS } from '../owner-theme';
 import type { CourseListItem } from '@/services/assignment.service';
 
+/** One paid course bought for the whole organization: one price, every employee may learn it. */
 interface CartItem {
   course: CourseListItem;
   canonicalCode: string;
   level: number;
-  unitPrice: number;
-  seats: number;
+  price: number;
 }
+
+const coursePrice = (course: CourseListItem, level: number) => course.price || (level === 3 ? 699000 : 399000);
 
 export function CourseCheckoutPage() {
   useUiLanguage();
@@ -41,13 +43,12 @@ export function CourseCheckoutPage() {
   const [searchParams] = useSearchParams();
   const { data: orgData } = useOrganization();
   const currentUser = useCurrentUser((s) => s.user);
-  const purchaseMutation = usePurchaseCourseSeats();
+  const purchaseMutation = usePurchaseCourse();
 
   const { data: coursesData, isLoading: coursesLoading } = useCourseCatalog({});
 
-  // 1. Phân tích danh sách mã khóa học từ URL (?courses=M1-I,M2-A&seats=10)
+  // 1. Phân tích danh sách mã khóa học từ URL (?courses=M1-I,M2-A)
   const coursesParam = searchParams.get('courses') || searchParams.get('selected') || searchParams.get('code') || '';
-  const defaultSeats = Math.max(1, Number(searchParams.get('seats')) || 10);
 
   const requestedCodes = useMemo(() => {
     return distinctCourseCodes(coursesParam);
@@ -61,41 +62,37 @@ export function CourseCheckoutPage() {
     if (!coursesData?.items || cartInitialized) return;
 
     const items: CartItem[] = [];
+    const owned: string[] = [];
     const allCourses = coursesData.items;
+    const levelOf = (code: string) => (code.endsWith('-A') ? 3 : code.endsWith('-I') ? 2 : 1);
 
     requestedCodes.forEach((reqCode) => {
       const match = allCourses.find((c) => courseCodeKey(c.code) === reqCode);
-      if (match) {
-        const level = match.code.endsWith('-A') ? 3 : match.code.endsWith('-I') ? 2 : 1;
-        const unitPrice = level === 3 ? 699000 : level === 2 ? 399000 : 0;
-        items.push({
-          course: match,
-          canonicalCode: canonicalCourseCode(match.code),
-          level,
-          unitPrice,
-          seats: defaultSeats,
-        });
+      if (!match) return;
+      const level = levelOf(match.code);
+      // Khóa Cơ bản miễn phí; khóa đã mua thì cả doanh nghiệp đã học được, không mua lại.
+      if (level === 1) return;
+      if (match.isPurchased) {
+        owned.push(canonicalCourseCode(match.code));
+        return;
       }
+      items.push({ course: match, canonicalCode: canonicalCourseCode(match.code), level, price: coursePrice(match, level) });
     });
 
-    // Fallback: nếu không có mã nào truyền vào hoặc không tìm thấy, lấy khóa M1-I làm ví dụ
-    if (items.length === 0 && allCourses.length > 0) {
-      const defaultCourse = allCourses.find((c) => c.code.endsWith('-I')) || allCourses[0];
+    // Không truyền mã nào: gợi ý khóa Trung cấp đầu tiên doanh nghiệp chưa mua.
+    if (items.length === 0 && owned.length === 0 && requestedCodes.length === 0) {
+      const defaultCourse = allCourses.find((c) => c.code.endsWith('-I') && !c.isPurchased);
       if (defaultCourse) {
-        const level = defaultCourse.code.endsWith('-A') ? 3 : 2;
-        items.push({
-          course: defaultCourse,
-          canonicalCode: canonicalCourseCode(defaultCourse.code),
-          level,
-          unitPrice: level === 3 ? 699000 : 399000,
-          seats: defaultSeats,
-        });
+        items.push({ course: defaultCourse, canonicalCode: canonicalCourseCode(defaultCourse.code), level: 2, price: coursePrice(defaultCourse, 2) });
       }
     }
 
+    if (owned.length > 0) {
+      toast.info(`Doanh nghiệp đã mua ${owned.join(', ')} — mọi nhân viên đều học được, không cần mua lại.`);
+    }
     setCartItems(items);
     setCartInitialized(true);
-  }, [coursesData?.items, requestedCodes, defaultSeats, cartInitialized]);
+  }, [coursesData?.items, requestedCodes, cartInitialized]);
 
   // 2. Thông tin pháp lý & đại diện doanh nghiệp
   const [customerInfo, setCustomerInfo] = useState({
@@ -223,22 +220,8 @@ export function CourseCheckoutPage() {
     qrCode?: string;
   } | null>(null);
 
-  // Tính toán chi phí
-  const totalAmount = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.seats * item.unitPrice, 0);
-  }, [cartItems]);
-
-  const updateSeats = (canonicalCode: string, delta: number) => {
-    setCartItems((prev) =>
-      prev.map((item) => {
-        if (item.canonicalCode === canonicalCode) {
-          const nextSeats = Math.max(1, item.seats + delta);
-          return { ...item, seats: nextSeats };
-        }
-        return item;
-      })
-    );
-  };
+  // Tính toán chi phí: mỗi khóa trả một lần cho cả doanh nghiệp
+  const totalAmount = useMemo(() => cartItems.reduce((sum, item) => sum + item.price, 0), [cartItems]);
 
   const removeCartItem = (canonicalCode: string) => {
     if (cartItems.length <= 1) {
@@ -250,6 +233,10 @@ export function CourseCheckoutPage() {
 
   // Tiến hành xác nhận đơn hàng & chuyển sang bước thanh toán VietQR
   const handleProceedToPayment = async () => {
+    if (cartItems.length === 0) {
+      toast.error('Chưa có khóa học nào cần mua.');
+      return;
+    }
     if (!customerInfo.representativeName.trim()) {
       toast.error('Vui lòng nhập họ và tên người đại diện.');
       return;
@@ -274,11 +261,7 @@ export function CourseCheckoutPage() {
       const signerNote = `[Hợp đồng điện tử: ${docHash}] Đại diện: ${customerInfo.representativeName} (${customerInfo.phone})`;
 
       for (const item of cartItems) {
-        const res = await purchaseMutation.mutateAsync({
-          courseId: item.course.id,
-          seats: item.seats,
-          note: signerNote,
-        });
+        const res = await purchaseMutation.mutateAsync({ courseId: item.course.id, note: signerNote });
         lastOrderId = res.orderId;
       }
 
@@ -365,7 +348,7 @@ export function CourseCheckoutPage() {
             Hợp đồng đào tạo chuẩn hóa năng lực số · Nghị định 130/2018/NĐ-CP
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] heading-gradient">
-            Thanh toán & Ký kết Hợp đồng Cung cấp Suất học
+            Thanh toán & Ký kết Hợp đồng mua khóa học
           </h1>
         </header>
 
@@ -394,8 +377,8 @@ export function CourseCheckoutPage() {
                 <span className="font-bold text-slate-900">{customerInfo.representativeName} ({customerInfo.phone})</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">{translateUi("Số lượng khóa mở bản quyền:")}</span>
-                <span className="font-bold text-slate-900">{cartItems.length}{translateUi(" khóa (")}{cartItems.reduce((s, c) => s + c.seats, 0)}{translateUi(" suất học)")}</span>
+                <span className="text-slate-500">{translateUi("Khóa học đã mua:")}</span>
+                <span className="font-bold text-slate-900">{cartItems.length}{translateUi(" khóa · mọi nhân viên đều học được")}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">{translateUi("Tổng thanh toán:")}</span>
@@ -421,11 +404,11 @@ export function CourseCheckoutPage() {
 
               <button
                 type="button"
-                onClick={() => navigate('/enterprise/training-batches')}
+                onClick={() => navigate('/enterprise/assignments')}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-105"
                 style={{ background: 'var(--po-accent)' }}
               >
-                <span>{translateUi("Tạo đợt đào tạo & Gán nhân sự →")}</span>
+                <span>{translateUi("Giao khóa học cho nhân sự →")}</span>
               </button>
 
               <button
@@ -843,7 +826,7 @@ export function CourseCheckoutPage() {
                       >
                         Điều khoản Hợp đồng đào tạo trực tuyến
                       </button>{' '}
-                      và cam kết thanh toán chi phí suất học theo thông tin đã đăng ký.
+                      và cam kết thanh toán chi phí khóa học theo thông tin đã đăng ký.
                     </span>
                   </label>
                 </div>
@@ -862,6 +845,12 @@ export function CourseCheckoutPage() {
                   </h3>
                   <Link to="/enterprise/courses" className="text-xs font-semibold text-emerald-700 hover:underline">{translateUi("+ Thêm khóa")}</Link>
                 </div>
+
+                {cartItems.length === 0 && (
+                  <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-xs text-slate-500">
+                    {translateUi('Các khóa đã chọn đều đã được mua hoặc miễn phí. Mỗi khóa chỉ mua một lần cho cả doanh nghiệp.')}
+                  </p>
+                )}
 
                 {/* Danh sách khóa học trong đơn */}
                 <div className="space-y-3 divide-y divide-slate-100">
@@ -892,32 +881,9 @@ export function CourseCheckoutPage() {
                         )}
                       </div>
 
-                      {/* Bộ chỉnh số lượng suất */}
                       <div className="flex items-center justify-between text-xs pt-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-500">{translateUi("Số suất học:")}</span>
-                          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50">
-                            <button
-                              type="button"
-                              onClick={() => updateSeats(item.canonicalCode, -5)}
-                              className="px-2 py-1 text-slate-600 hover:bg-slate-200 rounded-l-lg font-bold"
-                            >
-                              -
-                            </button>
-                            <span className="px-3 py-1 font-bold text-slate-900 bg-white">{item.seats}</span>
-                            <button
-                              type="button"
-                              onClick={() => updateSeats(item.canonicalCode, 5)}
-                              className="px-2 py-1 text-slate-600 hover:bg-slate-200 rounded-r-lg font-bold"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-
-                        <span className="font-bold text-slate-900">
-                          {(item.seats * item.unitPrice).toLocaleString('vi-VN')} ₫
-                        </span>
+                        <span className="text-slate-500">{translateUi("Cả doanh nghiệp học, không giới hạn số người")}</span>
+                        <span className="font-bold text-slate-900">{item.price.toLocaleString('vi-VN')} ₫</span>
                       </div>
                     </div>
                   ))}
@@ -926,7 +892,7 @@ export function CourseCheckoutPage() {
                 {/* Tóm lược chi phí */}
                 <div className="rounded-2xl bg-slate-50 p-4 space-y-2 text-xs border border-slate-200/70">
                   <div className="flex justify-between text-slate-600">
-                    <span>{translateUi("Tạm tính (")}{cartItems.reduce((s, c) => s + c.seats, 0)}{translateUi(" suất):")}</span>
+                    <span>{translateUi("Tạm tính (")}{cartItems.length}{translateUi(" khóa):")}</span>
                     <span className="font-semibold text-slate-900">{totalAmount.toLocaleString('vi-VN')} ₫</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
@@ -947,7 +913,7 @@ export function CourseCheckoutPage() {
                 <button
                   type="button"
                   onClick={handleProceedToPayment}
-                  disabled={isProcessing}
+                  disabled={isProcessing || cartItems.length === 0}
                   className="w-full flex items-center justify-center gap-2 rounded-2xl py-3 px-4 text-xs font-bold text-white shadow-md hover:brightness-105 transition-all disabled:opacity-50"
                   style={{ background: 'var(--po-accent)' }}
                 >
@@ -1003,9 +969,9 @@ export function CourseCheckoutPage() {
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-800">Điều 2: Mở rộng phạm vi năng lực & Suất học</h4>
+                <h4 className="font-bold text-slate-800">Điều 2: Mở rộng phạm vi năng lực & quyền học</h4>
                 <p>
-                  Khi Bên B hoàn tất nghĩa vụ thanh toán, hệ thống sẽ tự động mở rộng phạm vi năng lực của Bên B tương ứng với các khóa học đã đăng ký. Bên B có toàn quyền phân công nhân viên vào các đợt đào tạo và theo dõi tiến độ thời gian thực.
+                  Khi Bên B hoàn tất nghĩa vụ thanh toán, hệ thống sẽ tự động mở rộng phạm vi năng lực của Bên B tương ứng với các khóa học đã đăng ký. Mỗi khóa đã mua được mở cho toàn bộ nhân viên của Bên B, không giới hạn số người học; Bên B có toàn quyền phân công nhân viên và theo dõi tiến độ thời gian thực.
                 </p>
               </div>
 

@@ -10,7 +10,6 @@ import './workforce';
 import './analytics';
 import './platform';
 import './tasks';
-import './training-batches';
 import './personal';
 import './me';
 import './ceilings';

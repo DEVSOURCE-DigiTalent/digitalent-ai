@@ -76,7 +76,7 @@ export function PlatformOverviewPage() {
   };
   const orders = commerce.data?.orders?.items ?? [];
   const courseList = coursesQuery.data ?? commerce.data?.courses ?? [];
-  // /platform/courses còn trả khóa của phiên bản cũ (vẫn có suất đã bán); thẻ "Khóa học" chỉ đếm phiên bản đang dùng.
+  // /platform/courses còn trả khóa của phiên bản cũ (vẫn có lượt mua); thẻ "Khóa học" chỉ đếm phiên bản đang dùng.
   const currentCourseCount = data?.currentVersionNo
     ? courseList.filter((c) => c.versionNo === data.currentVersionNo).length || data.courseCount
     : data?.courseCount ?? 0;
@@ -180,8 +180,7 @@ export function PlatformOverviewPage() {
               </div>
               <div className="pa-ov-kpi-val is-money">{formatMoney(data.revenue)}</div>
               <div className="pa-ov-kpi-sub">
-                <strong>{formatNumber(data.seatsPurchased)}</strong> suất đã bán ·{' '}
-                <strong>{formatNumber(data.seatsGranted)}</strong> suất được cấp
+                <strong>{formatNumber(data.purchaseCount)}</strong> lượt mua khóa
               </div>
             </Link>
 
@@ -248,7 +247,7 @@ export function PlatformOverviewPage() {
               orders={orders}
               courses={courseList}
               totalRevenue={data.revenue}
-              seatsPurchased={data.seatsPurchased}
+              purchaseCount={data.purchaseCount}
               isSubLoading={commerce.isLoading && coursesQuery.isLoading}
             />
 

@@ -122,7 +122,7 @@ export function CapabilityCeilingMatrix() {
           title: course.title || `Khóa học ${code}`,
           level: course.level,
           domainName: domain.name,
-          price: course.pricePerSeat || (course.level === 3 ? 699000 : 399000),
+          price: course.price || (course.level === 3 ? 699000 : 399000),
         });
       }
       return next;
@@ -201,7 +201,7 @@ export function CapabilityCeilingMatrix() {
   const save = async () => {
     const ceilings = Object.entries(current).map(([categoryId, level]) => ({ categoryId, level }));
     if (activeScope === ALL && ceilings.some(({ categoryId, level }) => level > (matrix.domains.find((item) => item.categoryId === categoryId)?.maxAllowedCeiling ?? 1))) {
-      toast.error('Có cấp chưa mua suất học. Chọn khóa để mua trước khi mở rộng phạm vi.');
+      toast.error('Có cấp chưa mua khóa học. Chọn khóa để mua trước khi mở rộng phạm vi.');
       return;
     }
     if (activeScope !== ALL && ceilings.some(({ categoryId, level }) => level > (orgSaved[categoryId] ?? 0))) {
@@ -532,7 +532,7 @@ export function CapabilityCeilingMatrix() {
             <div className="cc-actions">
               <div className="cc-interaction-guide" aria-label={translateUi("Cách thao tác")}>
                 {blockedDepartments ? <span className="cc-interaction-guide__notice"><Info size={15} />{translateUi("Lưu phạm vi doanh nghiệp trước khi thiết lập phạm vi phòng ban.")}</span> : <span><Check size={14} /><strong>{translateUi("Chọn ô")}</strong><ArrowRight size={12} />{translateUi("Chọn cấp & lưu")}</span>}
-                <span><Info size={14} /><strong>ⓘ</strong>{translateUi("Khóa học & suất học")}</span>
+                <span><Info size={14} /><strong>ⓘ</strong>{translateUi("Khóa học & quyền học")}</span>
                 <span><ChevronDown size={14} /><strong>{translateUi("Tên lĩnh vực")}</strong>{translateUi("Cài đặt vị trí")}</span>
               </div>
               <div className="btns">
@@ -577,7 +577,7 @@ export function CapabilityCeilingMatrix() {
                   {selectedToBuy.size}
                 </span>
                 <div className="min-w-0">
-                  <h4 className="font-bold text-slate-900 text-sm">{translateUi("Giỏ suất học · ")}{selectedToBuy.size}{translateUi(" khóa")}</h4>
+                  <h4 className="font-bold text-slate-900 text-sm">{translateUi("Giỏ khóa học · ")}{selectedToBuy.size}{translateUi(" khóa")}</h4>
                   <div className="cc-cart-items">
                     {Array.from(selectedToBuy.values()).map((item) => (
                       <span
@@ -705,7 +705,7 @@ function DomainRow({
           : inOrg
           ? 'trong phạm vi doanh nghiệp'
           : isLocked
-          ? 'chưa mua suất, bấm để chọn mua cùng khóa khác'
+          ? 'chưa mua khóa, bấm để chọn mua cùng khóa khác'
           : 'bấm để chọn cấp độ năng lực';
         const className = `cc-cell${isSelectedToBuy ? ' selected-to-buy' : isLocked ? ' is-locked' : inRoute ? ' route' : inOrg ? ' dn' : ' licensed'}${course.courseId ? '' : ' empty'}`;
         const label = course.courseId && course.code ? (
@@ -742,7 +742,7 @@ function DomainRow({
             >
               {translateUi(label)}<small>{isSelectedToBuy ? 'Đã chọn mua' : translateUi('Chọn mua +')}</small>
             </button>
-            <button type="button" className="cc-purchase-cell__detail" aria-label={translateUi(`Xem khóa ${course.code ?? `cấp ${course.level}`}`)} title={translateUi("Khóa học & suất học")} onClick={() => onInspect(domain, course.level)}><Info size={13} /></button>
+            <button type="button" className="cc-purchase-cell__detail" aria-label={translateUi(`Xem khóa ${course.code ?? `cấp ${course.level}`}`)} title={translateUi("Khóa học & quyền học")} onClick={() => onInspect(domain, course.level)}><Info size={13} /></button>
           </div>
         );
 
@@ -761,7 +761,7 @@ function DomainRow({
             {translateUi(label)}
             {!isLocked && course.level === routeLevel && <small className="cc-current-ceiling"><Check size={11} />{translateUi(" Mức đang chọn")}</small>}
           </button>
-          <button type="button" className="cc-purchase-cell__detail" disabled={!course.courseId} aria-label={translateUi(`Xem khóa ${course.code ?? `cấp ${course.level}`}`)} title={translateUi("Khóa học & suất học")} onClick={() => onInspect(domain, course.level)}><Info size={13} /></button>
+          <button type="button" className="cc-purchase-cell__detail" disabled={!course.courseId} aria-label={translateUi(`Xem khóa ${course.code ?? `cấp ${course.level}`}`)} title={translateUi("Khóa học & quyền học")} onClick={() => onInspect(domain, course.level)}><Info size={13} /></button>
           </div>
         ) : (
           <div key={course.level} className="cc-purchase-cell">

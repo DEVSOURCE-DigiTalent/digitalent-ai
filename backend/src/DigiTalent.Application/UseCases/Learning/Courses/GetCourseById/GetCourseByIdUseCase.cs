@@ -90,26 +90,18 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
         var calculatedLevel = level > 0 ? level : (course.EntryLevel.HasValue ? course.EntryLevel.Value + 1 : 1);
 
         var codes = CourseCodes.Aliases(course.Code);
-        var seatOrders = await (
-            from order in _context.CourseSeatOrders.AsNoTracking()
-            join platform in _context.PlatformCourses.AsNoTracking() on order.CourseId equals platform.Id
-            where order.OrganizationId == organizationId && codes.Contains(platform.Code)
-            select order
-        ).ToListAsync();
-
-        var seatsPurchased = seatOrders.Where(o => o.Kind == DigiTalent.Domain.Constants.PlatformCatalog.SeatOrderKind.Purchase).Sum(o => o.Seats);
-        var seatsGranted = seatOrders.Where(o => o.Kind == DigiTalent.Domain.Constants.PlatformCatalog.SeatOrderKind.AdminGrant).Sum(o => o.Seats);
-        var totalSeats = seatsPurchased + seatsGranted;
+        var isPurchased = CourseOwnership.IsPaid(course.Code)
+            && await CourseOwnership.IsPurchasedAsync(_context, organizationId, course.Code);
 
         var courseVersionIds = await _context.Courses.AsNoTracking()
             .Where(c => c.OrganizationId == organizationId && codes.Contains(c.Code))
             .Select(c => c.Id).ToListAsync();
-        var usedSeats = await _context.CourseAssignments.AsNoTracking()
+        var assignedCount = await _context.CourseAssignments.AsNoTracking()
             .Where(ca => courseVersionIds.Contains(ca.CourseId)
                 && ca.Status == DigiTalent.Domain.Constants.Statuses.CourseAssignment.Active)
             .Select(ca => ca.EmployeeId).Distinct().CountAsync();
 
-        var hasLicense = calculatedLevel == 1 || totalSeats > 0;
+        var hasLicense = calculatedLevel == 1 || isPurchased;
 
         return new CourseDetailDto
         {
@@ -130,10 +122,9 @@ public class GetCourseByIdUseCase : IUseCase<GetCourseByIdUseCaseInput, CourseDe
             PrerequisiteCourseId = prerequisite?.Id,
             PrerequisiteTitle = prerequisite?.Title,
             CreatedAt = course.CreatedAt,
-            SeatsPurchased = seatsPurchased,
-            SeatsGranted = seatsGranted,
-            SeatsAvailable = Math.Max(0, totalSeats - usedSeats),
-            SeatsUsed = usedSeats,
+            Price = await CourseOwnership.PriceAsync(_context, course.Code),
+            IsPurchased = isPurchased,
+            AssignedCount = assignedCount,
             HasLicense = hasLicense,
             Modules = modules
         };

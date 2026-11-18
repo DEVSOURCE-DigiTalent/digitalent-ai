@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace DigiTalent.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// Map CompetencyMilestone với bảng "competency_milestones" (canonical v3.9).
+/// Map CompetencyMilestone với bảng "competency_milestones" (canonical v3.10).
 /// </summary>
 public class CompetencyMilestoneConfiguration : IEntityTypeConfiguration<CompetencyMilestone>
 {

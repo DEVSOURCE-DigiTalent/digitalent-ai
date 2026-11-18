@@ -272,7 +272,8 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Họ và tên</span>
-                <strong style={{ color: '#0f172a', display: 'block' }}>{u.displayName || u.email}</strong>
+                <strong style={{ color: '#0f172a', display: 'block' }}>{u.displayName || u.email}</strong>
+
               </div>
 
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
@@ -285,12 +286,14 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
 
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Số điện thoại</span>
-                <strong style={{ color: '#0f172a', display: 'block' }}>{u.phone || 'Chưa cập nhật'}</strong>
+                <strong style={{ color: '#0f172a', display: 'block' }}>{u.phone || 'Chưa cập nhật'}</strong>
+
               </div>
 
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Ngày tạo tài khoản</span>
-                <strong style={{ color: '#0f172a', display: 'block' }}>{formatDateTime(u.createdAt)}</strong>
+                <strong style={{ color: '#0f172a', display: 'block' }}>{formatDateTime(u.createdAt)}</strong>
+
               </div>
             </div>
           </div>
@@ -323,14 +326,14 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
               </div>
 
               <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Suất học</span>
+                <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Quyền học</span>
                 <strong style={{ color: '#0f172a', display: 'block' }}>
                   {u.workspace === 'enterprise' || u.organizationId
                     ? 'Theo tổ chức'
                     : PERSONAL_PLANS[u.planCode ?? ''] ?? 'Tài khoản tiêu chuẩn'}
                 </strong>
                 <span style={{ fontSize: 12, color: '#64748b' }}>
-                  {u.workspace === 'enterprise' || u.organizationId ? 'Sử dụng suất học của tổ chức' : 'Gói cá nhân'}
+                  {u.workspace === 'enterprise' || u.organizationId ? 'Học các khóa tổ chức đã mua' : 'Gói cá nhân'}
                 </span>
               </div>
             </div>
@@ -361,14 +364,14 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
                 </div>
 
                 <div style={{ padding: '9px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Suất học và hợp đồng</span>
+                  <span style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 2 }}>Khóa đã mua và hợp đồng</span>
                   <strong style={{ color: '#0f172a', display: 'block' }}>Xem ở hồ sơ tổ chức</strong>
                   <span style={{ fontSize: 12, color: '#0369a1' }}>Mở trang Tổ chức</span>
                 </div>
               </div>
 
               <div style={{ padding: '12px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', fontSize: 12.5, color: '#166534' }}>
-                Chủ doanh nghiệp quản lý suất học, nhân viên và hợp đồng của tổ chức.
+                Chủ doanh nghiệp mua khóa học, quản lý nhân viên và hợp đồng của tổ chức.
               </div>
             </div>
           ) : isManager ? (

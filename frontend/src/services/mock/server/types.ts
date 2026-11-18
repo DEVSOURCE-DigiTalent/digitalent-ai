@@ -198,28 +198,6 @@ export interface MemberOverride {
 
 export * from './types-work';
 
-export type TrainingBatchStatus = 'DRAFT' | 'SCHEDULED' | 'RUNNING' | 'COMPLETED' | 'CANCELLED';
-
-export interface TrainingBatchRecord {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  status: TrainingBatchStatus;
-  startDate: string;
-  endDate: string;
-  courseIds: string[];
-  targetCriteria?: {
-    departmentIds?: string[];
-    jobPositionIds?: string[];
-    jobGrades?: string[];
-    employeeIds?: string[];
-  };
-  participantEmployeeIds: string[];
-  createdAt: string;
-  createdByName?: string;
-}
-
 export interface InternalCourseRecord {
   id: string;
   code: string;
@@ -262,7 +240,6 @@ export interface OrgData {
   skillGapRuns: SkillGapRunRecord[];
   assignments: AssignmentRecord[];
   decisions: RecommendationDecision[];
-  trainingBatches?: TrainingBatchRecord[];
   seedMembers: SeedMemberRecord[];
   seedInvitations: SeedInvitationRecord[];
   memberOverrides: Record<string, MemberOverride>;
@@ -278,8 +255,8 @@ export interface OrgData {
   capabilityCeilings?: CapabilityCeilingRecord;
   /** Organization competency milestone per category id (competency_milestones; 0 or missing = not set). */
   competencyMilestones?: Record<string, number>;
-  /** Paid course seats are independent of configured organization ceilings. */
-  courseSeatOrders?: Record<string, number>;
+  /** Ids of the paid courses the organization bought; every employee may learn them. */
+  courseOrders?: string[];
   /** Plan changes made after sign-up (seeded organizations have their plan in code). */
   subscriptionOverride?: {
     planCode: string;

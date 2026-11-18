@@ -149,7 +149,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<SubscriptionEntitlement> SubscriptionEntitlements => Set<SubscriptionEntitlement>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
 
-    // Platform catalog (frameworks, catalog versions, course builder, seats) — SQL v3.2 sections 12A + 18
+    // Platform catalog (frameworks, catalog versions, course builder, course orders) — SQL v3.2 sections 12A + 18
     public DbSet<PlatformFramework> PlatformFrameworks => Set<PlatformFramework>();
     public DbSet<PlatformFrameworkDomain> PlatformFrameworkDomains => Set<PlatformFrameworkDomain>();
     public DbSet<PlatformFrameworkRelease> PlatformFrameworkReleases => Set<PlatformFrameworkRelease>();
@@ -162,7 +162,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<PlatformModuleQuestion> PlatformModuleQuestions => Set<PlatformModuleQuestion>();
     public DbSet<PlatformQuestionOption> PlatformQuestionOptions => Set<PlatformQuestionOption>();
     public DbSet<PlatformAsset> PlatformAssets => Set<PlatformAsset>();
-    public DbSet<CourseSeatOrder> CourseSeatOrders => Set<CourseSeatOrder>();
+    public DbSet<CourseOrder> CourseOrders => Set<CourseOrder>();
 
     // Shared
     public DbSet<UserFeedback> UserFeedbacks => Set<UserFeedback>();

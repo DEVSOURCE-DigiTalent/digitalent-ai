@@ -73,10 +73,12 @@ const FIELD_LABELS: Record<string, string> = {
   versionNo: 'Số phiên bản',
   status: 'Trạng thái',
   reason: 'Lý do',
-  price: 'Đơn giá',
-  pricePerSeat: 'Đơn giá mỗi suất',
-  seatLimit: 'Hạn mức suất học',
-  seatsGranted: 'Số suất cấp',
+  price: 'Giá khóa học',
+  // Nhật ký trước khi bỏ suất học (schema v3.9) vẫn mang các khóa cũ.
+  pricePerSeat: 'Giá khóa học',
+  seats: 'Số lượng',
+  courseCode: 'Mã khóa học',
+  seatLimit: 'Số quyền sử dụng của gói',
   lockReason: 'Lý do khóa',
   deactivatedReason: 'Lý do vô hiệu hóa',
   suspensionReason: 'Lý do tạm ngưng',
@@ -283,7 +285,7 @@ function AuditActorCell({ email }: { email: string | null }) {
   );
 }
 
-type QuickFilterCategory = 'all' | 'security' | 'catalog' | 'seats' | 'members';
+type QuickFilterCategory = 'all' | 'security' | 'catalog' | 'commerce' | 'members';
 
 /**
  * PA-10 · Nhật ký kiểm tra: High-density Security Audit Log & Visual Diff
@@ -328,8 +330,8 @@ export function PlatformAuditLogPage() {
       if (category === 'catalog') {
         return a.includes('CATALOG') || a.includes('COURSE') || a.includes('FRAMEWORK');
       }
-      if (category === 'seats') {
-        return a.includes('SEAT') || a.includes('GRANT') || a.includes('PRICE') || a.includes('PURCHASE') || a.includes('PLAN');
+      if (category === 'commerce') {
+        return a.includes('GRANT') || a.includes('PRICE') || a.includes('PURCHASE') || a.includes('PLAN');
       }
       if (category === 'members') {
         return a.includes('ORGANIZATION') || a.includes('MEMBER') || a.includes('MENTOR') || a.includes('USER') || a.includes('DEPARTMENT') || a.includes('POSITION') || a.includes('PULSE');
@@ -348,12 +350,12 @@ export function PlatformAuditLogPage() {
       const a = log.action.toUpperCase();
       return a.includes('CATALOG') || a.includes('COURSE') || a.includes('FRAMEWORK');
     }).length;
-    const seats = rawItems.filter((log) => {
+    const commerce = rawItems.filter((log) => {
       const a = log.action.toUpperCase();
-      return a.includes('SEAT') || a.includes('GRANT') || a.includes('PURCHASE') || a.includes('PRICE');
+      return a.includes('GRANT') || a.includes('PURCHASE') || a.includes('PRICE');
     }).length;
 
-    return { total: totalItems, security, catalog, seats };
+    return { total: totalItems, security, catalog, commerce };
   }, [rawItems, totalItems]);
 
   const handleExportCsv = () => {
@@ -468,8 +470,8 @@ export function PlatformAuditLogPage() {
             <CreditCard size={18} />
           </div>
           <div>
-            <div className="pa-audit-kpi-value">{kpiStats.seats}</div>
-            <div className="pa-audit-kpi-label">{translateUi('Suất học và giá')}</div>
+            <div className="pa-audit-kpi-value">{kpiStats.commerce}</div>
+            <div className="pa-audit-kpi-label">{translateUi('Mua khóa và giá')}</div>
           </div>
         </div>
       </div>
@@ -508,11 +510,11 @@ export function PlatformAuditLogPage() {
 
           <button
             type="button"
-            className={`pa-audit-chip ${category === 'seats' ? 'is-active' : ''}`}
-            onClick={() => setCategory('seats')}
+            className={`pa-audit-chip ${category === 'commerce' ? 'is-active' : ''}`}
+            onClick={() => setCategory('commerce')}
           >
             <CreditCard size={13} />
-            <span>{translateUi('Suất học và giá')}</span>
+            <span>{translateUi('Mua khóa và giá')}</span>
           </button>
 
           <button

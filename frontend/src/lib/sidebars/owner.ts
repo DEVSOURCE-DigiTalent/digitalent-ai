@@ -10,7 +10,6 @@ import {
   MessageSquare,
   TrendingUp,
   Users,
-  UsersRound,
 } from 'lucide-react';
 import type { SidebarConfig } from './types';
 
@@ -31,7 +30,6 @@ export const OWNER_SIDEBAR: SidebarConfig = [
 
   // ── CÁC CÔNG CỤ KHÁC ──
   { label: 'Các công cụ khác' },
-  { label: 'Đợt đào tạo', icon: UsersRound, screenId: 'OW-25', activeFor: ['OW-26', 'OW-27'] },
   { label: 'Chứng nhận', icon: Award, screenId: 'OW-46', activeFor: ['OW-47'] },
   { label: 'Hoạt động', icon: Bell, screenId: 'SHR-03' },
   { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04' },

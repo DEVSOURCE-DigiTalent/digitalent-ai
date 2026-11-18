@@ -13,6 +13,8 @@ export const formatMoney = (value: number) => `${new Intl.NumberFormat('vi-VN').
 export const formatNumber = (value: number) => new Intl.NumberFormat('vi-VN').format(value);
 export const formatDate = (value: string | null | undefined) =>
   value ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)) : '-';
+export const formatTime = (value: string | null | undefined) =>
+  value ? new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(value)) : '-';
 export const formatDateTime = (value: string | null | undefined) =>
   value
     ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
@@ -78,10 +80,6 @@ export const CHANGE_KIND: Record<string, { label: string; tone: PillTone }> = {
 export const QUESTIONS_MIN = 2;
 export const QUESTIONS_RECOMMENDED = 6;
 
-export const ORDER_KIND: Record<string, { label: string; tone: PillTone }> = {
-  PURCHASE: { label: 'Doanh nghiệp mua', tone: undefined },
-  ADMIN_GRANT: { label: 'Quản trị cấp', tone: 'gray' },
-};
 
 export const AUDIT_ACTIONS: Record<string, string> = {
   PLATFORM_FRAMEWORK_CREATED: 'Thêm khung năng lực',
@@ -101,7 +99,6 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   PLATFORM_COURSE_DRAFT_SAVED: 'Lưu nháp khóa học',
   PLATFORM_COURSE_PUBLISHED: 'Công bố khóa học',
   PLATFORM_COURSE_QUESTION_ADDED: 'Thêm câu hỏi nháp',
-  PLATFORM_SEATS_GRANTED: 'Cấp suất học',
   PLATFORM_ORGANIZATION_SUSPENDED: 'Tạm ngưng tổ chức',
   PLATFORM_ORGANIZATION_RESTORED: 'Khôi phục tổ chức',
   PLATFORM_USER_LOCKED: 'Khóa tài khoản',

@@ -84,7 +84,7 @@ public class PulseCourseSummaryDto
     /// <summary>PATH | OPTIONAL | ABOVE_CEILING | OUTSIDE_PATH.</summary>
     public string Zone { get; set; } = string.Empty;
     public bool InPath { get; set; }
-    /// <summary>FREE_FULL | SEAT_ACTIVE | PREVIEW.</summary>
+    /// <summary>FREE_FULL | PURCHASED | PREVIEW.</summary>
     public string Access { get; set; } = string.Empty;
     public bool CanWork { get; set; }
     /// <summary>Lý do chưa được học / ghi tiến độ — xem PulseBlockReason; null nếu được.</summary>

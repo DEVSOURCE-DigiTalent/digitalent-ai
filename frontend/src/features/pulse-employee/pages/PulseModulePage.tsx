@@ -627,7 +627,7 @@ function QuizArea({ detail, viewed, reachedEnd, onOpenPart, opening, onBackToLes
           {reason
             ? BLOCK_MESSAGES[reason]
             : detail.sample
-            ? BLOCK_MESSAGES.SEAT_REQUIRED
+            ? BLOCK_MESSAGES.PURCHASE_REQUIRED
             : 'Mô đun này chưa có câu hỏi ôn tập.'}
         </p>
         {reason === 'PRE_ASSESSMENT_REQUIRED' && (

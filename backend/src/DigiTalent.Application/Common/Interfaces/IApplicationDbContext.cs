@@ -125,7 +125,7 @@ public interface IApplicationDbContext
     DbSet<SubscriptionEntitlement> SubscriptionEntitlements { get; }
     DbSet<Invoice> Invoices { get; }
 
-    // Platform catalog (frameworks, catalog versions, course builder, seats) — SQL v3.2 sections 12A + 18
+    // Platform catalog (frameworks, catalog versions, course builder, course orders) — SQL v3.2 sections 12A + 18
     DbSet<PlatformFramework> PlatformFrameworks { get; }
     DbSet<PlatformFrameworkDomain> PlatformFrameworkDomains { get; }
     DbSet<PlatformFrameworkRelease> PlatformFrameworkReleases { get; }
@@ -138,7 +138,7 @@ public interface IApplicationDbContext
     DbSet<PlatformModuleQuestion> PlatformModuleQuestions { get; }
     DbSet<PlatformQuestionOption> PlatformQuestionOptions { get; }
     DbSet<PlatformAsset> PlatformAssets { get; }
-    DbSet<CourseSeatOrder> CourseSeatOrders { get; }
+    DbSet<CourseOrder> CourseOrders { get; }
 
     // Shared
     DbSet<UserFeedback> UserFeedbacks { get; }

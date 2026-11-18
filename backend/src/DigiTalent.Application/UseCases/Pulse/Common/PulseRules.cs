@@ -260,9 +260,9 @@ public static class PulseCourseAccess
 {
     /// <summary>Khóa Cơ bản: đọc đầy đủ miễn phí.</summary>
     public const string FreeFull = "FREE_FULL";
-    /// <summary>Khóa có phí đã có lượt học (suất đã kích hoạt / được giao).</summary>
-    public const string SeatActive = "SEAT_ACTIVE";
-    /// <summary>Khóa có phí chưa có suất: đề cương + trang mẫu đầu tiên của mô đun 1.</summary>
+    /// <summary>Khóa có phí doanh nghiệp đã mua (hoặc được cấp): mọi nhân viên học đầy đủ.</summary>
+    public const string Purchased = "PURCHASED";
+    /// <summary>Khóa có phí doanh nghiệp chưa mua: đề cương + trang mẫu đầu tiên của mô đun 1.</summary>
     public const string Preview = "PREVIEW";
 }
 
@@ -317,7 +317,8 @@ public static class PulseBlockReason
     public const string PreAssessmentRequired = "PRE_ASSESSMENT_REQUIRED";
     /// <summary>Bài đánh giá trước khi học đang chờ quản lý chấm.</summary>
     public const string PreAssessmentPending = "PRE_ASSESSMENT_PENDING";
-    public const string SeatRequired = "SEAT_REQUIRED";
+    /// <summary>Khóa có phí doanh nghiệp chưa mua.</summary>
+    public const string PurchaseRequired = "PURCHASE_REQUIRED";
     public const string PreviousModuleRequired = "PREVIOUS_MODULE_REQUIRED";
     public const string SlidesNotViewed = "SLIDES_NOT_VIEWED";
     /// <summary>Lần làm trước chưa đạt: mở lại trang của câu chưa đúng rồi mới làm lần tiếp theo.</summary>
@@ -363,8 +364,8 @@ public static class PulseSlotStatus
     /// <summary>Bài cuối lần 1 chưa đạt, chờ mở lần nộp cuối.</summary>
     public const string RetryWait = "RETRY_WAIT";
     public const string NeedsSupport = "NEEDS_SUPPORT";
-    /// <summary>Cần học nhưng khóa có phí chưa có suất học.</summary>
-    public const string SeatNeeded = "SEAT_NEEDED";
+    /// <summary>Cần học nhưng doanh nghiệp chưa mua khóa có phí.</summary>
+    public const string PurchaseNeeded = "PURCHASE_NEEDED";
     /// <summary>Chưa mở: khóa cấp trước của lĩnh vực chưa đạt.</summary>
     public const string AfterPriorLevel = "AFTER_PRIOR_LEVEL";
     public const string AboveCeiling = "ABOVE_CEILING";

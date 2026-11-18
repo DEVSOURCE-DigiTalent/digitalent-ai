@@ -47,7 +47,7 @@ export function DomainMilestonePanel({ domain, canEdit }: { domain: CeilingDomai
               <em>
                 {level === saved ? <span className="cp-milestone-tag"><Flag size={11} aria-hidden="true" />{translateUi('Mốc hiện tại')}</span>
                   : level === suggested ? <span className="cp-milestone-tag is-suggested">{translateUi('Gợi ý theo vị trí')}</span>
-                  : level === 1 ? translateUi('Miễn phí') : item?.isUnlocked === false ? translateUi('Chưa mua suất học') : translateUi('Đã mở quyền học')}
+                  : level === 1 ? translateUi('Miễn phí') : item?.isUnlocked === false ? translateUi('Chưa mua khóa học') : translateUi('Đã mở quyền học')}
               </em>
               {selected === level && <Check size={15} className="cp-standard__course-option-check" aria-hidden="true" />}
             </button>

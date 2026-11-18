@@ -109,11 +109,12 @@ export function useCancelAssignment() {
   });
 }
 
-export function usePurchaseCourseSeats() {
+/** Buys a paid course for the whole organization (OW-23). */
+export function usePurchaseCourse() {
   const refresh = useRefreshLearningData();
   return useMutation({
-    mutationFn: async ({ courseId, seats, note }: { courseId: string; seats: number; note?: string }) =>
-      (await assignmentService.purchaseSeats(courseId, seats, note)).data.data!,
+    mutationFn: async ({ courseId, note }: { courseId: string; note?: string }) =>
+      (await assignmentService.purchase(courseId, note)).data.data!,
     onSuccess: refresh,
   });
 }

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { PlatformSeatOrder } from '@/services/platform-admin.service';
+import type { PlatformCourseOrder } from '@/services/platform-admin.service';
 import { extractContracts } from '../console/components/contracts';
 
-function order(partial: Partial<PlatformSeatOrder>): PlatformSeatOrder {
+function order(partial: Partial<PlatformCourseOrder>): PlatformCourseOrder {
   return {
     id: 'o', organizationId: 'org', organizationName: 'Org', courseCode: 'M1-I', courseTitle: 'Khóa',
-    seats: 10, kind: 'PURCHASE', unitPrice: 399000, totalAmount: 3990000, reason: null,
+    amount: 3990000, reason: null,
     createdByEmail: null, createdAt: '2026-11-14T16:47:00Z', ...partial,
   };
 }
@@ -15,21 +15,20 @@ describe('extractContracts', () => {
     const reason = '[Hợp đồng điện tử: DT-ESIGN-4MQLNW8] Đại diện: Nguyễn Thế Hùng (0988776655)';
     const contracts = extractContracts([
       order({ id: '1', reason }),
-      order({ id: '2', reason, seats: 5, totalAmount: 2000000, createdAt: '2026-11-14T16:40:00Z' }),
+      order({ id: '2', reason, courseCode: 'M2-A', amount: 2000000, createdAt: '2026-11-14T16:40:00Z' }),
     ]);
 
     expect(contracts).toEqual([
       {
-        code: 'DT-ESIGN-4MQLNW8', signer: 'Nguyễn Thế Hùng', orderCount: 2, seats: 15,
+        code: 'DT-ESIGN-4MQLNW8', signer: 'Nguyễn Thế Hùng', orderCount: 2,
         totalAmount: 5990000, signedAt: '2026-11-14T16:40:00Z',
       },
     ]);
   });
 
-  it('ignores admin grants and purchases without a contract code', () => {
+  it('ignores purchases without a contract code', () => {
     const contracts = extractContracts([
-      order({ reason: 'Doanh nghiệp đăng ký mua suất học' }),
-      order({ kind: 'ADMIN_GRANT', reason: '[Hợp đồng điện tử: DT-ESIGN-X1] Đại diện: A (0)' }),
+      order({ reason: 'Doanh nghiệp mua khóa học' }),
       order({ reason: null }),
     ]);
     expect(contracts).toEqual([]);

@@ -10,6 +10,6 @@ public class UpdatePlatformCatalogCourseUseCaseInput
     public string? Outcome { get; set; }
     public Guid DomainId { get; set; }
     public int Level { get; set; } = 1;
-    public long PricePerSeat { get; set; }
+    public long Price { get; set; }
     public string SalesStatus { get; set; } = "OPEN";
 }

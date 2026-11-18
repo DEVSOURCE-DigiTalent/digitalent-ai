@@ -44,7 +44,7 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
     expect(within(nav).getByText('Khoảng trống năng lực')).toBeInTheDocument();
     expect(within(nav).getByText('Khóa học')).toBeInTheDocument();
     expect(within(nav).getByText('Báo cáo chu kỳ')).toBeInTheDocument();
-    expect(within(nav).getByText('Đợt đào tạo')).toBeInTheDocument();
+    expect(within(nav).queryByText('Đợt đào tạo')).not.toBeInTheDocument();
     expect(within(nav).getByText('Chứng nhận')).toBeInTheDocument();
     expect(within(nav).getByText('Hoạt động')).toBeInTheDocument();
   });

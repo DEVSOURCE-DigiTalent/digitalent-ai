@@ -17,7 +17,7 @@ const report = vi.hoisted(() => ({
 
 vi.mock('../OwnerAssessmentHeatmap', () => ({ OwnerAssessmentHeatmap: () => <p>Kết quả đánh giá</p> }));
 vi.mock('@/hooks/use-organization', () => ({
-  useOrganizationOverview: () => ({ data: { name: 'DigiTalent', members: { active: 6, pending: 2, inactive: 0 }, runningBatches: 1 } }),
+  useOrganizationOverview: () => ({ data: { name: 'DigiTalent', members: { active: 6, pending: 2, inactive: 0 } } }),
 }));
 vi.mock('@/hooks/use-trial-program', () => ({ useTrialProgram: () => ({}) }));
 vi.mock('@/hooks/use-skill-gaps', () => ({ useLearningNeeds: () => ({}) }));
@@ -44,12 +44,14 @@ describe('Owner progress tabs', () => {
     expect(map.queryByRole('link', { name: 'Báo cáo chu kỳ' })).not.toBeInTheDocument();
     expect(map.getByText('25%')).toBeInTheDocument();
     expect(map.getByText('1 / 4 lượt giao')).toBeInTheDocument();
-    expect(map.getAllByRole('button', { pressed: false })).toHaveLength(6);
+    expect(map.getByRole('button', { name: /^Khóa học/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(map.getAllByRole('button', { pressed: false })).toHaveLength(5);
+    expect(map.queryByRole('button', { name: /^Đợt đào tạo/ })).not.toBeInTheDocument();
     const branches = screen.getByRole('tabpanel', { name: 'Bản đồ doanh nghiệp' });
     expect(branches.querySelectorAll('[data-side="left"]')).toHaveLength(3);
     expect(branches.querySelectorAll('[data-side="right"]')).toHaveLength(3);
     const gap = map.getByRole('button', { name: /^Khoảng trống năng lực/ });
-    expect(gap.parentElement).toHaveAttribute('data-side', 'bottom');
+    expect(gap.parentElement).toHaveAttribute('data-side', 'right');
     expect(gap.parentElement).toHaveAttribute('data-tone', 'amber');
     fireEvent.click(gap);
     expect(map.getByRole('link', { name: 'Xem chi tiết' })).toHaveAttribute('href', '/enterprise/skill-gap');

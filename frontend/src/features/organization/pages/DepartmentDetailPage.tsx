@@ -1,7 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Building2, Edit2, GraduationCap, Mail, Send, UserPlus } from 'lucide-react';
+import { ArrowLeft, Building2, Edit2, Mail, Send, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { StatusBadge, getStatusVariant, Tabs, DataTable, type Column } from '@/components/shared';
 import { PageLoading } from '@/components/shared/LoadingState';
@@ -202,7 +202,6 @@ export function DepartmentDetailPage() {
           { id: 'overview', label: 'Tổng quan' },
           { id: 'members', label: 'Thành viên', badge: members.length },
           { id: 'positions', label: 'Vị trí công việc', badge: positionsData?.totalItems ?? 0 },
-          { id: 'training', label: 'Tiến độ đào tạo' },
         ]}
       >
         {tab === 'overview' && (
@@ -317,18 +316,6 @@ export function DepartmentDetailPage() {
               emptyTitle="Chưa có vị trí nào"
               emptyDescription="Chưa có vị trí trực thuộc hoặc được gán cho nhân viên trong phòng ban này."
             />
-          </div>
-        )}
-
-        {tab === 'training' && (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-            <GraduationCap className="size-8 mx-auto text-slate-400 mb-2" />
-            <p className="font-medium text-slate-700">{translateUi("Theo dõi đào tạo theo phòng ban")}</p>
-            <p className="text-xs text-slate-500 mt-1">{translateUi("Các khóa học và đợt đào tạo của nhân viên trong phòng ban này được quản lý tại mục Đợt đào tạo.")}</p>
-            <Link
-              to="/enterprise/training-batches"
-              className="mt-3 inline-block font-medium text-primary-700 hover:underline text-xs"
-            >{translateUi("Xem các đợt đào tạo →")}</Link>
           </div>
         )}
       </Tabs>

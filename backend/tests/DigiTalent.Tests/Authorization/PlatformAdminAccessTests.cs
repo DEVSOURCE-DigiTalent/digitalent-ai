@@ -18,7 +18,6 @@ public class PlatformAdminAccessTests
     [InlineData("POST", "api/v1/platform/catalog/versions/{versionNo:int}/courses/{courseId:guid}/modules")] // PA-04 trình biên soạn
     [InlineData("GET", "api/v1/platform/organizations")] // PA-05 Tổ chức
     [InlineData("POST", "api/v1/platform/organizations/{id:guid}/suspend")] // PA-05 tạm ngưng tổ chức
-    [InlineData("POST", "api/v1/platform/organizations/{id:guid}/seat-grants")] // PA-06 cấp suất học
     [InlineData("GET", "api/v1/platform/users")] // PA-07 Người dùng
     [InlineData("POST", "api/v1/platform/users/{id:guid}/lock")] // PA-08 khóa tài khoản
     [InlineData("PUT", "api/v1/platform/catalog/versions/{versionNo:int}/prices")] // PA-09 Đơn giá

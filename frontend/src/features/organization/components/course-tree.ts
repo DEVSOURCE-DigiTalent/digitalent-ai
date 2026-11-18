@@ -77,14 +77,18 @@ export function courseLevel(course: CourseListItem): number {
   return courseCodeMetadata(course.code)?.level ?? course.level;
 }
 
-export const LEVEL_PRICING: Record<number, { price: number; formatted: string; isFree: boolean; badge: string }> = {
-  1: { price: 0, formatted: 'Miễn phí', isFree: true, badge: 'Miễn phí (Trial)' },
-  2: { price: 399000, formatted: '399.000 ₫ / suất', isFree: false, badge: '399.000 ₫ / suất' },
-  3: { price: 699000, formatted: '699.000 ₫ / suất', isFree: false, badge: '699.000 ₫ / suất' },
-};
+/** Default course prices (VND) when the catalog has no price yet. A paid course is bought once for the whole organization. */
+const DEFAULT_LEVEL_PRICE: Record<number, number> = { 1: 0, 2: 399000, 3: 699000 };
 
-export function levelPricing(level: number) {
-  return LEVEL_PRICING[level] ?? { price: 0, formatted: 'Miễn phí', isFree: true, badge: 'Miễn phí' };
+/**
+ * Price label of a course level. `price` is the course's own price from the catalog when known (Platform Admin may
+ * change it); otherwise the default of the level. Basic courses are always free.
+ */
+export function levelPricing(level: number, price?: number | null) {
+  const amount = level <= 1 ? 0 : price || DEFAULT_LEVEL_PRICE[level] || 0;
+  if (amount === 0) return { price: 0, formatted: 'Miễn phí', isFree: true, badge: 'Miễn phí' };
+  const money = `${amount.toLocaleString('vi-VN')} ₫`;
+  return { price: amount, formatted: `${money} / cả doanh nghiệp`, isFree: false, badge: money };
 }
 
 export function levelName(level: number): string {

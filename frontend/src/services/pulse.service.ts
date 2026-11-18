@@ -10,7 +10,7 @@ import type { ApiResponse } from '../types/api';
 
 export type PulseDomainStatus = 'PENDING' | 'GAP' | 'MET' | 'OUTSIDE_PATH';
 export type PulseLevelSource = 'NONE' | 'COURSE' | 'PRACTICAL_EVIDENCE';
-export type PulseCourseAccess = 'FREE_FULL' | 'SEAT_ACTIVE' | 'PREVIEW';
+export type PulseCourseAccess = 'FREE_FULL' | 'PURCHASED' | 'PREVIEW';
 /** Vùng của khóa trên lộ trình: mục tiêu vị trí giới hạn bởi phạm vi năng lực của phòng ban. */
 export type PulseCourseZone = 'PATH' | 'OPTIONAL' | 'ABOVE_CEILING' | 'OUTSIDE_PATH';
 export type PulseBlockReason =
@@ -20,7 +20,7 @@ export type PulseBlockReason =
   | 'PRIOR_LEVEL_REQUIRED'
   | 'PRE_ASSESSMENT_REQUIRED'
   | 'PRE_ASSESSMENT_PENDING'
-  | 'SEAT_REQUIRED'
+  | 'PURCHASE_REQUIRED'
   | 'PREVIOUS_MODULE_REQUIRED'
   | 'SLIDES_NOT_VIEWED'
   | 'REVIEW_REQUIRED'
@@ -36,7 +36,7 @@ export type PulseSlotStatus =
   | 'IN_REVIEW'
   | 'RETRY_WAIT'
   | 'NEEDS_SUPPORT'
-  | 'SEAT_NEEDED'
+  | 'PURCHASE_NEEDED'
   | 'AFTER_PRIOR_LEVEL'
   | 'ABOVE_CEILING'
   | 'OUTSIDE_PATH'

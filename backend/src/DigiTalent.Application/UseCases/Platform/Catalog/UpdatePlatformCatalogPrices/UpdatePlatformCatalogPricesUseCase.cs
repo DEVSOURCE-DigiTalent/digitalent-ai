@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Platform.Catalog;
 
 /// <summary>
-/// Đơn giá: sets the per-seat price and sales status of several courses in the draft catalog version at once. The
+/// Đơn giá: sets the course price (paid once per organization) and sales status of several courses in the draft catalog version at once. The
 /// version in use keeps its prices until the draft is published. Basic courses stay free.
 /// </summary>
 public class UpdatePlatformCatalogPricesUseCase : IUseCase<UpdatePlatformCatalogPricesUseCaseInput, PlatformCatalogVersionDetail>
@@ -37,17 +37,17 @@ public class UpdatePlatformCatalogPricesUseCase : IUseCase<UpdatePlatformCatalog
         {
             var course = courses.FirstOrDefault(c => c.CourseId == item.CourseId)
                 ?? throw new NotFoundException("Khóa học không có trong phiên bản này.");
-            var price = course.Level == PlatformCatalog.MinLevel ? 0 : item.PricePerSeat;
-            if (course.PricePerSeat == price && course.SalesStatus == item.SalesStatus) continue;
+            var price = course.Level == PlatformCatalog.MinLevel ? 0 : item.Price;
+            if (course.Price == price && course.SalesStatus == item.SalesStatus) continue;
 
             var identity = identities[course.CourseId];
-            changes.Add(new { code = identity.Code, from = course.PricePerSeat, to = price, salesFrom = course.SalesStatus, salesTo = item.SalesStatus });
-            course.PricePerSeat = price;
+            changes.Add(new { code = identity.Code, from = course.Price, to = price, salesFrom = course.SalesStatus, salesTo = item.SalesStatus });
+            course.Price = price;
             course.SalesStatus = item.SalesStatus;
             if (identity.PublishedAt == null)
             {
                 // An unpublished course has no version in use: keep its identity in step with the draft.
-                identity.PricePerSeat = price;
+                identity.Price = price;
             }
 
             PlatformCatalogEditor.MarkEdited(course);

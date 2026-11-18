@@ -16,7 +16,7 @@ public class UpdatePlatformCatalogCourseUseCaseValidator : AbstractValidator<Upd
         RuleFor(x => x.Outcome).MaximumLength(4000);
         RuleFor(x => x.DomainId).NotEmpty();
         RuleFor(x => x.Level).InclusiveBetween(PlatformCatalog.MinLevel, PlatformCatalog.MaxLevel);
-        RuleFor(x => x.PricePerSeat).InclusiveBetween(0, 1_000_000_000).WithMessage("Giá mỗi suất không hợp lệ.");
+        RuleFor(x => x.Price).InclusiveBetween(0, 1_000_000_000).WithMessage("Giá khóa học không hợp lệ.");
         RuleFor(x => x.SalesStatus).Must(Statuses.PlatformCourseSales.IsValid).WithMessage("Trạng thái bán không hợp lệ.");
     }
 }

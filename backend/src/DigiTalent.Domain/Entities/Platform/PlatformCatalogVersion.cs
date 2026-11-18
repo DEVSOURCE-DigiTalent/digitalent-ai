@@ -30,7 +30,7 @@ public class PlatformCatalogCourse : BaseEntity
     public short Level { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Outcome { get; set; } = string.Empty;
-    public long PricePerSeat { get; set; }
+    public long Price { get; set; }
     public string SalesStatus { get; set; } = string.Empty;
     public string FinalTitle { get; set; } = string.Empty;
     /// <summary>Sanitized HTML.</summary>

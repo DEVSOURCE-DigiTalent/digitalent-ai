@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.Platform.Common;
 using DigiTalent.Application.UseCases.Platform.Framework;
 using DigiTalent.Application.UseCases.Platform.Organizations;
 using DigiTalent.Application.UseCases.Platform.Overview;
@@ -73,8 +74,8 @@ public class PlatformAdminTests
         (await context.PlatformFrameworkDomains.CountAsync()).Should().Be(6);
         (await context.PlatformCourses.CountAsync()).Should().Be(18);
         (await context.PlatformFrameworkReleases.CountAsync()).Should().Be(1);
-        (await context.PlatformCourses.Where(c => c.Level == 1).AllAsync(c => c.PricePerSeat == 0)).Should().BeTrue();
-        (await context.PlatformCourses.Where(c => c.Level > 1).AllAsync(c => c.PricePerSeat > 0)).Should().BeTrue();
+        (await context.PlatformCourses.Where(c => c.Level == 1).AllAsync(c => c.Price == 0)).Should().BeTrue();
+        (await context.PlatformCourses.Where(c => c.Level > 1).AllAsync(c => c.Price > 0)).Should().BeTrue();
     }
 
     [Fact]
@@ -121,26 +122,33 @@ public class PlatformAdminTests
     }
 
     [Fact]
-    public async Task SeatGrantRecordsAnOrderButKeepsTheOrganizationInTrial()
+    public async Task HistoricalACodeCourseIsListedOnceUnderItsMCodeWithItsOrders()
     {
         await using var context = await CreateSeededContextAsync();
         var organization = await AddOrganizationAsync(context);
-        var grant = new GrantPlatformCourseSeatsUseCase(context, Admin(), Mock.Of<IAuditService>());
-
-        var basic = () => grant.ExecuteAsync(new GrantPlatformCourseSeatsUseCaseInput
+        var current = await context.PlatformCourses.SingleAsync(c => c.Code == "M1-I");
+        // A1-I is the v1 identity of the same course (CourseCodes.Aliases); an old order still points at it.
+        var legacy = new PlatformCourse
         {
-            OrganizationId = organization.Id, CourseCode = "M1-F", Seats = 1, Reason = "Hỗ trợ dùng thử mở rộng",
-        });
-        await basic.Should().ThrowAsync<BadRequestException>();
+            Code = "A1-I", DomainId = current.DomainId, Level = current.Level, VersionNo = 1, Title = "Bản v1",
+            Price = 399000, SalesStatus = Statuses.PlatformCourseSales.Open, PublishedAt = DateTimeOffset.UtcNow.AddMonths(-1),
+        };
+        context.PlatformCourses.Add(legacy);
+        context.CourseOrders.Add(new CourseOrder { OrganizationId = organization.Id, CourseId = legacy.Id, Amount = 399000 });
+        await context.SaveChangesAsync();
 
-        var detail = await grant.ExecuteAsync(new GrantPlatformCourseSeatsUseCaseInput
-        {
-            OrganizationId = organization.Id, CourseCode = "M3-I", Seats = 2, Reason = "Bù suất do lỗi thanh toán",
-        });
+        var courses = await PlatformCatalogReader.ReadCoursesAsync(context);
 
-        detail.Seats.Should().ContainSingle(s => s.CourseCode == "M3-I" && s.SeatsGranted == 2 && s.SeatsPurchased == 0);
-        detail.Orders.Should().ContainSingle(o => o.Kind == PlatformCatalog.SeatOrderKind.AdminGrant && o.TotalAmount == 0);
-        detail.Organization.Stage.Should().Be(PlatformOrganizationStages.Trial);
+        courses.Should().HaveCount(18);
+        courses.Should().NotContain(c => c.Code == "A1-I");
+        var listed = courses.Single(c => c.Code == "M1-I");
+        listed.PurchaseCount.Should().Be(1);
+        listed.Revenue.Should().Be(399000);
+
+        var detail = await PlatformOrganizationReader.ReadDetailAsync(context, organization.Id);
+        detail.Organization.CoursesPurchased.Should().Be(1);
+        detail.Organization.Stage.Should().Be(PlatformOrganizationStages.Paid);
+        detail.PurchasedCourses.Should().ContainSingle(c => c.CourseCode == "M1-I");
     }
 
     [Fact]
@@ -204,14 +212,11 @@ public class PlatformAdminTests
         var trial = await AddOrganizationAsync(context, "Northstar Studio");
         var paid = await AddOrganizationAsync(context, "Northstar Growth");
         var course = await context.PlatformCourses.SingleAsync(c => c.Code == "M1-I");
-        context.CourseSeatOrders.Add(new CourseSeatOrder
+        context.CourseOrders.Add(new CourseOrder
         {
             OrganizationId = paid.Id,
             CourseId = course.Id,
-            Seats = 3,
-            Kind = PlatformCatalog.SeatOrderKind.Purchase,
-            UnitPrice = course.PricePerSeat,
-            TotalAmount = course.PricePerSeat * 3,
+            Amount = course.Price,
         });
         await context.SaveChangesAsync();
 
@@ -221,8 +226,8 @@ public class PlatformAdminTests
         overview.TrialOrganizationCount.Should().Be(1);
         overview.PaidOrganizationCount.Should().Be(1);
         overview.ConversionRate.Should().Be(50);
-        overview.SeatsPurchased.Should().Be(3);
-        overview.Revenue.Should().Be(course.PricePerSeat * 3);
+        overview.PurchaseCount.Should().Be(1);
+        overview.Revenue.Should().Be(course.Price);
         overview.CourseCount.Should().Be(18);
         overview.CurrentVersionNo.Should().Be(1);
         overview.FrameworkCount.Should().Be(1);

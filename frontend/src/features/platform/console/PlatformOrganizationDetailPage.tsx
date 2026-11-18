@@ -51,7 +51,7 @@ export function PlatformOrganizationDetailPage() {
             <Pill tone={statusPill.tone}>{translateUi(statusPill.label)}</Pill>
           </div>
           <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
-            {o.ownerEmail ? translateUi(`Chủ sở hữu: ${o.ownerEmail} · `) : ''}Quản lý gói cước, số lượng nhân sự và thao tác cấp quyền hoặc tạm ngưng.
+            {o.ownerEmail ? translateUi(`Chủ sở hữu: ${o.ownerEmail} · `) : ''}Gói cước, nhân sự, khóa đã mua và thao tác tạm ngưng hoặc mở lại tổ chức.
           </p>
         </div>
 

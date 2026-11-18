@@ -197,7 +197,7 @@ public class PlatformCatalogEditor
                 Level = c.Level,
                 Title = c.Title,
                 Outcome = c.Outcome,
-                PricePerSeat = c.PricePerSeat,
+                Price = c.Price,
                 SalesStatus = c.SalesStatus,
                 FinalTitle = c.FinalTitle,
                 FinalPrompt = c.FinalPrompt,

@@ -95,7 +95,7 @@ export interface CatalogCourseRow {
   levelName: string;
   moduleCount: number;
   questionCount: number;
-  pricePerSeat: number;
+  price: number;
   salesStatus: CatalogSalesStatus;
   changeKind: ChangeKind;
 }
@@ -176,7 +176,7 @@ export interface CatalogCourseDetail {
   levelName: string;
   title: string;
   outcome: string;
-  pricePerSeat: number;
+  price: number;
   salesStatus: CatalogSalesStatus;
   final: { title: string; promptHtml: string; criteria: string[] };
   modules: CatalogModule[];
@@ -188,7 +188,7 @@ export interface CourseInfoInput {
   outcome: string;
   domainId: string;
   level: number;
-  pricePerSeat: number;
+  price: number;
   salesStatus: CatalogSalesStatus;
 }
 
@@ -241,8 +241,8 @@ export const platformCatalogService = {
   getPublishCheck: (versionNo: number) => unwrap<PublishCheck>(apiClient.get(`/platform/catalog/versions/${versionNo}/publish-check`)),
   publishVersion: (versionNo: number, releaseNote?: string) =>
     unwrap<CatalogVersionDetail>(apiClient.post(`/platform/catalog/versions/${versionNo}/publish`, { releaseNote })),
-  /** Đơn giá: per-seat price and sales status of several courses in the draft (Basic stays free). */
-  updatePrices: (versionNo: number, items: { courseId: string; pricePerSeat: number; salesStatus: CatalogSalesStatus }[]) =>
+  /** Đơn giá: course price (bought once per organization) and sales status of several courses in the draft (Basic stays free). */
+  updatePrices: (versionNo: number, items: { courseId: string; price: number; salesStatus: CatalogSalesStatus }[]) =>
     unwrap<CatalogVersionDetail>(apiClient.put(`/platform/catalog/versions/${versionNo}/prices`, { items })),
 
   createCourse: (versionNo: number, body: { code: string; title: string; domainId: string; level: number }) =>

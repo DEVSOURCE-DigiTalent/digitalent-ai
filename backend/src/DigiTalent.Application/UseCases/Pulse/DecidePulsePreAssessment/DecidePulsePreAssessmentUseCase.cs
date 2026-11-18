@@ -10,9 +10,9 @@ namespace DigiTalent.Application.UseCases.Pulse;
 /// <summary>
 /// POST /pulse/final-reviews/pre-assessments/{preAssessmentId}/decision — người chấm ghi quyết định cho bài đánh giá
 /// trước khi học đang chờ ("Đạt" cần phần trắc nghiệm đủ số câu đúng, <see cref="PulseExamPaper.BelowPass"/>):
-///   - PASSED: khóa được công nhận — lượt học của mã khóa chuyển COMPLETED (tạo mới nếu chưa có, không cần suất học),
+///   - PASSED: khóa được công nhận — lượt học của mã khóa chuyển COMPLETED (tạo mới nếu chưa có, không cần doanh nghiệp mua khóa),
 ///     mức đã xác nhận có thể tăng và cấp kế tiếp mở.
-///   - NOT_YET: nhân viên học khóa rồi làm bài cuối khóa như bình thường (khóa có phí vẫn cần suất học).
+///   - NOT_YET: nhân viên học khóa rồi làm bài cuối khóa như bình thường (khóa có phí vẫn cần doanh nghiệp đã mua).
 /// Nhân viên nhận thông báo kèm lý do. Ghi nhật ký kiểm tra sau khi lưu.
 /// </summary>
 public class DecidePulsePreAssessmentUseCase : IUseCase<DecidePulsePreAssessmentUseCaseInput, DecidePulsePreAssessmentUseCaseOutput>
@@ -72,7 +72,7 @@ public class DecidePulsePreAssessmentUseCase : IUseCase<DecidePulsePreAssessment
 
         if (input.Decision == Statuses.FinalSubmissionDecision.Passed)
         {
-            // Lượt học của mã khóa (suất đã giữ nếu có); không có thì tạo lượt đã hoàn thành.
+            // Lượt học của mã khóa nếu đã có; không có thì tạo lượt đã hoàn thành.
             var enrollment = await (
                     from item in _context.Enrollments
                     join version in _context.Courses on item.CourseId equals version.Id

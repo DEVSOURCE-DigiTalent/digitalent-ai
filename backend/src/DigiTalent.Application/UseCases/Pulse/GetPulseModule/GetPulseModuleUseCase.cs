@@ -8,7 +8,7 @@ namespace DigiTalent.Application.UseCases.Pulse;
 /// <summary>
 /// GET /me/pulse/courses/{courseId}/modules/{moduleId} — trang học mô đun (§9.2): các trang nội dung theo thứ tự và
 /// bộ câu ôn tập của lần làm kế tiếp (không kèm đáp án). Sau lần chưa đạt, câu hỏi chỉ hiện lại khi đã mở lại các trang
-/// liên quan. Khóa có phí chưa có suất chỉ xem trang đầu tiên của mô đun 1 (§8).
+/// liên quan. Khóa có phí doanh nghiệp chưa mua chỉ xem trang đầu tiên của mô đun 1 (§8).
 /// </summary>
 public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPulseModuleUseCaseOutput>
 {
@@ -30,7 +30,7 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
         var sample = state.Access == PulseCourseAccess.Preview;
         if (sample && module.Index > 0)
         {
-            throw new ForbiddenException(PulseCourseWorkspace.BlockMessage(PulseBlockReason.SeatRequired));
+            throw new ForbiddenException(PulseCourseWorkspace.BlockMessage(PulseBlockReason.PurchaseRequired));
         }
 
         var slides = sample ? module.Slides.Take(1).ToList() : module.Slides.ToList();
@@ -102,7 +102,7 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
             LastQuiz = lastQuiz,
             Quiz = quiz,
             Review = review,
-            QuizBlockReason = sample ? PulseBlockReason.SeatRequired : quizBlock ?? (review is { Done: false } ? PulseBlockReason.ReviewRequired : null),
+            QuizBlockReason = sample ? PulseBlockReason.PurchaseRequired : quizBlock ?? (review is { Done: false } ? PulseBlockReason.ReviewRequired : null),
             NextModuleId = module.Index + 1 < state.Modules.Count ? state.Modules[module.Index + 1].ModuleId : null,
             AllModulesPassed = state.AllModulesPassed,
         };

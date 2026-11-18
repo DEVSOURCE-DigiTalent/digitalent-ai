@@ -88,9 +88,9 @@ describe('capability ceilings (Phạm vi năng lực)', () => {
     expect(result).toEqual({ status: 400, codes: ['COURSE_LICENSE_REQUIRED'] });
   });
 
-  it('unlocks the matching organization ceiling after purchasing its course seats', async () => {
+  it('unlocks the matching organization ceiling after buying its course', async () => {
     asUser('mock-owner');
-    await call('post', '/courses/crs-A5-I/purchase-seats', { seats: 1 });
+    await call('post', '/courses/crs-A5-I/purchase', {});
     const ceilings = ['cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'].map((categoryId) => ({
       categoryId,
       level: categoryId === 'cat-5' ? 2 : 1,

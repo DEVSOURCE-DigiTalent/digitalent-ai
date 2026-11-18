@@ -66,10 +66,10 @@ public class CeilingCourseDto
     /// <summary>Năng lực và cấp đích thực tế của khóa đã xuất bản, từ course_competencies.</summary>
     public List<CeilingCourseCompetencyDto> Competencies { get; set; } = new();
 
-    /// <summary>Khóa học đã mở bản quyền cho doanh nghiệp (Cấp 1 luôn mở, Cấp 2/3 khi đã mua suất).</summary>
+    /// <summary>Khóa học đã mở cho cả doanh nghiệp (Cấp 1 luôn mở, Cấp 2/3 khi doanh nghiệp đã mua hoặc được cấp).</summary>
     public bool IsUnlocked { get; set; } = true;
-    public int SeatsPurchased { get; set; }
-    public long PricePerSeat { get; set; }
+    /// <summary>Giá mua khóa cho cả doanh nghiệp (0 với khóa Cơ bản).</summary>
+    public long Price { get; set; }
 }
 
 public class CeilingCourseCompetencyDto

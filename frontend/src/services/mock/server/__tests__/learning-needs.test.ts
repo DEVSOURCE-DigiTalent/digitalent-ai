@@ -69,7 +69,7 @@ describe('published assessment → current position standard → exact course', 
     for (const item of standard.items) data.profiles[employee.id][item.competencyId] = { level: 3, source: 'MANUAL', confirmedAt: '2026-10-01T00:00:00Z' };
     expect(employeeLearningNeeds(data, employee).state).toBe('NEEDS_LEARNING');
     // Buying the target course and completing learning do not constitute confirmed competence.
-    data.courseSeatOrders = { [courseFor('cat-1', 3)!.id]: 50 };
+    data.courseOrders = [courseFor('cat-1', 3)!.id];
     data.assignments.forEach((assignment) => { assignment.status = 'COMPLETED'; });
     expect(employeeLearningNeeds(data, employee).state).toBe('NEEDS_LEARNING');
     for (const item of standard.items) data.profiles[employee.id][item.competencyId].confirmedAt = '2026-11-04T00:00:00Z';

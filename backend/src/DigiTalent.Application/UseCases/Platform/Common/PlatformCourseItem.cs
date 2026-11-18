@@ -4,7 +4,7 @@ namespace DigiTalent.Application.UseCases.Platform.Common;
 
 /// <summary>
 /// One published course as Platform Admin sees it: the fields of the catalog version in use, its price in the
-/// draft version (if any), content size and seat totals.
+/// draft version (if any), content size, and how many organizations bought it.
 /// </summary>
 public class PlatformCourseItem
 {
@@ -20,17 +20,17 @@ public class PlatformCourseItem
     public int VersionNo { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Outcome { get; set; } = string.Empty;
-    public long PricePerSeat { get; set; }
+    public long Price { get; set; }
     public string SalesStatus { get; set; } = string.Empty;
     public bool IsFree => Level == PlatformCatalog.MinLevel;
     /// <summary>Price of the course in the draft version; null when there is no draft.</summary>
-    public long? DraftPricePerSeat { get; set; }
+    public long? DraftPrice { get; set; }
     /// <summary>Sales status of the course in the draft version; null when there is no draft.</summary>
     public string? DraftSalesStatus { get; set; }
     public DateTimeOffset? PublishedAt { get; set; }
     public int ModuleCount { get; set; }
     public int QuestionCount { get; set; }
-    public int SeatsPurchased { get; set; }
-    public int SeatsGranted { get; set; }
+    /// <summary>Organizations that bought the course.</summary>
+    public int PurchaseCount { get; set; }
     public long Revenue { get; set; }
 }

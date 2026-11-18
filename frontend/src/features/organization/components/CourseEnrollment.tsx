@@ -1,6 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useNavigate } from 'react-router-dom';
-import { UserCheck, Layers } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserCheck } from 'lucide-react';
 import type { CourseDetailDto } from '@/services/assignment.service';
 
 interface CourseEnrollmentProps {
@@ -8,10 +8,10 @@ interface CourseEnrollmentProps {
   isBasic: boolean;
   assignmentCount: number;
   completedCount: number;
+  /** The organization may assign the course: Basic, or a paid course it bought (once, for every employee). */
   hasLicense?: boolean;
-  totalSeats?: number;
-  seatsAvailable?: number;
-  onBuySeats?: () => void;
+  /** Where to buy the course when it is not bought yet. */
+  checkoutPath?: string;
 }
 
 export function CourseEnrollment({
@@ -20,9 +20,7 @@ export function CourseEnrollment({
   assignmentCount,
   completedCount,
   hasLicense = true,
-  totalSeats = 0,
-  seatsAvailable = 0,
-  onBuySeats,
+  checkoutPath,
 }: CourseEnrollmentProps) {
   useUiLanguage();
   const navigate = useNavigate();
@@ -45,17 +43,17 @@ export function CourseEnrollment({
         style={{ color: 'var(--po-ink)', letterSpacing: '-0.045em' }}
       >
         {isBasic
-          ? 'Mở toàn bộ'
+          ? translateUi('Mở toàn bộ')
           : hasLicense
-          ? translateUi(`Đã mở bản quyền (${totalSeats} suất)`)
-          : 'Chưa có bản quyền'}
+          ? translateUi('Đã mua cho cả doanh nghiệp')
+          : translateUi('Chưa mua khóa học')}
       </h2>
       <p className="mt-1 text-xs" style={{ color: 'var(--po-muted)' }}>
         {isBasic
-          ? 'Không cần phân công. Tất cả nhân viên có thể truy cập nội dung khóa Cơ bản.'
+          ? translateUi('Không cần phân công. Tất cả nhân viên có thể truy cập nội dung khóa Cơ bản.')
           : hasLicense
-          ? translateUi(`Tổ chức đã trang bị ${totalSeats} suất (còn ${seatsAvailable} suất khả dụng). Quản lý có thể giao khóa hoặc tạo đợt đào tạo.`)
-          : 'Khóa học trả phí theo suất học. Cần trang bị suất trước khi giao cho nhân viên học.'}
+          ? translateUi('Mọi nhân viên đều học được, không giới hạn số người. Quản lý có thể giao khóa cho nhân viên.')
+          : translateUi('Khóa học có phí, mua một lần cho cả doanh nghiệp rồi giao cho nhân viên học.')}
       </p>
 
       <div className="flex flex-wrap gap-2 mt-4">
@@ -70,7 +68,7 @@ export function CourseEnrollment({
           >
             {assignmentCount > 0
               ? translateUi(`${assignmentCount} nhân viên đã giao`)
-              : 'Chưa có phân công'}
+              : translateUi('Chưa có phân công')}
           </span>
         )}
         {completedCount > 0 && (
@@ -80,57 +78,30 @@ export function CourseEnrollment({
           >
             {completedCount}{translateUi(" đã hoàn thành")}</span>
         )}
-        {!isBasic && hasLicense && (
-          <span
-            className="rounded-full px-2.5 py-1 text-[10px] font-bold whitespace-nowrap bg-emerald-50 text-emerald-800 border border-emerald-200"
-          >{translateUi("Còn ")}{seatsAvailable}{translateUi(" suất khả dụng")}</span>
-        )}
       </div>
 
       <div className="flex flex-wrap gap-2 mt-5">
         {hasLicense ? (
-          <>
-            <button
-              type="button"
-              onClick={() => navigate(`/enterprise/assignments?courseId=${course.id}`)}
-              className="inline-flex items-center gap-1.5 rounded-[11px] px-3 py-2 text-xs font-bold transition-transform hover:-translate-y-0.5"
-              style={{
-                background: 'var(--po-accent)',
-                color: '#fff',
-                boxShadow: '0 9px 18px rgba(19,123,132,.17)',
-              }}
-            >
-              <UserCheck className="size-3.5" />{translateUi("Giao khóa học")}</button>
-            <button
-              type="button"
-              onClick={() => navigate(`/enterprise/training-batches/new?courseId=${course.id}`)}
-              className="inline-flex items-center gap-1.5 rounded-[11px] border px-3 py-2 text-xs font-bold transition-transform hover:-translate-y-0.5"
-              style={{
-                background: 'var(--po-surface)',
-                color: 'var(--po-accent)',
-                borderColor: '#cdd7f5',
-              }}
-            >
-              <Layers className="size-3.5" />{translateUi("Thêm vào đợt đào tạo")}</button>
-            {!isBasic && onBuySeats && (
-              <button
-                type="button"
-                onClick={onBuySeats}
-                className="inline-flex items-center gap-1.5 rounded-[11px] border px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                style={{ borderColor: 'var(--po-line)' }}
-              >{translateUi("+ Mua thêm suất")}</button>
-            )}
-          </>
-        ) : (
           <button
             type="button"
-            onClick={onBuySeats}
+            onClick={() => navigate(`/enterprise/assignments?courseId=${course.id}`)}
+            className="inline-flex items-center gap-1.5 rounded-[11px] px-3 py-2 text-xs font-bold transition-transform hover:-translate-y-0.5"
+            style={{
+              background: 'var(--po-accent)',
+              color: '#fff',
+              boxShadow: '0 9px 18px rgba(19,123,132,.17)',
+            }}
+          >
+            <UserCheck className="size-3.5" />{translateUi("Giao khóa học")}</button>
+        ) : checkoutPath ? (
+          <Link
+            to={checkoutPath}
             className="inline-flex items-center gap-1.5 rounded-[11px] px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:brightness-105"
             style={{ background: '#f59e0b' }}
           >
-            <span>🔒 Trang bị suất học ngay</span>
-          </button>
-        )}
+            <span>🔒 {translateUi("Mua khóa học cho doanh nghiệp")}</span>
+          </Link>
+        ) : null}
       </div>
     </section>
   );

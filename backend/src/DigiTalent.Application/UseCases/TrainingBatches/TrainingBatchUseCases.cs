@@ -258,33 +258,12 @@ public class CreateTrainingBatchUseCase : IUseCase<CreateTrainingBatchInput, Cre
         if (course == null)
             throw new BadRequestException("Course not found.");
 
-        var isPaidCourse = course.Code.EndsWith("-I", StringComparison.OrdinalIgnoreCase) ||
-                           course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ||
-                           course.EntryLevel >= 2;
-        if (isPaidCourse)
+        var isPaidCourse = CourseOwnership.IsPaid(course.Code) || course.EntryLevel >= 2;
+        if (isPaidCourse && !await CourseOwnership.IsPurchasedAsync(_context, orgId, course.Code))
         {
-            var courseCodes = CourseCodes.Aliases(course.Code);
-            var purchasedSeats = await (
-                from o in _context.CourseSeatOrders.AsNoTracking()
-                join pc in _context.PlatformCourses.AsNoTracking() on o.CourseId equals pc.Id
-                where o.OrganizationId == orgId && courseCodes.Contains(pc.Code)
-                select (int?)o.Seats
-            ).SumAsync() ?? 0;
-
-            var usedSeats = await _context.CourseAssignments.AsNoTracking()
-                .Where(ca => _context.Courses.Any(version => version.Id == ca.CourseId
-                    && version.OrganizationId == course.OrganizationId && courseCodes.Contains(version.Code))
-                    && ca.Status == Statuses.CourseAssignment.Active)
-                .Select(ca => ca.EmployeeId).Distinct().CountAsync();
-
-            var availableSeats = Math.Max(0, purchasedSeats - usedSeats);
-            var requestedEmployeesCount = input.EmployeeIds.Distinct().Count();
-            if (availableSeats < requestedEmployeesCount)
-            {
-                var price = course.Code.EndsWith("-A", StringComparison.OrdinalIgnoreCase) ? "699.000 ₫" : "399.000 ₫";
-                throw new BadRequestException(
-                    $"Khóa học '{course.Title}' là khóa học có phí ({price}/suất). Tổ chức hiện có {purchasedSeats} suất ({usedSeats} đã phân công, còn {availableSeats} suất). Cần mua thêm suất học trước khi tạo đợt đào tạo cho {requestedEmployeesCount} nhân viên.");
-            }
+            throw new BadRequestException(
+                $"Khóa học '{course.Title}' là khóa học có phí. Doanh nghiệp cần mua khóa học trước khi tạo đợt đào tạo.",
+                "courseId", "COURSE_NOT_PURCHASED");
         }
 
         var codeExists = await _context.TrainingBatches.AsNoTracking()

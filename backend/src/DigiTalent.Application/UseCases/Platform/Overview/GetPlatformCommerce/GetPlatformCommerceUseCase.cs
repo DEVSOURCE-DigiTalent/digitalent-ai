@@ -16,7 +16,6 @@ public class GetPlatformCommerceUseCase : IUseCase<GetPlatformCommerceUseCaseInp
     {
         var courses = await PlatformCatalogReader.ReadCoursesAsync(_context);
         var orders = PlatformCatalogReader.QueryOrders(_context);
-        if (!string.IsNullOrWhiteSpace(input.Kind)) orders = orders.Where(o => o.Kind == input.Kind.Trim().ToUpperInvariant());
         if (!string.IsNullOrWhiteSpace(input.Search))
         {
             var search = input.Search.Trim().ToLower();
@@ -26,10 +25,10 @@ public class GetPlatformCommerceUseCase : IUseCase<GetPlatformCommerceUseCaseInp
         return new GetPlatformCommerceUseCaseOutput
         {
             Courses = courses,
-            SeatsPurchased = courses.Sum(c => c.SeatsPurchased),
-            SeatsGranted = courses.Sum(c => c.SeatsGranted),
+            PurchaseCount = courses.Sum(c => c.PurchaseCount),
+            BuyerCount = await _context.CourseOrders.AsNoTracking().Select(o => o.OrganizationId).Distinct().CountAsync(),
             Revenue = courses.Sum(c => c.Revenue),
-            Orders = new PagedList<PlatformSeatOrderItem>
+            Orders = new PagedList<PlatformCourseOrderItem>
             {
                 TotalItems = await orders.CountAsync(),
                 Items = await orders.Skip((input.PageIndex - 1) * input.PageSize).Take(input.PageSize).ToListAsync(),

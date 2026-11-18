@@ -26,7 +26,7 @@ public class GetPulsePracticeUseCase : IUseCase<GetPulsePracticeUseCaseInput, Ge
     {
         var snapshot = await _reader.LoadAsync();
         var finals = snapshot.Courses
-            // Suất đang giữ (chưa đủ điều kiện học) nằm ở Lộ trình, không phải việc cần làm ở Thực hành.
+            // Lượt học đang giữ (chưa đủ điều kiện học) nằm ở Lộ trình, không phải việc cần làm ở Thực hành.
             .Where(c => c.Enrollment != null && (c.CanWork || c.Approved || c.Submissions.Count > 0))
             .OrderBy(c => Rank(c.FinalStatus))
             .ThenBy(c => c.Domain.Number).ThenBy(c => c.Course.Tier)

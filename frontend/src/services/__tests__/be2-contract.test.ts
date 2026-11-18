@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import apiClient from '../api-client';
 import { taskService } from '../task.service';
-import { trainingBatchService } from '../training-batch.service';
 import { organizationService } from '../organization.service';
 import { assignmentService } from '../assignment.service';
 import { analyticsService } from '../analytics.service';
@@ -38,50 +37,6 @@ describe('BE2 wire contracts', () => {
     expect(post.mock.calls[1][0]).toBe('/submissions/submission-1/evaluate');
     expect(post.mock.calls[1][1]).toMatchObject({ rubricScores: '{"quality":80}', decision: 'APPROVED' });
     expect(evaluated.data.data?.evaluation?.rubricScores).toEqual({ quality: 80 });
-  });
-
-  it('creates one-course batches with the BE2 field names', async () => {
-    const post = vi.spyOn(apiClient, 'post').mockResolvedValue(response({ id: 'batch-1', employeesAdded: 1 }));
-    await trainingBatchService.createBatch({
-      code: 'BATCH-1', name: 'Đợt đào tạo', startDate: '2026-10-10', endDate: '2026-11-10',
-      courseIds: ['course-1'], participantEmployeeIds: ['employee-1'], autoAssign: true,
-    });
-    expect(post.mock.calls[0][0]).toBe('/training-batches');
-    expect(post.mock.calls[0][1]).toEqual({
-      code: 'BATCH-1', title: 'Đợt đào tạo', description: undefined,
-      courseId: 'course-1', departmentId: undefined, jobPositionId: undefined,
-      startDate: '2026-10-10T00:00:00Z', endDate: '2026-11-10T00:00:00Z', dueDate: '2026-11-10T00:00:00Z',
-      employeeIds: ['employee-1'],
-    });
-    expect(() => trainingBatchService.createBatch({
-      name: 'Sai', startDate: '2026-10-10', endDate: '2026-11-10', courseIds: ['a', 'b'],
-    })).toThrow(/một khóa học/);
-    expect(post).toHaveBeenCalledTimes(1);
-  });
-
-  it('uses the new batch summary API and maps list status', async () => {
-    const item = {
-      id: 'batch-1', code: 'BATCH-1', title: 'Đợt đào tạo', courseId: 'course-1',
-      startDate: '2026-10-10T00:00:00Z', endDate: '2026-11-10T00:00:00Z',
-      status: 'ACTIVE', totalEmployees: 2, completedCount: 1, createdAt: '2026-10-01T00:00:00Z',
-    };
-    const get = vi.spyOn(apiClient, 'get')
-      .mockResolvedValueOnce(response({ items: [item], totalItems: 1, pageIndex: 1, pageSize: 100, totalPages: 1 }))
-      .mockResolvedValueOnce(response({ total: 1, running: 1, scheduled: 0, completed: 0, cancelled: 0, totalParticipants: 2 }));
-    const list = await trainingBatchService.getBatches({ status: 'RUNNING' });
-    expect(get.mock.calls[0][0]).toBe('/training-batches');
-    expect(get.mock.calls[0][1]).toEqual({ params: { status: 'ACTIVE' } });
-    expect(list.data.data?.items[0]).toMatchObject({ name: 'Đợt đào tạo', status: 'RUNNING' });
-
-    const summary = await trainingBatchService.getSummary();
-    expect(get.mock.calls[1][0]).toBe('/training-batches/summary');
-    expect(summary.data.data).toMatchObject({ total: 1, running: 1, totalParticipants: 2 });
-  });
-
-  it('activates draft batches through the new BE2 endpoint', async () => {
-    const post = vi.spyOn(apiClient, 'post').mockResolvedValue(response({ success: true }));
-    await trainingBatchService.activateBatch('batch-1');
-    expect(post.mock.calls[0][0]).toBe('/training-batches/batch-1/activate');
   });
 
   it('sends organization settings inside the BE2 settings dictionary', async () => {

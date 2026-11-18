@@ -58,7 +58,7 @@ public static class PlatformCatalogVersionReader
                     LevelName = PlatformCatalog.LevelName(r.CatalogCourse.Level),
                     ModuleCount = size.Modules,
                     QuestionCount = size.Questions,
-                    PricePerSeat = r.CatalogCourse.PricePerSeat,
+                    Price = r.CatalogCourse.Price,
                     SalesStatus = r.CatalogCourse.SalesStatus,
                     ChangeKind = r.CatalogCourse.ChangeKind,
                 };

@@ -8,7 +8,7 @@ import { seedWork } from './seed-work';
 import type {
   AssignmentRecord, AuditEntry, DepartmentRecord, EmployeeRecord,
   InternalCourseRecord, JobGradeRecord, JobPositionRecord, OrgData, ProfileMap,
-  RequirementSetRecord, SeedInvitationRecord, SeedMemberRecord, TrainingBatchRecord,
+  RequirementSetRecord, SeedInvitationRecord, SeedMemberRecord,
 } from './types';
 
 /**
@@ -353,69 +353,14 @@ export function buildAcmeData(): OrgData {
   // Demo licenses are explicit purchase data, never inferred from saved ceilings.
   // Category 5 intentionally has only the free foundation course, so the owner can
   // immediately see and test the purchase gate for Trung cấp / Nâng cao.
-  const courseSeatOrders = Object.fromEntries(
+  const courseOrders = 
     [
       ['cat-1', 3], ['cat-2', 2], ['cat-3', 3],
       ['cat-4', 2], ['cat-6', 2],
     ].map(([categoryId, level]) => {
       const course = COURSES.find((item) => item.categoryId === categoryId && item.level === level)!;
-      return [course.id, 12];
-    }),
-  );
-
-  function buildTrainingBatches(): TrainingBatchRecord[] {
-    return [
-      {
-        id: 'tb-001',
-        code: 'DOT-2026-01',
-        name: 'Phổ cập Năng lực số cho Khối Nghiệp vụ & Kỹ thuật',
-        description: 'Chương trình đào tạo trọng điểm Quý 1/2026 nhằm nâng cao năng lực khai thác dữ liệu và an toàn thông tin.',
-        status: 'RUNNING',
-        startDate: dateFromNow(-15),
-        endDate: dateFromNow(15),
-        courseIds: ['crs-A1-F', 'crs-A2-F', 'crs-A4-F'],
-        targetCriteria: {
-          departmentIds: ['dep-kt', 'dep-it'],
-          jobGrades: ['G1', 'G2'],
-        },
-        participantEmployeeIds: ['emp-001', 'emp-006', 'emp-007', 'emp-008', 'emp-009', 'emp-010', 'emp-011', 'emp-013'],
-        createdAt: daysFromNow(-20),
-        createdByName: 'Nguyễn Văn Chủ',
-      },
-      {
-        id: 'tb-002',
-        code: 'DOT-2026-02',
-        name: 'Nâng cao Kỹ năng Dữ liệu & AI cho Cấp bậc G2–G3',
-        description: 'Đợt đào tạo chuyên sâu về ứng dụng AI và phân tích dữ liệu nghiệp vụ cho cán bộ quản lý và chuyên viên cấp cao.',
-        status: 'SCHEDULED',
-        startDate: dateFromNow(10),
-        endDate: dateFromNow(40),
-        courseIds: ['crs-M6-I', 'crs-A1-I'],
-        targetCriteria: {
-          jobGrades: ['G2', 'G3'],
-        },
-        participantEmployeeIds: ['emp-001', 'emp-002', 'emp-003', 'emp-004', 'emp-005'],
-        createdAt: daysFromNow(-5),
-        createdByName: 'Nguyễn Văn Chủ',
-      },
-      {
-        id: 'tb-003',
-        code: 'DOT-2025-04',
-        name: 'Đợt Khởi động - Nhập môn Chuyển đổi số & An toàn thông tin',
-        description: 'Đợt đào tạo toàn diện chuẩn bị lộ trình chuẩn hóa theo Khung chuẩn năng lực số.',
-        status: 'COMPLETED',
-        startDate: dateFromNow(-90),
-        endDate: dateFromNow(-30),
-        courseIds: ['crs-A1-F', 'crs-A4-F'],
-        targetCriteria: {
-          departmentIds: ['dep-ns', 'dep-kd'],
-        },
-        participantEmployeeIds: ['emp-002', 'emp-007', 'emp-012', 'emp-014'],
-        createdAt: daysFromNow(-100),
-        createdByName: 'Trần Thị Quản Trị',
-      },
-    ];
-  }
+      return course.id;
+    });
 
   const data: OrgData = {
     organizationId: ACME_ORGANIZATION_ID,
@@ -434,13 +379,12 @@ export function buildAcmeData(): OrgData {
     skillGapRuns: [],
     assignments: buildAssignments(),
     decisions: [],
-    trainingBatches: buildTrainingBatches(),
     seedMembers,
     seedInvitations,
     memberOverrides: {},
     audit: buildAudit(),
     internalCourses: buildInternalCourses(),
-    courseSeatOrders,
+    courseOrders,
   };
 
   seedWork(data);

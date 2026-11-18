@@ -36,6 +36,6 @@ public class PulseCourseModuleDto
     public bool Passed { get; set; }
     /// <summary>Đã qua mô đun trước (mô đun 1 luôn mở theo thứ tự).</summary>
     public bool Unlocked { get; set; }
-    /// <summary>Được mở để đọc: khóa có quyền đầy đủ, hoặc trang mẫu của mô đun 1 khi chưa có suất.</summary>
+    /// <summary>Được mở để đọc: khóa có quyền đầy đủ, hoặc trang mẫu của mô đun 1 khi doanh nghiệp chưa mua khóa.</summary>
     public bool Viewable { get; set; }
 }
