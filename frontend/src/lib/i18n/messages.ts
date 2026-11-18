@@ -159,6 +159,8 @@ Chuyển giao diện sáng|Switch to light mode
 Chuyển giao diện tối|Switch to dark mode
 Đăng xuất|Sign out
 Học tập của tôi|My learning
+Điều hướng học tập|Learning navigation
+Về không gian quản lý|Back to team workspace
 Quản lý|Manager
 Nhân viên|Employee
 Quản trị viên|Administrator

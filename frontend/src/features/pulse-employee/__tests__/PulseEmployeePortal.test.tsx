@@ -21,6 +21,7 @@ import {
 import { PulseFinalPage } from '../pages/PulseFinalPage';
 import { PulsePreAssessmentPage } from '../pages/PulsePreAssessmentPage';
 import { PulseHeader } from '../components/PulseHeader';
+import { PulseSidebar } from '../components/PulseSidebar';
 import { trialProgramService } from '@/services/trial-program.service';
 import { PULSE_PATHS } from '../lib/paths';
 
@@ -213,6 +214,24 @@ describe('Pulse employee routes', () => {
     renderAt(PULSE_PATHS.course('course-1'), <PulseHeader />);
     expect(screen.getByRole('link', { name: 'Lộ trình' }).className).toContain('active');
     expect(screen.getByRole('link', { name: 'Đánh giá' }).className).not.toContain('active');
+  });
+
+  it('gives a manager the shared roadmap and a way back to the team workspace', async () => {
+    signIn({ roles: [ROLES.MANAGER] });
+    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview()));
+
+    renderAt(PULSE_PATHS.path, null, (
+      <Route path={PULSE_PATHS.path} element={<><PulseHeader /><PulseSidebar manager /><PulsePathPage /></>} />
+    ));
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Bảng Ma trận Cấp độ' }));
+    expect(screen.getByRole('heading', { name: 'Bảng ma trận lộ trình năng lực số · Kế toán' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Về không gian quản lý' })).toHaveAttribute('href', '/enterprise/team');
+    expect(screen.getByRole('link', { name: 'Hoạt động' })).toHaveAttribute('href', '/enterprise/notifications');
+    const nav = screen.getByRole('navigation', { name: 'Điều hướng học tập' });
+    expect(within(nav).getByRole('link', { name: 'Lộ trình năng lực' })).toHaveAttribute('href', PULSE_PATHS.path);
+    expect(within(nav).queryByRole('link', { name: 'Góp ý' })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole('link', { name: 'Báo lỗi' })).not.toBeInTheDocument();
   });
 });
 
