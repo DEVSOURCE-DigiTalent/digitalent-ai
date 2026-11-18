@@ -96,9 +96,6 @@ function trialRows(trials: PlatformTrialItem[], now: number): AttentionRow[] {
     if (deadline < now && t.submitted === 0) {
       rows.push({ ...base, key: `${t.organizationId}-expired`, severity: 'danger', tag: 'Dùng thử',
         reason: `Đã hết hạn nộp bài, chưa ai nộp (0/${t.participants})` });
-    } else if (deadline < now && t.stage === 'ASSIGNED' && t.reviewed < t.submitted) {
-      rows.push({ ...base, key: `${t.organizationId}-grading`, severity: 'warn', tag: 'Dùng thử',
-        reason: `Đã hết hạn nộp, mentor mới chấm ${t.reviewed}/${t.submitted} bài` });
     } else if (deadline >= now && deadline - now <= DUE_SOON_HOURS * HOUR_MS && t.submitted < t.participants) {
       const hours = Math.max(1, Math.round((deadline - now) / HOUR_MS));
       rows.push({ ...base, key: `${t.organizationId}-due`, severity: 'warn', tag: 'Dùng thử',
