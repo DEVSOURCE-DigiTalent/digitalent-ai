@@ -30,7 +30,7 @@ const SERIES = [
   { key: 'current', color: 'var(--development-current)', dash: undefined, width: 5, radius: 5, label: 'Hiện tại' },
   { key: 'target', color: 'var(--development-target)', dash: '9 5', width: 3.5, radius: 4, label: 'Mức áp dụng phòng ban' },
 ] as const;
-const PLOT_ORDER = ['current', 'target', 'baseline'] as const;
+const PLOT_ORDER = ['baseline', 'target', 'current'] as const;
 type SeriesKey = typeof SERIES[number]['key'];
 
 const domainCode = (code: string) => code.replace('TT02_', '');
@@ -77,6 +77,7 @@ export function DevelopmentChart({ scope }: { scope: WorkforceDevelopmentScope }
   const headingId = useId();
   const rangeId = useId();
   const [selected, setSelected] = useState('');
+  const [openDomain, setOpenDomain] = useState('');
   const [hidden, setHidden] = useState<SeriesKey[]>([]);
   const query = useWorkforceDevelopment(scope);
   const member = 'employeeId' in scope;
@@ -94,12 +95,41 @@ export function DevelopmentChart({ scope }: { scope: WorkforceDevelopmentScope }
     ? null
     : Math.round((active.target - active.current) * 100) / 100;
 
+  function domainTooltip(domain: (typeof domains)[number], popover = false) {
+    const levels = new Map<number | SeriesKey, typeof series>();
+    for (const item of series) {
+      if (hidden.includes(item.key)) continue;
+      const value = domain[item.key];
+      const group = value == null || (item.key === 'target' && value === 0) ? item.key : value;
+      const entries = levels.get(group) ?? [];
+      entries.push(item);
+      levels.set(group, entries);
+    }
+
+    return (
+      <div className="manager-development__tooltip" role={popover ? undefined : "tooltip"}>
+        <strong>{translateUi(domain.name)}</strong>
+        <dl className="manager-development__tooltip-levels">
+          {[...levels.entries()].map(([group, [first, ...others]]) => (
+            <div key={group}>
+              <dt><span aria-hidden="true" style={{ background: first.color }} />
+                {[first, ...others].map(({ label }) => translateUi(label)).join(' · ')}
+              </dt>
+              <dd>{describeLevel(domain[first.key], first.key)}</dd>
+            </div>
+          ))}
+        </dl>
+        {!member && domain.currentLevels && <LevelDistribution counts={domain.currentLevels} format={format} />}
+      </div>
+    );
+  }
+
   function toggleSeries(key: SeriesKey) {
     setHidden((previous) => previous.includes(key) ? previous.filter((item) => item !== key) : [...previous, key]);
   }
 
   return (
-    <section className="manager-development" aria-labelledby={headingId}>
+    <section className="manager-development" data-scope={member ? "member" : "department"} aria-labelledby={headingId}>
       <header>
         <h2 id={headingId}>{translateUi(member ? 'Năng lực qua sáu lĩnh vực' : 'Năng lực số của phòng ban')}</h2>
         {!member && query.isSuccess && <span className="manager-development__headcount"><strong>{format.format(count)}</strong> {translateUi('nhân viên đang làm việc')}</span>}
@@ -120,8 +150,8 @@ export function DevelopmentChart({ scope }: { scope: WorkforceDevelopmentScope }
               ))}
               {showBand && <span className="manager-development__band-key">{translateUi('Chênh lệch với mục tiêu')}</span>}
             </div>
-            <div className="manager-development__canvas">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={{ width: 640, height: 275 }}>
+            <div className="manager-development__canvas" onMouseEnter={() => setOpenDomain('')}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={{ width: 640, height: member ? 275 : 430 }}>
                 <ComposedChart data={chartData} margin={{ top: 16, right: 24, bottom: 0, left: 0 }}
                   onClick={({ activeLabel }) => {
                     if (typeof activeLabel === 'string' && domains.some(({ code }) => code === activeLabel)) setSelected(activeLabel);
@@ -145,25 +175,12 @@ export function DevelopmentChart({ scope }: { scope: WorkforceDevelopmentScope }
                     content={({ active: isHovered, label }) => {
                       const hovered = isHovered && domains.find(({ code }) => code === label);
                       if (!hovered) return null;
-                      return (
-                        <div className="manager-development__tooltip" role="tooltip">
-                          <strong>{translateUi(hovered.name)}</strong>
-                          <dl className="manager-development__tooltip-levels">
-                            {series.filter(({ key }) => !hidden.includes(key)).map(({ key, label: name, color }) => (
-                              <div key={key}>
-                                <dt><span aria-hidden="true" style={{ background: color }} />{translateUi(name)}</dt>
-                                <dd>{describeLevel(hovered[key], key)}</dd>
-                              </div>
-                            ))}
-                          </dl>
-                          {!member && hovered.currentLevels && <LevelDistribution counts={hovered.currentLevels} format={format} />}
-                        </div>
-                      );
+                      return domainTooltip(hovered);
                     }} />
                   {PLOT_ORDER.map((key) => {
                     const item = series.find((definition) => definition.key === key)!;
                     return <Line key={key} type="monotone" dataKey={key} name={translateUi(item.label)} hide={hidden.includes(key)}
-                      stroke={item.color} strokeWidth={item.width} strokeDasharray={item.dash}
+                      stroke={item.color} strokeWidth={item.width} strokeDasharray={item.dash} zIndex={key === 'current' ? 410 : 400}
                       dot={{ r: item.radius, fill: 'var(--po-surface)', strokeWidth: 2 }}
                       activeDot={{ r: item.radius + 2, fill: item.color, stroke: item.color, strokeWidth: 5, strokeOpacity: 0.28 }}
                       connectNulls={false} isAnimationActive={false} />;
@@ -174,20 +191,33 @@ export function DevelopmentChart({ scope }: { scope: WorkforceDevelopmentScope }
           </div>
 
           <div className="manager-development__domains" role="group" aria-label={translateUi('Chọn lĩnh vực để xem chi tiết')}>
-            {domains.map(({ code, name }) => {
+            {domains.map((domain, index) => {
+              const { code, name } = domain;
               const tab = domainTab(code);
               const Icon = tab?.icon;
               return (
-                <button key={code} type="button" aria-pressed={code === active.code} aria-label={translateUi(name)}
-                  aria-controls={`${headingId}-domain`} onClick={() => setSelected(code)}>
-                  <span className="manager-development__domain-icon" aria-hidden="true">{Icon && <Icon size={15} />}</span>
-                  <span><small>{domainCode(code)}</small><strong>{translateUi(tab?.label ?? name)}</strong></span>
-                </button>
+                <div className="manager-development__domain" key={code} onKeyDown={(event) => {
+                  if (event.key === 'Escape') setOpenDomain('');
+                }}>
+                  <button type="button" aria-pressed={member ? code === active.code : undefined} aria-label={translateUi(name)}
+                    aria-expanded={member ? undefined : openDomain === code}
+                    aria-controls={headingId + (member ? '-domain' : '-popover-' + index)}
+                    onClick={() => {
+                      setSelected(code);
+                      if (!member) setOpenDomain(openDomain === code ? '' : code);
+                    }}>
+                    <span className="manager-development__domain-icon" aria-hidden="true">{Icon && <Icon size={15} />}</span>
+                    <span><small>{domainCode(code)}</small><strong>{translateUi(tab?.label ?? name)}</strong></span>
+                  </button>
+                  {!member && <div id={headingId + '-popover-' + index} className="manager-development__popover" hidden={openDomain !== code} aria-live="polite">
+                    {openDomain === code && domainTooltip(domain, true)}
+                  </div>}
+                </div>
               );
             })}
           </div>
 
-          <div id={`${headingId}-domain`} className="manager-development__detail" aria-live="polite">
+          {member && <div id={`${headingId}-domain`} className="manager-development__detail" aria-live="polite">
             <div className="manager-development__summary" key={active.code}>
               <div className="manager-development__summary-title">
                 <h3>{translateUi(active.name)}</h3>
@@ -196,11 +226,7 @@ export function DevelopmentChart({ scope }: { scope: WorkforceDevelopmentScope }
                 {series.map(({ key, label, color }) => (
                   <div key={key}>
                     <dt><span aria-hidden="true" style={{ background: color }} />{translateUi(label)}</dt>
-                    <dd><strong>{describeLevel(active[key], key)}</strong>
-                      {!member && key !== 'target' && <small>
-                        {format.format(key === 'baseline' ? active.baselineCount : active.currentCount)}/{format.format(count)} {translateUi('có dữ liệu')}
-                      </small>}
-                    </dd>
+                    <dd><strong>{describeLevel(active[key], key)}</strong></dd>
                   </div>
                 ))}
               </dl>
@@ -208,8 +234,7 @@ export function DevelopmentChart({ scope }: { scope: WorkforceDevelopmentScope }
                 <span>{translateUi(difference > 0 ? 'Còn thiếu' : difference < 0 ? 'Vượt mục tiêu' : 'Đạt mục tiêu')}</span>
               </div>}
             </div>
-            {!member && active.currentLevels && <LevelDistribution key={active.code + '-distribution'} counts={active.currentLevels} format={format} />}
-          </div>
+          </div>}
         </>}
     </section>
   );
