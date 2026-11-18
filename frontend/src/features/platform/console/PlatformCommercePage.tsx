@@ -719,22 +719,16 @@ function PriceTable({
     }
   };
 
+  // Only a course added in this draft can be removed; a published course is paused from its "Mở bán" select.
   const onDeleteCourse = (course: AugmentedPlatformCourse) => {
-    if (draftNo === null) return;
-    if (course.isNewInDraft) {
-      removeCourse.mutate(course.id, {
-        onSuccess: () => {
-          toast.success(`Đã xóa khóa học ${course.code} khỏi bản nháp v${draftNo}.`);
-          setConfirmDeleteId(null);
-        },
-        onError: (err) => toast.error(errorMessage(err)),
-      });
-    } else {
-      // For published courses, pause sale instead
-      set(course.id, { sales: 'PAUSED' });
-      toast.info(`Khóa học ${course.code} đã được chuyển sang trạng thái "Tạm ngưng bán" trong bản nháp.`);
-      setConfirmDeleteId(null);
-    }
+    if (draftNo === null || !course.isNewInDraft) return;
+    removeCourse.mutate(course.id, {
+      onSuccess: () => {
+        toast.success(`Đã xóa khóa học ${course.code} khỏi bản nháp v${draftNo}.`);
+        setConfirmDeleteId(null);
+      },
+      onError: (err) => toast.error(errorMessage(err)),
+    });
   };
 
   const totalColSpan = draftNo !== null && editable ? 7 : draftNo !== null ? 6 : 5;
@@ -1023,7 +1017,10 @@ function PriceTable({
                         )}
 
                         <td style={{ textAlign: 'center' }}>
-                          {editable ? (
+                          {c.isFree ? (
+                            // Basic courses are free for every organization: there is nothing to put on or off sale.
+                            <span style={{ fontSize: 12, color: '#64748b' }}>Miễn phí cho mọi doanh nghiệp</span>
+                          ) : editable ? (
                             <select
                               value={edit.sales}
                               onChange={(e) => set(c.id, { sales: e.target.value as SalesStatus })}
@@ -1054,7 +1051,7 @@ function PriceTable({
 
                         {draftNo !== null && editable && (
                           <td style={{ textAlign: 'center' }}>
-                            {isConfirmingDelete ? (
+                            {!c.isNewInDraft ? null : isConfirmingDelete ? (
                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                 <button
                                   type="button"
@@ -1071,9 +1068,9 @@ function PriceTable({
                                   }}
                                   onClick={() => onDeleteCourse(c)}
                                   disabled={removeCourse.isPending}
-                                  title={c.isNewInDraft ? 'Xác nhận xóa khóa học khỏi bản nháp' : 'Chuyển sang tạm ngưng bán'}
+                                  title="Xác nhận xóa khóa học khỏi bản nháp"
                                 >
-                                  {c.isNewInDraft ? 'Xóa' : 'Ngưng'}
+                                  Xóa
                                 </button>
                                 <button
                                   type="button"
@@ -1094,13 +1091,14 @@ function PriceTable({
                                   width: 28,
                                   padding: 0,
                                   borderRadius: 6,
-                                  color: c.isNewInDraft ? '#ef4444' : '#94a3b8',
+                                  color: '#ef4444',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                 }}
                                 onClick={() => setConfirmDeleteId(c.id)}
-                                title={c.isNewInDraft ? `Xóa khóa ${c.code} khỏi bản nháp` : `Tạm ngưng bán khóa ${c.code}`}
+                                title={`Xóa khóa ${c.code} khỏi bản nháp`}
+                                aria-label={`Xóa khóa ${c.code} khỏi bản nháp`}
                               >
                                 <Trash2 size={14} />
                               </button>
