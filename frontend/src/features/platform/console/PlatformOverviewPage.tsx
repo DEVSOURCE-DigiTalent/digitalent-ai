@@ -35,6 +35,7 @@ import {
 import { PlatformOverviewSkeleton } from './components/OverviewSkeleton';
 import { OrganizationDonutCard, RevenueColumnCard } from './components/OverviewCharts';
 import { AttentionListCard, TrialFunnelCard } from './components/OverviewInsights';
+import { trialNeedsMentor } from '@/features/trial-program/lib/trial-mentor';
 
 type FeedTab = 'orgs' | 'audit';
 
@@ -70,7 +71,7 @@ export function PlatformOverviewPage() {
   const trialItems = trialsQuery.data ?? [];
   const organizations = orgsQuery.data?.items ?? [];
   const queue: QueueCounts = {
-    pendingTrials: trialItems.filter((item) => item.stage === 'REQUESTED').length,
+    pendingTrials: trialItems.filter(trialNeedsMentor).length,
     openFeedbacks,
     openBugs,
   };
@@ -413,8 +414,8 @@ function buildActionRows(data: PlatformOverview, queue: QueueCounts): ActionRow[
     items.push({
       key: 'trials_pending',
       severity: 'warn',
-      text: `${queue.pendingTrials} tổ chức dùng thử chưa có mentor chấm bài.`,
-      to: '/platform/trials',
+      text: `${queue.pendingTrials} tổ chức đang học chưa có mentor chấm bài.`,
+      to: '/platform/mentors',
       action: 'Phân công',
     });
   }
