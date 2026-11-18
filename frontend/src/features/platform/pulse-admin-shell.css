@@ -388,33 +388,9 @@
   flex: 0 0 auto;
 }
 
-/* Subtle Tinted Quick Create Button so main-content CTA remains primary focus */
+/* Anchor of the header popovers (notifications, account menu) */
 .pa-popover-anchor {
   position: relative;
-}
-
-.pulse-ui.pa-console .pa-btn-create {
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: 1px solid var(--pa-accent-border);
-  background: var(--pa-accent-soft);
-  color: var(--pa-accent-solid);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.25;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 120ms ease-out, border-color 120ms ease-out;
-}
-
-.pulse-ui.pa-console .pa-btn-create:hover,
-.pulse-ui.pa-console .pa-btn-create[aria-expanded='true'] {
-  background: #fde6ce;
-  border-color: var(--pa-accent);
 }
 
 /* Notification Bell Button */
@@ -1578,15 +1554,8 @@ dialog.pa-cmd-dialog::backdrop {
 @media (max-width: 880px) {
 
   .pa-topbar-mobile-brand .pa-brand-role-pill,
-  .pa-btn-create-label,
   .pa-user-name {
     display: none;
-  }
-
-  .pulse-ui.pa-console .pa-btn-create {
-    width: 40px;
-    padding: 0;
-    justify-content: center;
   }
 }
 
@@ -1615,7 +1584,6 @@ dialog.pa-cmd-dialog::backdrop {
 
   .pulse-ui.pa-console .pa-mobile-nav-btn,
   .pulse-ui.pa-console .pa-cmd-trigger,
-  .pulse-ui.pa-console .pa-btn-create,
   .pulse-ui.pa-console .pa-icon-btn,
   .pulse-ui.pa-console .pa-user-btn.is-avatar-only {
     height: 36px;
@@ -1623,7 +1591,6 @@ dialog.pa-cmd-dialog::backdrop {
 
   .pulse-ui.pa-console .pa-mobile-nav-btn,
   .pulse-ui.pa-console .pa-cmd-trigger,
-  .pulse-ui.pa-console .pa-btn-create,
   .pulse-ui.pa-console .pa-icon-btn,
   .pulse-ui.pa-console .pa-user-btn.is-avatar-only {
     width: 36px;
@@ -2229,6 +2196,28 @@ dialog.pa-cmd-dialog::backdrop {
 /* Compact KPI Cards variant for density-optimized pages (Frameworks, Reference Positions) */
 .pulse-ui.pa-console .pa-ov-kpi-grid.pa-kpi-compact {
   gap: 12px;
+}
+
+/* Two-card KPI row (trial survey page) */
+.pulse-ui.pa-console .pa-ov-kpi-grid.pa-kpi-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 680px) {
+  .pulse-ui.pa-console .pa-ov-kpi-grid.pa-kpi-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Three-card KPI row (framework and mentor pages) */
+.pulse-ui.pa-console .pa-ov-kpi-grid.pa-kpi-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 880px) {
+  .pulse-ui.pa-console .pa-ov-kpi-grid.pa-kpi-3 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .pulse-ui.pa-console .pa-kpi-compact .pa-ov-kpi-card {
@@ -3114,7 +3103,7 @@ dialog.pa-cmd-dialog::backdrop {
   border-spacing: 0;
   font-size: 14px;
   color: var(--pa-ink);
-  min-width: 920px;
+  min-width: 760px;
 }
 
 .pulse-ui.pa-console .pa-tr-table thead th {
@@ -4081,11 +4070,12 @@ dialog.pa-cmd-dialog::backdrop {
   gap: 4px;
 }
 
+/* Number on top, its explanation (or the urgent pill) underneath, both left-aligned. */
 .pulse-ui.pa-console .pa-tr-kpi-val-row {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   margin-top: 2px;
 }
 
@@ -6252,35 +6242,18 @@ dialog.pa-cmd-dialog::backdrop {
  * PA-06: Organization Detail Drawer Redesign (.pa-org-detail-*)
  * ========================================================================== */
 
-.pulse-ui.pa-console .pa-org-detail-banner {
+.pulse-ui.pa-console .pa-org-detail-suspended {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px;
-  background: var(--pa-surface-sub);
-  border-radius: 12px;
-  border: 1px solid var(--pa-border);
-  margin-bottom: 16px;
-}
-
-.pulse-ui.pa-console .pa-org-detail-head-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.pulse-ui.pa-console .pa-org-detail-name {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--pa-ink);
-  line-height: 1.25;
-}
-
-.pulse-ui.pa-console .pa-org-detail-sub {
-  font-size: 12.5px;
-  color: var(--pa-ink-3);
-  margin-top: 2px;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .pulse-ui.pa-console .pa-org-detail-strip {
