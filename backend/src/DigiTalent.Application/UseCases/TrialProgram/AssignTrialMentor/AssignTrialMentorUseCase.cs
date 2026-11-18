@@ -45,11 +45,14 @@ public class AssignTrialMentorUseCase : IUseCase<AssignTrialMentorUseCaseInput, 
             throw new BadRequestException("Kết quả đã được công bố, không đổi mentor.", "mentorUserId", "TRIAL_REPORTED");
         }
 
+        var nowForLock = _reader.Now;
         var mentor = await (
                 from user in _context.Users
                 join userRole in _context.UserRoles on user.Id equals userRole.UserId
                 join role in _context.Roles on userRole.RoleId equals role.Id
-                where user.Id == input.MentorUserId && role.Code == Roles.Mentor && user.Status == Statuses.User.Active
+                where user.Id == input.MentorUserId && role.Code == Roles.Mentor
+                      && (user.Status == Statuses.User.Active
+                          || (user.Status == Statuses.User.Locked && user.LockedUntil != null && user.LockedUntil <= nowForLock))
                 select new { user.Id, user.DisplayName })
             .FirstOrDefaultAsync()
             ?? throw new BadRequestException("Chọn một mentor đang hoạt động.", "mentorUserId", "MENTOR_INVALID");
