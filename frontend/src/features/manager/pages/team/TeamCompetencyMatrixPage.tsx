@@ -6,18 +6,16 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { SectionLoading } from '@/components/shared/LoadingState';
 import { LoadError } from '@/features/pulse-employee/components/ui';
 import { ManagerPage, ManagerPageHeader, NoDepartment } from '@/features/pulse-manager/components/ManagerUi';
-import { levelStatus, type LevelStatus } from '@/features/pulse-manager/lib/capability';
+import { levelStatus } from '@/features/pulse-manager/lib/capability';
 import { MANAGER_PATHS } from '@/features/pulse-manager/lib/paths';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
 import { TT02_DOMAINS } from '@/lib/reference-positions';
 import type { SkillGapItem, SkillGapRunDetail } from '@/services/intelligence.service';
 import { useManagerSkillGapMatrix } from '../../hooks/use-manager-skill-gaps';
+import { CAPABILITY_STATUS as STATUS, CapabilityMarks, CapabilityStatusIcon, capabilityLevelLabel } from '@/features/pulse-manager/components/CapabilityVisuals';
 import './team-competency-matrix.css';
 
 const COLUMN_LIMIT = 6;
-const STATUS: Record<LevelStatus, string> = {
-  MET: 'Đạt yêu cầu', GAP: 'Chưa đạt', PENDING: 'Chưa xác nhận mức', OUTSIDE_PATH: 'Ngoài lộ trình',
-};
 const code = (item: SkillGapItem) => item.frameworkCode || item.competencyCode;
 
 function CompetencyMatrix({ rows }: { rows: SkillGapRunDetail[] }) {
@@ -49,8 +47,7 @@ function CompetencyMatrix({ rows }: { rows: SkillGapRunDetail[] }) {
   return (
     <section className="team-matrix" aria-labelledby="team-matrix-title">
       <header className="team-matrix-tools">
-        <div><h2 id="team-matrix-title"><Grid3X3 size={20} aria-hidden="true" />{translateUi('Đối chiếu theo lĩnh vực')}</h2>
-          <p>{translateUi('Mức hiện tại')} / {translateUi('Mức yêu cầu')}</p></div>
+        <h2 id="team-matrix-title"><Grid3X3 size={20} aria-hidden="true" />{translateUi('Đối chiếu theo lĩnh vực')}</h2>
         <div className="team-matrix-select">
           <span>{translateUi('Lĩnh vực')}</span>
           <OwnerFilterSelect icon="filter" variant="manager" label="Lĩnh vực" value={activeKey ?? ''}
@@ -59,8 +56,12 @@ function CompetencyMatrix({ rows }: { rows: SkillGapRunDetail[] }) {
         </div>
       </header>
       <ul className="team-matrix-legend" role="list" aria-label={translateUi('Chú giải trạng thái')}>
-        {Object.entries(STATUS).map(([status, label]) => <li key={status} data-status={status}>{translateUi(label)}</li>)}
+        {Object.entries(STATUS).map(([status, label]) => <li key={status} data-status={status}><CapabilityStatusIcon status={status as keyof typeof STATUS} />{translateUi(label)}</li>)}
       </ul>
+      <div className="team-matrix-key" aria-hidden="true">
+        <span><i />{translateUi('Mức hiện tại')}</span>
+        <span><i />{translateUi('Mức yêu cầu')}</span>
+      </div>
       {lastPage > 0 && (
         <div className="team-matrix-columns">
           <button type="button" disabled={current === 0} onClick={() => setColumnPage(current - 1)} aria-label={translateUi('Nhóm năng lực trước')}><ChevronLeft size={17} /></button>
@@ -68,6 +69,7 @@ function CompetencyMatrix({ rows }: { rows: SkillGapRunDetail[] }) {
           <button type="button" disabled={current === lastPage} onClick={() => setColumnPage(current + 1)} aria-label={translateUi('Nhóm năng lực sau')}><ChevronRight size={17} /></button>
         </div>
       )}
+      <div className="team-matrix-scroll" role="region" tabIndex={0} aria-label={translateUi(domain.name)}>
       <table role="table" className="team-matrix-table" aria-label={translateUi(domain.name)}>
         <thead role="rowgroup"><tr role="row">
           <th scope="col" role="columnheader">{translateUi('Nhân viên')}</th>
@@ -87,10 +89,18 @@ function CompetencyMatrix({ rows }: { rows: SkillGapRunDetail[] }) {
                   return (
                     <td role="cell" key={column.competencyId}>
                       <span className="team-matrix-mobile-code" aria-hidden="true">{code(column)} · {translateUi(column.competencyName)}</span>
-                      <span className="team-matrix-level" data-status={status}>
-                        {item ? `${item.currentLevel || '—'} / ${item.requiredLevel || '—'}` : '—'}
-                        <span className="sr-only"> · {translateUi(STATUS[status])}</span>
-                      </span>
+                      <div className="team-matrix-level" data-status={status} title={status === 'OUTSIDE_PATH' ? translateUi(STATUS[status]) : [
+                        translateUi('Mức hiện tại') + ': ' + capabilityLevelLabel(item?.currentLevel),
+                        translateUi('Mức yêu cầu') + ': ' + capabilityLevelLabel(item?.requiredLevel, true),
+                        translateUi(STATUS[status]),
+                      ].join(' · ')}>
+                        {status !== 'OUTSIDE_PATH' && <span className="team-matrix-marks">
+                          <span className="sr-only">{translateUi('Mức hiện tại')}: </span><CapabilityMarks value={item?.currentLevel} compact />
+                          <span className="sr-only">{translateUi('Mức yêu cầu')}: </span><CapabilityMarks value={item?.requiredLevel} target compact />
+                        </span>}
+                        <CapabilityStatusIcon status={status} />
+                        <span className="sr-only">{translateUi(STATUS[status])}</span>
+                      </div>
                     </td>
                   );
                 })}
@@ -99,6 +109,7 @@ function CompetencyMatrix({ rows }: { rows: SkillGapRunDetail[] }) {
           })}
         </tbody>
       </table>
+      </div>
     </section>
   );
 }

@@ -1,8 +1,9 @@
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { PageLoading } from '@/components/shared/LoadingState';
 import { useEffect, useId, useState } from 'react';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
-import { Check, ClipboardCheck, X, ArrowRight, GraduationCap, Building2, Clock, CheckCircle2, AlertCircle, FileCheck2, Sparkles, Search, ChevronDown } from 'lucide-react';
+import { Check, ClipboardCheck, X, ArrowRight, GraduationCap, Building2, Clock, CheckCircle2, AlertCircle, FileCheck2, Sparkles, Search, ChevronDown, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import '@/features/trial-program/mentor-workspace.css';
 import { toast } from 'sonner';
 import { useDecidePulseFinal, useDecidePulsePreAssessment, usePulseFinalReviews, useRecordPulseSupport, useRefreshPulseFinalAi } from '@/hooks/use-pulse';
@@ -263,7 +264,8 @@ function DeferredRecording({ recording }: { recording: NonNullable<PulseFinalRev
   </details>;
 }
 
-const RESULT_PAGE_SIZE = 10;
+const RESULT_PAGE_SIZES = [5, 10, 20] as const;
+const RESULT_SIZE_OPTIONS = RESULT_PAGE_SIZES.map((size) => ({ value: String(size), label: String(size) }));
 const managerStatusLabel = (status: PulseReviewStatus) =>
   status === 'PENDING' ? 'Chờ Mentor đánh giá' : status === 'APPROVED' ? 'Đạt' : STATUS_PILL[status].label;
 const normalizeSearch = (value: string) => value.toLocaleLowerCase('vi').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd');
@@ -274,15 +276,24 @@ function ManagerResults({ data }: { data: PulseFinalReviewQueue }) {
   const [filter, setFilter] = useState<Filter>('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(RESULT_PAGE_SIZES[0]);
   const [expanded, setExpanded] = useState<string>();
   const panelId = useId();
   const searched = data.items.filter((item) => normalizeSearch(`${item.employeeName} ${item.courseTitle}`).includes(normalizeSearch(search.trim())));
   const ofKind = searched.filter((item) => kind === 'ALL' || item.kind === kind);
   const visible = ofKind.filter((item) => FILTERS.find(({ key }) => key === filter)!.match(item.status));
-  const pages = Math.max(1, Math.ceil(visible.length / RESULT_PAGE_SIZE));
+  const pages = Math.max(1, Math.ceil(visible.length / pageSize));
   const current = Math.min(page, pages);
-  const start = (current - 1) * RESULT_PAGE_SIZE;
-  useEffect(() => { if (page > pages) setPage(pages); }, [page, pages]);
+  const start = (current - 1) * pageSize;
+  const pageNumbers = [...new Set([1, current - 1, current, current + 1, pages])]
+    .filter((number) => number >= 1 && number <= pages)
+    .sort((a, b) => a - b);
+  useEffect(() => {
+    if (page > pages) {
+      setPage(pages);
+      setExpanded(undefined);
+    }
+  }, [page, pages]);
 
   function navigate(next = 1) {
     setPage(next);
@@ -296,16 +307,21 @@ function ManagerResults({ data }: { data: PulseFinalReviewQueue }) {
 
   return <section className="mgr-results" aria-label={translateUi('Danh sách kết quả bài làm')}>
     <div className="mgr-results-toolbar">
-      <label className="mgr-results-search"><Search size={17} aria-hidden="true" />
+      <div className="mgr-results-search"><Search size={17} aria-hidden="true" />
         <input type="search" value={search} aria-label={translateUi('Tìm nhân viên hoặc khóa học')}
           placeholder={translateUi('Tìm nhân viên hoặc khóa học')} onChange={(event) => { setSearch(event.target.value); navigate(); }} />
-      </label>
+        {search && <button type="button" aria-label={translateUi('Xóa tìm kiếm')} onClick={() => { setSearch(''); navigate(); }}>
+          <X size={16} aria-hidden="true" />
+        </button>}
+      </div>
       <div className="mgr-results-kinds" role="group" aria-label={translateUi('Lọc theo loại bài')}>
+        <span className="mgr-results-filter-icon" aria-hidden="true"><Filter size={16} /></span>
         {KIND_FILTERS.map(({ key, label }) => <button key={key} type="button" aria-pressed={kind === key}
           onClick={() => { setKind(key); navigate(); }}>{translateUi(label)}</button>)}
       </div>
     </div>
     <div className="mgr-results-statuses" role="group" aria-label={translateUi('Lọc theo trạng thái')}>
+      <span className="mgr-results-filter-icon" aria-hidden="true"><Filter size={16} /></span>
       {FILTERS.map(({ key, label, match }) => <button key={key} type="button" aria-pressed={filter === key}
         onClick={() => { setFilter(key); navigate(); }}>
         {translateUi(key === 'PENDING' ? 'Chờ Mentor đánh giá' : label)} <strong>{ofKind.filter(({ status }) => match(status)).length}</strong>
@@ -315,41 +331,69 @@ function ManagerResults({ data }: { data: PulseFinalReviewQueue }) {
       action={<button type="button" className={btn('outline', true)} onClick={() => {
         setSearch(''); setKind('ALL'); setFilter('ALL'); navigate();
       }}>{translateUi('Xóa bộ lọc')}</button>} /> : (
-      <ul className="mgr-results-list" role="list">
-        {visible.slice(start, start + RESULT_PAGE_SIZE).map((item, index) => {
-          const key = `${item.kind}-${item.submissionId}`;
-          const open = expanded === key;
-          const detailId = `${panelId}-${index}`;
-          const latest = item.attempts.at(-1);
-          const choice = latest?.choice;
-          return <li key={key} data-open={open}>
-            <button type="button" className="mgr-result-row" aria-expanded={open} aria-controls={detailId}
-              aria-label={`${translateUi('Xem chi tiết')} · ${item.employeeName} · ${item.courseTitle}`}
-              onClick={() => setExpanded(open ? undefined : key)}>
-              <span className="mgr-result-person"><Initials name={item.employeeName} /><span><strong>{item.employeeName}</strong>
-                {item.positionName && <small>{item.positionName}</small>}</span></span>
-              <span className="mgr-result-course"><strong>{item.courseTitle}</strong>
-                <small>{translateUi(KIND_LABELS[item.kind])}{latest && ` · ${formatDateTime(latest.submittedAt)}`}</small></span>
-              <span className="mgr-result-score">
-                <strong>{choice ? `${choice.score}/${choice.total}` : '—'}<span className="sr-only"> · {translateUi('Trắc nghiệm')}</span></strong>
-                {choice && choice.total > 0 && <progress aria-hidden="true" max={choice.total} value={choice.score} data-passed={choice.passed} />}
-              </span>
-              <span className="mgr-result-status" data-status={item.status}>{translateUi(managerStatusLabel(item.status))}</span>
-              <ChevronDown size={17} aria-hidden="true" />
-            </button>
-            <div id={detailId} hidden={!open} className="mgr-result-detail">
-              {open && <ReviewCard item={item} criteria={data.criteria} compact />}
-            </div>
-          </li>;
-        })}
-      </ul>
+      <>
+        <div className="mgr-results-columns" aria-hidden="true">
+          <span>{translateUi('Nhân viên')}</span>
+          <span>{translateUi('Khóa học')}</span>
+          <span>{translateUi('Trắc nghiệm')}</span>
+          <span>{translateUi('Trạng thái')}</span>
+        </div>
+        <ul className="mgr-results-list" role="list">
+          {visible.slice(start, start + pageSize).map((item, index) => {
+            const key = `${item.kind}-${item.submissionId}`;
+            const open = expanded === key;
+            const detailId = `${panelId}-${index}`;
+            const latest = item.attempts.at(-1);
+            const choice = latest?.choice;
+            return <li key={key} data-open={open}>
+              <button type="button" className="mgr-result-row" aria-expanded={open} aria-controls={detailId}
+                aria-label={`${translateUi('Xem chi tiết')} · ${item.employeeName} · ${item.courseTitle}`}
+                onClick={() => setExpanded(open ? undefined : key)}>
+                <span className="mgr-result-person"><Initials name={item.employeeName} /><span><strong>{item.employeeName}</strong>
+                  {item.positionName && <small>{item.positionName}</small>}</span></span>
+                <span className="mgr-result-course"><strong>{item.courseTitle}</strong>
+                  <small>{translateUi(KIND_LABELS[item.kind])}{latest && ` · ${formatDateTime(latest.submittedAt)}`}</small></span>
+                <span className="mgr-result-score">
+                  <strong>{choice ? `${choice.score}/${choice.total}` : '—'}<span className="sr-only"> · {translateUi('Trắc nghiệm')}</span></strong>
+                  {choice && choice.total > 0 && <progress aria-hidden="true" max={choice.total} value={choice.score} data-passed={choice.passed} />}
+                </span>
+                <span className="mgr-result-status" data-status={item.status}>
+                  {item.status === 'APPROVED' ? <Check size={13} aria-hidden="true" /> : item.status === 'NOT_YET' ? <X size={13} aria-hidden="true" /> : null}
+                  {translateUi(managerStatusLabel(item.status))}
+                </span>
+                <ChevronDown size={17} aria-hidden="true" />
+              </button>
+              <div id={detailId} hidden={!open} className="mgr-result-detail">
+                {open && <ReviewCard item={item} criteria={data.criteria} compact />}
+              </div>
+            </li>;
+          })}
+        </ul>
+      </>
     )}
-    {pages > 1 && <nav className="mgr-results-pagination" aria-label={translateUi('Phân trang')}>
-      <span role="status">{start + 1}–{Math.min(start + RESULT_PAGE_SIZE, visible.length)} / {visible.length}</span>
-      <button type="button" disabled={current <= 1} onClick={() => navigate(current - 1)}>{translateUi('Trang trước')}</button>
-      <span>{current} / {pages}</span>
-      <button type="button" disabled={current >= pages} onClick={() => navigate(current + 1)}>{translateUi('Trang sau')}</button>
-    </nav>}
+    {visible.length > 0 && <div className="mgr-results-pagination">
+      <span role="status" className="mgr-results-range">
+        <strong>{start + 1}–{Math.min(start + pageSize, visible.length)}</strong> / {visible.length} {translateUi('Kết quả')}
+      </span>
+      {pages > 1 && <nav className="mgr-results-page-buttons" aria-label={translateUi('Phân trang')}>
+        <button type="button" aria-label={translateUi('Trang trước')} disabled={current <= 1} onClick={() => navigate(current - 1)}><ChevronLeft size={17} aria-hidden="true" /></button>
+        {pageNumbers.map((number, index) => <span key={number}>
+          {index > 0 && number - pageNumbers[index - 1] > 1 && <span className="mgr-results-ellipsis" aria-hidden="true">…</span>}
+          <button type="button" aria-current={current === number ? 'page' : undefined}
+            aria-label={translateUi('Trang') + ' ' + number} onClick={() => navigate(number)}>{number}</button>
+        </span>)}
+        <button type="button" aria-label={translateUi('Trang sau')} disabled={current >= pages} onClick={() => navigate(current + 1)}><ChevronRight size={17} aria-hidden="true" /></button>
+      </nav>}
+      <div className="mgr-results-size">
+        <span>{translateUi('Số dòng mỗi trang')}</span>
+        <OwnerFilterSelect variant="manager" label="Số dòng mỗi trang" value={String(pageSize)} options={RESULT_SIZE_OPTIONS}
+          onChange={(value) => {
+            const nextSize = Number(value);
+            setPageSize(nextSize);
+            navigate(Math.floor(start / nextSize) + 1);
+          }} />
+      </div>
+    </div>}
   </section>;
 }
 

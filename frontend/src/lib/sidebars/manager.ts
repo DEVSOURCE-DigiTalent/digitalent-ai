@@ -1,5 +1,4 @@
 import {
-  Bell,
   BookOpen,
   Bug,
   FileBarChart,
@@ -28,7 +27,6 @@ export const MANAGER_SIDEBAR: SidebarConfig = [
   // ── CÁC CÔNG CỤ KHÁC ──
   { label: 'Các công cụ khác' },
   { label: 'Học tập của tôi', icon: BookOpen, screenId: 'EM-01' },
-  { label: 'Hoạt động', icon: Bell, screenId: 'SHR-03' },
   { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04' },
   { label: 'Báo lỗi', icon: Bug, screenId: 'SHR-05' },
 ];
