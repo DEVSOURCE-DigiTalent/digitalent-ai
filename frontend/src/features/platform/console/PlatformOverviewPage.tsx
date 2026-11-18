@@ -31,6 +31,7 @@ import {
   formatDateTime,
   formatMoney,
   formatNumber,
+  SALES_PAUSE_ENABLED,
 } from '../components/pulse-format';
 import { PlatformOverviewSkeleton } from './components/OverviewSkeleton';
 import { OrganizationDonutCard, RevenueColumnCard } from './components/OverviewCharts';
@@ -237,7 +238,7 @@ export function PlatformOverviewPage() {
               <div className="pa-ov-kpi-val">{formatNumber(currentCourseCount)} khóa</div>
               <div className="pa-ov-kpi-sub">
                 Phiên bản v{data.currentVersionNo ?? '?'} · {data.domainCount} lĩnh vực
-                {data.pausedCourseCount > 0 && <> · {data.pausedCourseCount} tạm ngưng bán</>}
+                {SALES_PAUSE_ENABLED && data.pausedCourseCount > 0 && <> · {data.pausedCourseCount} tạm ngưng bán</>}
               </div>
             </Link>
           </div>
@@ -483,7 +484,7 @@ function buildActionRows(data: PlatformOverview, queue: QueueCounts): ActionRow[
     });
   }
 
-  if (data.pausedCourseCount > 0) {
+  if (SALES_PAUSE_ENABLED && data.pausedCourseCount > 0) {
     items.push({
       key: 'paused',
       severity: 'info',

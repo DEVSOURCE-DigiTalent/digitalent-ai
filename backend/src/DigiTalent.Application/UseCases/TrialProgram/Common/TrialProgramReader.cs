@@ -460,11 +460,14 @@ public class TrialProgramReader
             return null;
         }
 
+        var now = Now;
         var mentors = await (
                 from user in _context.Users.AsNoTracking()
                 join userRole in _context.UserRoles.AsNoTracking() on user.Id equals userRole.UserId
                 join role in _context.Roles.AsNoTracking() on userRole.RoleId equals role.Id
-                where role.Code == Roles.Mentor && user.Status == Statuses.User.Active
+                where role.Code == Roles.Mentor
+                      && (user.Status == Statuses.User.Active
+                          || (user.Status == Statuses.User.Locked && user.LockedUntil != null && user.LockedUntil <= now))
                 select new { user.Id, user.DisplayName })
             .Distinct()
             .ToListAsync();

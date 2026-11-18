@@ -231,7 +231,7 @@ public class TrialProgramFlowTests
         await platform.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput { OrganizationId = owner.OrganizationId!.Value, MentorUserId = mentor.Id });
         world.Context.ChangeTracker.Clear();
 
-        var assigned = (await new GetMentorsUseCase(world.Context).ExecuteAsync(new GetMentorsUseCaseInput())).Items.Single(m => m.UserId == mentor.Id);
+        var assigned = (await new GetMentorsUseCase(world.Context, world.Clock).ExecuteAsync(new GetMentorsUseCaseInput())).Items.Single(m => m.UserId == mentor.Id);
         assigned.ActiveTrials.Should().Be(1);
         assigned.WaitingFinals.Should().Be(1);
         (await (await TrialAsAsync(world, "mentor@digitalent.ai", Roles.Mentor)).ReviewScope.ReviewableEmployees().AnyAsync(e => e.Id == employeeProfile.Id))
@@ -244,7 +244,7 @@ public class TrialProgramFlowTests
         trial.ConvertedAt = world.Clock.Now;
         await world.Context.SaveChangesAsync();
         world.Context.ChangeTracker.Clear();
-        (await new GetMentorsUseCase(world.Context).ExecuteAsync(new GetMentorsUseCaseInput())).Items.Single(m => m.UserId == mentor.Id)
+        (await new GetMentorsUseCase(world.Context, world.Clock).ExecuteAsync(new GetMentorsUseCaseInput())).Items.Single(m => m.UserId == mentor.Id)
             .ActiveTrials.Should().Be(0);
         (await again.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("TRIAL_CONVERTED");
     }
@@ -296,6 +296,42 @@ public class TrialProgramFlowTests
 
         // Nothing left to do on a second click.
         (await platform.AutoAssign.ExecuteAsync(new AutoAssignTrialMentorsUseCaseInput())).Assigned.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task An_expired_login_lockout_does_not_keep_a_mentor_out_of_assignments()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var owner = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var mentorRole = await world.Context.Roles.SingleAsync(r => r.Code == Roles.Mentor);
+        // Five wrong passwords locked it for 15 minutes yesterday; nobody signed in since, so the status still says LOCKED.
+        var expired = new User
+        {
+            Email = "mentor-expired@digitalent.ai", DisplayName = "Mentor Hết Khóa", PasswordHash = "x",
+            Status = Statuses.User.Locked, LockedUntil = world.Clock.Now.AddDays(-1),
+        };
+        expired.UserRoles.Add(new UserRole { RoleId = mentorRole.Id, AssignedAt = world.Clock.Now });
+        // Locked by an admin (no end): stays out.
+        var manual = new User { Email = "mentor-locked@digitalent.ai", DisplayName = "Mentor Bị Khóa", PasswordHash = "x", Status = Statuses.User.Locked };
+        manual.UserRoles.Add(new UserRole { RoleId = mentorRole.Id, AssignedAt = world.Clock.Now });
+        world.Context.Users.AddRange(expired, manual);
+        world.Context.TrialWorkspaces.Add(new TrialWorkspace
+        {
+            OrganizationId = owner.OrganizationId!.Value, OwnerUserId = owner.Id, PolicyJson = "{}",
+            StartedAt = world.Clock.Now.AddDays(-2), EndsAt = world.Clock.Now.AddDays(30), RequestedAt = world.Clock.Now.AddDays(-1),
+        });
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+
+        var mentors = (await new GetMentorsUseCase(world.Context, world.Clock).ExecuteAsync(new GetMentorsUseCaseInput())).Items;
+        mentors.Single(m => m.UserId == expired.Id).Status.Should().Be(Statuses.User.Active);
+        mentors.Single(m => m.UserId == manual.Id).Status.Should().Be(Statuses.User.Locked);
+
+        var platform = await TrialAsAsync(world, "mentor@digitalent.ai", Roles.PlatformAdmin);
+        var toManual = () => platform.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput { OrganizationId = owner.OrganizationId!.Value, MentorUserId = manual.Id });
+        (await toManual.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("MENTOR_INVALID");
+        await platform.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput { OrganizationId = owner.OrganizationId!.Value, MentorUserId = expired.Id });
+        (await world.Context.TrialWorkspaces.AsNoTracking().SingleAsync()).MentorUserId.Should().Be(expired.Id);
     }
 
     [Fact]

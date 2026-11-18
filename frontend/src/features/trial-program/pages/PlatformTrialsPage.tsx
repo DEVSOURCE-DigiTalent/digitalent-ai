@@ -9,7 +9,8 @@ import {
   usePlatformTrials,
 } from '@/hooks/use-trial-program';
 import type { MentorItem, PlatformTrialItem } from '@/services/trial-program.service';
-import { LoadError } from '@/features/platform/components/pulse-ui';
+import { LoadError, Pager } from '@/features/platform/components/pulse-ui';
+import { useClientPage } from '@/features/platform/components/paging';
 import { errorMessage, initials } from '@/features/platform/components/pulse-format';
 import { PlatformDrawer } from '@/features/platform/components/PlatformDrawer';
 import { PlatformTrialsSkeleton } from './PlatformTrialsSkeleton';
@@ -103,11 +104,15 @@ function learningRank(t: PlatformTrialItem) {
   return waiting > 0 ? 2 : 3;
 }
 
-function getWorkloadLabel(activeTrials: number, status?: string) {
-  if (status && status !== 'ACTIVE') return { label: 'Đã khóa', tone: 'is-locked' };
-  if (activeTrials === 0) return { label: 'Đang rảnh', tone: 'is-free' };
-  if (activeTrials >= MENTOR_MAX_ORGANIZATIONS) return { label: 'Đã đủ', tone: 'is-high' };
-  return { label: 'Đang phụ trách', tone: '' };
+/** How many more organizations a mentor can take ("Còn trống N chỗ" / "Hết chỗ"). */
+function freeSlots(m: MentorItem) {
+  return Math.max(0, MENTOR_MAX_ORGANIZATIONS - (m.activeTrials || 0));
+}
+
+function capacityLabel(m: MentorItem) {
+  if (m.status !== 'ACTIVE') return { label: 'Đã khóa', tone: 'is-neutral' };
+  const free = freeSlots(m);
+  return free === 0 ? { label: 'Hết chỗ', tone: 'is-neutral' } : { label: `Còn trống ${free} chỗ`, tone: 'is-ok' };
 }
 
 const COMPANY_PREFIX_REGEX =
@@ -249,11 +254,14 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
       urgent: taking.filter((t) => getDeadlineStatus(t) !== null).length,
     };
   }, [trialsList]);
-  // Employees with results: participants of the trials whose report is published.
-  const reportedParticipants = useMemo(
-    () => trialsList.filter((t) => t.stage === 'REPORTED').reduce((sum, t) => sum + (t.participants || 0), 0),
-    [trialsList],
-  );
+  // Employees with results = those who submitted in a reported trial (absentees after the deadline have none).
+  const reportedTotals = useMemo(() => {
+    const reported = trialsList.filter((t) => t.stage === 'REPORTED');
+    return {
+      submitted: reported.reduce((sum, t) => sum + (t.submitted || 0), 0),
+      participants: reported.reduce((sum, t) => sum + (t.participants || 0), 0),
+    };
+  }, [trialsList]);
 
   const activeMentors = useMemo(
     () => mentorsList.filter((m) => m.status === 'ACTIVE'),
@@ -279,9 +287,11 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
     }
     return map;
   }, [trialsList]);
-  const maxMentorLoad = MENTOR_MAX_ORGANIZATIONS;
-  const fullMentors = useMemo(
-    () => activeMentors.filter((m) => (m.activeTrials || 0) >= MENTOR_MAX_ORGANIZATIONS),
+  const mentorTotals = useMemo(
+    () => ({
+      freeSlots: activeMentors.reduce((sum, m) => sum + freeSlots(m), 0),
+      waiting: activeMentors.reduce((sum, m) => sum + (m.waitingFinals || 0), 0),
+    }),
     [activeMentors],
   );
 
@@ -376,6 +386,11 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
       onError: (err) => toast.error(errorMessage(err)),
     });
 
+  // Pages of the three tables (10 rows by default, 10 · 15 · 20 · 25 to choose).
+  const surveyPage = useClientPage(filteredItems);
+  const learningPage = useClientPage(filteredLearning);
+  const teamPage = useClientPage(mentorsList);
+
   const showLearning = (target: LearningTab) => {
     setLearningTab((prev) => (prev === target ? 'ALL' : target));
     learningSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -452,7 +467,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                   </span>
                 ) : (
                   <span className="pa-tr-kpi-sub-neutral">
-                    {takingTotals.submitted}/{takingTotals.participants} nhân viên đã nộp bài
+                    tổ chức · {takingTotals.submitted}/{takingTotals.participants} nhân viên đã nộp bài
                   </span>
                 )}
               </div>
@@ -472,7 +487,9 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
               </div>
               <div className="pa-tr-kpi-val-row">
                 <span className="pa-ov-kpi-val">{surveyCounts.REPORTED}</span>
-                <span className="pa-tr-kpi-sub-neutral">{reportedParticipants} nhân viên có kết quả</span>
+                <span className="pa-tr-kpi-sub-neutral">
+                  tổ chức · {reportedTotals.submitted}/{reportedTotals.participants} nhân viên có kết quả
+                </span>
               </div>
             </button>
 
@@ -537,8 +554,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
               <div className="pa-tr-kpi-val-row">
                 <span className="pa-ov-kpi-val">{mentorsList.length}</span>
                 <span className="pa-tr-kpi-sub-neutral">
-                  {freeMentors.length} rảnh · {busyMentors.length} có bài chờ · {fullMentors.length} đã đủ{' '}
-                  {MENTOR_MAX_ORGANIZATIONS}
+                  Còn trống {mentorTotals.freeSlots} chỗ · {mentorTotals.waiting} bài chờ chấm
                   {mentorsList.length > activeMentors.length ? ` · ${mentorsList.length - activeMentors.length} đã khóa` : ''}
                 </span>
               </div>
@@ -661,7 +677,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredItems.map((t) => {
+                    {surveyPage.pageItems.map((t) => {
                       const status = surveyStatusOf(t);
                       const statusMeta = SURVEY_STATUS[status];
                       const deadline = getDeadlineStatus(t);
@@ -749,6 +765,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                 </table>
               </div>
             )}
+            {filteredItems.length > 0 && <Pager {...surveyPage.pager} />}
           </section>
           )}
 
@@ -762,7 +779,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                   Tổ chức và mentor phụ trách
                 </h2>
                 <p className="pa-ov-panel-sub">
-                  Mentor được tự phân công khi chủ doanh nghiệp bắt đầu khảo sát và chấm bài cuối cấp khi nhân viên học (sau khi có báo cáo). Tổ chức nào chưa có mentor là do lúc đó mọi mentor đã đủ {MENTOR_MAX_ORGANIZATIONS} tổ chức.
+                  Mentor được tự phân công khi tổ chức bắt đầu khảo sát và chấm bài cuối cấp khi nhân viên học.
                 </p>
               </div>
               {withoutMentor > 0 && (
@@ -853,7 +870,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
 
                       {[
                         { key: 'busy', label: `CÓ BÀI CHỜ CHẤM (${busyMentors.length})`, dot: 'is-busy', items: busyMentors },
-                        { key: 'free', label: `ĐANG RẢNH (${freeMentors.length})`, dot: 'is-free', items: freeMentors },
+                        { key: 'free', label: `KHÔNG CÓ BÀI CHỜ (${freeMentors.length})`, dot: 'is-free', items: freeMentors },
                       ]
                         .filter((group) => group.items.length > 0)
                         .map((group) => (
@@ -935,7 +952,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredLearning.map((t) => {
+                    {learningPage.pageItems.map((t) => {
                       const waiting = t.waitingFinals ?? 0;
                       const learners = t.learners ?? 0;
                       return (
@@ -1020,6 +1037,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                 </table>
               </div>
             )}
+            {filteredLearning.length > 0 && <Pager {...learningPage.pager} />}
           </section>
 
           {/* Tier 4: Mentor Team Scorecard Table Panel */}
@@ -1034,7 +1052,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                   Mentor
                 </h2>
                 <p className="pa-ov-panel-sub">
-                  {activeMentors.length} mentor đang hoạt động. Mentor chấm bài cuối cấp (assignment mỗi cấp độ của từng lĩnh vực). Ở doanh nghiệp dùng thử, chỉ mentor được giao mới chấm được.
+                  Mỗi mentor phụ trách tối đa {MENTOR_MAX_ORGANIZATIONS} tổ chức.
                 </p>
               </div>
 
@@ -1074,10 +1092,11 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {mentorsList.map((m) => {
+                    {teamPage.pageItems.map((m) => {
                       const isSelected = mentorFilter === m.userId;
-                      const loadMeta = getWorkloadLabel(m.activeTrials, m.status);
-                      const loadPct = Math.min(100, Math.round((m.activeTrials / maxMentorLoad) * 100));
+                      const capacity = capacityLabel(m);
+                      const loadPct = Math.min(100, Math.round((m.activeTrials / MENTOR_MAX_ORGANIZATIONS) * 100));
+                      const waiting = m.status === 'ACTIVE' ? m.waitingFinals || 0 : 0;
                       const assignedTrials = mentorTrialsMap.get(m.userId) || [];
 
                       return (
@@ -1100,35 +1119,25 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                           <td>
                             <div className="pa-tr-load-wrap">
                               <div className="pa-tr-load-head">
-                                <strong>Phụ trách {m.activeTrials}/{MENTOR_MAX_ORGANIZATIONS} doanh nghiệp</strong>
-                                {loadMeta.tone === 'is-high' && <span>{loadMeta.label}</span>}
+                                <strong>Phụ trách {m.activeTrials}/{MENTOR_MAX_ORGANIZATIONS} tổ chức</strong>
                               </div>
                               <div className="pa-tr-load-track" aria-hidden="true">
                                 <div
-                                  className={`pa-tr-load-fill ${loadMeta.tone}`}
-                                  style={{
-                                    width: `${Math.max(m.activeTrials > 0 ? 18 : 6, loadPct)}%`,
-                                  }}
+                                  className={`pa-tr-load-fill ${freeSlots(m) === 0 ? 'is-high' : ''}`}
+                                  style={{ width: `${Math.max(m.activeTrials > 0 ? 18 : 6, loadPct)}%` }}
                                 />
                               </div>
-                              <div>
-                                <span
-                                  className={`pa-tr-pill ${m.status === 'ACTIVE'
-                                      ? (m.waitingFinals || 0) === 0
-                                        ? 'is-ok'
-                                        : 'is-info'
-                                      : 'is-neutral'
-                                    }`}
-                                >
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                <span className={`pa-tr-pill ${capacity.tone}`}>
                                   <span className="pa-tr-pill-dot" aria-hidden="true" />
-                                  <span>
-                                    {m.status === 'ACTIVE'
-                                      ? (m.waitingFinals || 0) === 0
-                                        ? 'Đang rảnh'
-                                        : `${m.waitingFinals} bài chờ chấm`
-                                      : 'Đã khóa'}
-                                  </span>
+                                  <span>{capacity.label}</span>
                                 </span>
+                                {waiting > 0 && (
+                                  <span className="pa-tr-pill is-info">
+                                    <span className="pa-tr-pill-dot" aria-hidden="true" />
+                                    <span>{waiting} bài chờ chấm</span>
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -1205,6 +1214,7 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                 </table>
               </div>
             )}
+            {mentorsList.length > 0 && <Pager {...teamPage.pager} />}
           </section>
           </>
           )}
@@ -1221,14 +1231,6 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
         />
       )}
 
-      {/* Slide-over Drawer: Create Mentor */}
-      {createMentorOpen && (
-        <CreateMentorDrawer
-          isOpen={createMentorOpen}
-          onClose={() => setCreateMentorOpen(false)}
-        />
-      )}
-
       {/* Slide-over Drawer: View All Assigned Trials of Mentor */}
       {mentorTrialsDrawer && (
         <MentorAssignedTrialsDrawer
@@ -1241,6 +1243,14 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
           }}
         />
       )}
+      {/* Slide-over Drawer: Create Mentor */}
+      {createMentorOpen && (
+        <CreateMentorDrawer
+          isOpen={createMentorOpen}
+          onClose={() => setCreateMentorOpen(false)}
+        />
+      )}
+
     </div>
   );
 }
@@ -1423,12 +1433,10 @@ function TrialDetailDrawer({
                             <div style={{ fontSize: 13, color: 'var(--pa-ink-2)' }}>{m.email}</div>
                           </div>
                         </div>
-                        <span className={`pa-tr-pill ${isFull ? 'is-neutral' : isRecommended ? 'is-ok' : 'is-info'}`}>
+                        <span className={`pa-tr-pill ${isFull ? 'is-neutral' : 'is-ok'}`}>
                           {isFull
-                            ? `Đã đủ ${MENTOR_MAX_ORGANIZATIONS} tổ chức`
-                            : isRecommended
-                              ? 'Đang rảnh'
-                              : `Phụ trách ${m.activeTrials}/${MENTOR_MAX_ORGANIZATIONS} tổ chức${m.waitingFinals ? ` · ${m.waitingFinals} bài chờ chấm` : ''}`}
+                            ? 'Hết chỗ'
+                            : `Còn trống ${freeSlots(m)} chỗ${m.waitingFinals ? ` · ${m.waitingFinals} bài chờ chấm` : ''}`}
                         </span>
                       </label>
                     );

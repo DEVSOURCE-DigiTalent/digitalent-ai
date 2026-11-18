@@ -571,6 +571,23 @@
   color: #64748b;
 }
 
+.pulse-ui .pa-pager .button-row {
+  align-items: center;
+}
+
+/* Rows-per-page select next to the pager buttons. */
+.pulse-ui .pa-pager-size {
+  height: 32px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--pa-border, #dbe2ea);
+  border-radius: 10px;
+  background-color: var(--pa-surface, #fff);
+  color: var(--pa-ink-2, #334155);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .pulse-ui .data-table tbody tr.pa-row-link {
   cursor: pointer;
 }
