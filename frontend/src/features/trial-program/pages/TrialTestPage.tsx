@@ -241,7 +241,7 @@ export function TrialTestPage() {
 
   return (
     <div className="tp tp-survey-page tp-survey-page--owner">
-      <Link to="/enterprise/trial" className="tp-survey-back">← Đánh giá đội ngũ</Link>
+      <Link to="/enterprise/trial" className="tp-survey-back">← Khảo sát năng lực số</Link>
       <header className="tp-head">
         <div>
           <span className="tp-eyebrow">{data.organizationName}</span>

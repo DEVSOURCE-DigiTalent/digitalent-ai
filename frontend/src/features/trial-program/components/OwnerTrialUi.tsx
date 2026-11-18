@@ -1,7 +1,8 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  AlertTriangle,
   Check,
   Eye,
   Award,
@@ -21,13 +22,15 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Flag,
   Users,
 } from 'lucide-react';
 import { Modal } from '@/components/shared';
-import { TrialDisclosure } from './TrialDisclosure';
 import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
-import type { TrialParticipantStatus, TrialReport, TrialReportEmployee, TrialStage } from '@/services/trial-program.service';
-import { LEVEL_LABELS, STAGE, domainTotals, levelFromShare, sharePercent } from '../lib/trial-format';
+import { TrialDisclosure } from './TrialDisclosure';
+import { DomainLineChart } from './DomainLineChart';
+import type { TrialEmployeeDomainDetail, TrialParticipantStatus, TrialReport, TrialReportEmployee } from '@/services/trial-program.service';
+import { LEVEL_LABELS, POSITION_STANDARD_PATH, domainTotals, formatWhen, sharePercent } from '../lib/trial-format';
 
 export const DOMAIN_THEMES = [
   {
@@ -96,75 +99,62 @@ export function LevelBadge({ level, size = 'default' }: { level: number; size?: 
   useUiLanguage();
   const value = Math.max(0, Math.min(3, Math.round(level)));
   const styles = [
-    'bg-slate-100/90 text-slate-600 border-slate-200/90 font-medium', // 0: Chưa đạt
-    'bg-sky-50 text-sky-700 border-sky-200/90 font-bold', // 1: Cơ bản
-    'bg-indigo-50 text-indigo-700 border-indigo-200/90 font-bold', // 2: Trung cấp
-    'bg-emerald-50 text-emerald-800 border-emerald-200/90 font-bold', // 3: Nâng cao
+    'bg-slate-100 text-slate-700 border-slate-200 font-medium', // 0: Chưa đạt
+    'bg-teal-50 text-teal-800 border-teal-200 font-semibold', // 1: Cơ bản
+    'bg-teal-100 text-teal-900 border-teal-300 font-semibold', // 2: Trung cấp
+    'bg-teal-800 text-white border-teal-800 font-semibold', // 3: Nâng cao
   ];
-  const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-[11px] min-w-[64px]' : 'px-2.5 py-1 text-xs min-w-[76px]';
+  const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-xs min-w-[64px]' : 'px-2.5 py-1 text-[13px] min-w-[76px]';
 
   return (
-    <span
-      className={`inline-flex items-center justify-center rounded-xl border shadow-2xs transition-all ${sizeClasses} ${styles[value]}`}
-    >
+    <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-lg border ${sizeClasses} ${styles[value]}`}>
       {translateUi(LEVEL_LABELS[value])}
     </span>
   );
 }
 
 const PARTICIPANT: Record<TrialParticipantStatus, { label: string; tone: string }> = {
-  INVITED: { label: 'Đã mời', tone: '' },
+  INVITED: { label: 'Chưa kích hoạt', tone: '' },
   INVITE_EXPIRED: { label: 'Lời mời hết hạn', tone: 'bad' },
-  ACTIVE: { label: 'Chưa làm bài', tone: 'warn' },
+  ACTIVE: { label: 'Chưa nộp', tone: 'warn' },
   SUBMITTED: { label: 'Đã nộp', tone: 'info' },
   REVIEWED: { label: 'Đã chấm', tone: 'ok' },
 };
 
-export function ParticipantStatus({ status }: { status: TrialParticipantStatus }) {
+/** `closed`: the results are out, so anyone who has not submitted did not take part. */
+export function ParticipantStatus({ status, closed = false }: { status: TrialParticipantStatus; closed?: boolean }) {
   useUiLanguage();
-  const s = PARTICIPANT[status];
+  const submitted = status === 'SUBMITTED' || status === 'REVIEWED';
+  const s = closed && !submitted ? { label: 'Không nộp bài', tone: '' } : PARTICIPANT[status];
   return <span className={`tp-badge ${s.tone}`}>{translateUi(s.label)}</span>;
 }
 
-export function StageBadge({ stage }: { stage: TrialStage }) {
-  useUiLanguage();
-  return <span className={`tp-badge ${STAGE[stage].tone}`}>{translateUi(STAGE[stage].label)}</span>;
-}
+export type ProgressStep = { label: string; detail?: string };
 
-/** Thanh bước: index = bước hiện tại (0-based); các bước trước đã xong. */
-export function Steps({ steps, current, label = 'Các bước dùng thử' }: { steps: string[]; current: number; label?: string }) {
+/**
+ * Thanh tiến độ: các mốc nối nhau bằng một đường tô màu tới bước hiện tại.
+ * `progress` (0–1) tô thêm một phần đoạn nối sau bước hiện tại; `complete` đánh dấu mọi bước đã xong.
+ */
+export function Steps({ steps, current, progress = 0, complete = false, label = 'Tiến độ khảo sát' }: {
+  steps: (string | ProgressStep)[]; current: number; progress?: number; complete?: boolean; label?: string;
+}) {
   useUiLanguage();
+  const items = steps.map((step) => (typeof step === 'string' ? { label: step } : step));
+  const segments = Math.max(1, items.length - 1);
+  const filled = complete ? 1 : Math.min(1, (current + Math.max(0, Math.min(1, progress))) / segments);
   return (
-    <nav aria-label={translateUi(label)} className="w-full">
-      <ol className="flex items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2 rounded-2xl bg-white/90 border border-slate-200/80 shadow-2xs">
-        {steps.map((step, index) => {
-          const isDone = index < current;
-          const isCurrent = index === current;
+    <nav aria-label={translateUi(label)} className="trial-progress">
+      <ol style={{ '--steps': items.length } as React.CSSProperties}>
+        <li className="trial-progress__track" aria-hidden="true"><span style={{ width: `${filled * 100}%` }} /></li>
+        {items.map((step, index) => {
+          const state = complete || index < current ? 'done' : index === current ? 'current' : 'upcoming';
           return (
-            <li
-              key={step}
-              aria-current={isCurrent ? 'step' : undefined}
-              data-state={isCurrent ? 'current' : isDone ? 'done' : 'upcoming'}
-              className={`flex-1 flex items-center justify-center sm:justify-start gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs transition-all ${
-                isDone
-                  ? 'bg-emerald-50/80 text-emerald-800 font-semibold border border-emerald-200/60'
-                  : isCurrent
-                  ? 'bg-[#137b84]/10 text-[#0e5968] font-bold border border-[#137b84]/30 shadow-2xs'
-                  : 'bg-transparent text-slate-400 font-medium'
-              }`}
-            >
-              <span
-                className={`grid size-5 place-items-center rounded-full text-[10px] font-bold shrink-0 transition-colors ${
-                  isDone
-                    ? 'bg-emerald-600 text-white'
-                    : isCurrent
-                    ? 'bg-[#137b84] text-white shadow-2xs'
-                    : 'bg-slate-200 text-slate-500'
-                }`}
-              >
-                {isDone ? <Check size={11} strokeWidth={3} /> : index + 1}
-              </span>
-              <span className="hidden sm:inline truncate">{step}</span>
+            <li key={step.label} data-state={state} aria-current={index === current ? 'step' : undefined}>
+              {/* Số thứ tự luôn giữ nguyên; bước đã xong chỉ đổi sang nền đặc. */}
+              <span className="trial-progress__dot" aria-hidden="true">{index + 1}</span>
+              <span className="trial-progress__label">{translateUi(step.label)}</span>
+              {state === 'done' && <span className="sr-only">{translateUi('(đã xong)')}</span>}
+              {step.detail && <span className="trial-progress__detail">{translateUi(step.detail)}</span>}
             </li>
           );
         })}
@@ -174,20 +164,345 @@ export function Steps({ steps, current, label = 'Các bước dùng thử' }: { 
 }
 
 const nextCourseSuffix = ['F', 'I', 'A'];
+const courseCode = (domainNumber: number, level: number) => `M${domainNumber}-${nextCourseSuffix[level - 1]}`;
 
-function summarizeDomain(domain: TrialReport['summary'][number], employees: TrialReport['employees']) {
-  const comparisons = employees.flatMap((employee) => (employee.domainDetails ?? []).flatMap((detail) =>
-    detail.categoryId === domain.categoryId && detail.targetLevel
-      ? [{ level: detail.level, target: detail.targetLevel }]
-      : []));
-  const gaps = comparisons.filter(({ level, target }) => level < target);
-  const level = gaps.reduce((lowest, detail) => Math.min(lowest, detail.level + 1), 3);
-  const course = gaps.length ? { level, code: `M${domain.number}-${nextCourseSuffix[level - 1]}` } : null;
-  return { ...domain, gapCount: gaps.length, course };
+/**
+ * Khóa cần học theo thứ tự, từ mức kế tiếp tới mức chuẩn. Khóa của một lĩnh vực nối tiếp nhau
+ * (Cơ bản → Trung cấp → Nâng cao), nên người đang ở Cơ bản với chuẩn Nâng cao cần "Trung cấp → Nâng cao".
+ */
+function CoursePath({ domainNumber, from, to }: { domainNumber: number; from: number; to: number }) {
+  useUiLanguage();
+  const levels = from > to ? [] : Array.from({ length: to - from + 1 }, (_, index) => from + index);
+  if (!levels.length) return null;
+  return (
+    <ol className="trial-course-path" aria-label={translateUi(levels.length > 1 ? 'Khóa cần học, lần lượt' : 'Khóa cần học')}>
+      {levels.map((level, index) => {
+        const code = courseCode(domainNumber, level);
+        return (
+          <li key={code}>
+            {index > 0 && <ArrowRight size={13} className="trial-course-path__arrow" aria-hidden="true" />}
+            <Link
+              to={`/enterprise/courses?focus=${code}&level=${level}`}
+              className="trial-course-link"
+              aria-label={translateUi(`Khóa ${LEVEL_LABELS[level]} (${code})`)}
+              title={code}
+            >
+              {index === 0 && <BookOpen size={14} aria-hidden="true" />}
+              {translateUi(index === 0 ? `Khóa ${LEVEL_LABELS[level]}` : LEVEL_LABELS[level])}
+            </Link>
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
 
-/** Bảng năng lực của doanh nghiệp: phân bố mức theo lĩnh vực và mức của từng nhân viên. */
-export function CompetencyReport({ report, participantCount, nextSteps }: { report: TrialReport; participantCount?: number; nextSteps?: ReactNode }) {
+type DomainPerson = { level: number; target: number };
+
+/** Filter value for employees without a department (never a real department name). */
+const NO_DEPARTMENT = '__no_department__';
+
+/**
+ * Một lĩnh vực tính lại từ danh sách người đang xem (cả công ty hoặc một phòng ban): số người ở từng mức, mức trung bình
+ * (làm tròn như backend: 1 chữ số rồi tới mức gần nhất), chuẩn và khóa cần học.
+ * `index`: position of the domain in the report, which is also its position in each employee's `levels`.
+ */
+function summarizeDomain(domain: TrialReport['summary'][number], index: number, employees: TrialReport['employees']) {
+  const people: DomainPerson[] = employees.map((employee) => {
+    const detail = employee.domainDetails?.find((d) => d.categoryId === domain.categoryId);
+    return { level: detail?.level ?? employee.levels[index] ?? 0, target: detail?.targetLevel ?? 0 };
+  });
+  const counts = [0, 1, 2, 3].map((level) => people.filter((person) => person.level === level).length);
+  const average = people.length ? Math.round((people.reduce((sum, person) => sum + person.level, 0) / people.length) * 10) / 10 : 0;
+  const compared = people.filter((person) => person.target > 0);
+  const gaps = compared.filter((person) => person.level < person.target);
+  const targets = compared.map((person) => person.target);
+  const targetRange = targets.length ? [Math.min(...targets), Math.max(...targets)] as const : null;
+  // Courses the company needs here, in order (a paid course is bought once for everyone): from the next level of the
+  // weakest person below the standard up to the highest standard.
+  const courseRange = gaps.length
+    ? [Math.min(...gaps.map((person) => person.level + 1)), Math.max(...gaps.map((person) => person.target))] as const
+    : null;
+  // One standard for everyone → the detail's level scale can colour the levels below it; mixed or missing stay neutral.
+  const standard = targetRange && targetRange[0] === targetRange[1] && compared.length === people.length ? targetRange[0] : null;
+  // Average required level of the people who have a standard, for the line chart (same rounding as `average`).
+  const targetAverage = compared.length ? Math.round((targets.reduce((sum, target) => sum + target, 0) / compared.length) * 10) / 10 : null;
+  return {
+    ...domain, counts, average, level: Math.round(average),
+    hasStandard: compared.length > 0, compared: compared.length, gapCount: gaps.length, targetRange, courseRange, standard, targetAverage,
+  };
+}
+
+type DomainRow = ReturnType<typeof summarizeDomain>;
+
+/**
+ * Mức hiện tại của công ty ở lĩnh vực: mức trung bình của những người đã có kết quả. Đặt cạnh "Mức cần đạt":
+ * hổ phách khi trung bình thấp hơn chuẩn, xanh chỉ khi mọi người đều đạt chuẩn (trung bình đạt mà còn người dưới
+ * chuẩn thì để trung tính; số người ở từng mức nằm trong Chi tiết), trung tính khi chưa có chuẩn.
+ */
+function CurrentLevelCell({ row }: { row: DomainRow }) {
+  useUiLanguage();
+  const level = Math.max(0, Math.min(3, Math.round(row.level)));
+  const tone = !row.targetRange ? 'neutral' : level < row.targetRange[0] ? 'below' : row.gapCount === 0 ? 'met' : 'neutral';
+  return (
+    <span className="trial-current" data-tone={tone}>
+      {tone === 'met' && <Check size={14} aria-hidden="true" />}
+      {translateUi(LEVEL_LABELS[level])}
+    </span>
+  );
+}
+
+/** Mức chuẩn vị trí của lĩnh vực (một mức, hoặc khoảng khi các vị trí khác nhau); chưa có thì mời đặt chuẩn. */
+function TargetCell({ row }: { row: DomainRow }) {
+  useUiLanguage();
+  if (!row.targetRange) {
+    return (
+      <Link to={POSITION_STANDARD_PATH} className="inline-flex items-center gap-1 text-[13px] font-semibold text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-teal-800">
+        {translateUi('Cần đặt chuẩn vị trí')}<ArrowRight size={13} aria-hidden="true" />
+      </Link>
+    );
+  }
+  const [low, high] = row.targetRange;
+  return <span className="trial-target">{translateUi(LEVEL_LABELS[low])}{high !== low && <> – {translateUi(LEVEL_LABELS[high])}</>}</span>;
+}
+
+/** Khóa công ty cần cho lĩnh vực, lần lượt; mọi người đã đạt chuẩn thì không cần; chưa có chuẩn thì chưa gợi ý được. */
+function CourseCell({ row }: { row: DomainRow }) {
+  useUiLanguage();
+  if (row.courseRange) return <CoursePath domainNumber={row.number} from={row.courseRange[0]} to={row.courseRange[1]} />;
+  if (row.hasStandard) {
+    return <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-emerald-700"><Check size={14} aria-hidden="true" />{translateUi('Không cần thêm khóa')}</span>;
+  }
+  return <span className="text-slate-400" aria-label={translateUi('Chưa có gợi ý')}>—</span>;
+}
+
+/**
+ * Chi tiết một lĩnh vực, mở ngay trong dòng của bảng (không phải thẻ nổi), hai phần:
+ * - Ô tóm tắt (stat tile): nhãn có biểu tượng trạng thái ("Chưa đạt chuẩn Nâng cao"), số người, thanh tỷ lệ
+ *   dưới chuẩn / đạt chuẩn và chú thích số người mỗi phần (màu luôn đi kèm chữ).
+ * - Biểu đồ cột: chiều cao = số người ở mỗi mức (số ghi trên đầu cột). Cột dưới chuẩn màu hổ phách, từ chuẩn trở lên
+ *   màu xanh, mức chuẩn có cờ; ngoặc "Dưới chuẩn / Đạt chuẩn" dưới trục nói rõ nghĩa của màu. Các vị trí có chuẩn
+ *   khác nhau thì cột màu xám, không có ngoặc.
+ */
+function DomainDetail({ row }: { row: DomainRow }) {
+  useUiLanguage();
+  const max = Math.max(1, ...row.counts);
+  const singleTarget = row.targetRange && row.targetRange[0] === row.targetRange[1] ? row.targetRange[0] : null;
+  const status = row.gapCount > 0 ? 'below' : row.hasStandard ? 'met' : 'none';
+  const target = singleTarget ? ` ${LEVEL_LABELS[singleTarget]}` : ' vị trí';
+  const met = row.compared - row.gapCount;
+  return (
+    <div className="trial-domain-detail__body">
+      <div className="trial-insight" data-status={status}>
+        {status === 'none' ? (
+          <>
+            <span className="trial-insight__label">{translateUi('Chưa có chuẩn vị trí để so sánh')}</span>
+            <Link to={POSITION_STANDARD_PATH} className="trial-insight__link">{translateUi('Đặt chuẩn vị trí')}<ArrowRight size={14} aria-hidden="true" /></Link>
+          </>
+        ) : (
+          <>
+            <span className="trial-insight__label">
+              {status === 'below' ? <AlertTriangle size={15} aria-hidden="true" /> : <Check size={15} strokeWidth={2.5} aria-hidden="true" />}
+              {translateUi(status === 'below' ? `Chưa đạt chuẩn${target}` : `Đã đạt chuẩn${target}`)}
+            </span>
+            <strong className="trial-insight__value">
+              {status === 'below' ? row.gapCount : row.compared}/{row.compared}<span>{translateUi(' người')}</span>
+            </strong>
+            <span className="trial-insight__meter" aria-hidden="true">
+              {row.gapCount > 0 && <span data-tone="below" style={{ flexGrow: row.gapCount }} />}
+              {met > 0 && <span data-tone="met" style={{ flexGrow: met }} />}
+            </span>
+            <span className="trial-insight__legend">
+              {row.gapCount > 0 && <span><i data-tone="below" aria-hidden="true" />{translateUi(`${row.gapCount} dưới chuẩn`)}</span>}
+              {met > 0 && <span><i data-tone="met" aria-hidden="true" />{translateUi(`${met} đạt chuẩn`)}</span>}
+            </span>
+          </>
+        )}
+      </div>
+
+      <figure className="trial-dist">
+        <ol className="trial-dist__plot" aria-label={translateUi('Số người ở từng mức')}>
+          {LEVEL_LABELS.map((label, level) => {
+            const count = row.counts[level] ?? 0;
+            const tone = row.standard == null ? 'neutral' : level < row.standard ? 'below' : 'met';
+            const isStandard = level === row.standard;
+            return (
+              <li key={label} className="trial-dist__item" data-tone={tone} data-standard={isStandard || undefined}
+                title={translateUi(`${label}: ${count} người`)} style={{ '--share': count / max, '--i': level } as React.CSSProperties}>
+                <span className="trial-dist__col" aria-hidden="true">
+                  <span className="trial-dist__value" data-zero={count === 0 || undefined}>{count}</span>
+                  {count > 0 && <span className="trial-dist__bar" />}
+                </span>
+                <span className="trial-dist__label">
+                  {isStandard && <Flag size={12} aria-hidden="true" />}{translateUi(label)}
+                </span>
+                <span className="sr-only">{translateUi(`${count} người`)}{isStandard ? translateUi(', mức chuẩn vị trí') : ''}</span>
+              </li>
+            );
+          })}
+        </ol>
+        {row.standard != null && (
+          <div className="trial-dist__groups" aria-hidden="true">
+            {row.standard > 0 && <span data-tone="below" style={{ gridColumn: `1 / ${row.standard + 1}` }}>{translateUi('Dưới chuẩn')}</span>}
+            <span data-tone="met" style={{ gridColumn: `${row.standard + 1} / 5` }}>{translateUi('Đạt chuẩn')}</span>
+          </div>
+        )}
+        {row.hasStandard && row.standard == null && <figcaption className="trial-domain-detail__hint">{translateUi('Các vị trí có chuẩn khác nhau nên không tô màu.')}</figcaption>}
+      </figure>
+    </div>
+  );
+}
+
+const EMPLOYEE_PAGE_SIZE = 10;
+
+/**
+ * Kết quả của doanh nghiệp: bảng theo lĩnh vực (số người ở từng mức so với chuẩn vị trí, khóa nên học) và mức của từng người.
+ * `provisional`: đợt khảo sát chưa chốt, số liệu còn thay đổi khi có thêm bài nộp.
+ */
+type PersonDomain = Pick<TrialEmployeeDomainDetail,
+  'categoryId' | 'number' | 'name' | 'level' | 'targetLevel' | 'skillGap'
+  | 'basicCorrect' | 'basicTotal' | 'intermediateCorrect' | 'intermediateTotal' | 'advancedCorrect' | 'advancedTotal'>;
+
+const initialsOf = (name: string) => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return (words.at(-1)?.[0] ?? '?').toLocaleUpperCase('vi');
+};
+
+/** Vòng phần trăm câu đúng; số ghi bằng mực, màu chỉ ở vòng. */
+function ScoreRing({ percent }: { percent: number }) {
+  const radius = 22;
+  const length = 2 * Math.PI * radius;
+  return (
+    <span className="trial-score-ring" aria-hidden="true">
+      <svg viewBox="0 0 56 56" width="56" height="56">
+        <circle cx="28" cy="28" r={radius} className="trial-score-ring__track" />
+        <circle cx="28" cy="28" r={radius} className="trial-score-ring__value"
+          strokeDasharray={`${(percent / 100) * length} ${length}`} transform="rotate(-90 28 28)" />
+      </svg>
+      <span>{percent}%</span>
+    </span>
+  );
+}
+
+/** Dải tóm tắt đầu hộp kết quả: người làm bài và ba con số đáng xem nhất. */
+function PersonSummary({ employee, details, score, total }: { employee: TrialReportEmployee; details: PersonDomain[]; score?: number | null; total: number }) {
+  useUiLanguage();
+  const compared = details.filter((d) => (d.targetLevel ?? 0) > 0);
+  const met = compared.filter((d) => d.level >= (d.targetLevel ?? 0)).length;
+  const courses = compared.reduce((sum, d) => sum + Math.max(0, (d.targetLevel ?? 0) - d.level), 0);
+  const meta = [
+    employee.departmentName && { Icon: Building2, text: employee.departmentName },
+    employee.positionName && { Icon: Briefcase, text: employee.positionName },
+    employee.email && { Icon: Mail, text: employee.email },
+    employee.submittedAt && { Icon: Calendar, text: `${translateUi('Nộp lúc')} ${formatWhen(employee.submittedAt)}` },
+  ].filter(Boolean) as { Icon: typeof Mail; text: string }[];
+
+  return (
+    <div className="trial-person-hero">
+      <div className="trial-person-hero__who">
+        <span className="trial-person-hero__avatar" aria-hidden="true">{initialsOf(employee.fullName)}</span>
+        <ul className="trial-person-hero__meta">
+          {meta.map(({ Icon, text }) => <li key={text}><Icon size={14} aria-hidden="true" />{text}</li>)}
+        </ul>
+      </div>
+      <div className="trial-person-hero__stats">
+        <div className="trial-person-stat" data-status={compared.length === 0 ? 'none' : met === compared.length ? 'met' : 'below'}>
+          <span className="trial-person-stat__label">{translateUi('Đạt chuẩn vị trí')}</span>
+          {compared.length > 0 ? <>
+            <strong className="trial-person-stat__value">{met}/{compared.length}<span>{translateUi(' lĩnh vực')}</span></strong>
+            <span className="trial-person-stat__meter" aria-hidden="true">
+              {met > 0 && <span data-tone="met" style={{ flexGrow: met }} />}
+              {compared.length - met > 0 && <span data-tone="below" style={{ flexGrow: compared.length - met }} />}
+            </span>
+          </> : <span className="trial-person-stat__empty">{translateUi('Chưa có chuẩn để so sánh')}</span>}
+        </div>
+        {score != null && total > 0 && (
+          <div className="trial-person-stat trial-person-stat--ring">
+            <ScoreRing percent={sharePercent(score, total)} />
+            <span>
+              <span className="trial-person-stat__label">{translateUi('Trắc nghiệm')}</span>
+              <strong className="trial-person-stat__value"><span className="trial-person-stat__num">{score}/{total}</span></strong>
+              <span className="trial-person-stat__note">{translateUi('câu đúng')}</span>
+            </span>
+          </div>
+        )}
+        {compared.length > 0 && (
+          <div className="trial-person-stat" data-status={courses > 0 ? 'below' : 'met'}>
+            <span className="trial-person-stat__label">{translateUi('Cần học thêm')}</span>
+            <strong className="trial-person-stat__value">{courses}<span>{translateUi(' khóa')}</span></strong>
+            <span className="trial-person-stat__note">{translateUi(courses > 0 ? 'Để đạt chuẩn ở mọi lĩnh vực' : 'Đã đạt chuẩn ở mọi lĩnh vực')}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Thang 3 bậc của một lĩnh vực: bậc đã đạt tô đặc, bậc còn thiếu tới chuẩn tô vàng, bậc chuẩn có cờ. */
+function LevelLadder({ level, target }: { level: number; target: number }) {
+  useUiLanguage();
+  const name = `${translateUi('Mức hiện tại')} ${translateUi(LEVEL_LABELS[level])}${target ? `, ${translateUi('chuẩn')} ${translateUi(LEVEL_LABELS[target])}` : ''}`;
+  return (
+    <div className="trial-ladder" role="img" aria-label={name}>
+      {[1, 2, 3].map((step) => (
+        <span key={step} className="trial-ladder__step" data-state={step <= level ? 'done' : step <= target ? 'need' : 'rest'} data-target={step === target || undefined}>
+          <span className="trial-ladder__bar" />
+          <span className="trial-ladder__label">{step === target && <Flag size={11} />}{translateUi(LEVEL_LABELS[step])}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Một lĩnh vực trong hộp kết quả của một người: mức, thang bậc so với chuẩn, trắc nghiệm, khóa cần học. */
+function PersonDomainCard({ detail }: { detail: PersonDomain }) {
+  useUiLanguage();
+  const theme = DOMAIN_THEMES[detail.number - 1] || DOMAIN_THEMES[0];
+  const Icon = theme.icon;
+  const target = detail.targetLevel ?? 0;
+  const gap = target ? Math.max(0, target - detail.level) : 0;
+  const status = !target ? 'none' : gap > 0 ? 'below' : 'met';
+  const totals = domainTotals(detail);
+  const tiers = [
+    { label: 'Cơ bản', correct: detail.basicCorrect, total: detail.basicTotal },
+    { label: 'Trung cấp', correct: detail.intermediateCorrect, total: detail.intermediateTotal },
+    { label: 'Nâng cao', correct: detail.advancedCorrect, total: detail.advancedTotal },
+  ];
+
+  return (
+    <article className="trial-person-domain" data-status={status}>
+      <header className="trial-person-domain__head">
+        <span className={`trial-person-domain__icon ${theme.bgClass}`}><Icon size={16} aria-hidden="true" /></span>
+        <span className="min-w-0">
+          <span className="trial-person-domain__number">{translateUi('Lĩnh vực')} {detail.number}</span>
+          <h5 className="trial-person-domain__name" title={translateUi(detail.name)}>{translateUi(detail.name)}</h5>
+        </span>
+        <span className="trial-person-domain__status" data-status={status}>
+          {status === 'below' ? <AlertTriangle size={13} aria-hidden="true" /> : status === 'met' ? <Check size={13} aria-hidden="true" /> : null}
+          {translateUi(status === 'below' ? `Thiếu ${gap} cấp` : status === 'met' ? 'Đạt chuẩn' : 'Chưa có chuẩn')}
+        </span>
+      </header>
+
+      {/* The ladder says both levels: filled steps = current level, the flag = the standard. */}
+      <LevelLadder level={detail.level} target={target} />
+
+      {totals.total > 0 && (
+        <p className="trial-person-domain__quiz">
+          {/* The level comes from the share of right answers in the whole domain; per-level counts are for reference. */}
+          <span>{translateUi('Trắc nghiệm')} <strong>{totals.correct}/{totals.total}</strong> ({totals.percent}%)</span>
+          <span className="trial-person-domain__tiers">
+            {tiers.map((tier) => <span key={tier.label}>{translateUi(tier.label)} {tier.correct ?? 0}/{tier.total ?? 0}</span>)}
+          </span>
+        </p>
+      )}
+
+      {/* Every course up to the standard, in order (not only the next one), as in the domain table. */}
+      {gap > 0 && <CoursePath domainNumber={detail.number} from={detail.level + 1} to={target} />}
+    </article>
+  );
+}
+
+export function CompetencyReport({ report, participantCount, provisional = false }: { report: TrialReport; participantCount?: number; provisional?: boolean }) {
   useUiLanguage();
   const [selectedEmployee, setSelectedEmployee] = useState<TrialReportEmployee | null>(null);
   const [closingEmployee, setClosingEmployee] = useState(false);
@@ -202,7 +517,6 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [isEmployeeTableOpen, setIsEmployeeTableOpen] = useState(false);
   const [employeePage, setEmployeePage] = useState(1);
-  const [employeePageSize, setEmployeePageSize] = useState(5);
 
   const filteredEmployees = report.employees.filter(
     (e) =>
@@ -211,185 +525,132 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
       (e.departmentName && e.departmentName.toLowerCase().includes(employeeFilter.toLowerCase())) ||
       (e.positionName && e.positionName.toLowerCase().includes(employeeFilter.toLowerCase())),
   );
-  const employeePageCount = Math.max(1, Math.ceil(filteredEmployees.length / employeePageSize));
+  const employeePageCount = Math.max(1, Math.ceil(filteredEmployees.length / EMPLOYEE_PAGE_SIZE));
   const activeEmployeePage = Math.min(employeePage, employeePageCount);
-  const visibleEmployees = filteredEmployees.slice((activeEmployeePage - 1) * employeePageSize, activeEmployeePage * employeePageSize);
-  const sortedByPriority = report.summary.map((domain) => summarizeDomain(domain, report.employees)).sort((a, b) =>
-    b.gapCount - a.gapCount || (b.averageGap ?? 0) - (a.averageGap ?? 0) || a.average - b.average || a.number - b.number);
-  const topFocusDomain = sortedByPriority.find((domain) => domain.course);
-  const focusCourse = topFocusDomain?.course;
-  const scores = report.employees.reduce(({ correct, total }, employee) =>
-    employee.choiceScore != null && employee.choiceTotal != null && employee.choiceTotal > 0
-      ? { correct: correct + employee.choiceScore, total: total + employee.choiceTotal }
-      : { correct, total }, { correct: 0, total: 0 });
-  const totalQuestions = scores.total;
-  const overallLevel = levelFromShare(scores.correct, totalQuestions);
-  const overallPercent = sharePercent(scores.correct, totalQuestions);
+  const visibleEmployees = filteredEmployees.slice((activeEmployeePage - 1) * EMPLOYEE_PAGE_SIZE, activeEmployeePage * EMPLOYEE_PAGE_SIZE);
+
+  // Department filter for the domain table: every column and chart is recomputed from that department's people.
+  const [department, setDepartment] = useState('');
+  const departmentOf = (employee: TrialReportEmployee) => employee.departmentName?.trim() || NO_DEPARTMENT;
+  const departmentCounts = report.employees.reduce((counts, employee) =>
+    counts.set(departmentOf(employee), (counts.get(departmentOf(employee)) ?? 0) + 1), new Map<string, number>());
+  const departmentNames = [...departmentCounts.keys()].sort((a, b) =>
+    Number(a === NO_DEPARTMENT) - Number(b === NO_DEPARTMENT) || a.localeCompare(b, 'vi'));
+  const activeDepartment = departmentCounts.has(department) ? department : '';
+  const scopedEmployees = activeDepartment ? report.employees.filter((employee) => departmentOf(employee) === activeDepartment) : report.employees;
+  const departmentOptions = [
+    { value: '', label: translateUi(`Tất cả phòng ban (${report.employees.length} người)`) },
+    ...departmentNames.map((name) => ({
+      value: name,
+      label: `${name === NO_DEPARTMENT ? translateUi('Chưa có phòng ban') : name} (${translateUi(`${departmentCounts.get(name)} người`)})`,
+    })),
+  ];
+
+  // Domains keep the framework order 1 → 6 (same as the per-person table).
+  const domains = report.summary.map((domain, index) => summarizeDomain(domain, index, scopedEmployees)).sort((a, b) => a.number - b.number);
+  const [openDomains, setOpenDomains] = useState<ReadonlySet<string>>(() => new Set());
+  const toggleDomain = (id: string) => setOpenDomains((current) => {
+    const next = new Set(current);
+    if (!next.delete(id)) next.add(id);
+    return next;
+  });
+
+  const total = Math.max(participantCount ?? report.assessed, report.assessed);
+  const lowCoverage = report.assessed * 2 < total;
+
   const employeeScore = selectedEmployee?.choiceScore;
   const employeeQuestionCount = selectedEmployee?.choiceTotal ?? 0;
+  const selectedDetails: PersonDomain[] = !selectedEmployee ? []
+    : selectedEmployee.domainDetails?.length ? selectedEmployee.domainDetails
+    : report.domains.map((domain, index) => ({
+        categoryId: domain.categoryId, number: domain.number, name: domain.name, level: selectedEmployee.levels[index] ?? 0,
+        basicCorrect: 0, basicTotal: 0, intermediateCorrect: 0, intermediateTotal: 0, advancedCorrect: 0, advancedTotal: 0,
+      }));
 
   return (
-    <div className="trial-competency-report space-y-6">
-      {nextSteps}
-
-      <section aria-labelledby="trial-report-title" className="trial-report-overview rounded-2xl border p-5 sm:p-6">
-        <h2 id="trial-report-title" className="text-xl font-bold tracking-tight">{translateUi('Bức tranh năng lực')}</h2>
-        <p className="mt-1 text-sm text-teal-50">
-          {translateUi('Kết quả từ')} <strong>{report.assessed}</strong> {translateUi('nhân sự hoàn thành khảo sát.')}
-          {participantCount != null && report.assessed < participantCount && (
-            <> {translateUi('Tổng số tham gia:')} <strong>{participantCount}</strong>.</>
-          )}
-        </p>
-
-        <div className={`mt-4 grid gap-3 ${topFocusDomain && focusCourse ? 'lg:grid-cols-[1fr_1.15fr]' : ''}`}>
-          <div className="rounded-2xl border border-white/25 bg-white/10 p-4 sm:p-5">
-            <p className="flex items-center gap-2 text-sm font-semibold text-teal-100">
-              <Award size={17} aria-hidden="true" />
-              {translateUi('Mức năng lực trung bình')}
-            </p>
-            <p className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              {totalQuestions > 0 ? <>{overallLevel > 0 && <>{translateUi('Đạt mức')} </>}{translateUi(LEVEL_LABELS[overallLevel])}</> : translateUi('Chưa có điểm trắc nghiệm')}
-            </p>
-            {totalQuestions > 0 && (
-              <p className="mt-1 text-sm tabular-nums text-teal-50">{overallPercent}% {translateUi('câu đúng trên tổng số bài đã chấm')}</p>
-            )}
-            {totalQuestions > 0 && overallLevel === 0 && (
-              <p className="mt-1 text-sm text-teal-50">{translateUi('Nên bắt đầu từ khóa Cơ bản.')}</p>
+    <div className="trial-competency-report space-y-5">
+      {/* ── KẾT QUẢ THEO 6 LĨNH VỰC: mức hiện tại · mức cần đạt · khóa nên học; "Chi tiết" mở bậc thang số người ở từng mức ── */}
+      <section aria-labelledby="trial-report-title" className="trial-domain-report rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs">
+        <div className="trial-domain-report__head">
+          <div>
+            <h2 id="trial-report-title" className="font-bold tracking-tight">{translateUi('Kết quả theo lĩnh vực')}</h2>
+            {/* Only when few people have results (the report holds scored papers only): a warning, not a routine count. */}
+            {lowCoverage && (
+              <p className="is-warn">
+                <AlertTriangle size={14} aria-hidden="true" />
+                <strong>{report.assessed}/{total} {translateUi('người')}</strong> {translateUi('có kết quả')}
+                <span aria-hidden="true"> · </span><span>{translateUi('Chưa đủ để kết luận cho cả đội')}</span>
+              </p>
             )}
           </div>
-          {topFocusDomain && focusCourse && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal-100 bg-[#f7fcfb] p-4 sm:p-5">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-teal-800">{translateUi('Cần ưu tiên')}</p>
-                <p className="mt-2 text-base font-bold leading-snug text-slate-900">{translateUi(topFocusDomain.name)}</p>
-                <p className="mt-1 text-sm text-slate-700">{topFocusDomain.gapCount} {translateUi('người cần bổ sung theo chuẩn vị trí')}</p>
-              </div>
-              <Link to={`/enterprise/courses?focus=${focusCourse.code}&level=${focusCourse.level}`} className="inline-flex items-center gap-2 rounded-xl border border-transparent bg-[#125c61] px-3 py-2 text-sm font-semibold text-white hover:bg-[#164957] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 motion-safe:transition-colors">
-                <BookOpen size={15} aria-hidden="true" />{translateUi('Xem khóa')} {focusCourse.code}
-                <ArrowRight size={15} aria-hidden="true" />
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ── BẢNG NĂNG LỰC 6 LĨNH VỰC ── */}
-      <section className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3.5 mb-4">
-          <h3 className="text-base font-bold text-slate-900">{translateUi("Năng lực theo lĩnh vực")}</h3>
-          <span className="text-xs font-semibold text-slate-500">{translateUi("Tổng nhân sự: ")}<strong className="text-slate-900 font-bold tabular-nums">{report.assessed}</strong>{translateUi(" người")}</span>
+          <div className="trial-domain-report__tools">
+            {provisional && <span className="trial-provisional-chip">{translateUi('Tạm thời · tự cập nhật khi có thêm bài nộp')}</span>}
+            {departmentNames.length > 1 && (
+              <OwnerFilterSelect
+                icon="filter"
+                label={translateUi('Lọc theo phòng ban')}
+                value={activeDepartment}
+                onChange={(value) => setDepartment(value)}
+                options={departmentOptions}
+                className="trial-department-filter"
+              />
+            )}
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <DomainLineChart points={domains.map((row) => ({
+          number: row.number,
+          name: row.name,
+          short: DOMAIN_THEMES[row.number - 1]?.tableHeader ?? `${row.number}`,
+          current: row.average,
+          target: row.targetAverage,
+        }))} />
+
+        <div className="relative overflow-x-auto">
+          <table className="trial-domain-table w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <th className="py-3 px-4">{translateUi("Lĩnh vực")}</th>
-                <th className="py-3 px-3 text-center">{translateUi('Mức năng lực trung bình')}</th>
-                <th className="py-3 px-4 min-w-[220px]">{translateUi("Phân bổ (")}{report.assessed} người)</th>
-                <th className="py-3 px-4 min-w-[180px]">{translateUi("Khóa học đề xuất")}</th>
+              <tr>
+                <th scope="col" className="trial-domain-table__domain">{translateUi('Lĩnh vực')}</th>
+                <th scope="col">{translateUi('Mức hiện tại')}</th>
+                <th scope="col">{translateUi('Mức cần đạt')}</th>
+                <th scope="col">{translateUi('Khóa nên học')}</th>
+                <th scope="col"><span className="sr-only">{translateUi('Chi tiết')}</span></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {sortedByPriority.map((row) => {
+            <tbody className="text-[13px]">
+              {domains.map((row) => {
                 const theme = DOMAIN_THEMES[row.number - 1] || DOMAIN_THEMES[0];
                 const Icon = theme.icon;
-
-                const course = row.course;
-
+                const open = openDomains.has(row.categoryId);
+                const detailId = `trial-domain-detail-${row.categoryId}`;
                 return (
-                  <tr key={row.categoryId} className="hover:bg-slate-50/70 transition-colors group">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`size-8 rounded-xl ${theme.bgClass} border ${theme.borderClass} flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform`}
-                        >
-                          <Icon size={16} />
+                  <Fragment key={row.categoryId}>
+                    <tr data-open={open || undefined}>
+                      <td className="py-3.5 px-4" data-cell="domain">
+                        <div className="flex items-center gap-3">
+                          <div className={`size-8 rounded-xl ${theme.bgClass} border ${theme.borderClass} flex items-center justify-center shrink-0`}>
+                            <Icon size={16} aria-hidden="true" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="block text-xs font-semibold text-slate-500">{translateUi('Lĩnh vực')} {row.number}</span>
+                            <strong className="block text-sm font-bold leading-snug text-slate-900">{translateUi(row.name)}</strong>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">{translateUi("Miền 0")}{row.number}
-                          </span>
-                          <strong className="text-slate-900 font-bold text-xs sm:text-sm block leading-snug">
-                            {row.name}
-                          </strong>
-                        </div>
-                      </div>
-                    </td>
-
-
-                    <td className="py-3.5 px-3 text-center">
-                      <LevelBadge level={row.level} />
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <div className="space-y-1.5">
-                        <div
-                          className="h-2 w-full rounded-full overflow-hidden bg-slate-100 flex border border-slate-200/60 shadow-inner"
-                          title={translateUi(row.counts.map((n, i) => `${LEVEL_LABELS[i]}: ${n}`).join(' · '))}
-                        >
-                          {row.counts.map((count, levelIdx) =>
-                            count > 0 ? (
-                              <div
-                                key={levelIdx}
-                                style={{
-                                  width: `${(count / Math.max(1, report.assessed)) * 100}%`,
-                                }}
-                                className={`h-full first:rounded-l-full last:rounded-r-full transition-all duration-300 ${
-                                  levelIdx === 0
-                                    ? 'bg-slate-400'
-                                    : levelIdx === 1
-                                    ? 'bg-sky-500'
-                                    : levelIdx === 2
-                                    ? 'bg-indigo-600'
-                                    : 'bg-emerald-500'
-                                }`}
-                              />
-                            ) : null,
-                          )}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5 text-[10.5px]">
-                          {row.counts.map((count, levelIdx) =>
-                            count > 0 ? (
-                              <span
-                                key={levelIdx}
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold ${
-                                  levelIdx === 0
-                                    ? 'bg-slate-100 text-slate-700 border border-slate-200'
-                                    : levelIdx === 1
-                                    ? 'bg-sky-50 text-sky-800 border border-sky-200'
-                                    : levelIdx === 2
-                                    ? 'bg-indigo-50 text-indigo-800 border border-indigo-200'
-                                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                }`}
-                              >
-                                <span
-                                  className={`size-1.5 rounded-full ${
-                                    levelIdx === 0
-                                      ? 'bg-slate-400'
-                                      : levelIdx === 1
-                                      ? 'bg-sky-500'
-                                      : levelIdx === 2
-                                      ? 'bg-indigo-500'
-                                      : 'bg-emerald-500'
-                                  }`}
-                                />
-                                {translateUi(LEVEL_LABELS[levelIdx])}: <strong>{count}</strong>
-                              </span>
-                            ) : null,
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      {course ? (
-                        <Link to={`/enterprise/courses?focus=${course.code}&level=${course.level}`} className="inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-2.5 py-1.5 text-xs font-semibold text-teal-900 hover:bg-teal-100">
-                          <BookOpen size={13} aria-hidden="true" />
-                          {translateUi('Xem khóa')} {course.code} · {translateUi(LEVEL_LABELS[course.level])}
-                        </Link>
-                      ) : <span className="text-slate-600">—</span>}
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="py-3.5 px-3" data-cell="current" data-label={translateUi('Mức hiện tại')}><CurrentLevelCell row={row} /></td>
+                      <td className="py-3.5 px-3" data-cell="target" data-label={translateUi('Mức cần đạt')}><TargetCell row={row} /></td>
+                      <td className="py-3.5 px-3" data-cell="course" data-label={translateUi('Khóa nên học')}><CourseCell row={row} /></td>
+                      <td className="py-3.5 px-4 text-right" data-cell="toggle">
+                        <button type="button" className="trial-detail-toggle" aria-expanded={open} aria-controls={detailId} onClick={() => toggleDomain(row.categoryId)}>
+                          {translateUi(open ? 'Thu gọn' : 'Chi tiết')}<span className="sr-only"> {translateUi(row.name)}</span>
+                          <ChevronDown size={15} aria-hidden="true" />
+                        </button>
+                      </td>
+                    </tr>
+                    <tr className="trial-domain-detail" id={detailId} hidden={!open}>
+                      <td colSpan={5}>{open && <DomainDetail row={row} />}</td>
+                    </tr>
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -397,328 +658,138 @@ export function CompetencyReport({ report, participantCount, nextSteps }: { repo
         </div>
       </section>
 
-      {/* ── BẢNG THEO TỪNG NHÂN VIÊN (COLLAPSIBLE / XỔ RA ĐÓNG LẠI) ── */}
+      {/* ── KẾT QUẢ TỪNG NGƯỜI (THU GỌN MẶC ĐỊNH) ── */}
       <section className="rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden transition-all">
         <button
           type="button"
           onClick={() => setIsEmployeeTableOpen((v) => !v)}
           aria-expanded={isEmployeeTableOpen}
           aria-controls="trial-employee-results"
-          className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 sm:p-6 text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-between gap-3 p-5 sm:p-6 text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-3.5">
-            <div className="size-11 rounded-xl bg-teal-50 border border-teal-100/80 flex items-center justify-center text-teal-700 shadow-2xs shrink-0">
-              <Users size={20} />
+            <div className="size-11 rounded-xl bg-teal-50 border border-teal-100/80 flex items-center justify-center text-teal-700 shrink-0">
+              <Users size={20} aria-hidden="true" />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900">{translateUi("Chi tiết từng nhân viên")}</h3>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/80 shadow-2xs">{translateUi("6 Lĩnh vực")}</span>
-              </div>
-              <p className="text-sm text-slate-600 font-medium mt-1">
-                Đánh giá chuẩn hóa 6 lĩnh vực năng lực số của từng nhân sự
-              </p>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900">{translateUi('Kết quả từng người')}</h3>
+              <p className="mt-0.5 text-[13px] text-slate-600">{translateUi(`Mức của ${report.assessed} người ở 6 lĩnh vực`)}</p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-colors">
-              {isEmployeeTableOpen ? (
-                <>
-                  <ChevronUp size={15} />{translateUi(" Thu gọn")}</>
-              ) : (
-                <>
-                  <ChevronDown size={15} />{translateUi(" Xem chi tiết")}</>
-              )}
-            </span>
-          </div>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-bold text-slate-700">
+            {isEmployeeTableOpen ? <><ChevronUp size={15} aria-hidden="true" />{translateUi('Thu gọn')}</> : <><ChevronDown size={15} aria-hidden="true" />{translateUi('Xem')}</>}
+          </span>
         </button>
 
         <TrialDisclosure open={isEmployeeTableOpen} id="trial-employee-results">
-          <div className="p-5 sm:p-6 pt-0 border-t border-slate-100 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
-              <OwnerFilterSelect label={translateUi("Số kết quả mỗi trang")} value={String(employeePageSize)} onChange={(value) => { setEmployeePageSize(Number(value)); setEmployeePage(1); }} options={[5, 10, 15, 25].map((size) => ({ value: String(size), label: `${size} / trang` }))} />
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4 border-t border-slate-100 space-y-4">
+            {report.employees.length > EMPLOYEE_PAGE_SIZE && (
               <div className="relative w-full sm:w-72">
-                <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
                 <input
                   type="text"
-                  placeholder={translateUi("Tìm theo tên, phòng ban...")}
+                  aria-label={translateUi('Tìm theo tên, phòng ban')}
+                  placeholder={translateUi('Tìm theo tên, phòng ban...')}
                   value={employeeFilter}
                   onChange={(e) => { setEmployeeFilter(e.target.value); setEmployeePage(1); }}
-                  className="w-full h-9 pl-8 pr-3 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-teal-600 transition-colors"
+                  className="w-full h-9 pl-8 pr-3 text-sm rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-teal-600 transition-colors"
                 />
               </div>
-            </div>
+            )}
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+            {/* `relative`: the sr-only header is absolutely positioned and must stay inside the scroll box on phones. */}
+            <div className="relative overflow-x-auto rounded-xl border border-slate-200/80">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-bold uppercase tracking-wider text-slate-600">
-                    <th className="py-3 px-4 min-w-[200px]">{translateUi("Nhân viên")}</th>
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-bold text-slate-600">
+                    <th className="py-3 px-4 min-w-[200px]">{translateUi('Nhân viên')}</th>
                     {DOMAIN_THEMES.map((theme) => (
                       <th key={theme.number} className="py-3 px-2 text-center min-w-[95px]" title={translateUi(theme.name)}>
                         {translateUi(theme.tableHeader)}
                       </th>
                     ))}
-                    <th className="py-3 px-4 text-center min-w-[110px]">{translateUi("Thao tác")}</th>
+                    <th className="py-3 px-4 text-center min-w-[110px]"><span className="sr-only">{translateUi('Thao tác')}</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
+                <tbody className="divide-y divide-slate-100 text-[13px]">
                   {filteredEmployees.length === 0 ? (
                     <tr>
-                      <td colSpan={DOMAIN_THEMES.length + 2} className="py-8 text-center text-slate-400">{translateUi("Không tìm thấy nhân viên nào phù hợp")}</td>
+                      <td colSpan={DOMAIN_THEMES.length + 2} className="py-8 text-center text-slate-500">{translateUi('Không tìm thấy nhân viên nào phù hợp')}</td>
                     </tr>
                   ) : (
-                    visibleEmployees.map((e) => {
-                      const initials = e.fullName
-                        .trim()
-                        .split(/\s+/)
-                        .slice(-2)
-                        .map((w) => w[0])
-                        .join('')
-                        .toUpperCase();
-
-                      return (
-                        <tr key={e.employeeId} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-teal-600 to-indigo-600 text-white font-black text-xs shadow-2xs shrink-0">
-                                {initials}
-                              </div>
-                              <div>
-                                <strong className="text-slate-900 block text-xs sm:text-sm font-bold">{e.fullName}</strong>
-                                <span className="text-xs text-slate-600 block mt-0.5 font-medium">
-                                  {[e.departmentName, e.positionName].filter(Boolean).join(' · ') || translateUi('Nhân viên')}
-                                </span>
-                              </div>
-                            </div>
+                    visibleEmployees.map((e) => (
+                      <tr key={e.employeeId} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <strong className="text-slate-900 block text-sm font-bold">{e.fullName}</strong>
+                          <span className="text-xs text-slate-600 block mt-0.5">
+                            {[e.departmentName, e.positionName].filter(Boolean).join(' · ') || translateUi('Nhân viên')}
+                          </span>
+                        </td>
+                        {e.levels.map((level, i) => (
+                          <td key={i} className="py-3.5 px-2 text-center">
+                            <LevelBadge level={level} size="sm" />
                           </td>
-
-                          {e.levels.map((level, i) => (
-                            <td key={i} className="py-3.5 px-2 text-center">
-                              <LevelBadge level={level} size="sm" />
-                            </td>
-                          ))}
-
-                          <td className="py-3.5 px-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => { setClosingEmployee(false); setSelectedEmployee(e); }}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 text-xs font-bold text-teal-800 transition-all shadow-2xs hover:shadow-xs cursor-pointer"
-                            >
-                              <Eye size={13} className="text-teal-700" />{translateUi("Xem chi tiết")}</button>
-                          </td>
-                        </tr>
-                      );
-                    })
+                        ))}
+                        <td className="py-3.5 px-4 text-center">
+                          <button
+                            type="button"
+                            onClick={() => { setClosingEmployee(false); setSelectedEmployee(e); }}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 text-[13px] font-bold text-teal-800 transition-colors cursor-pointer"
+                          >
+                            <Eye size={14} className="text-teal-700" aria-hidden="true" />{translateUi('Xem chi tiết')}</button>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
             </div>
-            <div className="tp-participant-pagination" aria-label={translateUi("Phân trang kết quả đánh giá")}>
-              <span>{filteredEmployees.length ? translateUi(`${(activeEmployeePage - 1) * employeePageSize + 1}–${Math.min(activeEmployeePage * employeePageSize, filteredEmployees.length)} / ${filteredEmployees.length} người`) : '0 người'}</span>
-              {employeePageCount > 1 && <div><button type="button" disabled={activeEmployeePage === 1} onClick={() => setEmployeePage(activeEmployeePage - 1)}>{translateUi("Trước")}</button><strong>{translateUi("Trang ")}{activeEmployeePage}/{employeePageCount}</strong><button type="button" disabled={activeEmployeePage === employeePageCount} onClick={() => setEmployeePage(activeEmployeePage + 1)}>{translateUi("Sau")}</button></div>}
-            </div>
+            {employeePageCount > 1 && (
+              <div className="tp-participant-pagination" aria-label={translateUi('Phân trang kết quả từng người')}>
+                <span>{translateUi(`${(activeEmployeePage - 1) * EMPLOYEE_PAGE_SIZE + 1}–${Math.min(activeEmployeePage * EMPLOYEE_PAGE_SIZE, filteredEmployees.length)} / ${filteredEmployees.length} người`)}</span>
+                <div><button type="button" disabled={activeEmployeePage === 1} onClick={() => setEmployeePage(activeEmployeePage - 1)}>{translateUi('Trước')}</button><strong>{translateUi('Trang ')}{activeEmployeePage}/{employeePageCount}</strong><button type="button" disabled={activeEmployeePage === employeePageCount} onClick={() => setEmployeePage(activeEmployeePage + 1)}>{translateUi('Sau')}</button></div>
+              </div>
+            )}
           </div>
         </TrialDisclosure>
       </section>
 
-      {/* Modal xem chi tiết bài đánh giá của từng nhân viên */}
+      {/* Kết quả của một người */}
       {selectedEmployee && (
         <Modal
           open={Boolean(selectedEmployee)}
           onClose={closeEmployee}
           className={`trial-result-dialog${closingEmployee ? ' is-closing' : ''}`}
           size="xl"
-          title={translateUi(`Chi tiết đánh giá năng lực: ${selectedEmployee.fullName}`)}
+          title={translateUi(`Kết quả của ${selectedEmployee.fullName}`)}
           footer={
-            <div className="flex w-full items-center justify-between">
-              <span className="text-xs text-slate-500">
-                {selectedEmployee.submittedAt
-                  ? translateUi(`Nộp bài lúc ${new Date(selectedEmployee.submittedAt).toLocaleString('vi-VN')}`)
-                  : ''}
-              </span>
+            <div className="flex w-full justify-end">
               <button
                 type="button"
                 onClick={closeEmployee}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
-              >{translateUi("Đóng")}</button>
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              >{translateUi('Đóng')}</button>
             </div>
           }
         >
           <div className="space-y-4 py-1">
-            {/* Profile banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-slate-50 via-teal-50/30 to-sky-50/40 border border-slate-200/80">
-              <div className="flex items-center gap-3.5">
-                <div className="size-11 rounded-2xl bg-gradient-to-br from-teal-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center shadow-2xs shrink-0">
-                  {selectedEmployee.fullName
-                    .trim()
-                    .split(/\s+/)
-                    .slice(-2)
-                    .map((w) => w[0])
-                    .join('')
-                    .toUpperCase()}
-                </div>
-                <div>
-                  <h4 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
-                    {selectedEmployee.fullName}
-                  </h4>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    {selectedEmployee.departmentName && (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
-                        <Building2 size={13} className="text-slate-500" />
-                        {selectedEmployee.departmentName}
-                      </span>
-                    )}
-                    {selectedEmployee.positionName && (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-800 bg-sky-50 px-2.5 py-0.5 rounded-lg border border-sky-200 shadow-2xs">
-                        <Briefcase size={13} className="text-sky-600" />
-                        {selectedEmployee.positionName}
-                      </span>
-                    )}
-                    {selectedEmployee.email && (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-white px-2.5 py-0.5 rounded-lg border border-slate-200">
-                        <Mail size={13} className="text-slate-400" />
-                        {selectedEmployee.email}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+            <PersonSummary employee={selectedEmployee} details={selectedDetails} score={employeeScore} total={employeeQuestionCount} />
 
-              {selectedEmployee.submittedAt && (
-                <div className="sm:text-right shrink-0">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">{translateUi("Thời gian nộp")}</span>
-                  <span className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold text-slate-800 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs mt-0.5">
-                    <Calendar size={13} className="text-teal-600" />
-                    {new Date(selectedEmployee.submittedAt).toLocaleString('vi-VN')}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {employeeScore != null && employeeQuestionCount > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-950">
-                <h4 className="font-semibold">{translateUi('Tổng kết trắc nghiệm')}</h4>
-                <p><strong className="tabular-nums">{employeeScore}/{employeeQuestionCount}</strong> {translateUi('câu đúng')} ({sharePercent(employeeScore, employeeQuestionCount)}%)</p>
-              </div>
-            )}
-
-            {/* Nhận xét từ Mentor nếu có */}
             {selectedEmployee.reviewNote && (
-              <div className="rounded-2xl border border-purple-200/90 bg-purple-50/60 p-3.5 space-y-1 shadow-2xs">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900">
-                  <FileText className="size-3.5 text-purple-700" />{translateUi("Ghi chú đánh giá:")}</div>
-                <p className="text-xs text-purple-950 italic leading-relaxed">
-                  "{selectedEmployee.reviewNote}"
-                </p>
+              <div className="trial-person-note">
+                <FileText className="size-4" aria-hidden="true" />
+                <div>
+                  <strong>{translateUi('Nhận xét của chuyên gia')}</strong>
+                  <p>{selectedEmployee.reviewNote}</p>
+                </div>
               </div>
             )}
 
-            {/* Danh sách 6 lĩnh vực */}
             <div className="space-y-3 pt-1">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h4 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Award size={15} className="text-teal-600" />{translateUi("Kết quả chi tiết 6 lĩnh vực năng lực số")}</h4>
-                <span className="text-xs text-slate-500 font-medium">{translateUi("Mức khảo sát")}</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {(selectedEmployee.domainDetails && selectedEmployee.domainDetails.length > 0
-                  ? selectedEmployee.domainDetails
-                  : report.domains.map((dom, idx) => ({
-                      categoryId: dom.categoryId,
-                      number: dom.number,
-                      name: dom.name,
-                      level: selectedEmployee.levels[idx] ?? 0,
-                      basicCorrect: 0,
-                      basicTotal: 0,
-                      intermediateCorrect: 0,
-                      intermediateTotal: 0,
-                      advancedCorrect: 0,
-                      advancedTotal: 0,
-                      mentorLevel: null,
-                      recommendedCourse: '',
-                      targetLevel: 0,
-                      usesSystemReference: false,
-                      skillGap: 0,
-                    }))
-                ).map((detail) => {
-                  const theme = DOMAIN_THEMES[detail.number - 1] || DOMAIN_THEMES[0];
-                  const Icon = theme.icon;
-                  const totals = domainTotals(detail);
-
-                  return (
-                    <div
-                      key={detail.categoryId}
-                      className="rounded-2xl border border-slate-200/90 bg-white p-4 space-y-3 shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between"
-                    >
-                      {/* Top: Icon + Tên lĩnh vực + LevelBadge */}
-                      <div className="flex items-start justify-between gap-2.5">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div
-                            className={`size-8 rounded-xl ${theme.bgClass} border ${theme.borderClass} flex items-center justify-center shrink-0 shadow-2xs`}
-                          >
-                            <Icon size={16} />
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">{translateUi("Miền 0")}{detail.number}
-                            </span>
-                            <h5 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug truncate" title={translateUi(detail.name)}>
-                              {detail.name}
-                            </h5>
-                          </div>
-                        </div>
-                        <div className="shrink-0">
-                          <LevelBadge level={detail.level} />
-                          {detail.mentorLevel != null && <p className="mt-1 text-right text-[11px] text-slate-600">{translateUi('Mentor xác nhận')}</p>}
-                        </div>
-                      </div>
-
-                      {detail.targetLevel ? (
-                        <p className="text-xs text-slate-700">
-                          {translateUi(detail.usesSystemReference ? 'Chuẩn hệ thống' : 'Chuẩn doanh nghiệp')} · {translateUi(LEVEL_LABELS[detail.targetLevel])}
-                          {' · '}{detail.skillGap ? translateUi(`Thiếu ${detail.skillGap} cấp`) : translateUi('Đạt chuẩn')}
-                        </p>
-                      ) : null}
-
-                      {/* Middle: Thông tin Trắc nghiệm lý thuyết */}
-                      {totals.total > 0 && <div className="rounded-xl bg-slate-50 border border-slate-100 p-2.5 space-y-1.5">
-                        {/* The level comes from the share of right answers in the whole domain; per-level counts are for reference. */}
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-semibold text-slate-600">{translateUi("Trắc nghiệm lý thuyết:")}</span>
-                          <span className="font-bold text-slate-800">
-                            {totals.correct}/{totals.total} {translateUi('câu đúng')} ({totals.percent}%)
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1 text-center">
-                          {[
-                            { label: 'Cơ bản: ', correct: detail.basicCorrect, total: detail.basicTotal },
-                            { label: 'Trung cấp: ', correct: detail.intermediateCorrect, total: detail.intermediateTotal },
-                            { label: 'Nâng cao: ', correct: detail.advancedCorrect, total: detail.advancedTotal },
-                          ].map((tier) => (
-                            <span
-                              key={tier.label}
-                              className="px-1.5 py-0.5 rounded-lg text-[10px] font-bold border bg-slate-100 text-slate-600 border-slate-200"
-                            >
-                              {translateUi(tier.label)}{tier.correct ?? 0}/{tier.total ?? 0}
-                            </span>
-                          ))}
-                        </div>
-                      </div>}
-
-                      {/* Bottom: Khóa học đề xuất */}
-                      {detail.recommendedCourse && (
-                        <div className="flex items-center gap-2 text-xs font-semibold text-teal-900 bg-teal-50/70 border border-teal-200/80 px-3 py-2 rounded-xl">
-                          <BookOpen size={14} className="text-teal-700 shrink-0" />
-                          <span className="truncate" title={translateUi(detail.recommendedCourse)}>
-                            {detail.level === 0 && <>{translateUi('Nên bắt đầu từ khóa Cơ bản')} · </>}{detail.recommendedCourse}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+              <h4 className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                <Award size={15} className="text-teal-600" aria-hidden="true" />{translateUi('Theo lĩnh vực')}</h4>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {selectedDetails.map((detail) => <PersonDomainCard key={detail.categoryId} detail={detail} />)}
               </div>
             </div>
           </div>
