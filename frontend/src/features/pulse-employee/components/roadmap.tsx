@@ -1,9 +1,10 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, Check, Clock, FileText, Lock, ShieldCheck, Target, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, Clock, FileText, Lock, Rocket, ShieldCheck, Target, Zap } from 'lucide-react';
 import type { PulseCourseSummary, PulseDomain, PulseOverview } from '@/services/pulse.service';
-import { courseLabel, courseStatusText, courseTone, showsProgress } from '../lib/course-state';
-import { capNote, levelName } from '../lib/labels';
+import { courseLabel, courseStatusText, courseTone, doneLabel, showsProgress } from '../lib/course-state';
+import { capNote, levelName, pad2 } from '../lib/labels';
+import { isBeyond, meetsRequirement, remainingRequired, requirementSource, roadmapDomains, visibleCourses } from '../lib/requirement';
 import { PULSE_PATHS } from '../lib/paths';
 import { Bar, PuLink } from './ui';
 
@@ -26,13 +27,9 @@ export function LevelDots({ level }: { level: number }) {
   );
 }
 
-const shortCode = (domain: PulseDomain, courses: PulseCourseSummary[]) =>
-  courses.find((c) => c.categoryId === domain.categoryId)?.code.split('-')[0] ?? domain.code;
-
 /**
- * Lộ trình doanh nghiệp đặt cho vị trí: mỗi lĩnh vực một hàng, mỗi cấp độ một cột, mỗi ô là tên khóa trong lộ trình
- * (Cơ bản → min(mục tiêu vị trí, phạm vi phòng ban)). Chỉ khóa bắt buộc: khóa tùy chọn nằm ở danh sách khóa bên dưới, khóa vượt
- * phạm vi không hiện. Chỉ là kế hoạch — không có tiến độ hay đạt / chưa đạt.
+ * Lộ trình của nhân viên: mỗi lĩnh vực một hàng, mỗi cấp độ một cột. Ô là khóa bắt buộc (Cơ bản → mức tối thiểu doanh
+ * nghiệp yêu cầu) hoặc khóa học vượt (doanh nghiệp đã mua, cao hơn mức tối thiểu); khóa chưa mua ở trên mức tối thiểu để trống.
  */
 export function RoadmapPlan({
   overview,
@@ -46,7 +43,7 @@ export function RoadmapPlan({
   onSelectCourse?: (course: PulseCourseSummary) => void;
 }) {
   useUiLanguage();
-  const domains = overview.domains.filter((d) => d.pathTop > 0);
+  const domains = roadmapDomains(overview);
 
   return (
     <div className="pu-matrix-wrapper">
@@ -82,33 +79,31 @@ export function RoadmapPlan({
             </tr>
           </thead>
           <tbody>
-            {domains.map((domain) => {
-              const domainCourses = overview.courses.filter(
-                (c) => c.categoryId === domain.categoryId && c.zone === 'PATH'
-              );
-              const approvedCourses = domainCourses.filter((c) => c.approved);
-              const isDomainMet = approvedCourses.length === domainCourses.length && domainCourses.length > 0;
-              const remainingCourses = domainCourses.length - approvedCourses.length;
-              const code = shortCode(domain, overview.courses);
+            {domains.map((domain, domainIdx) => {
+              const domainCourses = visibleCourses(overview, domain);
+              const required = domain.pathTop > 0;
+              const isDomainMet = required && meetsRequirement(domain);
+              const needsAttention = required && !isDomainMet;
+              const remainingCourses = remainingRequired(overview, domain).length;
+              const source = requirementSource(domain, overview.person);
 
-              const row = [1, 2, 3].map((tier) =>
-                overview.courses.find(
-                  (c) => c.categoryId === domain.categoryId && c.tier === tier && c.zone === 'PATH'
-                )
-              );
+              const row = [1, 2, 3].map((tier) => domainCourses.find((c) => c.tier === tier));
 
               return (
-                <tr key={domain.categoryId} className="pu-matrix-row">
+                <tr key={domain.categoryId} className={`pu-matrix-row${needsAttention ? ' needs-attention' : ''}`}>
                   {/* Cột 1: Thông tin Lĩnh vực Năng lực & Đối sánh (Phương án 1: 2 dòng thông thoáng) */}
                   <th scope="row" className="pu-matrix-domain-th">
                     <div className="pu-matrix-domain-card">
                       <div className="pu-matrix-domain-head">
-                        <span className="pu-matrix-domain-tag">{code}</span>
+                        <span className="pu-matrix-domain-tag">Lĩnh vực {pad2(domainIdx + 1)}</span>
                         {isDomainMet ? (
                           <span className="pu-matrix-domain-status met">
-                            <Check size={11} strokeWidth={3} />{translateUi(" Đạt chuẩn")}</span>
+                            <Check size={11} strokeWidth={3} />{translateUi(" Đạt yêu cầu")}</span>
+                        ) : required ? (
+                          <span className="pu-matrix-domain-status attention">
+                            <AlertTriangle size={11} />{translateUi(" Còn ")}{remainingCourses}{translateUi(" khóa bắt buộc")}</span>
                         ) : (
-                          <span className="pu-matrix-domain-status gap">{translateUi("Còn ")}{remainingCourses}{translateUi(" khóa")}</span>
+                          <span className="pu-matrix-domain-status gap">{translateUi("Không bắt buộc")}</span>
                         )}
                       </div>
 
@@ -118,12 +113,13 @@ export function RoadmapPlan({
 
                       {/* Dải đối sánh 2 dòng riêng biệt: không rớt chữ, rõ ràng */}
                       <div className="pu-matrix-domain-meta">
-                        <div className="pu-matrix-meta-row">
+                        <div className="pu-matrix-meta-row" title={required ? `${source} yêu cầu tối thiểu ${levelName(domain.pathTop)}` : undefined}>
                           <span className="pu-matrix-meta-label">
                             <Target size={11} className="pu-meta-icon text-amber-600" />
-                            <span>Mục tiêu vị trí:</span>
+                            <span>Yêu cầu tối thiểu:</span>
                           </span>
-                          <strong className="pu-matrix-meta-val target">{translateUi("Cấp ")}{domain.target} · {levelName(domain.target)}
+                          <strong className={`pu-matrix-meta-val ${needsAttention ? 'attention' : 'target'}`}>
+                            {required ? translateUi(`Cấp ${domain.pathTop} · ${levelName(domain.pathTop)}`) : translateUi('Không bắt buộc')}
                           </strong>
                         </div>
 
@@ -134,7 +130,7 @@ export function RoadmapPlan({
                             ) : (
                               <span className="pu-meta-dot" />
                             )}
-                            <span>Mức hiện tại:</span>
+                            <span>Mức đã đạt:</span>
                           </span>
                           <strong
                             className={`pu-matrix-meta-val ${
@@ -146,7 +142,7 @@ export function RoadmapPlan({
                             }`}
                           >
                             {isDomainMet
-                              ? translateUi(`Đạt chuẩn (${levelName(domain.verified)})`)
+                              ? translateUi(`Cấp ${domain.verified} · ${levelName(domain.verified)}`)
                               : domain.verified > 0
                                 ? translateUi(`Cấp ${domain.verified} · ${levelName(domain.verified)}`)
                                 : translateUi('Chưa đạt')}
@@ -159,22 +155,24 @@ export function RoadmapPlan({
                   {/* 3 Cột Cấp độ: Cấp 1, Cấp 2, Cấp 3 */}
                   {row.map((course, index) => {
                     const tier = index + 1;
+                    const notBought = overview.courses.some(
+                      (c) => c.categoryId === domain.categoryId && c.tier === tier && c.zone === 'ABOVE_CEILING'
+                    );
                     return (
                       <td key={index} className="pu-matrix-cell-td">
                         {course ? (
                           <PlanCell
                             course={course}
                             domain={domain}
+                            requirementGap={needsAttention && course.zone === 'PATH' && !course.approved}
                             joined={Boolean(row[index + 1])}
                             onSelectCourse={onSelectCourse}
                           />
                         ) : (
-                          <div className="pu-matrix-empty-cell" aria-label="Không có khóa trong lộ trình">
+                          <div className="pu-matrix-empty-cell" aria-label={notBought ? 'Doanh nghiệp chưa mua khóa' : 'Không có khóa'}>
                             <span className="pu-matrix-empty-dash">—</span>
                             <span className="pu-matrix-empty-hint">
-                              {tier > domain.target
-                                ? 'Vượt mục tiêu vị trí'
-                                : 'Không yêu cầu học'}
+                              {notBought ? 'Doanh nghiệp chưa mua khóa' : 'Không có khóa'}
                             </span>
                           </div>
                         )}
@@ -194,21 +192,24 @@ export function RoadmapPlan({
 function PlanCell({
   course,
   domain,
+  requirementGap,
   joined,
   onSelectCourse,
 }: {
   course: PulseCourseSummary;
   domain: PulseDomain;
+  requirementGap: boolean;
   joined: boolean;
   onSelectCourse?: (course: PulseCourseSummary) => void;
 }) {
   useUiLanguage();
-  const isCapped = domain.pathTop < domain.target && course.tier === domain.pathTop;
-  const isTarget = course.tier === domain.pathTop && !isCapped;
+  const beyond = isBeyond(course);
+  const isTarget = course.zone === 'PATH' && course.tier === domain.pathTop;
   const isDone = course.approved || course.slotStatus === 'COMPLETED';
   const isInProgress = course.slotStatus === 'IN_PROGRESS';
   const isPreTest = course.slotStatus === 'PRE_ASSESSMENT' || course.canStartPreAssessment;
   const isWaiting = course.slotStatus === 'PRE_REVIEW' || course.slotStatus === 'IN_REVIEW';
+  const isPurchaseNeeded = course.slotStatus === 'PURCHASE_NEEDED';
   const isLocked = course.slotStatus === 'AFTER_PRIOR_LEVEL' || course.zone === 'ABOVE_CEILING';
 
   const statusClass = isDone
@@ -219,16 +220,15 @@ function PlanCell({
         ? 'is-pretest'
         : isWaiting
           ? 'is-waiting'
-          : isLocked
+          : isLocked || isPurchaseNeeded
             ? 'is-locked'
             : 'is-standard';
 
   return (
-    <div className={`pu-matrix-card lv${course.tier} ${statusClass}${joined ? ' joined' : ''}`}>
-      {/* Đầu thẻ: Mã khóa, Cấp độ & Badge trạng thái */}
+    <div className={`pu-matrix-card lv${course.tier} ${statusClass}${beyond ? ' is-beyond' : ''}${requirementGap ? ' required-gap' : ''}${joined ? ' joined' : ''}`}>
+      {/* Đầu thẻ: Cấp độ & Badge trạng thái (không hiện mã khóa) */}
       <div className="pu-mcard-top">
-        <span className="pu-mcard-code">{course.code}</span>
-        <span className="pu-mcard-tier">{levelName(course.tier)}</span>
+        <span className="pu-mcard-tier">Khóa {levelName(course.tier)}</span>
 
         <div className="pu-mcard-badges">
           {isDone && (
@@ -252,13 +252,12 @@ function PlanCell({
             </span>
           )}
           {isTarget && (
-            <span className="pu-mcard-badge target" title="Mục tiêu năng lực của chức danh">
-              <Target size={10} />{translateUi(" Mục tiêu")}</span>
+            <span className={`pu-mcard-badge ${requirementGap ? 'attention' : 'target'}`} title="Mức tối thiểu doanh nghiệp yêu cầu">
+              <Target size={10} />{translateUi(" Mức yêu cầu")}</span>
           )}
-          {isCapped && (
-            <span className="pu-mcard-badge capped" title="Giới hạn theo phạm vi năng lực của phòng ban">
-              <Lock size={9} /> Giới hạn áp dụng
-            </span>
+          {beyond && (
+            <span className="pu-mcard-badge beyond" title="Cao hơn mức tối thiểu, doanh nghiệp đã mua: được khuyến khích">
+              <Rocket size={10} />{translateUi(" Học vượt")}</span>
           )}
         </div>
       </div>
@@ -293,7 +292,7 @@ function PlanCell({
       {/* Các nút hành động nhanh */}
       <div className="pu-mcard-actions">
         {isDone ? (
-          <span className="pu-mcard-done-label">
+          <span className="pu-mcard-done-label" title={translateUi(doneLabel(course))}>
             <Check size={11} strokeWidth={3} />{translateUi(" Đã đạt")}</span>
         ) : isPreTest ? (
           <Link
@@ -317,6 +316,9 @@ function PlanCell({
           >
             <span>Xem bài thi</span>
           </Link>
+        ) : isPurchaseNeeded ? (
+          <span className="pu-mcard-locked-label">
+            <Lock size={10} />{translateUi(" Chờ doanh nghiệp mua")}</span>
         ) : isLocked ? (
           <span className="pu-mcard-locked-label">
             <Lock size={10} />{translateUi(" Cấp ")}{course.tier - 1}{translateUi(" trước")}</span>
@@ -325,7 +327,7 @@ function PlanCell({
             to={PULSE_PATHS.course(course.courseId)}
             className="pu-mcard-cta-btn primary"
           >
-            <span>Vào học →</span>
+            <span>{beyond ? 'Học vượt →' : 'Vào học →'}</span>
           </Link>
         )}
 
@@ -412,7 +414,6 @@ export function CourseRow({
       </span>
       <div className="pu-course-main">
         <div className="pu-course-name">
-          <span>{course.code}</span>
           {onSelectCourse ? (
             <button
               type="button"
@@ -433,7 +434,7 @@ export function CourseRow({
         </span>
         {showsProgress(course) && (
           <span className="pu-course-progress">
-            <Bar value={course.progressPercent} label={translateUi(`Tiến độ học ${course.code}`)} />
+            <Bar value={course.progressPercent} label={translateUi(`Tiến độ học ${toSentenceCase(course.title)}`)} />
             <span>{course.progressPercent}% đã học</span>
           </span>
         )}

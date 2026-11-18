@@ -49,7 +49,7 @@ export const SLOT_LABELS: Record<PulseSlotStatus, string> = {
   NEEDS_SUPPORT: 'Cần hỗ trợ',
   PURCHASE_NEEDED: 'Chờ doanh nghiệp mua khóa',
   AFTER_PRIOR_LEVEL: 'Chưa mở',
-  ABOVE_CEILING: 'Ngoài phạm vi',
+  ABOVE_CEILING: 'Chưa mua',
   OUTSIDE_PATH: 'Ngoài lộ trình',
   NO_POSITION: 'Chưa có vị trí',
 };
@@ -96,7 +96,7 @@ export const finalTone = (status: PulseFinalStatus): 'green' | 'coral' | 'gray' 
 export const BLOCK_MESSAGES: Record<PulseBlockReason, string> = {
   NO_POSITION: 'Bạn chưa được gán vị trí công việc nên chưa có lộ trình học. Hãy liên hệ chủ doanh nghiệp.',
   OUTSIDE_PATH: 'Vị trí của bạn không yêu cầu lĩnh vực này. Bạn vẫn đọc được nội dung miễn phí nhưng không ghi tiến độ lộ trình.',
-  ABOVE_CEILING: 'Doanh nghiệp chưa mở cấp độ này của lĩnh vực cho phòng ban của bạn.',
+  ABOVE_CEILING: 'Khóa này cao hơn mức tối thiểu doanh nghiệp yêu cầu và doanh nghiệp chưa mua. Khi doanh nghiệp mua, khóa mở để bạn học vượt.',
   PRIOR_LEVEL_REQUIRED: 'Khóa mở khi bạn đạt khóa ở cấp trước của cùng lĩnh vực.',
   PRE_ASSESSMENT_REQUIRED: 'Bạn cần làm bài kiểm tra đầu vào (trắc nghiệm, tự chấm, một lần) trước khi học khóa này. Đạt 80% thì bỏ qua phần học và mở bài đánh giá cuối khóa; chưa đạt thì học tuần tự từng mô-đun. Bạn vẫn đọc được nội dung, nhưng tiến độ chỉ được ghi sau bài kiểm tra.',
   PRE_ASSESSMENT_PENDING: 'Bài đánh giá đầu vào đang chờ chuyên gia đánh giá. Nếu chưa đạt, khóa sẽ mở để bạn tiếp tục đào tạo.',

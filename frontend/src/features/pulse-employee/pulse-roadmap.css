@@ -3890,131 +3890,6 @@
   color: #64748b;
 }
 
-/* ── 2. Cụm 3 Card Thống kê Nhanh (Stats Row) ────────────────────────── */
-.pu-path-stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.pu-path-stat-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 18px 20px;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.pu-path-stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.06);
-  border-color: #cbd5e1;
-}
-
-.pu-stat-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.pu-stat-card-title {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.pu-stat-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
-.pu-stat-badge.high {
-  background: #ecfdf5;
-  color: #047857;
-  border: 1px solid #a7f3d0;
-}
-
-.pu-stat-badge.med {
-  background: #eff6ff;
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
-}
-
-.pu-stat-badge.normal {
-  background: #f8fafc;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-}
-
-.pu-stat-badge.highlight {
-  background: #eff6ff;
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
-}
-
-.pu-stat-badge.neutral {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-}
-
-.pu-stat-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.pu-stat-number-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.pu-stat-big-number {
-  font-size: 26px;
-  font-weight: 800;
-  color: #0f172a;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.pu-stat-total {
-  font-size: 13px;
-  font-weight: 600;
-  color: #64748b;
-}
-
-.pu-stat-prog-track {
-  width: 100%;
-  height: 6px;
-  border-radius: 999px;
-  background: #f1f5f9;
-  overflow: hidden;
-  margin-top: 4px;
-}
-
-.pu-stat-prog-fill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.3s ease;
-}
-
-.pu-stat-desc-note {
-  margin: 4px 0 0;
-  font-size: 11.5px;
-  color: #64748b;
-  line-height: 1.4;
-}
-
 /* ── 3. Thẻ Nhiệm vụ ưu tiên tiếp theo (Tone màu Xanh thương hiệu) ───── */
 .pu-priority-mission-card {
   display: flex;
@@ -4356,16 +4231,6 @@
   flex-wrap: wrap;
 }
 
-.pu-station-tag {
-  font-size: 11px;
-  font-weight: 800;
-  padding: 2.5px 7px;
-  border-radius: 6px;
-  background: #eff6ff;
-  color: #1e40af;
-  letter-spacing: 0.04em;
-}
-
 .pu-station-name {
   margin: 0;
   font-size: 16.5px;
@@ -4379,16 +4244,6 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.pu-station-meta {
-  font-size: 12px;
-  color: #64748b;
-}
-
-.pu-station-meta strong {
-  color: #0f172a;
-  font-weight: 700;
 }
 
 .pu-station-pill {
@@ -4529,20 +4384,20 @@
   margin-bottom: 8px;
 }
 
-.pu-scard-code {
+/* Cấp độ của khóa ghi bằng chữ (không hiện mã khóa như M2-F) */
+.pu-scard-level {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   font-weight: 800;
   color: #1e40af;
   background: #eff6ff;
-  padding: 1.5px 6px;
+  padding: 1.5px 7px;
   border-radius: 4px;
 }
 
-.pu-scard-tier {
-  font-size: 11px;
-  font-weight: 700;
-  color: #64748b;
-}
+.pu-scard-level .pu-level-dots i { width: 6px; height: 6px; }
 
 .pu-scard-badge {
   display: inline-flex;
@@ -4816,11 +4671,6 @@
   border-color: #93c5fd;
 }
 
-.pu-crit-code {
-  font-weight: 800;
-  font-size: 10.5px;
-}
-
 .pu-crit-name {
   font-weight: 500;
   max-width: 200px;
@@ -5008,8 +4858,8 @@
   padding: 2.5px 8px;
   border-radius: 5px;
   border: 1px solid #bfdbfe;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .pu-matrix-domain-status {
@@ -5179,15 +5029,6 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-}
-
-.pu-mcard-code {
-  font-size: 11px;
-  font-weight: 800;
-  color: #1e40af;
-  background: #eff6ff;
-  padding: 1.5px 6px;
-  border-radius: 4px;
 }
 
 .pu-mcard-tier {
@@ -5412,12 +5253,232 @@
   max-width: 140px;
 }
 
+/* ── 8b. Mức tối thiểu doanh nghiệp yêu cầu (vàng = chưa đạt) & Học vượt (tím) ── */
+.pu-req-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  border: 1px solid;
+  border-radius: 14px;
+}
+
+.pu-req-summary.gap { background: #fffbeb; border-color: #fcd34d; }
+.pu-req-summary.met { background: #f0fdf4; border-color: #bbf7d0; }
+
+.pu-req-summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.pu-req-summary.gap .pu-req-summary-icon { background: #fef3c7; color: #b45309; }
+.pu-req-summary.met .pu-req-summary-icon { background: #dcfce7; color: #15803d; }
+
+.pu-req-summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pu-req-summary-title {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #78350f;
+}
+
+.pu-req-summary.met .pu-req-summary-title { color: #14532d; }
+
+.pu-req-summary-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #57534e;
+}
+
+.pu-req-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pu-req-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #78350f;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.pu-req-chip:hover { background: #fef3c7; border-color: #f59e0b; }
+.pu-req-chip:focus-visible { outline: 2px solid #d97706; outline-offset: 2px; }
+
+.pu-req-chip-num {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fef3c7;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #92400e;
+}
+
+.pu-req-chip-level { font-weight: 800; color: #b45309; white-space: nowrap; }
+
+/* Dải yêu cầu trong thẻ lĩnh vực */
+.pu-req-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 9px 12px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.pu-req-bar.gap { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+.pu-req-bar.gap > svg { color: #d97706; }
+.pu-req-bar.gap .pu-level-dots i.on { background: #d97706; }
+.pu-req-bar.met { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+.pu-req-bar.met .pu-level-dots i.on { background: #16a34a; }
+.pu-req-bar.neutral { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; }
+.pu-req-text strong { font-weight: 800; }
+
+.pu-req-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border: 1px solid #ddd6fe;
+  border-radius: 999px;
+  background: #f5f3ff;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #5b21b6;
+  white-space: nowrap;
+}
+
+.pu-req-open strong { font-weight: 800; }
+.pu-req-status { margin-left: auto; font-weight: 700; }
+
+/* Thẻ lĩnh vực chưa đạt mức tối thiểu */
+.pu-station-card.needs-attention {
+  border-color: #fcd34d;
+  box-shadow: inset 4px 0 0 #f59e0b, 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.pu-station-card.needs-attention:hover {
+  border-color: #f59e0b;
+  box-shadow: inset 4px 0 0 #f59e0b, 0 6px 16px rgba(217, 119, 6, 0.08);
+}
+
+.pu-station-card.is-current.needs-attention { background: linear-gradient(180deg, #ffffff 0%, #fffdf5 100%); }
+
+.pu-station-indicator.attention {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #f59e0b;
+}
+
+.pu-station-pill.attention {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.pu-legend-dot.attention { background: #f59e0b; }
+.pu-legend-dot.beyond { background: #7c3aed; }
+
+/* Khóa bắt buộc chưa đạt & khóa học vượt */
+.pu-scard-zone {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.pu-scard-zone.required { background: #fef3c7; color: #92400e; }
+.pu-scard-zone.beyond { background: #ede9fe; color: #6d28d9; }
+
+.pu-station-course-card.required-gap { background: #fffdf7; border-color: #fcd34d; }
+.pu-station-course-card.required-gap:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 10px 22px -4px rgba(217, 119, 6, 0.14);
+}
+
+.pu-station-course-card.beyond { background: #fdfcff; border-color: #c4b5fd; border-style: dashed; }
+.pu-station-course-card.beyond:hover {
+  border-color: #8b5cf6;
+  box-shadow: 0 10px 22px -4px rgba(124, 58, 237, 0.14);
+}
+
+.pu-station-course-card.beyond.done { background: #fcfdfc; border-color: #bbf7d0; border-style: solid; }
+.pu-station-course-card.beyond.learning { border-color: #a78bfa; border-style: solid; }
+
+.pu-station-step-arrow.beyond { color: #7c3aed; border-color: #ddd6fe; }
+
+.pu-scard-cta.default.beyond { background: #faf5ff; border-color: #c4b5fd; color: #6d28d9; }
+.pu-scard-cta.default.beyond:hover { background: #ede9fe; border-color: #a78bfa; }
+
+/* Thẻ nhiệm vụ: gợi ý học vượt khi đã đạt mọi mức tối thiểu */
+.pu-priority-mission-card.beyond {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+  border-color: #ddd6fe;
+}
+
+.pu-priority-mission-card.beyond:hover {
+  border-color: #a78bfa;
+  box-shadow: 0 8px 24px -4px rgba(124, 58, 237, 0.14);
+}
+
+.pu-priority-mission-card.beyond .pu-pmission-indicator { background: #ede9fe; border-color: #ddd6fe; }
+.pu-priority-mission-card.beyond .pu-pmission-kicker { color: #6d28d9; }
+.pu-beyond-icon { color: #6d28d9; }
+
+/* Ma trận cấp độ */
+.pu-matrix-row.needs-attention .pu-matrix-domain-card {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  box-shadow: inset 4px 0 0 #f59e0b;
+}
+
+.pu-matrix-row.needs-attention:hover .pu-matrix-domain-card {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  box-shadow: inset 4px 0 0 #f59e0b, 0 4px 14px rgba(217, 119, 6, 0.1);
+}
+
+.pu-matrix-domain-status.attention { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.pu-matrix-meta-val.attention { color: #b45309; }
+.pu-mcard-badge.attention { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; font-weight: 800; }
+.pu-mcard-badge.beyond { background: #ede9fe; color: #6d28d9; }
+.pu-matrix-card.required-gap { background: #fffdf7; border-color: #fcd34d; }
+.pu-matrix-card.is-beyond { background: #fdfcff; border-color: #c4b5fd; border-style: dashed; }
+.pu-matrix-card.is-beyond.is-completed { background: #fcfdfc; border-color: #bbf7d0; border-style: solid; }
+
 /* ── 9. Responsive Tuning ────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .pu-path-stats-row {
-    grid-template-columns: 1fr;
-  }
-
   .pu-priority-mission-card {
     flex-direction: column;
     align-items: flex-start;
@@ -5451,5 +5512,19 @@
 
   .pu-station-step-arrow {
     display: none;
+  }
+
+  .pu-req-summary {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .pu-req-chip { border-radius: 12px; }
+
+  .pu-req-text { flex: 1 1 0; min-width: 0; }
+
+  .pu-req-status {
+    margin-left: 0;
+    flex-basis: 100%;
   }
 }
