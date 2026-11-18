@@ -8,7 +8,7 @@ const ERROR_CODE_MESSAGES = new Map<string, string>([
   ['INVALID_JOB_POSITION', 'Vị trí công việc không tồn tại hoặc không còn hoạt động.'],
   ['INVALID_MANAGER', 'Trưởng phòng phải là nhân viên đang hoạt động của tổ chức.'],
   ['PASSWORD_SAME_AS_EMAIL', 'Mật khẩu không được trùng với email.'],
-  ['CEILING_ABOVE_ORGANIZATION', 'Cấp độ áp dụng của phòng ban không được vượt mức doanh nghiệp đã thiết lập.'],
+  ['CEILING_ABOVE_ORGANIZATION', 'Mức của phòng ban không được cao hơn khóa doanh nghiệp đã có. Hãy mua khóa trước.'],
   ['ORGANIZATION_CEILING_REQUIRED', 'Hãy lưu phạm vi doanh nghiệp trước khi thiết lập phạm vi cho phòng ban.'],
   ['CEILINGS_INCOMPLETE', 'Vui lòng chọn cấp độ cho tất cả lĩnh vực.'],
   ['CATEGORY_NOT_IN_MATRIX', 'Năng lực không thuộc ma trận phạm vi năng lực.'],

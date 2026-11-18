@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
 /// <summary>
-/// Đặt thiết lập riêng cho một phòng ban (doanh nghiệp lớn). Chặn khi phạm vi phòng ban cao hơn phạm vi doanh nghiệp
-/// ở bất kỳ lĩnh vực nào; Inherit = true đưa phòng ban về kế thừa phạm vi doanh nghiệp.
+/// Đặt mức năng lực riêng cho một phòng ban, có thể cao hơn khóa doanh nghiệp đã có (đặt trước, mua sau: khóa chưa mua nằm
+/// trên lộ trình của nhân viên và bị khóa tới khi doanh nghiệp mua). Inherit = true bỏ mức riêng, nhân viên học theo chuẩn vị trí.
 /// </summary>
 public class UpdateDepartmentCeilingsUseCase : IUseCase<UpdateDepartmentCeilingsUseCaseInput, UpdateDepartmentCeilingsUseCaseOutput>
 {
@@ -41,17 +41,10 @@ public class UpdateDepartmentCeilingsUseCase : IUseCase<UpdateDepartmentCeilings
                                       && d.Status == Statuses.MasterData.Active)
             ?? throw new NotFoundException("Department not found.");
 
-        // 2. Phạm vi doanh nghiệp phải được lưu trước
-        var rows = await _context.CapabilityCeilings
-            .Where(c => c.OrganizationId == organizationId && (c.DepartmentId == null || c.DepartmentId == department.Id))
+        // 2. Mức riêng hiện có của phòng ban (toàn doanh nghiệp không có mức chọn tay: là mọi khóa đã có)
+        var deptRows = await _context.CapabilityCeilings
+            .Where(c => c.OrganizationId == organizationId && c.DepartmentId == department.Id)
             .ToListAsync();
-        var orgCeilings = rows.Where(r => r.DepartmentId == null).ToDictionary(r => r.CompetencyCategoryId, r => r.CeilingLevel);
-        if (orgCeilings.Count == 0)
-        {
-            throw new BadRequestException("Save the organization ceiling first.", "ceilings", "ORGANIZATION_CEILING_REQUIRED");
-        }
-
-        var deptRows = rows.Where(r => r.DepartmentId == department.Id).ToList();
         var oldValues = deptRows.ToDictionary(r => r.CompetencyCategoryId.ToString(), r => r.CeilingLevel);
 
         if (input.Inherit)
@@ -61,21 +54,11 @@ public class UpdateDepartmentCeilingsUseCase : IUseCase<UpdateDepartmentCeilings
         }
         else
         {
-            // The matrix returns the saved organization ceiling capped by current course access.
-            var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(organizationId);
-            var organizationLevels = matrix.Domains.ToDictionary(domain => domain.CategoryId, domain => domain.OrganizationCeiling);
-            foreach (var item in input.Ceilings)
+            // Any domain of the matrix, any level up to the platform maximum (validated); buying is a separate step.
+            var domainIds = (await _reader.LoadDomainsAsync(organizationId)).Select(domain => domain.Id).ToHashSet();
+            if (input.Ceilings.Any(item => !domainIds.Contains(item.CategoryId)))
             {
-                if (!orgCeilings.ContainsKey(item.CategoryId) || !organizationLevels.TryGetValue(item.CategoryId, out var orgLevel))
-                {
-                    throw new BadRequestException("A competency domain is not part of the ceiling matrix.", "ceilings", "CATEGORY_NOT_IN_MATRIX");
-                }
-
-                if (item.Level > orgLevel)
-                {
-                    throw new BadRequestException(
-                        "A department ceiling cannot be higher than the organization ceiling.", "ceilings", "CEILING_ABOVE_ORGANIZATION");
-                }
+                throw new BadRequestException("A competency domain is not part of the ceiling matrix.", "ceilings", "CATEGORY_NOT_IN_MATRIX");
             }
 
             var byCategory = deptRows.ToDictionary(r => r.CompetencyCategoryId);
