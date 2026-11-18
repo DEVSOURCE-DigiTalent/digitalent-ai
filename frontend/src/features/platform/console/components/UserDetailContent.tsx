@@ -418,7 +418,7 @@ export function UserDetailContent({ userId, isDrawer: _isDrawer }: UserDetailCon
 
 
               <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#334155' }}>
-                Mentor chấm bài tự luận của tổ chức dùng thử. Xem tổ chức đang phụ trách ở trang Đánh giá dùng thử.
+                Mentor chấm bài cuối cấp của nhân viên tổ chức dùng thử. Xem tổ chức đang phụ trách ở trang Mentor.
               </div>
             </div>
           ) : (

@@ -18,7 +18,6 @@ import {
   formatMoney,
   isReasonValid,
 } from '../../components/pulse-format';
-import { CompanyAvatar } from '../../components/CompanyAvatar';
 import { extractContracts } from './contracts';
 import {
   BookOpen,
@@ -26,7 +25,6 @@ import {
   CreditCard,
   ShieldAlert,
   GraduationCap,
-  Calendar,
   Layers,
   ArrowRight,
   FileCheck,
@@ -37,15 +35,9 @@ type DetailTab = 'overview' | 'people' | 'orders' | 'support';
 
 interface OrganizationDetailContentProps {
   orgId: string;
-  isDrawer?: boolean;
 }
 
-/** Mã nội bộ dạng TRIAL-<32 ký tự> không có ích khi đọc: chỉ hiện mã ngắn như DIGITALENT. */
-function readableOrgCode(code: string | null | undefined): string | null {
-  return code && code.length <= 20 ? code : null;
-}
-
-export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetailContentProps) {
+export function OrganizationDetailContent({ orgId }: OrganizationDetailContentProps) {
   useUiLanguage();
   const { data, isLoading, error } = usePlatformOrganization(orgId);
   const action = useOrganizationAction(orgId);
@@ -101,37 +93,11 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
 
   return (
     <div className="pa-org-detail-wrap">
-      {/* Hero Organization Banner (Shown on standalone page, omitted in drawer to avoid duplicate header) */}
-      {!isDrawer && (
-        <div className="pa-org-detail-banner">
-          <div className="pa-org-detail-head-left">
-            <CompanyAvatar name={o.name} size={44} />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span className="pa-org-detail-name">{o.name}</span>
-                {suspended ? (
-                  <span className="pa-tr-pill is-neutral">
-                    <span className="pa-tr-pill-dot" aria-hidden="true" />
-                    <span>Tạm ngưng</span>
-                  </span>
-                ) : o.stage === 'PAID' ? (
-                  <span className="pa-tr-pill is-ok">
-                    <span className="pa-tr-pill-dot" aria-hidden="true" />
-                    <span>Đã mua khóa</span>
-                  </span>
-                ) : (
-                  <span className="pa-tr-pill is-warn">
-                    <span className="pa-tr-pill-dot" aria-hidden="true" />
-                    <span>Đang dùng thử</span>
-                  </span>
-                )}
-              </div>
-              <div className="pa-org-detail-sub">
-                {o.ownerEmail ? `Chủ doanh nghiệp: ${o.ownerEmail}` : 'Chưa có chủ doanh nghiệp'}
-                {readableOrgCode(o.code) ? ` · Mã: ${readableOrgCode(o.code)}` : ''}
-              </div>
-            </div>
-          </div>
+      {/* Name, status, owner and code are in the page header (or the drawer header): only the suspension is repeated here. */}
+      {suspended && (
+        <div className="pa-org-detail-suspended" role="status">
+          <ShieldAlert size={14} aria-hidden="true" />
+          <span>Tổ chức đang tạm ngưng: nhân viên không đăng nhập được.</span>
         </div>
       )}
 
@@ -222,37 +188,6 @@ export function OrganizationDetailContent({ orgId, isDrawer }: OrganizationDetai
       {/* TAB 1: TỔNG QUAN & HỢP ĐỒNG */}
       {activeTab === 'overview' && (
         <div className="pa-org-detail-panel">
-          {/* Service Configuration & License Validity Info */}
-          <div className="pa-org-detail-card">
-            <div className="pa-org-detail-card-head">
-              <span className="pa-org-detail-card-title">
-                <span className="pa-org-detail-icon-box" aria-hidden="true">
-                  <Calendar size={14} />
-                </span>
-                Trạng thái tổ chức
-              </span>
-              <span style={{ fontSize: 12, color: 'var(--pa-ink-3)' }}>Đăng ký: {formatDate(o.createdAt)}</span>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
-              <div style={{ padding: '9px 12px', background: 'var(--pa-surface-sub)', borderRadius: 8, border: '1px solid var(--pa-border)' }}>
-                <span style={{ fontSize: 12, color: 'var(--pa-ink-3)', display: 'block', marginBottom: 2 }}>Trạng thái</span>
-                <strong style={{ color: suspended ? 'var(--pa-danger)' : 'var(--pa-ink)', display: 'block' }}>
-                  {suspended ? 'Đang tạm ngưng' : o.stage === 'PAID' ? 'Đã mua khóa' : 'Đang dùng thử'}
-                </strong>
-                <span style={{ fontSize: 12, color: 'var(--pa-ink-3)' }}>
-                  {suspended ? 'Nhân viên không đăng nhập được' : (readableOrgCode(o.code) ? `Mã tổ chức: ${readableOrgCode(o.code)}` : '')}
-                </span>
-              </div>
-
-              <div style={{ padding: '9px 12px', background: 'var(--pa-surface-sub)', borderRadius: 8, border: '1px solid var(--pa-border)' }}>
-                <span style={{ fontSize: 12, color: 'var(--pa-ink-3)', display: 'block', marginBottom: 2 }}>Chủ doanh nghiệp</span>
-                <strong style={{ color: 'var(--pa-ink)', display: 'block' }}>{o.ownerName || 'Chưa có chủ doanh nghiệp'}</strong>
-                <span style={{ fontSize: 12, color: 'var(--pa-ink-3)' }}>{o.ownerEmail ?? 'Chưa gán tài khoản chủ'}</span>
-              </div>
-            </div>
-          </div>
-
           <div className="pa-org-detail-card">
             <div className="pa-org-detail-card-head">
               <span className="pa-org-detail-card-title">

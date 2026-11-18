@@ -51,6 +51,22 @@ public class GetPlatformTrialsUseCase : IUseCase<GetPlatformTrialsUseCaseInput, 
             .GroupBy(a => a.OrganizationId)
             .Select(g => new { g.Key, Submitted = g.Count(), Reviewed = g.Count(a => a.ReviewedAt != null) })
             .ToDictionaryAsync(g => g.Key);
+        var waitingFinals = await WaitingFinalsAsync(context, organizationIds);
+        // After the report: what the organization bought and how many of its employees are learning.
+        var purchases = await context.CourseOrders.AsNoTracking()
+            .Where(o => organizationIds.Contains(o.OrganizationId))
+            .GroupBy(o => o.OrganizationId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.Key, g => g.Count);
+        var learners = await (
+                from enrollment in context.Enrollments.AsNoTracking()
+                join employee in context.Employees.AsNoTracking() on enrollment.EmployeeId equals employee.Id
+                where organizationIds.Contains(employee.OrganizationId)
+                select new { employee.OrganizationId, enrollment.EmployeeId })
+            .Distinct()
+            .GroupBy(x => x.OrganizationId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.Key, g => g.Count);
 
         var rank = new Dictionary<string, int>
         {
@@ -78,9 +94,16 @@ public class GetPlatformTrialsUseCase : IUseCase<GetPlatformTrialsUseCaseInput, 
                     MentorUserId = t.Trial.MentorUserId,
                     MentorName = t.Trial.MentorUserId is { } m ? mentors.GetValueOrDefault(m) : null,
                     ReportPublishedAt = t.Trial.ReportPublishedAt,
-                    Participants = employees.GetValueOrDefault(t.Trial.OrganizationId) + invitations.GetValueOrDefault(t.Trial.OrganizationId),
+                    // Someone who submitted and later left (archived profile) still counts, so it never reads "1 / 0".
+                    Participants = Math.Max(
+                        employees.GetValueOrDefault(t.Trial.OrganizationId) + invitations.GetValueOrDefault(t.Trial.OrganizationId),
+                        counts?.Submitted ?? 0),
                     Submitted = counts?.Submitted ?? 0,
                     Reviewed = counts?.Reviewed ?? 0,
+                    Converted = t.Trial.ConvertedAt != null,
+                    WaitingFinals = waitingFinals.GetValueOrDefault(t.Trial.OrganizationId),
+                    CoursesPurchased = purchases.GetValueOrDefault(t.Trial.OrganizationId),
+                    Learners = learners.GetValueOrDefault(t.Trial.OrganizationId),
                 };
             })
             .Where(item => string.IsNullOrWhiteSpace(stage) || item.Stage == stage.Trim().ToUpperInvariant())
@@ -89,4 +112,18 @@ public class GetPlatformTrialsUseCase : IUseCase<GetPlatformTrialsUseCaseInput, 
             .ThenByDescending(item => item.StartedAt)
             .ToList();
     }
+
+    /// <summary>
+    /// Course finals still waiting for a decision, per organization. In a trial organization only its mentor can
+    /// decide them (PulseReviewScope), so this is the mentor's work after the trial report.
+    /// </summary>
+    public static async Task<Dictionary<Guid, int>> WaitingFinalsAsync(IApplicationDbContext context, IReadOnlyCollection<Guid> organizationIds) =>
+        await (
+                from submission in context.CourseFinalSubmissions.AsNoTracking()
+                join enrollment in context.Enrollments.AsNoTracking() on submission.EnrollmentId equals enrollment.Id
+                join employee in context.Employees.AsNoTracking() on enrollment.EmployeeId equals employee.Id
+                where submission.Decision == null && organizationIds.Contains(employee.OrganizationId)
+                group submission by employee.OrganizationId into g
+                select new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.Key, g => g.Count);
 }

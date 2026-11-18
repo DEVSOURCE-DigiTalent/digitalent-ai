@@ -33,6 +33,13 @@ public class AssignTrialMentorUseCase : IUseCase<AssignTrialMentorUseCaseInput, 
             throw new BadRequestException("Doanh nghiệp chưa gửi yêu cầu chấm.", "mentorUserId", "TRIAL_NOT_REQUESTED");
         }
 
+        if (trial.ConvertedAt != null)
+        {
+            throw new BadRequestException("Doanh nghiệp đã chuyển sang gói chính thức, không cần mentor.", "mentorUserId", "TRIAL_CONVERTED");
+        }
+
+        // After the report a mentor can still be assigned once: the employees learn the Basic courses and only the
+        // assigned mentor grades their course finals (PulseReviewScope).
         if (trial.ReportPublishedAt != null && trial.MentorUserId != null)
         {
             throw new BadRequestException("Kết quả đã được công bố, không đổi mentor.", "mentorUserId", "TRIAL_REPORTED");
@@ -47,6 +54,15 @@ public class AssignTrialMentorUseCase : IUseCase<AssignTrialMentorUseCaseInput, 
             .FirstOrDefaultAsync()
             ?? throw new BadRequestException("Chọn một mentor đang hoạt động.", "mentorUserId", "MENTOR_INVALID");
 
+        var mentorLoad = await _context.TrialWorkspaces.CountAsync(t =>
+            t.MentorUserId == mentor.Id && t.ConvertedAt == null && t.OrganizationId != trial.OrganizationId);
+        if (mentorLoad >= TrialProgramRules.MaxOrganizationsPerMentor)
+        {
+            throw new BadRequestException(
+                $"{mentor.DisplayName} đã phụ trách đủ {TrialProgramRules.MaxOrganizationsPerMentor} doanh nghiệp. Chọn mentor khác.",
+                "mentorUserId", "MENTOR_FULL");
+        }
+
         var previous = trial.MentorUserId;
         var now = _reader.Now;
         trial.MentorUserId = mentor.Id;
@@ -55,10 +71,12 @@ public class AssignTrialMentorUseCase : IUseCase<AssignTrialMentorUseCaseInput, 
 
         var organizationName = await _reader.OrganizationNameAsync(trial.OrganizationId);
         var schedule = trial.PreferredReviewAt is { } at ? $" Giờ mong muốn chấm: {TrialProgramRules.FormatVietnamTime(at)}." : string.Empty;
+        var reported = trial.ReportPublishedAt != null;
         _reader.Notify(new[] { mentor.Id }, TrialProgramRules.NotificationMentorAssigned, "Bạn được phân công chấm bài dùng thử",
-            $"{organizationName}.{schedule}", trial.OrganizationId);
+            reported ? $"{organizationName}: chấm bài cuối cấp của nhân viên học thử." : $"{organizationName}.{schedule}", trial.OrganizationId);
         _reader.Notify(new[] { trial.OwnerUserId }, TrialProgramRules.NotificationMentorAssigned, "Đã có mentor chấm bài",
-            $"{mentor.DisplayName} sẽ chấm bài đánh giá của nhân viên.", trial.OrganizationId);
+            reported ? $"{mentor.DisplayName} sẽ chấm bài cuối cấp của nhân viên học thử." : $"{mentor.DisplayName} sẽ chấm bài đánh giá của nhân viên.",
+            trial.OrganizationId);
         await _context.SaveChangesAsync();
 
         await _audit.LogAsync("TRIAL_MENTOR_ASSIGNED", "trial_workspaces", trial.Id,

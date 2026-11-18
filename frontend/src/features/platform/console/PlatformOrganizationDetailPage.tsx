@@ -4,6 +4,8 @@ import { usePlatformOrganization } from '@/hooks/use-platform-admin';
 import { Footer, LoadError, Loading, PageHead, Pill } from '../components/pulse-ui';
 import { ORG_STATUS, STAGE_LABELS } from '../components/pulse-format';
 import { OrganizationDetailContent } from './components/OrganizationDetailContent';
+import { organizationHeaderLine } from './components/organization-header';
+import { CompanyAvatar } from '../components/CompanyAvatar';
 import { ArrowLeft } from 'lucide-react';
 
 /**
@@ -44,15 +46,18 @@ export function PlatformOrganizationDetailPage() {
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />
             Quản trị nền tảng / Hồ sơ tổ chức 360
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '6px 0 4px' }}>
-            <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', margin: 0 }}>
-              {o.name}
-            </h1>
-            <Pill tone={statusPill.tone}>{translateUi(statusPill.label)}</Pill>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '8px 0 4px' }}>
+            <CompanyAvatar name={o.name} size={44} />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', margin: 0 }}>
+                  {o.name}
+                </h1>
+                <Pill tone={statusPill.tone}>{translateUi(statusPill.label)}</Pill>
+              </div>
+              <p style={{ fontSize: 14, color: '#64748b', margin: '2px 0 0' }}>{translateUi(organizationHeaderLine(o))}</p>
+            </div>
           </div>
-          <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
-            {o.ownerEmail ? translateUi(`Chủ sở hữu: ${o.ownerEmail} · `) : ''}Gói cước, nhân sự, khóa đã mua và thao tác tạm ngưng hoặc mở lại tổ chức.
-          </p>
         </div>
 
         {back}

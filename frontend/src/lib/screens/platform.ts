@@ -24,6 +24,7 @@ export const PLATFORM_SCREENS: ScreenDef[] = [
   { id: 'PA-10', title: 'Nhật ký hoạt động', path: '/platform/audit-log', roles: ADMIN, permission: 'audit_log.read_system', priority: 'P0', aliases: ['PLT-12'] },
   // Dùng thử doanh nghiệp (docs/specs/2026-10-27-enterprise-trial-assessment.md): yêu cầu chấm, phân công mentor
   { id: 'PA-14', title: 'Đánh giá dùng thử', path: '/platform/trials', roles: ADMIN, permission: 'platform.trial.manage', priority: 'P0' },
+  { id: 'PA-17', title: 'Mentor', path: '/platform/mentors', roles: ADMIN, permission: 'platform.trial.manage', priority: 'P0' },
   { id: 'PA-15', title: 'Góp ý', path: '/platform/feedbacks', roles: ADMIN, permission: 'feedback.read_all', priority: 'P0' },
   { id: 'PA-16', title: 'Báo lỗi', path: '/platform/bug-reports', roles: ADMIN, permission: 'feedback.read_all', priority: 'P0' },
   { id: 'SHR-01', title: 'Hồ sơ của tôi', path: '/platform/account', roles: ADMIN, priority: 'P1' },

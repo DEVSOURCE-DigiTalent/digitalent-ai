@@ -191,6 +191,100 @@ public class TrialProgramFlowTests
     }
 
     [Fact]
+    public async Task After_the_report_a_mentor_can_be_assigned_and_keeps_the_waiting_course_finals()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var owner = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var mentor = await world.UserAsync("mentor@digitalent.ai");
+        var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
+        var employeeProfile = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
+        var m1f = await world.OpenForLearningAsync(employee, "M1-F");
+        await world.PassAllModulesAsync(employee, m1f.CourseId);
+        await world.SubmitFinalAsync(employee, m1f.CourseId);
+
+        // The report was published automatically (multiple choice scored by the system) and nobody was assigned.
+        world.Context.TrialWorkspaces.Add(new TrialWorkspace
+        {
+            OrganizationId = owner.OrganizationId!.Value, OwnerUserId = owner.Id, PolicyJson = "{}",
+            StartedAt = world.Clock.Now.AddDays(-3), EndsAt = world.Clock.Now.AddDays(11),
+            RequestedAt = world.Clock.Now.AddDays(-2), ReportPublishedAt = world.Clock.Now.AddDays(-1),
+        });
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+
+        var platform = await TrialAsAsync(world, "mentor@digitalent.ai", Roles.PlatformAdmin);
+        var row = (await platform.PlatformTrials.ExecuteAsync(new GetPlatformTrialsUseCaseInput())).Items.Single();
+        row.Stage.Should().Be(TrialProgramRules.StageReported);
+        row.MentorUserId.Should().BeNull();
+        row.WaitingFinals.Should().Be(1);
+        row.Converted.Should().BeFalse();
+        row.Learners.Should().Be(await world.Context.Enrollments
+            .Where(e => world.Context.Employees.Any(x => x.Id == e.EmployeeId && x.OrganizationId == owner.OrganizationId))
+            .Select(e => e.EmployeeId).Distinct().CountAsync()).And.BeGreaterThan(0);
+        (await (await TrialAsAsync(world, "mentor@digitalent.ai", Roles.Mentor)).ReviewScope.ReviewableEmployees().AnyAsync()).Should().BeFalse();
+
+        await platform.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput { OrganizationId = owner.OrganizationId!.Value, MentorUserId = mentor.Id });
+        world.Context.ChangeTracker.Clear();
+
+        var assigned = (await new GetMentorsUseCase(world.Context).ExecuteAsync(new GetMentorsUseCaseInput())).Items.Single(m => m.UserId == mentor.Id);
+        assigned.ActiveTrials.Should().Be(1);
+        assigned.WaitingFinals.Should().Be(1);
+        (await (await TrialAsAsync(world, "mentor@digitalent.ai", Roles.Mentor)).ReviewScope.ReviewableEmployees().AnyAsync(e => e.Id == employeeProfile.Id))
+            .Should().BeTrue();
+
+        // A mentor set after the report stays; a converted organization needs no mentor.
+        var again = () => platform.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput { OrganizationId = owner.OrganizationId!.Value, MentorUserId = mentor.Id });
+        (await again.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("TRIAL_REPORTED");
+        var trial = await world.Context.TrialWorkspaces.SingleAsync();
+        trial.ConvertedAt = world.Clock.Now;
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+        (await new GetMentorsUseCase(world.Context).ExecuteAsync(new GetMentorsUseCaseInput())).Items.Single(m => m.UserId == mentor.Id)
+            .ActiveTrials.Should().Be(0);
+        (await again.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("TRIAL_CONVERTED");
+    }
+
+    [Fact]
+    public async Task A_mentor_takes_at_most_five_trial_organizations()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var owner = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var mentor = await world.UserAsync("mentor@digitalent.ai");
+
+        // Five other trial organizations already with mentor@ (one converted, which no longer counts).
+        for (var i = 1; i <= 6; i++)
+        {
+            var org = new DigiTalent.Domain.Entities.Organization { Code = $"TRIAL-L{i}", Name = $"Dùng thử {i}", Status = Statuses.Organization.Active };
+            world.Context.Organizations.Add(org);
+            world.Context.TrialWorkspaces.Add(new TrialWorkspace
+            {
+                OrganizationId = org.Id, OwnerUserId = owner.Id, PolicyJson = "{}", MentorUserId = mentor.Id,
+                StartedAt = world.Clock.Now.AddDays(-3), EndsAt = world.Clock.Now.AddDays(11), RequestedAt = world.Clock.Now.AddDays(-2),
+                ConvertedAt = i == 6 ? world.Clock.Now : null,
+            });
+        }
+
+        world.Context.TrialWorkspaces.Add(new TrialWorkspace
+        {
+            OrganizationId = owner.OrganizationId!.Value, OwnerUserId = owner.Id, PolicyJson = "{}",
+            StartedAt = world.Clock.Now.AddDays(-3), EndsAt = world.Clock.Now.AddDays(11), RequestedAt = world.Clock.Now.AddDays(-2),
+        });
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+
+        var platform = await TrialAsAsync(world, "mentor@digitalent.ai", Roles.PlatformAdmin);
+        var assign = () => platform.Assign.ExecuteAsync(new AssignTrialMentorUseCaseInput { OrganizationId = owner.OrganizationId!.Value, MentorUserId = mentor.Id });
+        (await assign.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("MENTOR_FULL");
+
+        // Freeing one organization makes room again.
+        var one = await world.Context.TrialWorkspaces.FirstAsync(t => t.MentorUserId == mentor.Id && t.ConvertedAt == null);
+        one.ConvertedAt = world.Clock.Now;
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+        await assign.Should().NotThrowAsync();
+    }
+
+    [Fact]
     public async Task Mentor_sees_and_grades_regular_org_assignments_across_domains_and_levels()
     {
         using var world = await PulseTestWorld.CreateAsync();

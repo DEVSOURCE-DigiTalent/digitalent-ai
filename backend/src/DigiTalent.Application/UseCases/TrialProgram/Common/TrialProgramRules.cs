@@ -26,6 +26,9 @@ public static class TrialProgramRules
     /// <summary>Hạn làm bài xa nhất tính từ lúc gửi yêu cầu.</summary>
     public const int MaxDeadlineDays = 60;
 
+    /// <summary>A mentor grades the assignments of at most this many trial organizations (not converted) at a time.</summary>
+    public const int MaxOrganizationsPerMentor = 5;
+
     public const string StageSetup = "SETUP";
     public const string StageRequested = "REQUESTED";
     public const string StageAssigned = "ASSIGNED";

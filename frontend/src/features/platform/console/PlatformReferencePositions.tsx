@@ -9,8 +9,6 @@ import { PlatformReferencePositionsSkeleton } from './PlatformReferencePositions
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import {
   Briefcase,
-  Layers,
-  TrendingUp,
   ShieldCheck,
   RefreshCw,
   Save,
@@ -22,6 +20,7 @@ import {
   Palette,
   Cpu,
 } from 'lucide-react';
+
 
 const LEVEL_NAMES: Record<number, string> = {
   1: 'Cơ bản',
@@ -165,25 +164,6 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
   }, [levels, initial]);
 
   // Overall average across the entire matrix (30 cells)
-  const overallAvg = useMemo(() => {
-    let sum = 0;
-    let count = 0;
-    Object.values(levels).forEach((arr) => {
-      arr.forEach((val) => {
-        sum += val;
-        count += 1;
-      });
-    });
-    return count > 0 ? (sum / count).toFixed(1) : '2.0';
-  }, [levels]);
-
-  // Số ô yêu cầu mức Nâng cao (3) trên toàn ma trận
-  const totalCells = useMemo(() => Object.values(levels).reduce((n, arr) => n + arr.length, 0), [levels]);
-  const advancedCells = useMemo(
-    () => Object.values(levels).reduce((n, arr) => n + arr.filter((v) => v === 3).length, 0),
-    [levels],
-  );
-
   // Count changed cells
   const changedCount = useMemo(() => {
     let diff = 0;
@@ -222,7 +202,7 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
   return (
     <div>
       {/* 4 Core Enterprise Benchmark KPI Cards (Compact) */}
-      <div className="pa-ov-kpi-grid pa-kpi-compact" role="region" aria-label="Chỉ số tổng hợp mẫu vị trí chuẩn" style={{ marginBottom: 16 }}>
+      <div className="pa-ov-kpi-grid pa-kpi-compact pa-kpi-2" role="region" aria-label="Chỉ số tổng hợp mẫu vị trí chuẩn" style={{ marginBottom: 16 }}>
         {/* KPI 1: Chức danh chuẩn */}
         <div className="pa-ov-kpi-card is-tone-sky">
           <div className="pa-ov-kpi-top">
@@ -233,34 +213,6 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
           </div>
           <div className="pa-ov-kpi-val">{REFERENCE_POSITIONS.length}</div>
           <div className="pa-ov-kpi-sub">Giám đốc, Nhân sự, Marketing, Kinh doanh, Kế toán</div>
-        </div>
-
-        {/* KPI 2: Độ phủ năng lực */}
-        <div className="pa-ov-kpi-card is-tone-orange">
-          <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">Ô mức Nâng cao</span>
-            <div className="pa-kpi-icon-box" aria-hidden="true">
-              <Layers size={18} />
-            </div>
-          </div>
-          <div className="pa-ov-kpi-val">
-            {advancedCells} <small style={{ fontSize: 14, color: 'var(--pa-ink-3)', fontWeight: 500 }}>/ {totalCells}</small>
-          </div>
-          <div className="pa-ov-kpi-sub">ô yêu cầu mức 3 trên {TT02_DOMAINS.length} lĩnh vực</div>
-        </div>
-
-        {/* KPI 3: Kỳ vọng trung bình */}
-        <div className="pa-ov-kpi-card is-tone-amber">
-          <div className="pa-ov-kpi-top">
-            <span className="pa-ov-kpi-label">Mức trung bình</span>
-            <div className="pa-kpi-icon-box" aria-hidden="true">
-              <TrendingUp size={18} />
-            </div>
-          </div>
-          <div className="pa-ov-kpi-val">
-            {overallAvg.replace('.', ',')} <small style={{ fontSize: 14, color: 'var(--pa-ink-3)', fontWeight: 500 }}>/ 3</small>
-          </div>
-          <div className="pa-ov-kpi-sub">trên mọi vị trí và lĩnh vực</div>
         </div>
 
         {/* KPI 4: Trạng thái áp dụng & đồng bộ */}
@@ -406,36 +358,6 @@ function ReferenceMatrixView({ version, initial }: ReferenceMatrixViewProps) {
                 })}
               </tbody>
 
-              {/* Average Footprint Row */}
-              <tfoot>
-                <tr className="pa-rp-tfoot-tr">
-                  <th className="pa-rp-tfoot-domain">
-                    Trung bình
-                  </th>
-                  {REFERENCE_POSITIONS.map((pos) => {
-                    const posLevels = levels[pos.code] || [];
-                    const avgNum = posLevels.length
-                      ? posLevels.reduce((a, b) => a + b, 0) / posLevels.length
-                      : 0;
-                    const avgStr = posLevels.length ? avgNum.toFixed(1) : '0.0';
-                    const fillPercent = Math.min(100, Math.round((avgNum / 3) * 100));
-
-                    return (
-                      <td key={pos.code} className="pa-rp-tfoot-cell">
-                        <div className="pa-rp-avg-num">
-                          Mức {avgStr} <small>/ 3.0</small>
-                        </div>
-                        <div className="pa-rp-meter-bar" title={`Tỷ lệ đạt ${fillPercent}%`}>
-                          <div
-                            className="pa-rp-meter-fill"
-                            style={{ width: `${fillPercent}%` }}
-                          />
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              </tfoot>
             </table>
           </div>
         </div>

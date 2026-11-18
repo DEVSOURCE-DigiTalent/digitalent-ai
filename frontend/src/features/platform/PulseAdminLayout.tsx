@@ -29,6 +29,7 @@ import {
   CheckCheck,
   ChevronRight,
   FlaskConical,
+  GraduationCap,
   Gem,
   LayoutDashboard,
   LogOut,
@@ -36,7 +37,6 @@ import {
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
-  Plus,
   ReceiptText,
   ScrollText,
   Search,
@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import './pulse-mock.css';
 import './pulse-admin.css';
+import { trialNeedsMentor } from '@/features/trial-program/lib/trial-mentor';
 import './pulse-catalog.css';
 import './pulse-admin-shell.css';
 import './pulse-admin-polish.css';
@@ -65,7 +66,8 @@ interface QuickSearchRouteItem {
 
 const PLATFORM_ROUTE_ITEMS: readonly QuickSearchRouteItem[] = [
   { id: 'r-dash', title: 'Tổng quan', subtitle: 'Số liệu chính và việc cần xử lý', category: 'Khách hàng', path: '/platform/dashboard', icon: LayoutDashboard },
-  { id: 'r-trials', title: 'Đánh giá dùng thử', subtitle: 'Phân công mentor và theo dõi tiến độ chấm bài', category: 'Khách hàng', path: '/platform/trials', icon: FlaskConical },
+  { id: 'r-trials', title: 'Đánh giá dùng thử', subtitle: 'Tiến độ bài khảo sát của tổ chức dùng thử', category: 'Khách hàng', path: '/platform/trials', icon: FlaskConical },
+  { id: 'r-mentors', title: 'Mentor', subtitle: 'Phân công mentor chấm bài cuối cấp', category: 'Khách hàng', path: '/platform/mentors', icon: GraduationCap },
   { id: 'r-orgs', title: 'Tổ chức', subtitle: 'Trạng thái, khóa đã mua và nhân viên của từng tổ chức', category: 'Khách hàng', path: '/platform/organizations', icon: Building2 },
   { id: 'r-users', title: 'Người dùng', subtitle: 'Tra cứu, khóa và mở khóa tài khoản', category: 'Khách hàng', path: '/platform/users', icon: Users },
   { id: 'r-fw', title: 'Khung năng lực số', subtitle: '6 lĩnh vực năng lực số và các khóa học', category: 'Nội dung', path: '/platform/frameworks', icon: Gem },
@@ -89,6 +91,9 @@ interface BreadcrumbInfo {
 function getPlatformBreadcrumb(pathname: string): BreadcrumbInfo {
   if (pathname.startsWith('/platform/trials')) {
     return { groupLabel: 'Khách hàng', groupPath: '/platform/dashboard', current: 'Đánh giá dùng thử' };
+  }
+  if (pathname.startsWith('/platform/mentors')) {
+    return { groupLabel: 'Khách hàng', groupPath: '/platform/dashboard', current: 'Mentor' };
   }
   if (pathname.startsWith('/platform/organizations/')) {
     return { groupLabel: 'Khách hàng', groupPath: '/platform/organizations', current: 'Hồ sơ tổ chức' };
@@ -166,104 +171,6 @@ function formatNotifTimestamp(iso: string, language: string): string {
   const diffHours = Math.floor(diffMin / 60);
   if (diffHours < 24) return language === 'en' ? `${diffHours}h ago` : `${diffHours} giờ trước`;
   return date.toLocaleDateString(uiLocale(), { day: '2-digit', month: '2-digit' });
-}
-
-interface QuickCreateProps {
-  isOpen: boolean;
-  onToggle: () => void;
-  onClose: () => void;
-}
-
-function PlatformQuickCreateMenu({ isOpen, onToggle, onClose }: QuickCreateProps) {
-  const navigate = useNavigate();
-  const anchorRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    function onPointerDown(e: MouseEvent) {
-      if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    document.addEventListener('mousedown', onPointerDown);
-    return () => document.removeEventListener('mousedown', onPointerDown);
-  }, [isOpen, onClose]);
-
-  const actions = [
-    {
-      label: 'Tổ chức doanh nghiệp',
-      desc: 'Mở khóa học & Quản lý tổ chức',
-      icon: Building2,
-      path: '/platform/organizations',
-    },
-    {
-      label: 'Đánh giá dùng thử',
-      desc: 'Phân công & Duyệt dùng thử',
-      icon: FlaskConical,
-      path: '/platform/trials',
-    },
-    {
-      label: 'Phiên bản khóa học',
-      desc: 'Mở bản nháp hoặc tạo phiên bản mới',
-      icon: Anchor,
-      path: '/platform/versions',
-    },
-    {
-      label: 'Khung chuẩn năng lực',
-      desc: 'Thêm lĩnh vực vào khung năng lực',
-      icon: Gem,
-      path: '/platform/frameworks',
-    },
-  ];
-
-  return (
-    <div className="pa-popover-anchor" ref={anchorRef}>
-      <button
-        type="button"
-        className="pa-btn-create"
-        onClick={onToggle}
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        aria-controls="pa-quick-create-menu"
-        title={translateUi('Tạo hoặc thao tác nhanh')}
-      >
-        <Plus size={14} strokeWidth={2.4} aria-hidden="true" />
-        <span className="pa-btn-create-label">{translateUi('Tạo mới')}</span>
-      </button>
-
-      {isOpen && (
-        <div
-          id="pa-quick-create-menu"
-          role="menu"
-          aria-label={translateUi('Tạo nhanh')}
-          className="pa-menu-panel"
-        >
-          <div className="pa-menu-head">{translateUi('Tạo hoặc thao tác nhanh')}</div>
-          {actions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.path}
-                type="button"
-                role="menuitem"
-                className="pa-menu-item"
-                onClick={() => {
-                  navigate(action.path);
-                  onClose();
-                }}
-              >
-                <Icon size={15} className="pa-menu-item-icon" aria-hidden="true" />
-                <span className="pa-menu-item-copy">
-                  <span className="pa-menu-item-title">{translateUi(action.label)}</span>
-                  <span className="pa-menu-item-desc">{translateUi(action.desc)}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
 }
 
 interface NotificationMenuProps {
@@ -679,7 +586,6 @@ function PulseAdminShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readStoredSidebarState);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(location.pathname);
@@ -689,7 +595,6 @@ function PulseAdminShell() {
   if (lastPathname !== location.pathname) {
     setLastPathname(location.pathname);
     setProfileOpen(false);
-    setQuickCreateOpen(false);
     setNotifOpen(false);
     setMobileNavOpen(false);
     setSearchModalOpen(false);
@@ -698,7 +603,7 @@ function PulseAdminShell() {
   // Real pending queue badges
   const { data: trials } = usePlatformTrials();
   const pendingTrialsCount = useMemo(
-    () => (trials ?? []).filter((t) => t.stage === 'REQUESTED').length,
+    () => (trials ?? []).filter(trialNeedsMentor).length,
     [trials],
   );
 
@@ -738,7 +643,6 @@ function PulseAdminShell() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setProfileOpen(false);
-        setQuickCreateOpen(false);
         setNotifOpen(false);
         setSearchModalOpen((prev) => !prev);
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && !isEditable) {
@@ -746,7 +650,6 @@ function PulseAdminShell() {
         toggleSidebarCollapsed();
       } else if (e.key === 'Escape') {
         setProfileOpen(false);
-        setQuickCreateOpen(false);
         setNotifOpen(false);
         setMobileNavOpen(false);
       }
@@ -955,7 +858,6 @@ function PulseAdminShell() {
                 className="pa-cmd-trigger"
                 onClick={() => {
                   setProfileOpen(false);
-                  setQuickCreateOpen(false);
                   setNotifOpen(false);
                   setSearchModalOpen(true);
                 }}
@@ -972,20 +874,9 @@ function PulseAdminShell() {
             </div>
 
             <div className="pa-topbar-actions">
-              <PlatformQuickCreateMenu
-                isOpen={quickCreateOpen}
-                onToggle={() => {
-                  setNotifOpen(false);
-                  setProfileOpen(false);
-                  setQuickCreateOpen((prev) => !prev);
-                }}
-                onClose={() => setQuickCreateOpen(false)}
-              />
-
               <PlatformNotificationMenu
                 isOpen={notifOpen}
                 onToggle={() => {
-                  setQuickCreateOpen(false);
                   setProfileOpen(false);
                   setNotifOpen((prev) => !prev);
                 }}
@@ -997,7 +888,6 @@ function PulseAdminShell() {
                   type="button"
                   className="pa-user-btn is-avatar-only"
                   onClick={() => {
-                    setQuickCreateOpen(false);
                     setNotifOpen(false);
                     setProfileOpen((prev) => !prev);
                   }}
