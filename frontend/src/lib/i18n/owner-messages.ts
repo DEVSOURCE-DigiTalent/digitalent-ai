@@ -1,5 +1,111 @@
 export const ownerEnglish: Record<string, string> = Object.fromEntries(`
 Theo dõi đội ngũ|Team progress
+Làm bài & nhận kết quả|Take the test & get results
+Chuyên gia đang chấm|Expert is grading
+Hết hạn, chưa ai nộp|Closed, no submissions
+Chuyên gia DigiTalent đang chấm bài. Kết quả chính thức sẽ hiện ngay trên trang này.|A DigiTalent expert is grading the tests. Final results will appear on this page.
+Khi mọi người nộp xong hoặc hết hạn, hệ thống sẽ trả kết quả đánh giá.|Once everyone submits or the deadline passes, the system returns the assessment results.
+Đổi hạn nộp|Change deadline
+Lọc danh sách theo trạng thái|Filter the list by status
+Bấm để lọc danh sách|Click to filter the list
+Bấm lại để xem tất cả|Click again to show everyone
+Bỏ lọc|Clear filter
+Cần cho|Needed by
+Bỏ mức đã đặt|Clear set levels
+· chưa đặt|· not set
+Đã đặt|Set
+Cột phòng ban|Department column
+Tìm và chuyển giữa các phòng ban|Find and switch departments
+Mức có nhãn "Đề xuất" là gợi ý theo Thông tư 02 cho các vị trí trong phòng ban; bấm "Dùng mức đề xuất" để áp dụng nhanh.|Levels tagged "Suggested" follow Circular 02 for the positions in the department; click "Use suggested levels" to apply them.
+Chọn một phòng ban ở cột bên trái, rồi bấm vào mức cao nhất nhân viên phòng đó cần đạt ở mỗi lĩnh vực. Họ học từ Cơ bản tới mức đó. Đặt được cả cấp chưa mua: nhân viên thấy khóa trên lộ trình và học được khi doanh nghiệp mua ở phần 1.|Pick a department on the left, then click the highest level its employees must reach in each domain. They learn from Basic up to it. Levels not bought can be set too: employees see the course on their path and can learn it once the company buys it in part 1.
+Đặt mức cho phòng ban|Set department levels
+Mua khóa còn thiếu ở phần 1|Buy missing courses in part 1
+Khóa đã có dùng được ở mọi phòng ban. Cơ bản miễn phí; Trung cấp và Nâng cao mua một lần cho cả doanh nghiệp.|Owned courses are available to every department. Basic is free; Intermediate and Advanced are bought once for the whole company.
+Đủ khóa cho mọi mức phòng ban đã đặt|Enough courses for every level departments set
+Đã có trong giỏ|Already in cart
+Lĩnh vực đã đặt|Domains set
+Khóa cần mua|Courses to buy
+Mua ở phần 1|Buy in part 1
+Chưa đặt được|Cannot be set yet
+Cấp ghi "Chưa mua" chưa đặt được. Muốn dùng, hãy mua khóa ở phần|Levels marked "Not bought" cannot be set yet. To use them, buy the course in
+1. Khóa học của doanh nghiệp|1. Company courses
+Ô chưa mua (phần 1)|Course not bought (part 1)
+Đang tải khung năng lực|Loading the competency framework
+Chưa tải được khung năng lực. Vui lòng thử lại sau.|Could not load the competency framework. Please try again later.
+Phần của khung năng lực|Parts of the competency framework
+Khóa học của doanh nghiệp|Company courses
+Năng lực từng phòng ban|Levels per department
+Cách hoạt động|How it works
+Khóa doanh nghiệp đã có được dùng cho mọi phòng ban. Cơ bản miễn phí; Trung cấp và Nâng cao mua một lần cho cả doanh nghiệp.|Courses the company owns are available to every department. Basic is free; Intermediate and Advanced are bought once for the whole company.
+Tóm tắt khóa học|Course summary
+khóa đã có|courses owned
+Cơ bản miễn phí|Free Basic
+Khóa học theo lĩnh vực và cấp|Courses by domain and level
+Chưa có phòng ban nào. Tạo phòng ban để đặt mức năng lực cho từng nhóm nhân viên.|No departments yet. Create departments to set levels for each group of employees.
+Đến Nhân sự|Go to People
+Tìm phòng ban|Search departments
+Tìm phòng ban...|Search departments...
+Đã đặt mức|Level set
+Chưa đặt|Not set
+Dùng mức đề xuất|Use suggested levels
+Bỏ mức riêng|Clear own levels
+Bỏ mức riêng, nhân viên học theo chuẩn vị trí|Clear own levels; employees follow their position standards
+· theo chuẩn vị trí|· follows position standards
+Thông tư 02/2025 gợi ý mức cho 5 vị trí mẫu, dùng để chọn mức đề xuất|Circular 02/2025 suggests levels for 5 sample positions, used for the suggested levels
+Lưu để nhân viên học theo mức mới.|Save so employees learn to the new levels.
+Chưa có khóa|No course
+Cả doanh nghiệp|Whole company
+Chưa phòng ban nào|No department yet
+Dùng ở:|Used in:
+Trong giỏ|In cart
+Bấm để bỏ khỏi giỏ|Click to remove from cart
+Cần mua|Needs buying
+Mua khóa để chọn mức này|Buy the course to choose this level
+Đã gồm|Included
+Chọn mức này|Choose this level
+Đề xuất|Suggested
+Xem khóa học doanh nghiệp đã có, rồi đặt mức năng lực cần đạt cho từng phòng ban.|See the courses the company owns, then set the level each department must reach.
+Từ điển 24 chuẩn TT02|24 TT02 standards dictionary
+Mua một lần|Bought once
+Mức của phòng ban|Department level
+Khóa doanh nghiệp đã có|Courses the company owns
+Ô của một cấp|A level cell
+Chọn mức|Choose a level
+Thêm vào giỏ, mua nhiều khóa một lần|Add to cart, buy several courses at once
+Xem nội dung khóa học|See what the course covers
+Đặt chuẩn cho vị trí trong phòng ban|Set the standard of a position in the department
+Phòng ban chưa có vị trí nào. Thêm vị trí cho phòng ban ở trang Nhân sự.|The department has no position yet. Add one on the People page.
+Mức của phòng ban không được cao hơn khóa doanh nghiệp đã có. Hãy mua khóa trước.|A department level cannot be higher than the courses the company owns. Buy the course first.
+Chưa có chuẩn để so sánh|No standard to compare with
+câu đúng|correct
+Cần học thêm|Still to learn
+Để đạt chuẩn ở mọi lĩnh vực|To meet the standard in every domain
+Đã đạt chuẩn ở mọi lĩnh vực|Meets the standard in every domain
+Chưa có chuẩn|No standard
+Chuẩn hệ thống|System standard
+Chuyên gia xác nhận|Confirmed by an expert
+Nhận xét của chuyên gia|Expert comment
+Không nộp bài|Did not submit
+có kết quả|with results
+Tạm thời · tự cập nhật khi có thêm bài nộp|Provisional · updates as more tests come in
+Mức cần đạt|Required level
+Khóa nên học|Courses to take
+Đã đạt chuẩn vị trí|Meets the position standard
+Dưới chuẩn|Below standard
+Chưa có chuẩn vị trí để so sánh|No position standard to compare with
+Đặt chuẩn vị trí|Set position standards
+Chưa đạt chuẩn vị trí|Below the position standard
+Không cần thêm khóa|No course needed
+Chưa có gợi ý|No suggestion yet
+Số người ở từng mức|People at each level
+Các vị trí có chuẩn khác nhau nên không tô màu.|Positions have different standards, so levels are not coloured.
+Khóa Cơ bản|Basic course
+Khóa Trung cấp|Intermediate course
+Khóa Nâng cao|Advanced course
+Chuẩn|Standard
+Khóa cần học, lần lượt|Courses to take, in order
+Khóa cần học|Course to take
+, mức chuẩn vị trí|, position standard level
 Chưa đạt cấp nào|No level reached
 Tiếp tục đặt hạn|Continue to deadline
 Quay lại danh sách|Back to participants

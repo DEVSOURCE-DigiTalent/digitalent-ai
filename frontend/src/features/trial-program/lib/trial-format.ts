@@ -1,6 +1,9 @@
 import type { TrialStage } from '@/services/trial-program.service';
 import { uiLocale } from '@/lib/i18n';
 
+/** Chuẩn vị trí được đặt trong ma trận trần năng lực của trang Khung năng lực số. */
+export const POSITION_STANDARD_PATH = '/enterprise/setup?tab=ceilings';
+
 export const LEVEL_LABELS = ['Chưa đạt Cơ bản', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
 export const TIER_LABELS = ['', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
 

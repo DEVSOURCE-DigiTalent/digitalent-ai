@@ -1,4 +1,4 @@
-import { departmentRoleError, downloadEmployeeTemplate } from '@/features/members/utils/employee-import-helper';
+import { downloadEmployeeTemplate } from '@/features/members/utils/employee-import-helper';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import {
@@ -10,17 +10,15 @@ import {
   Plus,
   Trash2,
   Upload,
-  UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { TrialParticipantRow } from '@/services/trial-program.service';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
-import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { readParticipantFile, rowsFromCells } from '../lib/participant-file';
 import { EMPTY_ROW as EMPTY, isRowEmpty, rowError } from '../lib/participant-rows';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PAGE_SIZE = 10;
 
 interface ParticipantsEditorProps {
   rows: TrialParticipantRow[];
@@ -29,11 +27,8 @@ interface ParticipantsEditorProps {
 }
 
 /**
- * Khung giao diện mời nhân viên tham gia đánh giá đội ngũ:
- * Thiết kế chuẩn hóa cao cấp theo phong cách Quản lý Nhân sự (InviteMembersModal):
- * 1. Tab Nhập từ file Excel / CSV (kèm tải file mẫu, xem trước cấu trúc, kéo thả hoặc dán trực tiếp).
- * 2. Tab Thêm thủ công từng nhân viên.
- * 3. Bảng danh sách trực quan, hỗ trợ gán phòng ban hàng loạt và kiểm tra tính hợp lệ tức thì.
+ * Danh sách người làm bài khảo sát: gõ thẳng vào bảng (mỗi dòng một người, kiểm tra ngay),
+ * hoặc mở "Nhập từ file Excel / CSV" để kéo thả file / dán từ Excel; gán phòng ban hàng loạt.
  */
 export function ParticipantsEditor({
   rows,
@@ -66,10 +61,9 @@ export function ParticipantsEditor({
     return department ? (posData?.items ?? []).filter((item) => item.departmentId === department.id) : [];
   };
 
-  // Tabs: 'excel' | 'manual'
-  const [tab, setTab] = useState<'excel' | 'manual'>('excel');
+  const [importOpen, setImportOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const pageSize = PAGE_SIZE;
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const activePage = Math.min(page, pageCount);
   const start = (activePage - 1) * pageSize;
@@ -80,15 +74,6 @@ export function ParticipantsEditor({
   const [pastedText, setPastedText] = useState('');
   const [fileError, setFileError] = useState<string | null>(null);
   const [batchMenuOpen, setBatchMenuOpen] = useState(false);
-
-  // Manual Draft State
-  const [manualDraft, setManualDraft] = useState<TrialParticipantRow>({
-    fullName: '',
-    email: '',
-    department: allDepartments[0] || '',
-    position: positionsFor(allDepartments[0] ?? '').length === 1 ? positionsFor(allDepartments[0] ?? '')[0].name : '',
-  });
-  const [manualError, setManualError] = useState<string | null>(null);
 
   const filledRows = rows.filter((r) => !isRowEmpty(r));
   const validCount = filledRows.filter((r) => rowError(r) === null).length;
@@ -168,7 +153,8 @@ export function ParticipantsEditor({
       const combined = [...existingFilled, ...imported];
       setPage(1);
       onChange(combined);
-      toast.success(`Đã nhập thành công ${imported.length} nhân sự từ file!`);
+      setImportOpen(false);
+      toast.success(`Đã nhập ${imported.length} người từ file`);
     } catch {
       setFileError('Không thể đọc file. Vui lòng sử dụng định dạng .xlsx hoặc .csv theo mẫu.');
     }
@@ -202,69 +188,11 @@ export function ParticipantsEditor({
       onChange(combined);
       setPastedText('');
       setIsPasting(false);
-      toast.success(`Đã thêm thành công ${parsed.length} nhân sự từ dữ liệu dán!`);
+      setImportOpen(false);
+      toast.success(`Đã thêm ${parsed.length} người từ dữ liệu dán`);
     } catch {
       setFileError('Không thể phân tích dữ liệu dán. Hãy kiểm tra dấu phẩy hoặc tab giữa các cột.');
     }
-  };
-
-  // Handle manual submit
-  const handleAddManual = (e: React.FormEvent) => {
-    e.preventDefault();
-    const fullName = manualDraft.fullName.trim();
-    const email = manualDraft.email.trim().toLowerCase();
-    const department = manualDraft.department.trim();
-    const position = manualDraft.position.trim();
-
-    if (!fullName) {
-      setManualError('Vui lòng nhập họ và tên nhân viên.');
-      return;
-    }
-    if (!EMAIL_PATTERN.test(email)) {
-      setManualError('Địa chỉ email không đúng định dạng.');
-      return;
-    }
-    if (filledRows.some((r) => r.email.trim().toLowerCase() === email)) {
-      setManualError('Email này đã có trong danh sách tham gia.');
-      return;
-    }
-
-    const newRow: TrialParticipantRow = { fullName, email, department, position, role: manualDraft.role ?? 'EMPLOYEE' };
-
-    const normalizedDepartment = department.toLocaleLowerCase('vi');
-    const existingDepartment = deptData?.items.find((item) =>
-      [item.name, item.code].some((name) => name.toLocaleLowerCase('vi') === normalizedDepartment));
-    const hasManager = Boolean(existingDepartment?.managerEmployeeId || existingDepartment?.hasPendingManagerInvitation)
-      || filledRows.some((row) => row.department.trim().toLocaleLowerCase('vi') === normalizedDepartment
-        && row.role === 'MANAGER' && !rowError(row));
-    const allowedPositions = positionsFor(department);
-    const allowed = allowedPositions.length === 0 || allowedPositions.some((item) =>
-      [item.name, item.code].some((name) => departmentKey(name) === departmentKey(position)));
-    const problem = rowError(newRow) ?? departmentRoleError(newRow.role ?? 'EMPLOYEE', hasManager)
-      ?? (allowed ? null : 'Chọn vị trí công việc của phòng ban này.');
-    if (problem) {
-      setManualError(problem);
-      return;
-    }
-    setManualError(null);
-
-    // If first row is empty, replace it; otherwise append
-    const updated = isRowEmpty(rows[0] ?? EMPTY) && rows.length === 1
-      ? [newRow]
-      : [...filledRows, newRow];
-
-    setPage(Math.ceil(updated.length / pageSize));
-    onChange(updated);
-    toast.success(`Đã thêm "${fullName}" vào danh sách đánh giá!`);
-
-    // Reset draft fields but keep department
-    setManualDraft((curr) => ({
-      ...curr,
-      fullName: '',
-      email: '',
-      position: '',
-      role: 'EMPLOYEE',
-    }));
   };
 
   const onDrop = (event: DragEvent) => {
@@ -274,243 +202,127 @@ export function ParticipantsEditor({
   };
 
   return (
-    <div className="trial-participants-editor space-y-6">
-      {/* ── Top Tabs & Capacity Pill ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setTab('excel')}
-            aria-pressed={tab === 'excel'}
-            className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-              tab === 'excel'
-                ? 'bg-[#137b84] text-white shadow-2xs'
-                : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-          >
-            <FileSpreadsheet className="size-4" />{translateUi("Nhập file Excel / CSV")}</button>
-          <button
-            type="button"
-            onClick={() => setTab('manual')}
-            aria-pressed={tab === 'manual'}
-            className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-              tab === 'manual'
-                ? 'bg-[#137b84] text-white shadow-2xs'
-                : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-          >
-            <UserPlus className="size-4" />{translateUi("Thêm từng người")}</button>
-          <button
-            type="button"
-            onClick={handleDownloadTemplate}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition-all cursor-pointer"
-            title={translateUi("Tải về file CSV mẫu: Họ tên, Email, Phòng ban, Vị trí, Vai trò")}
-          >
-            <Download className="size-3.5 text-[#137b84]" />{translateUi("Tải mẫu .csv")}</button>
-        </div>
-
-        {/* Participant count */}
-        <div className="flex items-center gap-2">
-          <span
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-green-200 bg-green-50 text-xs font-bold text-green-800"
-          >
-            <span className="size-2 rounded-full bg-current animate-pulse" />
-            {filledRows.length}{translateUi(" người")}</span>
-        </div>
+    <div className="trial-participants-editor space-y-4">
+      {/* ── Nhập từ file: mở khi cần, mặc định gõ thẳng vào bảng ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setImportOpen((open) => !open)}
+          aria-expanded={importOpen}
+          className={`trial-tool-button${importOpen ? ' is-active' : ''}`}
+        >
+          <FileSpreadsheet className="size-4" aria-hidden="true" />{translateUi('Nhập từ file Excel / CSV')}</button>
+        <button
+          type="button"
+          onClick={handleDownloadTemplate}
+          className="trial-tool-button"
+          title={translateUi('File mẫu gồm: Họ tên, Email, Phòng ban, Vị trí, Vai trò')}
+        >
+          <Download className="size-4" aria-hidden="true" />{translateUi('Tải file mẫu')}</button>
       </div>
 
-      {/* ── TAB 1: EXCEL / CSV IMPORT ── */}
-      {tab === 'excel' && (
+      {importOpen && (
         <div className="space-y-3">
-
-          {/* Upload Dropzone or Paste Mode */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-              <span>{translateUi("Chọn tải file lên hoặc dán trực tiếp:")}</span>
-              <button
-                type="button"
-                onClick={() => setIsPasting(!isPasting)}
-                className="text-[#137b84] hover:underline flex items-center gap-1 cursor-pointer font-bold"
-              >
-                <FileText className="size-3.5" />
-                {isPasting ? 'Chuyển sang chọn file' : translateUi('Dán dữ liệu trực tiếp từ Excel')}
-              </button>
-            </div>
-
-            {!isPasting ? (
-              <label
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setOver(true);
+          {!isPasting ? (
+            <label
+              onDragOver={(e) => {
+                e.preventDefault();
+                setOver(true);
+              }}
+              onDragLeave={() => setOver(false)}
+              onDrop={onDrop}
+              className={`trial-import-dropzone flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer transition-all ${
+                over
+                  ? 'border-[#137b84] bg-[#137b84]/5'
+                  : 'border-slate-300 bg-slate-50/70 hover:bg-[#137b84]/5 hover:border-[#137b84]'
+              }`}
+            >
+              <div className="grid size-12 place-items-center rounded-full bg-[#137b84]/10 text-[#137b84] mb-3">
+                <Upload className="size-6" aria-hidden="true" />
+              </div>
+              <span className="text-sm font-bold text-slate-800">{translateUi('Kéo thả hoặc chọn file')}</span>
+              <span className="mt-1 text-[13px] text-slate-600">{translateUi('Excel (.xlsx) hoặc CSV, theo file mẫu')}</span>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".xlsx,.csv,.txt"
+                className="sr-only"
+                onChange={(e) => {
+                  void importFile(e.target.files?.[0]);
+                  e.target.value = '';
                 }}
-                onDragLeave={() => setOver(false)}
-                onDrop={onDrop}
-                className={`trial-import-dropzone flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-7 text-center cursor-pointer transition-all ${
-                  over
-                    ? 'border-[#137b84] bg-[#137b84]/5'
-                    : 'border-slate-300 bg-slate-50/70 hover:bg-[#137b84]/5 hover:border-[#137b84]'
-                }`}
-              >
-                <div className="grid size-12 place-items-center rounded-full bg-[#137b84]/10 text-[#137b84] mb-3">
-                  <Upload className="size-6" />
-                </div>
-                <span className="text-sm font-bold text-slate-800">{translateUi("Kéo thả danh sách hoặc chọn file")}</span>
-                <span className="mt-1 text-xs text-slate-500">{translateUi("Excel (.xlsx) hoặc CSV")}</span>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept=".xlsx,.csv,.txt"
-                  className="sr-only"
-                  onChange={(e) => {
-                    void importFile(e.target.files?.[0]);
-                    e.target.value = '';
+              />
+            </label>
+          ) : (
+            <div className="space-y-2">
+              <textarea
+                rows={4}
+                aria-label={translateUi('Dữ liệu dán từ Excel')}
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                placeholder="Dán các dòng sao chép từ Excel hoặc file CSV vào đây...&#10;Ví dụ:&#10;Nguyễn Văn An	an.nguyen@congty.vn	Kinh doanh	Chuyên viên"
+                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#137b84] focus:ring-2 focus:ring-[#137b84]/20"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPastedText('');
+                    setIsPasting(false);
                   }}
-                />
-              </label>
-            ) : (
-              <div className="space-y-2">
-                <textarea
-                  rows={4}
-                  value={pastedText}
-                  onChange={(e) => setPastedText(e.target.value)}
-                  placeholder="Dán các dòng sao chép từ Excel hoặc file CSV vào đây...&#10;Ví dụ:&#10;Nguyễn Văn An	an.nguyen@congty.vn	Kinh doanh	Chuyên viên"
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#137b84] focus:ring-2 focus:ring-[#137b84]/20"
-                />
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPastedText('');
-                      setIsPasting(false);
-                    }}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 cursor-pointer"
-                  >{translateUi("Hủy")}</button>
-                  <button
-                    type="button"
-                    onClick={handleParsePastedText}
-                    disabled={!pastedText.trim()}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-4 py-1.5 text-xs font-bold text-white disabled:opacity-40 shadow-xs cursor-pointer"
-                  >
-                    Đọc danh sách nhân viên
-                  </button>
-                </div>
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >{translateUi('Hủy')}</button>
+                <button
+                  type="button"
+                  onClick={handleParsePastedText}
+                  disabled={!pastedText.trim()}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-4 py-1.5 text-[13px] font-bold text-white disabled:opacity-40 cursor-pointer"
+                >
+                  {translateUi('Đọc danh sách nhân viên')}
+                </button>
               </div>
-            )}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsPasting(!isPasting)}
+            className="inline-flex items-center gap-1 text-[13px] font-bold text-[#137b84] hover:underline cursor-pointer"
+          >
+            <FileText className="size-3.5" aria-hidden="true" />
+            {isPasting ? translateUi('Chọn file thay vì dán') : translateUi('Dán dữ liệu trực tiếp từ Excel')}
+          </button>
 
-            {fileError && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 flex items-center gap-2">
-                <AlertCircle className="size-4 shrink-0 text-red-600" />
-                <span>{fileError}</span>
-              </div>
-            )}
-          </div>
+          {fileError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-[13px] text-red-800 flex items-center gap-2" role="alert">
+              <AlertCircle className="size-4 shrink-0 text-red-600" aria-hidden="true" />
+              <span>{fileError}</span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── TAB 2: MANUAL ENTRY FORM ── */}
-      {tab === 'manual' && (
-        <form
-          onSubmit={handleAddManual}
-          className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4"
-        >
-          <div className="grid gap-3.5 sm:grid-cols-2">
-            <div className="space-y-1">
-              <label htmlFor={`${listId}-name`} className="text-xs font-semibold text-slate-700">{translateUi("Họ và tên ")}<span className="text-red-500">*</span>
-              </label>
-              <input
-                id={`${listId}-name`}
-                placeholder="VD: Nguyễn Văn An"
-                value={manualDraft.fullName}
-                onChange={(e) => setManualDraft((c) => ({ ...c, fullName: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#137b84] focus:ring-2 focus:ring-[#137b84]/20"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor={`${listId}-email`} className="text-xs font-semibold text-slate-700">{translateUi("Email nhân viên ")}<span className="text-red-500">*</span>
-              </label>
-              <input
-                id={`${listId}-email`}
-                type="email"
-                placeholder="an.nguyen@congty.vn"
-                value={manualDraft.email}
-                onChange={(e) => setManualDraft((c) => ({ ...c, email: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#137b84] focus:ring-2 focus:ring-[#137b84]/20"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor={`${listId}-dept`} className="text-xs font-semibold text-slate-700">{translateUi("Phòng ban")}</label>
-              <input
-                id={`${listId}-dept`}
-                list={`${listId}-d`}
-                placeholder="VD: Kinh doanh, Kỹ thuật..."
-                value={manualDraft.department}
-                onChange={(e) => {
-                  const department = e.target.value;
-                  const options = positionsFor(department);
-                  setManualDraft((draft) => ({ ...draft, department, position: options.length === 1 ? options[0].name : '' }));
-                }}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#137b84] focus:ring-2 focus:ring-[#137b84]/20"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label htmlFor={`${listId}-pos`} className="text-xs font-semibold text-slate-700">{translateUi("Vị trí công việc")}</label>
-              <input
-                id={`${listId}-pos`}
-                list={`${listId}-p-manual`}
-                placeholder={translateUi("VD: Chuyên viên kinh doanh, Trưởng nhóm...")}
-                value={manualDraft.position}
-                onChange={(e) => setManualDraft((c) => ({ ...c, position: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#137b84] focus:ring-2 focus:ring-[#137b84]/20"
-              />
-            </div>
-          </div>
-
-          <OwnerFilterSelect label={translateUi('Vai trò')} value={manualDraft.role ?? 'EMPLOYEE'}
-            onChange={(role) => setManualDraft((draft) => ({ ...draft, role }))}
-            options={[{ value: 'EMPLOYEE', label: 'Nhân viên' }, { value: 'MANAGER', label: 'Trưởng phòng' }]} />
-
-          {manualError && (
-            <p className="text-xs font-medium text-red-600 flex items-center gap-1.5">
-              <AlertCircle className="size-3.5" />
-              {manualError}
-            </p>
-          )}
-
-          <div className="flex justify-end pt-1">
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#137b84] hover:bg-[#0e5f66] px-4 py-2 text-xs font-bold text-white shadow-xs cursor-pointer"
-            >
-              <Plus className="size-4" />{translateUi("Thêm vào danh sách đánh giá")}</button>
-          </div>
-        </form>
-      )}
-
-      {/* ── LIVE ASSESSMENT PARTICIPANTS TABLE ── */}
+      {/* ── Bảng danh sách: một bộ đếm duy nhất + công cụ hàng loạt ── */}
       <div className="space-y-3">
-        {/* Table Header with Stats and Batch Tools */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-slate-50 border border-slate-200 p-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-900">{translateUi("Danh sách (")}{filledRows.length} người)
-            </span>
-            <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[11px] font-bold">
-              {validCount}{translateUi(" hợp lệ")}</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5">
+          <div className="flex flex-wrap items-center gap-2 text-[13px]" aria-live="polite">
+            <strong className="font-bold text-slate-900">{filledRows.length} {translateUi('người')}</strong>
+            {filledRows.length > 0 && (
+              <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-bold">
+                {validCount}{translateUi(' hợp lệ')}</span>
+            )}
             {invalidCount > 0 && (
-              <span className="rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-[11px] font-bold">
-                {invalidCount}{translateUi(" cần bổ sung")}</span>
+              <span className="rounded-full bg-amber-100 text-amber-900 px-2.5 py-0.5 text-xs font-bold">
+                {invalidCount}{translateUi(' cần bổ sung')}</span>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             {missingDepartmentCount > 0 && allDepartments.length > 0 && (
               <div className="tp-batch-dept" ref={batchMenuRef}>
-                <button type="button" className="tp-batch-dept__trigger" aria-expanded={batchMenuOpen} onClick={() => setBatchMenuOpen((open) => !open)}>{translateUi("Gán phòng ban cho ")}{missingDepartmentCount}{translateUi(" người ")}<span aria-hidden="true">⌄</span>
+                <button type="button" className="tp-batch-dept__trigger" aria-expanded={batchMenuOpen} onClick={() => setBatchMenuOpen((open) => !open)}>{translateUi('Gán phòng ban cho ')}{missingDepartmentCount}{translateUi(' người ')}<span aria-hidden="true">⌄</span>
                 </button>
                 {batchMenuOpen && <div className="tp-batch-dept__menu">
-                  <span>{translateUi("Chọn phòng ban để gán")}</span>
+                  <span>{translateUi('Chọn phòng ban để gán')}</span>
                   {allDepartments.map((department) => <button key={department} type="button" onClick={() => handleBatchAssignDept(department)}>{department}</button>)}
                 </div>}
               </div>
@@ -520,25 +332,24 @@ export function ParticipantsEditor({
               <button
                 type="button"
                 onClick={clearAll}
-                className="rounded-lg border border-slate-200 bg-white hover:bg-red-50 hover:text-red-600 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors cursor-pointer h-[30px]"
-              >{translateUi("Xóa tất cả")}</button>
+                className="rounded-lg border border-slate-200 bg-white hover:bg-red-50 hover:text-red-700 px-2.5 py-1 text-[13px] font-medium text-slate-700 transition-colors cursor-pointer h-[30px]"
+              >{translateUi('Xóa tất cả')}</button>
             )}
           </div>
         </div>
 
-        {/* Table of Rows */}
-        <div ref={tableScrollRef} className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-slate-50 sticky top-0 z-10 text-slate-700 font-bold border-b border-slate-200">
+        <div ref={tableScrollRef} className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table className="w-full text-left border-collapse text-[13px]">
+            <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
                 <th className="py-2.5 px-3 w-8">#</th>
-                <th className="py-2.5 px-3">{translateUi("Họ và tên ")}<span className="text-red-500">*</span></th>
-                <th className="py-2.5 px-3">{translateUi("Email ")}<span className="text-red-500">*</span></th>
-                <th className="py-2.5 px-3">{translateUi("Phòng ban")}</th>
-                <th className="py-2.5 px-3">{translateUi("Vị trí công việc")}</th>
-                <th className="py-2.5 px-3">{translateUi("Vai trò")}</th>
-                <th className="py-2.5 px-3 text-center w-24">{translateUi("Trạng thái")}</th>
-                <th className="py-2.5 px-3 text-center w-10">{translateUi("Xóa")}</th>
+                <th className="py-2.5 px-3">{translateUi('Họ và tên')} <span className="text-red-600" aria-hidden="true">*</span></th>
+                <th className="py-2.5 px-3">{translateUi('Email')} <span className="text-red-600" aria-hidden="true">*</span></th>
+                <th className="py-2.5 px-3">{translateUi('Phòng ban')} <span className="text-red-600" aria-hidden="true">*</span></th>
+                <th className="py-2.5 px-3">{translateUi('Vị trí công việc')} <span className="text-red-600" aria-hidden="true">*</span></th>
+                <th className="py-2.5 px-3">{translateUi('Vai trò')}</th>
+                <th className="py-2.5 px-3 text-center w-28">{translateUi('Kiểm tra')}</th>
+                <th className="py-2.5 px-3 text-center w-10"><span className="sr-only">{translateUi('Xóa')}</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -548,21 +359,12 @@ export function ParticipantsEditor({
                 const err = empty ? null : rowError(row);
 
                 return (
-                  <tr
-                    key={idx}
-                    className={
-                      empty
-                        ? 'bg-white opacity-70 hover:opacity-100'
-                        : err
-                          ? 'bg-amber-50/50 hover:bg-amber-50'
-                          : 'bg-white hover:bg-slate-50/70'
-                    }
-                  >
-                    <td className="py-2 px-3 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
+                  <tr key={idx} className={empty ? 'bg-white' : err ? 'bg-amber-50/50' : 'bg-white hover:bg-slate-50/70'}>
+                    <td className="py-2 px-3 text-slate-500 text-xs tabular-nums">{idx + 1}</td>
                     <td className="py-1.5 px-2.5">
                       <input
                         aria-label={translateUi(`Họ và tên dòng ${idx + 1}`)}
-                        placeholder={translateUi("Họ và tên...")}
+                        placeholder={translateUi('Họ và tên')}
                         value={row.fullName}
                         onChange={(e) => updateRow(idx, { fullName: e.target.value })}
                         className="tp-participant-input font-medium"
@@ -571,16 +373,18 @@ export function ParticipantsEditor({
                     <td className="py-1.5 px-2.5">
                       <input
                         type="email"
+                        aria-label={translateUi(`Email dòng ${idx + 1}`)}
                         placeholder="email@congty.vn"
                         value={row.email}
                         onChange={(e) => updateRow(idx, { email: e.target.value })}
-                        className="tp-participant-input font-mono"
+                        className="tp-participant-input"
                       />
                     </td>
                     <td className="py-1.5 px-2.5">
                       <input
                         list={`${listId}-d`}
-                        placeholder={translateUi("Phòng ban...")}
+                        aria-label={translateUi(`Phòng ban dòng ${idx + 1}`)}
+                        placeholder={translateUi('Phòng ban')}
                         value={row.department}
                         onChange={(e) => {
                           const department = e.target.value;
@@ -593,7 +397,8 @@ export function ParticipantsEditor({
                     <td className="py-1.5 px-2.5">
                       <input
                         list={`${listId}-p-${idx}`}
-                        placeholder="Vị trí..."
+                        aria-label={translateUi(`Vị trí dòng ${idx + 1}`)}
+                        placeholder={translateUi('Vị trí')}
                         value={row.position}
                         onChange={(e) => updateRow(idx, { position: e.target.value })}
                         className="tp-participant-input"
@@ -602,22 +407,20 @@ export function ParticipantsEditor({
                     <td className="py-1.5 px-2.5">
                       <select aria-label={translateUi(`Vai trò dòng ${idx + 1}`)} value={row.role ?? 'EMPLOYEE'}
                         onChange={(event) => updateRow(idx, { role: event.target.value })}
-                        className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm">
+                        className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-[13px]">
                         {rowError(row)?.startsWith('Vai trò') && <option value={row.role}>{row.role}</option>}
                         <option value="EMPLOYEE">{translateUi('Nhân viên')}</option>
                         <option value="MANAGER">{translateUi('Trưởng phòng')}</option>
                       </select>
                     </td>
                     <td className="py-2 px-3 text-center">
-                      {empty ? (
-                        <span className="text-[10px] text-slate-400">{translateUi("Dòng trống")}</span>
-                      ) : err ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full whitespace-nowrap">
-                          {err}
+                      {empty ? null : err ? (
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                          {translateUi(err)}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full whitespace-nowrap">
-                          <CheckCircle2 className="size-3" />{translateUi(" Hợp lệ")}</span>
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                          <CheckCircle2 className="size-3.5" aria-hidden="true" />{translateUi('Hợp lệ')}</span>
                       )}
                     </td>
                     <td className="py-2 px-3 text-center">
@@ -625,9 +428,9 @@ export function ParticipantsEditor({
                         type="button"
                         onClick={() => removeRow(idx)}
                         aria-label={translateUi(`Xóa dòng ${idx + 1}`)}
-                        className="rounded p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                        className="rounded p-1.5 text-slate-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer"
                       >
-                        <Trash2 className="size-3.5" />
+                        <Trash2 className="size-4" aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -636,20 +439,8 @@ export function ParticipantsEditor({
             </tbody>
           </table>
         </div>
-        {rows.length > 0 && <nav className="tp-participant-pagination" aria-label={translateUi('Phân trang danh sách nhân viên')}>
-          <span>{start + 1}–{Math.min(start + pageSize, rows.length)} / {rows.length}</span>
-          <div>
-            <OwnerFilterSelect label={translateUi('Số nhân viên mỗi trang')} value={String(pageSize)}
-              onChange={(value) => { setPageSize(Number(value)); setPage(1); }}
-              options={[5, 10, 15, 25, 50].map((size) => ({ value: String(size), label: `${size} / trang` }))} />
-            <button type="button" disabled={activePage === 1} onClick={() => setPage(activePage - 1)}>{translateUi('Trước')}</button>
-            <strong>{activePage}/{pageCount}</strong>
-            <button type="button" disabled={activePage === pageCount} onClick={() => setPage(activePage + 1)}>{translateUi('Sau')}</button>
-          </div>
-        </nav>}
 
-        {/* Bottom Actions */}
-        <div className="flex items-center justify-between pt-1">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => {
@@ -657,11 +448,17 @@ export function ParticipantsEditor({
               setPage(Math.ceil((rows.length + 1) / pageSize));
               onChange([...rows, { ...EMPTY }]);
             }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
           >
-            <Plus className="size-3.5" />{translateUi(" Thêm dòng mới")}</button>
+            <Plus className="size-4" aria-hidden="true" />{translateUi('Thêm dòng mới')}</button>
 
-          <span className="text-xs text-slate-500">{translateUi("Tổng cộng: ")}<strong>{filledRows.length}</strong>{translateUi(" người")}</span>
+          {pageCount > 1 && <nav className="tp-participant-pagination" aria-label={translateUi('Phân trang danh sách nhân viên')}>
+            <div>
+              <button type="button" disabled={activePage === 1} onClick={() => setPage(activePage - 1)}>{translateUi('Trước')}</button>
+              <strong>{activePage}/{pageCount}</strong>
+              <button type="button" disabled={activePage === pageCount} onClick={() => setPage(activePage + 1)}>{translateUi('Sau')}</button>
+            </div>
+          </nav>}
         </div>
       </div>
 
@@ -671,9 +468,6 @@ export function ParticipantsEditor({
           <option key={d} value={d} />
         ))}
       </datalist>
-      <datalist id={`${listId}-p-manual`}>
-        {positionsFor(manualDraft.department).map((item) => <option key={item.id} value={item.name} />)}
-      </datalist>
       {rows.slice(start, start + pageSize).map((row, index) => (
         <datalist key={start + index} id={`${listId}-p-${start + index}`}>
           {positionsFor(row.department).map((item) => <option key={item.id} value={item.name} />)}
@@ -682,4 +476,3 @@ export function ParticipantsEditor({
     </div>
   );
 }
-

@@ -21,7 +21,7 @@ describe('survey results context',()=>{
   it('shows a management back link and results without a learning path for the owner',()=>{
     context.owner=true;
     render(<MemoryRouter><TrialTestPage/></MemoryRouter>);
-    expect(screen.getByRole('link',{name:'← Đánh giá đội ngũ'})).toHaveAttribute('href','/enterprise/trial');
+    expect(screen.getByRole('link',{name:'← Khảo sát năng lực số'})).toHaveAttribute('href','/enterprise/trial');
     expect(screen.getByRole('heading',{name:'Kết quả khảo sát của tôi'})).toBeInTheDocument();
     expect(screen.getByText('≥ 80%')).toBeInTheDocument();
     expect(screen.queryByRole('link',{name:'Xem lộ trình học tập'})).not.toBeInTheDocument();

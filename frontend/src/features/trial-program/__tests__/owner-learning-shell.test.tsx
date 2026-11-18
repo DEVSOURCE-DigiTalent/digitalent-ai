@@ -36,7 +36,7 @@ describe('owner taking the trial test / learning', () => {
     renderAt('/enterprise/me/path');
 
     const nav = await screen.findByRole('navigation', { name: 'Điều hướng chính' });
-    expect(within(nav).getByRole('link', { name: /Đánh giá đội ngũ/ })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /Khảo sát năng lực số/ })).toBeInTheDocument();
     expect(within(nav).getByRole('link', { name: /Tổng quan/ })).toBeInTheDocument();
     expect(await screen.findByTestId('pulse-employee-layout')).toBeInTheDocument();
   });
@@ -46,7 +46,7 @@ describe('owner taking the trial test / learning', () => {
     renderAt('/enterprise/trial/learning');
 
     const nav = await screen.findByRole('navigation', { name: 'Điều hướng chính' });
-    expect(within(nav).getByRole('link', { name: /Đánh giá đội ngũ/ })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: /Khảo sát năng lực số/ })).toBeInTheDocument();
     expect(within(nav).getByRole('link', { name: /Tổng quan/ })).toBeInTheDocument();
     expect(await screen.findByRole('status', { name: 'Làm bài đánh giá trước khi học' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Tham gia làm bài đánh giá/ })).toBeDisabled();
