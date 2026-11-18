@@ -1112,13 +1112,14 @@ function TrialsConsole({ view }: { view: 'survey' | 'mentors' }) {
                                     <div
                                       key={t.organizationId}
                                       className="pa-tr-mentor-org-line"
-                                      title={`${t.organizationName} (${t.submitted}/${t.participants} bài đã nộp)`}
+                                      title={t.organizationName}
                                     >
                                       <span className="pa-tr-org-bullet" aria-hidden="true">•</span>
                                       <span className="pa-tr-mentor-org-truncate">{t.organizationName}</span>
-                                      <span className="pa-tr-mentor-org-pct">
-                                        ({t.submitted}/{t.participants})
-                                      </span>
+                                      {/* What the mentor has to do there: end-of-level assignments waiting (the survey is not theirs). */}
+                                      {(t.waitingFinals ?? 0) > 0 && (
+                                        <span className="pa-tr-mentor-org-pct">({t.waitingFinals} bài chờ chấm)</span>
+                                      )}
                                     </div>
                                   ))}
                                   {assignedTrials.length > 2 && (
