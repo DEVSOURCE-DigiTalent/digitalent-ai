@@ -5015,6 +5015,33 @@
 .pu-matrix-card.is-beyond { background: #fdfcff; border-color: #c4b5fd; border-style: dashed; }
 .pu-matrix-card.is-beyond.is-completed { background: #fcfdfc; border-color: #bbf7d0; border-style: solid; }
 
+/* Ma trận: mọi ô của một hàng (lĩnh vực, khóa, ô trống) cao bằng hàng, nút hành động / dải đối sánh nằm sát đáy
+   để thẳng hàng. `height: 1px` trên ô bảng cho phép con `height: 100%` lấy đúng chiều cao hàng. */
+.pu-matrix-wrapper .pu-matrix-table { margin: -6px 0 0; }
+
+.pu-matrix-wrapper .pu-matrix-domain-th,
+.pu-matrix-wrapper .pu-matrix-cell-td {
+  height: 1px;
+  vertical-align: top;
+}
+
+.pu-matrix-wrapper .pu-matrix-domain-th { padding: 0 6px 0 0; }
+.pu-matrix-wrapper .pu-matrix-cell-td { padding: 0 6px; }
+
+.pu-matrix-wrapper .pu-matrix-domain-card,
+.pu-matrix-wrapper .pu-matrix-card,
+.pu-matrix-wrapper .pu-matrix-empty-cell { height: 100%; }
+
+.pu-matrix-wrapper .pu-matrix-domain-card,
+.pu-matrix-wrapper .pu-matrix-card { justify-content: flex-start; }
+
+.pu-matrix-wrapper .pu-matrix-domain-meta { margin-top: auto; }
+
+/* "Khóa …" và nhãn trạng thái cùng một dòng; nhãn chỉ xuống dòng trong cụm của mình */
+.pu-matrix-wrapper .pu-mcard-top { flex-wrap: nowrap; align-items: flex-start; }
+.pu-matrix-wrapper .pu-mcard-tier { flex-shrink: 0; white-space: nowrap; line-height: 18px; }
+.pu-matrix-wrapper .pu-mcard-badges { min-width: 0; justify-content: flex-end; }
+
 /* ── 9. Responsive Tuning ────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .pu-mindmap-timeline::before {
