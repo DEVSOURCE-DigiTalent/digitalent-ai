@@ -1,31 +1,31 @@
 .pu.manager-owner-page {
-  --po-canvas: #f6f6fc;
+  --po-canvas: #edf4f7;
   --po-surface: #fff;
-  --po-raised: #f5f4fc;
-  --po-ink: #211e3a;
-  --po-muted: #625c76;
-  --po-accent: #5845b8;
-  --po-accent-strong: #443290;
-  --po-line: #e1def1;
-  --po-tint: #eeebff;
+  --po-raised: #f0f6f8;
+  --po-ink: #102e40;
+  --po-muted: #496273;
+  --po-accent: #165b75;
+  --po-accent-strong: #0d465f;
+  --po-line: #cddfe7;
+  --po-tint: #e0eff4;
   --po-soft: var(--po-tint);
-  --po-glow: #dbd4fa;
+  --po-glow: #d3e9ef;
   --po-coral: #e8a17f;
   --po-warm: var(--po-coral);
   --po-lime: #b8eadc;
 }
 
 html[data-theme='dark'] .pu.manager-owner-page {
-  --po-canvas: #171729;
-  --po-surface: #202035;
-  --po-raised: #282641;
-  --po-ink: #f0edfc;
-  --po-muted: #bab4ce;
-  --po-accent: #b2a0fc;
-  --po-accent-strong: #d3c7ff;
-  --po-line: #b4a5fb30;
-  --po-tint: #a998ff24;
-  --po-glow: #6154a7;
+  --po-canvas: #091f30;
+  --po-surface: #102c3e;
+  --po-raised: #153548;
+  --po-ink: #e9f5fa;
+  --po-muted: #b4ceda;
+  --po-accent: #83cdde;
+  --po-accent-strong: #abdfed;
+  --po-line: #9fd4ea30;
+  --po-tint: #81cbdc24;
+  --po-glow: #205f77;
 }
 
 .pu.manager-owner-page {
@@ -33,7 +33,7 @@ html[data-theme='dark'] .pu.manager-owner-page {
   color: var(--po-ink);
   background:
     radial-gradient(ellipse 680px 460px at 94% 0, color-mix(in srgb, var(--po-glow) 65%, transparent), transparent 74%),
-    radial-gradient(ellipse 740px 540px at 0 44%, #90aef21c, transparent 72%),
+    radial-gradient(ellipse 740px 540px at 0 44%, #5daab21c, transparent 72%),
     var(--po-canvas);
 }
 
@@ -148,7 +148,7 @@ html[data-theme='dark'] .pu.manager-owner-page {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.manager-owner-page :is(.pm-panel, .pm-course, .pm-evidence, .pm-domain-card, .pu-surface, .manager-owner-panel) {
+.manager-owner-page :is(.pm-panel, .pm-evidence, .pm-domain-card, .pu-surface, .manager-owner-panel) {
   min-width: 0;
   border: 1px solid var(--po-line);
   border-radius: 20px;

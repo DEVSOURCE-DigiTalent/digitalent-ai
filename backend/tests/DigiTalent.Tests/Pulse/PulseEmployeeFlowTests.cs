@@ -9,6 +9,9 @@ using FluentAssertions;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.Common.Authorization;
+using DigiTalent.Application.UseCases.Competency.Ceilings;
+using DigiTalent.Application.UseCases.Organization.Workforce;
 using Moq;
 
 namespace DigiTalent.Tests.Pulse;
@@ -92,6 +95,48 @@ public class PulseEmployeeFlowTests
         var manager = await world.AsAsync(PulseTestWorld.ManagerEmail, Roles.Manager);
         var overview = await manager.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
         overview.Reviewer!.Role.Should().Be("Mentor DigiTalent");
+    }
+
+    [Fact]
+    public async Task DepartmentDevelopment_UsesOnlyItsOwnDomainsAndShowsConfirmedLearningWithoutInventingBaseline()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var manager = await world.EmployeeAsync(PulseTestWorld.ManagerEmail);
+        var employee = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
+        var otherOrganization = Guid.NewGuid();
+        world.Context.CompetencyCategories.Add(new CompetencyCategory
+        {
+            OrganizationId = otherOrganization, Code = "TT02_D2", Name = "Other organization's domain",
+        });
+        await world.Context.SaveChangesAsync();
+
+        var user = new Mock<ICurrentUser>();
+        user.SetupGet(u => u.IsDepartmentManager).Returns(true);
+        user.SetupGet(u => u.EmployeeId).Returns(manager.Id);
+        user.Setup(u => u.GetRequiredOrganizationId()).Returns(manager.OrganizationId);
+        var catalog = new PulseCatalogReader(world.Context);
+        var development = new GetWorkforceDevelopmentUseCase(world.Context,
+            new EmployeeScope(world.Context, user.Object), new CapabilityCeilingReader(world.Context, catalog), catalog);
+
+        var team = await development.ExecuteAsync(new GetWorkforceDevelopmentInput(manager.DepartmentId, null));
+        team.Domains.Select(d => d.Code).Should().Equal("TT02_D1", "TT02_D2", "TT02_D3", "TT02_D4", "TT02_D5", "TT02_D6");
+        team.Domains.Should().OnlyContain(d => d.CurrentCount <= team.EmployeeCount);
+
+        var person = await development.ExecuteAsync(new GetWorkforceDevelopmentInput(null, employee.Id));
+        var communication = person.Domains.Single(d => d.Code == "TT02_D2");
+        communication.Baseline.Should().BeNull();
+        communication.Current.Should().BeGreaterThan(0);
+        communication.CurrentCount.Should().Be(1);
+        communication.CurrentLevels.Basic.Should().Be(1);
+        communication.CurrentLevels.NoData.Should().Be(0);
+        foreach (var domain in team.Domains)
+        {
+            var levels = domain.CurrentLevels;
+            (levels.BelowBasic + levels.Basic + levels.Intermediate + levels.Advanced).Should().Be(domain.CurrentCount);
+            (levels.NoData + domain.CurrentCount).Should().Be(team.EmployeeCount);
+        }
+        var outsideScope = () => development.ExecuteAsync(new GetWorkforceDevelopmentInput(Guid.NewGuid(), null));
+        await outsideScope.Should().ThrowAsync<NotFoundException>();
     }
 
     [Fact]

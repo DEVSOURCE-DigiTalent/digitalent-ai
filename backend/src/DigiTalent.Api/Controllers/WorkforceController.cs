@@ -26,6 +26,17 @@ public class WorkforceController : ControllerBase
         return Ok(ApiResponse<GetWorkforceUseCaseOutput>.Ok(result));
     }
 
+    [HttpGet("development")]
+    [HasPermission(Permissions.Employee.Read)]
+    public async Task<ActionResult<ApiResponse<GetWorkforceDevelopmentOutput>>> GetDevelopment(
+        [FromQuery] Guid? departmentId,
+        [FromQuery] Guid? employeeId,
+        [FromServices] IUseCase<GetWorkforceDevelopmentInput, GetWorkforceDevelopmentOutput> useCase)
+    {
+        var result = await useCase.ExecuteAsync(new GetWorkforceDevelopmentInput(departmentId, employeeId));
+        return Ok(ApiResponse<GetWorkforceDevelopmentOutput>.Ok(result));
+    }
+
     // GET api/v1/workforce/{employeeId}
     [HttpGet("{employeeId:guid}")]
     [HasPermission(Permissions.Competency.ProfileRead)]

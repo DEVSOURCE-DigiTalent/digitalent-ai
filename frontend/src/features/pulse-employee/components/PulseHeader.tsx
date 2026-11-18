@@ -26,6 +26,7 @@ import { ROLES, normalizeRoles } from '@/lib/roles';
 import { isEnterpriseTrial } from '@/lib/navigation';
 import { useMyTrialAssessment } from '@/hooks/use-trial-program';
 import { usePulseOverview } from '@/hooks/use-pulse';
+import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { initials } from '../lib/labels';
 import { PULSE_PATHS, isExamPath } from '../lib/paths';
 import { trialGateOf, type TrialGateState } from '../lib/trial-gate';
@@ -77,6 +78,7 @@ export interface PulseHeaderProps {
 }
 
 export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
+  useUiLanguage();
   const user = useCurrentUser((s) => s.user);
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -104,10 +106,11 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
   const nav = isPreRoadmapTrial
     ? TRIAL_NAV.map((item) => (item.screenId === 'EM-T1' && myTrial?.status === 'REVIEWED' ? { ...item, label: 'Kết quả khảo sát' } : item))
     : NAV;
-  const workspaceHome = roles.includes(ROLES.OWNER)
-    ? '/enterprise/dashboard'
-    : roles.includes(ROLES.MANAGER) ? '/enterprise/team' : null;
-  const roleLabel = roles.includes(ROLES.OWNER) ? 'Chủ doanh nghiệp' : roles.includes(ROLES.MANAGER) ? 'Quản lý' : 'Nhân viên';
+  const owner = roles.includes(ROLES.OWNER);
+  const manager = !owner && roles.includes(ROLES.MANAGER);
+  const activityPath = manager ? '/enterprise/notifications' : PULSE_PATHS.activity;
+  const managementLabel = translateUi('Về không gian quản lý');
+  const roleLabel = owner ? 'Chủ doanh nghiệp' : manager ? 'Quản lý' : 'Nhân viên';
 
   useEffect(() => {
     setOpen(false);
@@ -222,6 +225,11 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
         )}
 
         <div className="pu-header-actions">
+          {manager && !isGated && (
+            <Link to="/enterprise/team" className="pu-icon-btn" aria-label={managementLabel} title={managementLabel}>
+              <BriefcaseBusiness size={18} />
+            </Link>
+          )}
           {/* Nút tìm kiếm nhanh - ẩn khi bị gate */}
           {!isGated && (
             <button
@@ -251,7 +259,7 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
           {/* Nút thông báo hoạt động - ẩn khi bị gate */}
           {!isGated && (
             <Link
-              to={PULSE_PATHS.activity}
+              to={activityPath}
               className="pu-icon-btn pu-header-bell-btn"
               aria-label={unread?.length ? `Hoạt động, ${unread.length} chưa đọc` : 'Hoạt động'}
               title="Nhật ký hoạt động"
@@ -297,9 +305,9 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
                     {(myTrial?.status !== 'NOT_STARTED' || overview?.placementTest?.hasTaken) && (
                       <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> Kết quả đánh giá đầu vào</Link>
                     )}
-                    <Link role="menuitem" to={PULSE_PATHS.activity}><Bell size={16} /> Nhật ký hoạt động</Link>
-                    {workspaceHome && (
-                      <Link role="menuitem" to={workspaceHome}><BriefcaseBusiness size={16} /> Về không gian quản lý</Link>
+                    {!manager && <Link role="menuitem" to={activityPath}><Bell size={16} /> Nhật ký hoạt động</Link>}
+                    {owner && (
+                      <Link role="menuitem" to="/enterprise/dashboard"><BriefcaseBusiness size={16} /> {managementLabel}</Link>
                     )}
                     <hr />
                     <button role="menuitem" type="button" onClick={signOut} disabled={logout.isPending}>

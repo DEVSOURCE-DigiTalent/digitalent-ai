@@ -17,13 +17,13 @@ html[data-theme='dark'] .owner-filter-table>div:first-child{background:linear-gr
 /* The dropdown is portalled to the body, so both surfaces carry the variant. */
 :is(.owner-filter-select, .owner-filter-select__menu)[data-variant='manager'] {
   --select-surface: #fff;
-  --select-text: #292541;
-  --select-muted: #686080;
-  --select-line: #ded8f1;
-  --select-accent: #5941b6;
-  --select-hover: #f5f2fc;
-  --select-selected: #ece5ff;
-  --select-ring: #8468dd30;
+  --select-text: #102e40;
+  --select-muted: #496273;
+  --select-line: #cddfe7;
+  --select-accent: #15536d;
+  --select-hover: #f0f6f8;
+  --select-selected: #e0eff4;
+  --select-ring: #4b9cb130;
 }
 .owner-filter-select[data-variant='manager'] {
   min-width: 0;
@@ -46,7 +46,7 @@ html[data-theme='dark'] .owner-filter-table>div:first-child{background:linear-gr
 .owner-filter-select__menu[data-variant='manager'] {
   border-color: var(--select-line);
   background: var(--select-surface);
-  box-shadow: 0 14px 38px #2817462e;
+  box-shadow: 0 14px 38px #102f432e;
 }
 .owner-filter-select__menu[data-variant='manager'] [role='option'] { color: var(--select-text); }
 .owner-filter-select__menu[data-variant='manager'] [role='option'] > span { min-width: 0; overflow-wrap: anywhere; }
@@ -72,13 +72,13 @@ html[data-theme='dark'] .owner-filter-table>div:first-child{background:linear-gr
   box-shadow: 0 0 0 3px var(--select-ring);
 }
 html[data-theme='dark'] :is(.owner-filter-select, .owner-filter-select__menu)[data-variant='manager'] {
-  --select-surface: #25213a;
-  --select-text: #f1ecfc;
-  --select-muted: #c0b5d9;
-  --select-line: #4a4167;
-  --select-accent: #d0c0ff;
-  --select-hover: #33294d;
-  --select-selected: #433467;
+  --select-surface: #102c3e;
+  --select-text: #e9f5fa;
+  --select-muted: #b4ceda;
+  --select-line: #376177;
+  --select-accent: #a7deec;
+  --select-hover: #153548;
+  --select-selected: #1c475a;
 }
 .owner-filter-select[data-variant='manager'].pm-department-select {
   width: 100%;
@@ -86,9 +86,9 @@ html[data-theme='dark'] :is(.owner-filter-select, .owner-filter-select__menu)[da
   height: auto;
   padding-block: 6px;
   background: #ffffff0d;
-  color: #f1ecfc;
-  border-color: #b7a4ea50;
-  --select-accent: #d0c0ff;
+  color: #e9f5fa;
+  border-color: #9ccee250;
+  --select-accent: #a7deec;
 }
 
 .owner-filter-select__icon + span { flex: 1; min-width: 0; }

@@ -52,6 +52,7 @@ export function PulseEmployeeLayout() {
   const exam = isExamPath(pathname);
   const trial = useIsEnterpriseTrial();
   const owner = useCurrentUser((s) => Boolean(s.user?.roles.includes(ROLES.OWNER)));
+  const manager = useCurrentUser((s) => Boolean(s.user?.roles.includes(ROLES.MANAGER)));
   const { data: myTrial, isLoading: isTrialLoading } = useMyTrialAssessment(trial);
   const gate = trialGateOf(myTrial, undefined, owner);
   const { data: overview } = usePulseOverview(trial && !owner && myTrial?.status === 'REVIEWED');
@@ -88,7 +89,7 @@ export function PulseEmployeeLayout() {
             <OwnerLearningShell pathname={pathname} />
           ) : (
             <div
-              className={exam ? 'pu pu-exam-mode' : shouldFocus ? 'pu pu-gate-mode' : 'pu pu-workspace'}
+              className={exam ? 'pu pu-exam-mode' : shouldFocus ? 'pu pu-gate-mode' : manager ? 'pu pu-workspace pu-manager-learning' : 'pu pu-workspace'}
               data-testid="pulse-employee-layout"
             >
               {/* 1. Header trên cùng toàn màn hình - truyền gate để Header tự tối giản */}
@@ -104,7 +105,7 @@ export function PulseEmployeeLayout() {
                     : 'pu-workspace-content'
                 }
               >
-                {!exam && !shouldFocus && <PulseSidebar trialLearning={trialLearning} />}
+                {!exam && !shouldFocus && <PulseSidebar trialLearning={trialLearning} manager={manager} />}
                 <main
                   className={
                     exam

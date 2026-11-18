@@ -9,7 +9,7 @@ interface SidebarManagerCardProps {
   onToggleCollapsed?: () => void;
 }
 
-/** Khối cuối menu bên của quản lý (mock `.side-foot`): tài khoản, phòng ban đang quản lý và tổ chức. */
+/** Phòng ban đang xem, chọn trong các phòng ban được phân công. */
 export function SidebarManagerCard({ isRail = false, onToggleCollapsed }: SidebarManagerCardProps) {
   useUiLanguage();
   const user = useCurrentUser((s) => s.user);
@@ -45,19 +45,14 @@ export function SidebarManagerCard({ isRail = false, onToggleCollapsed }: Sideba
   return (
     <div className="shrink-0 pt-2">
       <dl className="pm-side-foot" aria-label="Phạm vi quản lý">
-        <dt>Tài khoản quản lý</dt>
-        <dd>{user?.fullName ?? translateUi('Quản lý')}</dd>
-        <dt>Phòng ban đang quản lý</dt>
+        <dt>{translateUi('Phòng ban đang quản lý')}</dt>
         <dd>
           {departments.length > 1 ? (
             <OwnerFilterSelect variant="manager" className="pm-department-select"
               label="Phòng ban đang quản lý" value={department?.id ?? ''} onChange={selectDepartment}
               options={departments.map((item) => ({ value: item.id, label: item.name }))} />
           ) : departmentName}
-          {department?.headcount != null && <small>{department.headcount} nhân viên trong phòng ban</small>}
         </dd>
-        <dt>{translateUi("Tổ chức")}</dt>
-        <dd>{orgName}</dd>
       </dl>
       {toggle}
     </div>

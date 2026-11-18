@@ -7,6 +7,32 @@ import type { CourseRecommendation, SkillGapItem, SkillGapSummary } from './inte
 export type GapFilter = 'HIGH' | 'ANY' | 'NONE' | 'UNKNOWN';
 export type LearningFilter = 'OVERDUE' | 'ACTIVE' | 'NONE';
 
+export interface WorkforceDevelopmentLevelCounts {
+  belowBasic: number;
+  basic: number;
+  intermediate: number;
+  advanced: number;
+  noData: number;
+}
+
+export interface WorkforceDevelopmentDomain {
+  code: string;
+  name: string;
+  baseline: number | null;
+  current: number | null;
+  target: number | null;
+  baselineCount: number;
+  currentCount: number;
+  currentLevels?: WorkforceDevelopmentLevelCounts;
+}
+
+export interface WorkforceDevelopment {
+  employeeCount: number;
+  domains: WorkforceDevelopmentDomain[];
+}
+
+export type WorkforceDevelopmentScope = { departmentId: string } | { employeeId: string };
+
 export const BLOCKER_LABELS: Record<string, string> = {
   NO_JOB_POSITION: 'Chưa có vị trí',
   NO_ACTIVE_REQUIREMENT_SET: 'Vị trí chưa có yêu cầu',
@@ -132,6 +158,8 @@ export interface CompetencyMatrixParams {
 
 /** The workforce as the learning administrator sees it (spec LCA-08, LCA-09, OW-19). */
 export const workforceService = {
+  getDevelopment: (params: WorkforceDevelopmentScope) =>
+    apiClient.get<ApiResponse<WorkforceDevelopment>>('/workforce/development', { params }),
   getList: (params?: WorkforceListParams) => apiClient.get<ApiResponse<PagedList<WorkforceRow>>>('/workforce', { params }),
   getById: (employeeId: string) => apiClient.get<ApiResponse<EmployeeCapability>>(`/workforce/${employeeId}`),
   getMatrix: (params?: CompetencyMatrixParams) =>

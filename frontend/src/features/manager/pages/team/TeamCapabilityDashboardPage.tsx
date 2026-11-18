@@ -156,13 +156,6 @@ export function TeamCapabilityDashboardPage() {
             <Brain className="size-5 text-indigo-600" />
           </div>
           <div className="text-3xl font-black text-indigo-600">{inProgressTraining}</div>
-          <Link
-            to="/enterprise/team/training"
-            className="text-xs text-indigo-600 font-medium hover:underline inline-flex items-center gap-1"
-          >
-            <span>{translateUi("Theo dõi tiến độ")}</span>
-            <ArrowRight className="size-3" />
-          </Link>
         </div>
 
         {/* Đào tạo quá hạn */}

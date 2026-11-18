@@ -1,7 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { workforceService, type WorkforceListParams } from '../services/workforce.service';
+import { workforceService, type WorkforceDevelopmentScope, type WorkforceListParams } from '../services/workforce.service';
 
 export const WORKFORCE_KEY = ['workforce'] as const;
+
+export function useWorkforceDevelopment(scope?: WorkforceDevelopmentScope) {
+  return useQuery({
+    queryKey: [...WORKFORCE_KEY, 'development', scope],
+    queryFn: async () => (await workforceService.getDevelopment(scope!)).data.data!,
+    enabled: Boolean(scope),
+    retry: false,
+  });
+}
 
 export function useDepartmentWorkforce(departmentId?: string) {
   return useQuery({
