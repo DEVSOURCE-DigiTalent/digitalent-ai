@@ -14,6 +14,8 @@ const STAGES = [
   { key: 'submitted', label: 'Đã nộp' },
 ] as const;
 type Stage = typeof STAGES[number]['key'];
+/** Once the results are out, people who never submitted did not take part: "Không nộp" instead of "Chưa nộp". */
+const stageLabel = (key: Stage, closed: boolean) => (closed && key === 'active' ? 'Không nộp' : STAGES.find((item) => item.key === key)?.label ?? '');
 type HeatmapMenuName = 'departments' | 'stages' | 'sort';
 type SortOption = 'lowest' | 'highest' | 'name';
 const ALL_STAGES: Stage[] = STAGES.map((stage) => stage.key);
@@ -40,6 +42,7 @@ interface DepartmentRow {
 export function OwnerAssessmentHeatmap() {
   useUiLanguage();
   const { data: program, isLoading, isError } = useTrialProgram();
+  const closed = program?.stage === 'REPORTED';
   const [selectedDepartments, setSelectedDepartments] = useState<string[] | null>(null);
   const [visibleStages, setVisibleStages] = useState<Stage[]>(ALL_STAGES);
   const [sort, setSort] = useState<SortOption>('lowest');
@@ -106,8 +109,8 @@ export function OwnerAssessmentHeatmap() {
 
   return <section className="owner-heatmap" aria-labelledby="owner-heatmap-title">
     <div className="owner-heatmap__header">
-      <div className="owner-heatmap__heading"><span className="owner-heatmap__icon"><Sparkles size={19} /></span><div><span className="owner-heatmap__eyebrow">{translateUi("TỔNG QUAN ĐỘI NGŨ")}</span><h2 id="owner-heatmap-title">{translateUi("Tiến độ đánh giá")}</h2></div></div>
-      <div className="owner-heatmap__header-actions">{program && <span className="owner-heatmap__department-badge"><strong>{rows.length}</strong>{translateUi(" phòng ban")}</span>}<Link className="owner-heatmap__link" to="/enterprise/trial">{translateUi("Quản lý đợt đánh giá ")}<ArrowRight size={16} /></Link></div>
+      <div className="owner-heatmap__heading"><span className="owner-heatmap__icon"><Sparkles size={19} /></span><div><h2 id="owner-heatmap-title">{translateUi(closed ? "Kết quả tham gia" : "Tiến độ làm bài")}</h2></div></div>
+      <div className="owner-heatmap__header-actions"><Link className="owner-heatmap__link" to="/enterprise/trial">{translateUi(closed ? "Xem kết quả khảo sát " : "Mở trang khảo sát ")}<ArrowRight size={16} /></Link></div>
     </div>
 
     {isLoading ? (
@@ -123,8 +126,8 @@ export function OwnerAssessmentHeatmap() {
         </div>
         <div className="owner-heatmap__distribution">
           <div className="owner-heatmap__distribution-title"><strong>{translateUi("Hành trình tham gia")}</strong><span>{totalPeople}{translateUi(" nhân viên")}</span></div>
-          <div className="owner-heatmap__distribution-bar" role="img" aria-label={translateUi(totals.map((stage) => `${stage.label}: ${stage.count}`).join(', '))}>{totalPeople > 0 && totals.filter((stage) => stage.count > 0).map((stage) => <span key={stage.key} className={`owner-heatmap__distribution-segment owner-heatmap__distribution-segment--${stage.key}`} style={{ width: `${(stage.count / totalPeople) * 100}%` }} title={translateUi(`${stage.label}: ${stage.count}`)} />)}</div>
-          <div className="owner-heatmap__status-grid">{totals.map((stage) => <div key={stage.key} className={`owner-heatmap__status owner-heatmap__status--${stage.key}`}><span className="owner-heatmap__status-label"><i />{translateUi(stage.label)}</span><strong>{stage.count}</strong></div>)}</div>
+          <div className="owner-heatmap__distribution-bar" role="img" aria-label={translateUi(totals.map((stage) => `${stageLabel(stage.key, closed)}: ${stage.count}`).join(', '))}>{totalPeople > 0 && totals.filter((stage) => stage.count > 0).map((stage) => <span key={stage.key} className={`owner-heatmap__distribution-segment owner-heatmap__distribution-segment--${stage.key}`} style={{ width: `${(stage.count / totalPeople) * 100}%` }} title={translateUi(`${stageLabel(stage.key, closed)}: ${stage.count}`)} />)}</div>
+          <div className="owner-heatmap__status-grid">{totals.map((stage) => <div key={stage.key} className={`owner-heatmap__status owner-heatmap__status--${stage.key}`}><span className="owner-heatmap__status-label"><i />{translateUi(stageLabel(stage.key, closed))}</span><strong>{stage.count}</strong></div>)}</div>
         </div>
       </div>
 
@@ -139,7 +142,7 @@ export function OwnerAssessmentHeatmap() {
           </HeatmapMenu>
           <HeatmapMenu label={translateUi("Cột trạng thái")} name="stages" openMenu={openMenu} setOpenMenu={setOpenMenu} badge={visibleStages.length === STAGES.length ? undefined : visibleStages.length}>
             <div className="owner-heatmap__menu-heading">{translateUi("Cột hiển thị")}</div>
-            {STAGES.map((stage) => <label className="owner-heatmap__menu-choice" key={stage.key}><input type="checkbox" checked={visibleStages.includes(stage.key)} onChange={() => toggleStage(stage.key)} /><i className={`owner-heatmap__legend-dot owner-heatmap__legend-dot--${stage.key}`} /><span>{translateUi(stage.label)}</span></label>)}
+            {STAGES.map((stage) => <label className="owner-heatmap__menu-choice" key={stage.key}><input type="checkbox" checked={visibleStages.includes(stage.key)} onChange={() => toggleStage(stage.key)} /><i className={`owner-heatmap__legend-dot owner-heatmap__legend-dot--${stage.key}`} /><span>{translateUi(stageLabel(stage.key, closed))}</span></label>)}
           </HeatmapMenu>
         </div>
         <div className="owner-heatmap__sort"><span>{translateUi("Sắp xếp")}</span><HeatmapMenu label={translateUi(translateUi(SORT_OPTIONS.find((option) => option.value === sort)?.label) ?? '')} name="sort" openMenu={openMenu} setOpenMenu={setOpenMenu} variant="sort">
@@ -149,7 +152,7 @@ export function OwnerAssessmentHeatmap() {
       </div>
 
       {rows.length === 0 ? <div className="owner-heatmap__empty"><strong>{translateUi("Chưa có phòng ban trong đợt đánh giá")}</strong><span>{translateUi("Thêm nhân viên vào đợt đánh giá để theo dõi tỷ lệ nộp bài tại đây.")}</span></div> : <>
-        <div className="owner-heatmap__scroll"><table><caption className="sr-only">{translateUi("Tỷ lệ nộp bài bằng số người đã nộp chia tổng người tham gia của phòng ban.")}</caption><thead><tr><th scope="col">{translateUi("Phòng ban ")}<span>({filtered.length})</span></th><th scope="col">{translateUi("Nhân viên")}</th>{STAGES.filter((stage) => visibleStages.includes(stage.key)).map((stage) => <th scope="col" className={`owner-heatmap__column--${stage.key}`} key={stage.key}>{translateUi(stage.label)}</th>)}<th scope="col" title={translateUi("Đã nộp / tổng người tham gia")}>{translateUi("Tỷ lệ nộp")}</th></tr></thead><tbody>{shown.map((row) => <FragmentRow key={row.name} row={row} stages={visibleStages} expanded={expanded === row.name} showDetail={expanded === row.name || closing.includes(row.name)} onToggle={() => toggleExpanded(row.name)} />)}</tbody></table>{filtered.length === 0 && <div className="owner-heatmap__no-results">{translateUi("Không tìm thấy phòng ban hoặc nhân viên phù hợp.")}</div>}</div>
+        <div className="owner-heatmap__scroll"><table><caption className="sr-only">{translateUi("Tỷ lệ nộp bài bằng số người đã nộp chia tổng người tham gia của phòng ban.")}</caption><thead><tr><th scope="col">{translateUi("Phòng ban ")}<span>({filtered.length})</span></th><th scope="col">{translateUi("Nhân viên")}</th>{STAGES.filter((stage) => visibleStages.includes(stage.key)).map((stage) => <th scope="col" className={`owner-heatmap__column--${stage.key}`} key={stage.key}>{translateUi(stageLabel(stage.key, closed))}</th>)}<th scope="col" title={translateUi("Đã nộp / tổng người tham gia")}>{translateUi("Tỷ lệ nộp")}</th></tr></thead><tbody>{shown.map((row) => <FragmentRow closed={closed} key={row.name} row={row} stages={visibleStages} expanded={expanded === row.name} showDetail={expanded === row.name || closing.includes(row.name)} onToggle={() => toggleExpanded(row.name)} />)}</tbody></table>{filtered.length === 0 && <div className="owner-heatmap__no-results">{translateUi("Không tìm thấy phòng ban hoặc nhân viên phù hợp.")}</div>}</div>
         {filtered.length > 8 && <button type="button" className="owner-heatmap__more" onClick={() => setShowAll(!showAll)}>{showAll ? translateUi('Thu gọn') : translateUi(`Xem thêm ${filtered.length - 8} phòng ban`)}</button>}
       </>}
     </>}
@@ -225,7 +228,7 @@ function HeatmapMenu({ label, name, openMenu, setOpenMenu, badge, variant, child
   </div>;
 }
 
-function FragmentRow({ row, stages, expanded, showDetail, onToggle }: { row: DepartmentRow; stages: Stage[]; expanded: boolean; showDetail: boolean; onToggle: () => void }) {
+function FragmentRow({ row, stages, expanded, showDetail, onToggle, closed }: { row: DepartmentRow; stages: Stage[]; expanded: boolean; showDetail: boolean; onToggle: () => void; closed: boolean }) {
   useUiLanguage();
   return <>
     <tr className="owner-heatmap__department-row" tabIndex={0} aria-expanded={expanded} onClick={onToggle} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onToggle(); } }}>
@@ -234,11 +237,11 @@ function FragmentRow({ row, stages, expanded, showDetail, onToggle }: { row: Dep
       {STAGES.filter((stage) => stages.includes(stage.key)).map((stage) => { const count = row.counts[stage.key]; const share = row.people.length ? count / row.people.length : 0; return <td key={stage.key}><span className={`owner-heatmap__cell owner-heatmap__cell--${stage.key}`} data-strength={count === 0 ? 'none' : share >= 0.5 ? 'high' : share >= 0.25 ? 'mid' : 'low'} title={translateUi(`${count} / ${row.people.length} người`)}><b>{count}</b>{count > 0 && <small>{Math.round(share * 100)}%</small>}<i style={{ width: `${share * 100}%` }} /></span></td>; })}
       <td><div className="owner-heatmap__rate-wrap"><span className="owner-heatmap__rate" data-level={row.rate === null ? 'none' : row.rate < 50 ? 'low' : row.rate < 80 ? 'mid' : 'high'}>{row.rate === null ? '—' : `${row.rate}%`}</span><span className="owner-heatmap__rate-track"><i style={{ width: `${row.rate ?? 0}%` }} /></span></div></td>
     </tr>
-    {showDetail && <tr className="owner-heatmap__detail"><td colSpan={3 + stages.length}><DepartmentPeople row={row} open={expanded} /></td></tr>}
+    {showDetail && <tr className="owner-heatmap__detail"><td colSpan={3 + stages.length}><DepartmentPeople row={row} open={expanded} closed={closed} /></td></tr>}
   </>;
 }
 
-function DepartmentPeople({ row, open }: { row: DepartmentRow; open: boolean }) {
+function DepartmentPeople({ row, open, closed }: { row: DepartmentRow; open: boolean; closed: boolean }) {
   useUiLanguage();
   const [entered, setEntered] = useState(false);
   const [query, setQuery] = useState('');
@@ -257,7 +260,7 @@ function DepartmentPeople({ row, open }: { row: DepartmentRow; open: boolean }) 
   return <div className={`owner-heatmap__detail-motion${entered ? ' is-open' : ''}`} aria-hidden={!open}>
     <div className="owner-heatmap__detail-clip"><div className="owner-heatmap__people-panel">
       <div className="owner-heatmap__people-head"><div><span className="owner-heatmap__people-kicker">{translateUi("NHÂN SỰ PHÒNG BAN")}</span><strong>{row.name} <em>{row.people.length}</em></strong></div>{row.people.length > PEOPLE_PER_PAGE && <label className="owner-heatmap__people-search"><Search size={15} aria-hidden="true" /><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} placeholder={translateUi("Tìm nhân viên")} aria-label={translateUi(`Tìm nhân viên trong ${row.name}`)} /></label>}</div>
-      {visiblePeople.length > 0 ? <div className="owner-heatmap__people-grid">{visiblePeople.map((person) => { const stage = stageOf(person.status); return <div className="owner-heatmap__person" key={person.id}><span className="owner-heatmap__person-avatar" aria-hidden="true">{person.fullName.trim().split(/\s+/).slice(-2).map((part) => part[0]).join('').toLocaleUpperCase('vi')}</span><span className="owner-heatmap__person-name" title={translateUi(person.fullName)}>{person.fullName}</span><span className={`owner-heatmap__person-status owner-heatmap__person-status--${stage}`}>{translateUi(STAGES.find((item) => item.key === stage)?.label)}</span></div>; })}</div> : <p className="owner-heatmap__people-empty">{translateUi("Không tìm thấy nhân viên phù hợp.")}</p>}
+      {visiblePeople.length > 0 ? <div className="owner-heatmap__people-grid">{visiblePeople.map((person) => { const stage = stageOf(person.status); return <div className="owner-heatmap__person" key={person.id}><span className="owner-heatmap__person-avatar" aria-hidden="true">{person.fullName.trim().split(/\s+/).slice(-2).map((part) => part[0]).join('').toLocaleUpperCase('vi')}</span><span className="owner-heatmap__person-name" title={translateUi(person.fullName)}>{person.fullName}</span><span className={`owner-heatmap__person-status owner-heatmap__person-status--${stage}`}>{translateUi(stageLabel(stage, closed))}</span></div>; })}</div> : <p className="owner-heatmap__people-empty">{translateUi("Không tìm thấy nhân viên phù hợp.")}</p>}
       {people.length > PEOPLE_PER_PAGE && <div className="owner-heatmap__people-footer"><span>{currentPage * PEOPLE_PER_PAGE + 1}–{Math.min((currentPage + 1) * PEOPLE_PER_PAGE, people.length)} / {people.length}{translateUi(" nhân viên")}</span><div><button type="button" aria-label={translateUi(`Trang trước của ${row.name}`)} disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={16} /></button><span>{currentPage + 1} / {pages}</span><button type="button" aria-label={translateUi(`Trang sau của ${row.name}`)} disabled={currentPage >= pages - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight size={16} /></button></div></div>}
     </div></div>
   </div>;

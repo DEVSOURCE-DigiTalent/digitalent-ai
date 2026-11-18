@@ -6,14 +6,14 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
     roleName: 'Chủ doanh nghiệp',
     welcomeTitle: 'Lộ trình 5 bước Chuẩn hóa Năng lực Số',
     welcomeDescription:
-      'Hành trình triển khai: Bắt đầu từ trang Đánh giá đội ngũ để khảo sát 6 lĩnh vực số cho nhân sự, nhận diện khoảng trống năng lực thực tế của toàn đội ngũ, thiết lập phạm vi năng lực mục tiêu, trang bị khóa học và theo dõi báo cáo chu kỳ.',
+      'Hành trình triển khai: Bắt đầu từ trang Khảo sát năng lực số để khảo sát 6 lĩnh vực số cho nhân sự, nhận diện khoảng trống năng lực thực tế của toàn đội ngũ, thiết lập phạm vi năng lực mục tiêu, trang bị khóa học và theo dõi báo cáo chu kỳ.',
     steps: [
       {
         id: 'owner-step-1',
         title: 'Bước 1: Khảo sát & Đánh giá Năng lực Đội ngũ',
         description:
           'Khởi đầu quan trọng nhất: Tạo đợt đánh giá và gửi bài khảo sát 6 lĩnh vực số để đo lường năng lực thực tế ban đầu của toàn đội ngũ.',
-        badge: '1. Đánh giá đội ngũ',
+        badge: '1. Khảo sát năng lực số',
         targetSelector: '[data-tour="OW-T1"]',
         targetPosition: 'right',
         actionRoute: '/enterprise/trial',
@@ -72,8 +72,8 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
     checklist: [
       {
         id: 'task-owner-1',
-        title: '1. Đánh giá đội ngũ',
-        subtitle: 'Tạo đợt khảo sát năng lực số đầu vào cho nhân sự tại trang Đánh giá đội ngũ',
+        title: '1. Khảo sát năng lực số',
+        subtitle: 'Tạo đợt khảo sát năng lực số đầu vào cho nhân sự tại trang Khảo sát năng lực số',
         route: '/enterprise/trial',
         targetSelector: '[data-tour="OW-T1"]',
         badge: 'Ưu tiên 1',

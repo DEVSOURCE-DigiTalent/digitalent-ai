@@ -23,7 +23,7 @@ export function EmployeeLearningNeedsCard({ employee, detail = false }: { employ
       </div>
       <div className="learning-need-course"><span className="learning-need-label"><BookOpen size={14} /> Khóa học đáp ứng yêu cầu</span>{domain.courseId ? <><h4>{domain.courseTitle}</h4><div><span className="learning-need-code">{domain.courseCode} · {levelName(domain.requiredLevel)}</span><Link to={`/enterprise/courses?focus=${encodeURIComponent(domain.courseId)}`}>{translateUi("Xem khóa học ")}<ArrowRight size={15} /></Link></div></> : <p>Chưa có khóa học tương ứng trong danh mục.</p>}</div>
     </section>)}</div>}
-    {waiting && <div className="learning-needs-message"><Clock3 size={18} /><p>Chờ kết quả đánh giá tổng thể{needs.length ? ' của các lĩnh vực còn lại' : ''}.</p><Link to="/enterprise/trial">{translateUi("Đánh giá đội ngũ ")}<ArrowRight size={14} /></Link></div>}
+    {waiting && <div className="learning-needs-message"><Clock3 size={18} /><p>Chờ kết quả đánh giá tổng thể{needs.length ? ' của các lĩnh vực còn lại' : ''}.</p><Link to="/enterprise/trial">{translateUi("Khảo sát năng lực số ")}<ArrowRight size={14} /></Link></div>}
     {employee.state === 'NO_STANDARD' && <div className="learning-needs-message"><p>Thiết lập chuẩn vị trí để xác định năng lực cần bổ sung.</p><Link to="/enterprise/setup">{translateUi("Thiết lập chuẩn ")}<ArrowRight size={14} /></Link></div>}
     {employee.state === 'MET' && <div className="learning-needs-message is-met"><CheckCircle2 size={19} /><p>Đã đáp ứng chuẩn năng lực của vị trí.</p></div>}
   </article>;

@@ -26,11 +26,11 @@ function resolveActions(
     org.members.active + org.members.pending > 1 ||
     (cap?.kpis.employees ?? 0) > 0;
 
-  // Bước 1: Khởi đầu từ trang Đánh giá đội ngũ để khảo sát năng lực số ban đầu
+  // Bước 1: Khởi đầu từ trang Khảo sát năng lực số để khảo sát năng lực số ban đầu
   if (!hasAssessmentStarted) {
     return [
-      { label: 'Đánh giá đội ngũ', to: '/enterprise/trial', variant: 'filled' },
-      { label: 'Xem nội dung đánh giá', to: '/enterprise/trial', variant: 'outline' },
+      { label: 'Khảo sát năng lực số', to: '/enterprise/trial', variant: 'filled' },
+      { label: 'Xem nội dung khảo sát', to: '/enterprise/trial', variant: 'outline' },
     ];
   }
 

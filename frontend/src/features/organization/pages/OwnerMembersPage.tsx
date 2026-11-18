@@ -1,7 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, ChevronLeft, ChevronRight, Mail, Send, FlaskConical, ArrowRight, Search, X, Building2, UsersRound, BriefcaseBusiness, Sparkles } from 'lucide-react';
+import { UserPlus, ChevronLeft, ChevronRight, Mail, Send, ClipboardCheck, ArrowRight, Search, X, Building2, UsersRound, BriefcaseBusiness, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useDepartments } from '@/hooks/use-departments';
@@ -172,10 +172,10 @@ export function OwnerMembersPage() {
       <div className="members-container members-workspace py-5 pb-16">
         <section className="members-invite" aria-label={translateUi("Mời thành viên nhanh")}>
           <div className="members-invite__icon"><Sparkles size={22} /></div>
-          <div className="members-invite__copy"><span>{translateUi("THAO TÁC NHANH")}</span><h2>{translateUi("Thêm nhân sự vào tổ chức")}</h2></div>
+          <div className="members-invite__copy"><h2>{translateUi("Thêm nhân sự vào tổ chức")}</h2></div>
           <div className="members-invite__actions">
             {canInvite && <button type="button" className="members-invite__primary" onClick={() => setInviting(true)}><UserPlus size={18} />{translateUi(" Mời thành viên ")}<ArrowRight size={16} /></button>}
-            <Link to="/enterprise/trial" className="members-invite__secondary"><FlaskConical size={17} />{translateUi(" Đợt đánh giá")}</Link>
+            <Link to="/enterprise/trial" className="members-invite__secondary"><ClipboardCheck size={17} />{translateUi(" Khảo sát năng lực số")}</Link>
           </div>
         </section>
 

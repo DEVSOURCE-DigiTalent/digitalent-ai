@@ -138,7 +138,7 @@ export function OwnerCourseCatalogPage() {
         {/* ── Header ── */}
         <header className="course-catalog-header mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-bold tracking-[-0.03em] heading-gradient">{translateUi("Khóa học năng lực số")}</h1>
+            <h1 className="font-bold tracking-[-0.03em] heading-gradient">{translateUi("Khóa học")}</h1>
           </div>
           <dl className="course-catalog-stats grid grid-cols-3 gap-2 text-center">
             <Stat label={translateUi("Lĩnh vực")} value={branches.length} />
@@ -451,12 +451,12 @@ function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onS
                 <span className="course-preselected-badge mb-1.5 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs">
                   <Sparkles className="size-2.5" />{translateUi("Đã chọn từ Khung năng lực")}</span>
               )}
-              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.08em]">
-                <span className="rounded px-1.5 py-0.5" style={{ background: tone.bg, color: tone.fg }}>{level.code} · {translateUi(level.name)}</span>
-                <span style={{ color: isPreselected ? '#b45309' : 'var(--po-muted)', fontWeight: isPreselected ? 800 : undefined }}>
+              <span className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.04em]">
+                <span className="whitespace-nowrap rounded px-1.5 py-0.5" style={{ background: tone.bg, color: tone.fg }}>{level.code} · {translateUi(level.name)}</span>
+                <span className="whitespace-nowrap" style={{ color: isPreselected ? '#b45309' : 'var(--po-muted)', fontWeight: isPreselected ? 800 : undefined }}>
                   {canonicalCourseCode(course.code)}
                 </span>
-                <span className={`ml-auto rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                <span className={`ml-auto whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-bold ${
                   pricing.isFree
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     : isLicensed

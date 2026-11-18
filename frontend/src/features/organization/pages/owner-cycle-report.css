@@ -54,3 +54,5 @@
   .cycle-loading-chart .cycle-loading-copy { display: none; }
 }
 .cycle-domain-card[data-assessed="false"]>.cycle-progress { background:#f1f4f7;border-style:dashed;border-color:#cbd7df;box-shadow:none; }
+
+.cycle-page-lead { margin:6px 0 0;font-size:15px;color:#4d6a7a; }
