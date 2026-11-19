@@ -437,23 +437,18 @@ describe('PulseTodayPage', () => {
     expect(screen.getByText(/Được công nhận qua bài đánh giá trước khi học/)).toBeTruthy();
   });
 
-  it('asks a new employee to take the pre-assessment of each course first', async () => {
-    const fresh = course({
-      slotStatus: 'PRE_ASSESSMENT', finalStatus: 'NOT_STARTED', preStatus: 'REQUIRED', canStartPreAssessment: true,
-      enrollmentId: null, enrollmentStatus: null, modulesPassed: 0, progressPercent: 0,
-    });
-    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({
-      courses: [fresh], nextSteps: [fresh], stats: { ...stats, preAssessmentsOpen: 1, learningCourses: 0 },
-    })));
+  it('shows the waiting exams by name, without stat cards, next steps or course codes', async () => {
+    const waiting = course({ courseId: 'course-2', code: 'A2-F', title: 'Giao tiếp số cơ bản', slotStatus: 'IN_REVIEW' });
+    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({ courses: [course(), waiting] })));
 
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
-    expect(await screen.findByText('Bắt đầu bằng bài đánh giá đầu vào')).toBeTruthy();
-    expect(screen.getByText('Thực hiện bài đánh giá trước khi học để được miễn học lý thuyết nếu đã đạt năng lực.')).toBeTruthy();
-    const links = screen.getAllByRole('link', { name: 'Làm bài đánh giá đầu vào →' });
-    expect(links.length).toBeGreaterThan(0);
-    links.forEach((link) => expect(link.getAttribute('href')).toBe(PULSE_PATHS.preAssessment('course-1')));
-    expect(screen.queryByText(/% đã học/)).toBeNull();
+    const queue = await screen.findByRole('region', { name: 'Bài đang chờ chấm' });
+    expect(within(queue).getByRole('link', { name: /Giao tiếp số cơ bản/ })).toHaveAttribute('href', PULSE_PATHS.final('course-2'));
+    expect(screen.queryByRole('region', { name: 'Tiến độ của bạn' })).toBeNull();
+    expect(screen.queryByText('Việc nên làm tiếp')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Truy cập nhanh' })).toBeNull();
+    expect(screen.queryByText(/\bA[12]-F\b/)).toBeNull();
   });
 
   it('expands and collapses a domain to show its courses', async () => {
