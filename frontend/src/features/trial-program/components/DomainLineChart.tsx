@@ -61,15 +61,24 @@ const between = (value: number) => Number.isInteger(value)
 
 /**
  * "Kết quả theo lĩnh vực" as a line chart: the six domains on the x axis, the level (Chưa đạt → Nâng cao) on the y axis.
- * Solid teal line with dots = current average level; dashed ink line with diamonds = required level; the shortfall between
- * them is shaded amber. Hover or focus a domain for its numbers (crosshair + tooltip). The table below stays the table view.
+ * Solid teal line with dots and a soft fill below = current average level; dashed violet line with diamonds = required
+ * level (the expected level when the owner set one); the shortfall between them is shaded amber. Both lines fade along a
+ * light gradient (ends checked for colour-blind separation). Hover or focus a domain for its numbers (crosshair + tooltip).
+ * The table below stays the table view.
  */
-export function DomainLineChart({ points }: { points: DomainLinePoint[] }) {
+export function DomainLineChart({ points, targetLabel = 'Mức cần đạt' }: {
+  points: DomainLinePoint[];
+  /** "Mức cần đạt" (position standards) or "Mức mong muốn" (set by the owner). */
+  targetLabel?: string;
+}) {
   useUiLanguage();
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(760);
   const [active, setActive] = useState<number | null>(null);
-  const clipId = `trial-line-clip-${useId().replace(/:/g, '')}`;
+  const uid = useId().replace(/:/g, '');
+  const clipId = `trial-line-clip-${uid}`;
+  const paint = { current: `trial-line-current-${uid}`, area: `trial-line-area-${uid}`, target: `trial-line-target-${uid}`, gap: `trial-line-gap-${uid}` };
+  const targetShort = targetLabel === 'Mức mong muốn' ? 'Mong muốn' : 'Cần đạt';
 
   useEffect(() => {
     const element = box.current;
@@ -113,6 +122,10 @@ export function DomainLineChart({ points }: { points: DomainLinePoint[] }) {
       return index >= 0 && py < currentRun[index][1] - 0.5;
     }))
     .map((run) => `${smoothPath(run)} L${run[run.length - 1][0]},${height} L${run[0][0]},${height} Z`);
+  // Soft fill under the current curve, down to the baseline.
+  const area = currentRun.length > 1
+    ? `${smoothPath(currentRun)} L${currentRun[currentRun.length - 1][0]},${y(0)} L${currentRun[0][0]},${y(0)} Z`
+    : '';
 
   const focus = active == null ? null : points[active];
   // The tooltip sits beside the crosshair (right of it in the left half, left of it in the right half), never over a line label.
@@ -131,7 +144,7 @@ export function DomainLineChart({ points }: { points: DomainLinePoint[] }) {
     <figure className="trial-line" aria-label={translateUi('Biểu đồ mức hiện tại so với mức cần đạt theo lĩnh vực')}>
       <ul className="trial-line__legend">
         <li><i data-series="current" aria-hidden="true" />{translateUi('Mức hiện tại (trung bình)')}</li>
-        {hasTarget && <li><i data-series="target" aria-hidden="true" />{translateUi('Mức cần đạt')}</li>}
+        {hasTarget && <li><i data-series="target" aria-hidden="true" />{translateUi(targetLabel)}</li>}
         {gaps.length > 0 && <li><i data-series="gap" aria-hidden="true" />{translateUi('Còn thiếu')}</li>}
       </ul>
       <div ref={box} className="trial-line__plot" onMouseLeave={() => setActive(null)}>
@@ -148,11 +161,27 @@ export function DomainLineChart({ points }: { points: DomainLinePoint[] }) {
               {narrow ? translateUi(`LV ${point.number}`) : translateUi(point.short)}
             </text>
           ))}
-          <defs><clipPath id={clipId}><path d={above} /></clipPath></defs>
-          {gaps.map((d) => <path key={d} d={d} className="trial-line__gap" clipPath={`url(#${clipId})`} aria-hidden="true" />)}
+          {/* userSpaceOnUse: a flat line has a zero-height box, where an objectBoundingBox gradient would paint nothing. */}
+          <defs>
+            <clipPath id={clipId}><path d={above} /></clipPath>
+            <linearGradient id={paint.current} gradientUnits="userSpaceOnUse" x1={margin.left} x2={width - margin.right} y1={0} y2={0}>
+              <stop offset="0" stopColor="#0e8f86" /><stop offset="1" stopColor="#1689a8" />
+            </linearGradient>
+            <linearGradient id={paint.target} gradientUnits="userSpaceOnUse" x1={margin.left} x2={width - margin.right} y1={0} y2={0}>
+              <stop offset="0" stopColor="#7c5cf0" /><stop offset="1" stopColor="#a24ee6" />
+            </linearGradient>
+            <linearGradient id={paint.area} gradientUnits="userSpaceOnUse" x1={0} x2={0} y1={margin.top} y2={y(0)}>
+              <stop offset="0" stopColor="#1689a8" stopOpacity="0.2" /><stop offset="1" stopColor="#0e8f86" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id={paint.gap} gradientUnits="userSpaceOnUse" x1={0} x2={0} y1={margin.top} y2={y(0)}>
+              <stop offset="0" stopColor="#f59e0b" stopOpacity="0.34" /><stop offset="1" stopColor="#fb923c" stopOpacity="0.12" />
+            </linearGradient>
+          </defs>
+          {area && <path d={area} className="trial-line__area" fill={`url(#${paint.area})`} aria-hidden="true" />}
+          {gaps.map((d) => <path key={d} d={d} className="trial-line__gap" fill={`url(#${paint.gap})`} clipPath={`url(#${clipId})`} aria-hidden="true" />)}
           {active != null && <line x1={x(active)} x2={x(active)} y1={margin.top - 6} y2={y(0)} className="trial-line__crosshair" aria-hidden="true" />}
-          {hasTarget && targetRuns.map((run) => <path key={run[0][0]} d={smoothPath(run)} className="trial-line__target" aria-hidden="true" />)}
-          <path d={smoothPath(currentRun)} className="trial-line__current" pathLength={1} aria-hidden="true" />
+          {hasTarget && targetRuns.map((run) => <path key={run[0][0]} d={smoothPath(run)} className="trial-line__target" stroke={`url(#${paint.target})`} aria-hidden="true" />)}
+          <path d={smoothPath(currentRun)} className="trial-line__current" stroke={`url(#${paint.current})`} pathLength={1} aria-hidden="true" />
           {points.map((point, index) => (
             <g key={point.number} aria-hidden="true">
               {point.target != null && (
@@ -165,7 +194,7 @@ export function DomainLineChart({ points }: { points: DomainLinePoint[] }) {
           {points.map((point, index) => (
             <rect key={point.number} x={margin.left + band * index} y={0} width={band} height={height} className="trial-line__hit"
               tabIndex={0} role="img"
-              aria-label={translateUi(`Lĩnh vực ${point.number} ${point.name}: hiện tại ${decimal(point.current)}${point.target != null ? `, cần đạt ${decimal(point.target)}` : ''}`)}
+              aria-label={translateUi(`Lĩnh vực ${point.number} ${point.name}: hiện tại ${decimal(point.current)}${point.target != null ? `, ${targetShort.toLocaleLowerCase('vi')} ${decimal(point.target)}` : ''}`)}
               onMouseEnter={() => setActive(index)} onFocus={() => setActive(index)} onBlur={() => setActive(null)} />
           ))}
         </svg>
@@ -174,11 +203,11 @@ export function DomainLineChart({ points }: { points: DomainLinePoint[] }) {
             <strong>{translateUi(`Lĩnh vực ${focus.number}`)}<span>{translateUi(focus.name)}</span></strong>
             <dl>
               <div><dt><i data-series="current" />{translateUi('Hiện tại')}</dt><dd>{decimal(focus.current)} <small>{translateUi(`· gần ${nearest(focus.current)}`)}</small></dd></div>
-              {focus.target != null && <div><dt><i data-series="target" />{translateUi('Cần đạt')}</dt><dd>{decimal(focus.target)} <small>{translateUi(`· ${between(focus.target)}`)}</small></dd></div>}
+              {focus.target != null && <div><dt><i data-series="target" />{translateUi(targetShort)}</dt><dd>{decimal(focus.target)} <small>{translateUi(`· ${between(focus.target)}`)}</small></dd></div>}
             </dl>
             {focus.target != null && (
               <p data-tone={focus.target > focus.current ? 'gap' : 'met'}>
-                {translateUi(focus.target > focus.current ? `Còn thiếu ${decimal(focus.target - focus.current)} mức` : 'Đạt chuẩn trung bình')}
+                {translateUi(focus.target > focus.current ? `Còn thiếu ${decimal(focus.target - focus.current)} mức` : targetShort === 'Mong muốn' ? 'Đạt mức mong muốn' : 'Đạt chuẩn trung bình')}
               </p>
             )}
           </div>

@@ -15,9 +15,19 @@ vi.mock('@/hooks/use-trial-program', () => ({
   useResendTrialInvitation: () => ({ isPending: false, mutate: vi.fn() }),
 }));
 vi.mock('@/hooks/use-departments', () => ({ useDepartments: () => ({}) }));
+vi.mock('@/hooks/use-capability-ceilings', () => ({
+  useCapabilityCeilings: () => ({ data: { domains: [], departments: [], levels: [] } }),
+}));
+vi.mock('@/hooks/use-permission', async (original) => ({ ...(await original<typeof import('@/hooks/use-permission')>()), usePermission: () => ({ can: () => true }) }));
 vi.mock('@/hooks/use-job-positions', () => ({ useJobPositions: () => ({}) }));
 vi.mock('../components/OwnerSurveyAction', () => ({ OwnerSurveyAction: () => null }));
 afterEach(() => { cleanup(); program.current = null; });
+
+/** List → popup "Kết quả sẽ so với mức nào?" (keep the system suggestion) → deadline. */
+function goToDeadline() {
+  fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục đặt hạn' }));
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Kết quả sẽ so với mức nào?' })).getByRole('button', { name: /Dùng đề xuất của hệ thống/ }));
+}
 
 it('keeps taking the test and getting results in one last step that says what is happening', () => {
   const participant = (id: string) => ({ id, fullName: `Nhân viên ${id}`, email: `nv${id}@example.test`, status: 'SUBMITTED', addedAt: '2026-11-10T00:00:00Z' });
@@ -91,7 +101,7 @@ it('opens a separate deadline step and submits only the selected local deadline'
   render(<MemoryRouter><TrialProgramPage /></MemoryRouter>);
   const steps = screen.getByRole('navigation', { name: 'Tiến độ khảo sát' });
   expect(steps.querySelector('[aria-current="step"]')).toHaveTextContent('Chọn người làm bài');
-  fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục đặt hạn' }));
+  goToDeadline();
   expect(steps.querySelector('[aria-current="step"]')).toHaveTextContent('Đặt hạn, gửi lời mời');
   expect(screen.queryByRole('heading', { name: 'Danh sách người làm bài' })).not.toBeInTheDocument();
   const time = screen.getByRole('region', { name: 'Chọn giờ nộp bài' });
@@ -121,7 +131,7 @@ it('adds a draft row on its own page and preserves edits when navigating back', 
 
 it('blocks out-of-range time and lets a preset replace it', () => {
   render(<MemoryRouter><TrialProgramPage /></MemoryRouter>);
-  fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục đặt hạn' }));
+  goToDeadline();
   const hour = screen.getByRole('textbox', { name: 'Giờ' });
   const minute = screen.getByRole('textbox', { name: 'Phút' });
   const submitButton = screen.getByRole('button', { name: 'Gửi lời mời & bắt đầu khảo sát' });

@@ -45,21 +45,16 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); saveDepartment.mockReset(); });
 
 describe('Khung năng lực số', () => {
-  it('starts on the courses the company owns and points at what departments still need', () => {
+  it('starts on the courses the company owns, as plain tiles', () => {
     renderAt();
     expect(screen.getByRole('tab', { name: /Khóa học của doanh nghiệp/ })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('img', { name: 'Đã có 4/6 khóa' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Đặt mức/ })).toBeNull();
+    expect(screen.getByText('Đã có 4/6 khóa')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Xem khóa A1-2' })).toHaveTextContent('Dùng ở: Mọi phòng ban');
-
-    // Marketing set Advanced communication: the course to buy is flagged and the callout offers it.
-    const needed = screen.getByRole('button', { name: /Lĩnh vực 2, cấp 3: chưa mua khóa/ });
-    expect(needed).toHaveTextContent('Cần cho');
-    expect(within(needed).getByTitle('Cần cho: Marketing')).toHaveTextContent('M');
-    expect(screen.getByText('Phòng ban đang cần 1 khóa chưa mua')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Thêm cả 1 vào giỏ' }));
-    expect(screen.getByRole('region', { name: 'Thao tác khung năng lực' })).toHaveTextContent('Giỏ khóa học · 1 khóa');
-    expect(screen.getByRole('button', { name: 'Đã có trong giỏ' })).toBeDisabled();
+    // No summary block, no "Cần cho" badges: a course not bought just says so, with its price.
+    expect(screen.queryByText(/Doanh nghiệp đã có/)).toBeNull();
+    expect(screen.queryByText('Cần cho')).toBeNull();
+    expect(screen.getByRole('button', { name: /Lĩnh vực 2, cấp 3: chưa mua khóa/ })).toHaveTextContent('699.000 đ · Thêm vào giỏ');
+    expect(screen.queryByText('Mức mong muốn')).toBeNull();
   });
 
   it('opens on one click and switches to another course without waiting for an exit timer', () => {
@@ -94,56 +89,68 @@ describe('Khung năng lực số', () => {
     expect(info).toHaveBeenCalledWith('Đã bỏ chọn khóa A2-3');
   });
 
-  it('sets a department level as a range, with the suggestion marked and only the domains picked saved', async () => {
+  it('saves a department level on click, without a save bar, and can undo it', async () => {
     saveDepartment.mockResolvedValue({});
     renderAt('/enterprise/setup?tab=departments');
-    // One picker for any number of departments, with the progress and a jump to the next one.
+    // One line joined to the grid: the department picker, its state, the jump to the next department not set.
     const picker = screen.getByRole('combobox', { name: 'Chọn phòng ban' });
     expect(picker).toHaveTextContent('Kế toán');
-    expect(screen.getByText('Kế toán chưa đặt mức. Bấm vào mức cần đạt ở từng lĩnh vực.')).toBeInTheDocument();
-    expect(screen.getByText('phòng ban đã đặt mức').parentElement).toHaveTextContent('1/2 phòng ban đã đặt mức');
-    expect(screen.queryByRole('button', { name: /Phòng ban chưa đặt tiếp theo/ })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Phòng ban sau' }));
+    expect(picker.parentElement).toHaveTextContent('Chưa đặt');
+    expect(screen.queryByText('4 người')).toBeNull();
+    // Kế toán is the only department not set, and it is the one shown: nothing to jump to.
+    expect(screen.queryByRole('button', { name: /phòng ban chưa đặt/ })).toBeNull();
+    fireEvent.click(picker);
+    const marketing = screen.getByRole('option', { name: /Marketing/ });
+    expect(marketing).toHaveTextContent('Đã đặt');
+    expect(screen.getByRole('option', { name: /Kế toán/ })).toHaveTextContent('Chưa đặt');
+    fireEvent.click(marketing);
     expect(picker).toHaveTextContent('Marketing');
-    expect(screen.getByRole('button', { name: /Phòng ban chưa đặt tiếp theo/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Phòng ban chưa đặt tiếp theo/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Còn 1 phòng ban chưa đặt.*Kế toán/ }));
     expect(picker).toHaveTextContent('Kế toán');
-    expect(screen.queryByRole('button', { name: /chuẩn vị trí/i })).toBeNull();
+
     const basic = screen.getByRole('button', { name: 'Đặt mức Lĩnh vực 1: Cơ bản' });
     const intermediate = screen.getByRole('button', { name: 'Đặt mức Lĩnh vực 1: Trung cấp' });
     expect(intermediate).toHaveTextContent('Đề xuất');
 
-    fireEvent.click(intermediate);
+    await act(async () => { fireEvent.click(intermediate); });
+    expect(saveDepartment).toHaveBeenCalledWith({ departmentId: 'kt', data: { inherit: false, ceilings: [{ categoryId: 'cat-1', level: 2 }] } });
     expect(intermediate).toHaveAttribute('aria-pressed', 'true');
     expect(intermediate).toHaveTextContent('Mức cần đạt');
     expect(basic).toHaveTextContent('Đã gồm');
+    expect(screen.queryByRole('region', { name: 'Thao tác khung năng lực' })).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent('Đã lưu');
 
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' })); });
-    expect(saveDepartment).toHaveBeenCalledWith({ departmentId: 'kt', data: { inherit: false, ceilings: [{ categoryId: 'cat-1', level: 2 }] } });
+    // Undo: the department had nothing set, so it goes back to the suggestion.
+    saveDepartment.mockClear();
+    await act(async () => { fireEvent.click(within(screen.getByRole('status')).getByRole('button', { name: /Hoàn tác/ })); });
+    expect(saveDepartment).toHaveBeenCalledWith({ departmentId: 'kt', data: { inherit: true, ceilings: [] } });
+    expect(intermediate).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('sets a level whose course is not bought yet, while buying stays in the courses view', () => {
+  it('sets a level whose course is not bought yet, while buying stays in the courses view', async () => {
+    saveDepartment.mockResolvedValue({});
     renderAt('/enterprise/setup?tab=departments', (node) => <div className="enterprise-shell" data-testid="enterprise-shell">{node}</div>);
     const advanced = screen.getByRole('button', { name: 'Đặt mức Lĩnh vực 2: Nâng cao (chưa mua)' });
     expect(advanced).toHaveTextContent('Chưa mua');
-    fireEvent.click(advanced);
+    await act(async () => { fireEvent.click(advanced); });
     expect(advanced).toHaveAttribute('aria-pressed', 'true');
 
-    // The department hero counts the course to buy; the dock only saves, no cart here.
-    const toBuy = screen.getByText('Khóa cần mua').parentElement!;
-    expect(toBuy).toHaveTextContent('1');
-    const dock = screen.getByRole('region', { name: 'Thao tác khung năng lực' });
-    expect(dock.parentElement).toBe(screen.getByTestId('enterprise-shell'));
-    expect(within(dock).getByRole('button', { name: 'Lưu thay đổi' })).toBeInTheDocument();
-    expect(dock).not.toHaveTextContent('Giỏ khóa học');
-
-    fireEvent.click(within(toBuy).getByRole('button', { name: /Mua ở phần 1/ }));
+    // Buying happens in the courses view, where the cart is.
+    fireEvent.click(screen.getByRole('tab', { name: /Khóa học của doanh nghiệp/ }));
     expect(screen.getByRole('tab', { name: /Khóa học của doanh nghiệp/ })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByRole('region', { name: 'Thao tác khung năng lực' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Lĩnh vực 1, cấp 3: chưa mua khóa/ }));
     const cartDock = screen.getByRole('region', { name: 'Thao tác khung năng lực' });
+    expect(cartDock.parentElement).toBe(screen.getByTestId('enterprise-shell'));
     expect(within(cartDock).getByRole('button', { name: /Thanh toán & Ký online/ })).toBeInTheDocument();
-    expect(within(cartDock).queryByRole('button', { name: 'Lưu thay đổi' })).toBeNull();
   });
 
+  it('a failed save puts the level back and says why', async () => {
+    const error = vi.spyOn(toast, 'error');
+    saveDepartment.mockRejectedValue(new Error('offline'));
+    renderAt('/enterprise/setup?tab=departments');
+    const intermediate = screen.getByRole('button', { name: 'Đặt mức Lĩnh vực 1: Trung cấp' });
+    await act(async () => { fireEvent.click(intermediate); });
+    expect(intermediate).toHaveAttribute('aria-pressed', 'false');
+    expect(error).toHaveBeenCalledWith('Chưa lưu được mức năng lực.');
+  });
 });

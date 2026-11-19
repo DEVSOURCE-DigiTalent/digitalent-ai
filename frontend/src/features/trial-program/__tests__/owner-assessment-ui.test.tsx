@@ -76,7 +76,7 @@ describe('owner assessment interactions', () => {
     expect(table.getByText('Chưa đủ để kết luận cho cả đội')).toBeInTheDocument();
     expect(table.getByText('Tạm thời · tự cập nhật khi có thêm bài nộp')).toBeInTheDocument();
     // Without position standards there is nothing to compare: a link to set the standard instead.
-    expect(screen.getByRole('link', { name: /Cần đặt chuẩn vị trí/ })).toHaveAttribute('href', '/enterprise/setup?tab=ceilings');
+    expect(screen.getByRole('link', { name: /Đặt mức cho phòng ban/ })).toHaveAttribute('href', '/enterprise/setup?tab=departments');
   });
   it('suggests M2-A only when the position requires advanced level', () => {
     const summary = { categoryId: 'communication', number: 2, name: 'Giao tiếp', counts: [0, 0, 1, 0], average: 2, level: 2 };

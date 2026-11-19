@@ -40,7 +40,6 @@ Khóa doanh nghiệp đã có được dùng cho mọi phòng ban. Cơ bản mi�
 Tóm tắt khóa học|Course summary
 khóa đã có|courses owned
 Cơ bản miễn phí|Free Basic
-Khóa học theo lĩnh vực và cấp|Courses by domain and level
 Chưa có phòng ban nào. Tạo phòng ban để đặt mức năng lực cho từng nhóm nhân viên.|No departments yet. Create departments to set levels for each group of employees.
 Đến Nhân sự|Go to People
 Tìm phòng ban|Search departments
@@ -864,4 +863,139 @@ Mua khóa và giá|Course purchases & pricing
 Giá khóa|Course price
 Giá khóa cho cả doanh nghiệp (₫)|Course price for the organization (₫)
 Giá khóa (mua một lần cho cả doanh nghiệp) và trạng thái mở bán.|Course price (bought once per organization) and sales status.
+Mức mong muốn|Expected level
+Bạn mong muốn nhân viên đạt mức nào?|What level do you expect your employees to reach?
+Kết quả khảo sát sẽ được so với mức này. Chưa chắc thì cứ dùng đề xuất của hệ thống, đổi lúc nào cũng được ở Khung năng lực số.|Survey results are compared with this level. Not sure yet? Use the system suggestion; you can change it any time in the digital competency framework.
+Đường nét đứt trên biểu đồ kết quả|The dashed line on the results chart
+Đích lộ trình học của từng nhân viên|The end of each employee's learning path
+Nhân viên vẫn làm bài trong lúc bạn đặt|Employees keep taking the test while you decide
+Mức mong muốn dùng ở đâu|Where the expected level is used
+Lưu & xem tiến độ làm bài|Save & see test progress
+Giữ như cũ|Keep as is
+Theo đề xuất của hệ thống|System suggestion
+Một mức cho cả doanh nghiệp|One level for the whole company
+Mức riêng từng phòng ban|A level per department
+Dễ nhất|Easiest
+Mỗi người theo chuẩn vị trí của mình. Không cần thiết lập.|Everyone follows their own position standard. Nothing to set up.
+Ai cũng như nhau, không phân biệt phòng ban.|The same for everyone, whatever the department.
+Cần có phòng ban trước.|Create departments first.
+Cách đặt mức mong muốn|How to set the expected level
+Lưu mức mong muốn|Save expected level
+Đã lưu mức mong muốn.|Expected level saved.
+Chưa lưu được mức mong muốn.|Could not save the expected level.
+Doanh nghiệp chưa có phòng ban nào.|The company has no department yet.
+Hệ thống so mỗi người với chuẩn vị trí của họ theo Thông tư 02/2025, nên hai người khác vị trí có thể cần mức khác nhau. Mức cao nhất các vị trí trong doanh nghiệp đang cần:|The system compares each person with their position standard (Circular 02/2025), so two people in different positions may need different levels. Highest level the company's positions need:
+Chọn mức mọi nhân viên cần đạt ở từng lĩnh vực. Đã điền sẵn mức phần lớn nhân viên cần theo chuẩn vị trí.|Choose the level every employee should reach in each domain. Prefilled with the level most employees need by their position standard.
+Mức mọi nhân viên cần đạt ở từng lĩnh vực.|The level every employee should reach in each domain.
+Dùng lại đề xuất|Use the suggestion again
+Tìm phòng ban…|Search departments…
+Chỉ phòng chưa xong|Only unfinished departments
+Điền đề xuất vào ô còn trống|Fill empty cells with the suggestion
+Không có phòng ban phù hợp|No matching department
+Đã đủ|Complete
+Dùng đề xuất cho|Use the suggestion for
+Trang phòng ban|Department pages
+Kết quả được so với|Results are compared with
+một mức mong muốn cho cả doanh nghiệp|one expected level for the whole company
+mức mong muốn của từng phòng ban|each department's expected level
+chuẩn vị trí của từng người (đề xuất của hệ thống)|each person's position standard (system suggestion)
+ · bạn chưa đặt mức mong muốn| · you have not set an expected level
+Đặt mức mong muốn|Set expected level
+Đổi mức mong muốn|Change expected level
+Đổi cách đặt|Change how it is set
+Chưa chọn|Not chosen
+Mọi nhân viên cùng một mức, không phân biệt phòng ban. Mức riêng của phòng ban được giữ lại nhưng chưa dùng.|Every employee shares one level, whatever the department. Department levels are kept but not used.
+Mỗi người theo chuẩn vị trí của mình (Thông tư 02/2025). Mức riêng của phòng ban được giữ lại nhưng chưa dùng.|Everyone follows their own position standard (Circular 02/2025). Department levels are kept but not used.
+Mỗi phòng ban theo mức đặt bên dưới.|Each department follows the level set below.
+Chưa chọn cách đặt. Phòng ban đã đặt mức thì theo mức đó, phòng chưa đặt theo đề xuất của hệ thống.|Not chosen yet. Departments with a level follow it; the others follow the system suggestion.
+Đề xuất hệ thống|System suggestion
+Chung cả công ty|Whole company
+Từng phòng ban|Per department
+Đang theo đề xuất|Following the suggestion
+Mong muốn|Expected
+Đạt mức mong muốn|Expected level met
+Chưa có mức để so sánh|No level to compare with
+1. Xem khung năng lực số|1. See the competency framework
+Chưa mở trong bản dùng thử|Not open in the trial
+chưa mở trong bản dùng thử|not open in the trial
+Bản dùng thử có Khảo sát năng lực số, Khung năng lực số và Khóa học.|The trial includes the digital competency survey, the competency framework and courses.
+Hãy đặt mức cho đủ mọi lĩnh vực (và mọi phòng ban khi đặt theo phòng ban).|Set a level for every domain (and every department when setting per department).
+Doanh nghiệp chưa có phòng ban nào. Hãy tạo phòng ban trước.|The company has no department yet. Create departments first.
+Tiếp tục đặt mức mong muốn|Continue to the expected level
+Quay lại mức mong muốn|Back to the expected level
+Lưu & tiếp tục đặt hạn|Save & continue to the deadline
+Đổi lại được bất cứ lúc nào|You can change it any time
+Theo đề xuất|System suggestion
+Đang tải mức mong muốn|Loading the expected level
+Kết quả sẽ được so với chuẩn vị trí của từng người. Bạn có thể đặt mức mong muốn sau ở Khung năng lực số.|Results will be compared with each person's position standard. You can set an expected level later in the competency framework.
+Kết quả sẽ so với mức nào?|What will the results be compared with?
+Mức mong muốn là đường nét đứt trên biểu đồ kết quả và là đích lộ trình học của nhân viên. Đổi lúc nào cũng được.|The expected level is the dashed line on the results chart and the end of employees' learning paths. You can change it any time.
+Dùng mức doanh nghiệp đã đặt|Use the level the company set
+Dùng đề xuất của hệ thống|Use the system suggestion
+Nhanh nhất|Quickest
+Mỗi người theo chuẩn vị trí của mình. Tiếp tục đặt hạn ngay.|Everyone follows their own position standard. Go on to the deadline.
+Tự đặt ở Khung năng lực số|Set it in the competency framework
+Một mức cho cả doanh nghiệp hoặc mức riêng từng phòng ban. Danh sách vừa nhập được giữ lại.|One level for the whole company or one per department. The list you entered is kept.
+Kết quả sẽ so với:|Results will be compared with:
+Đổi|Change
+Đặt mức mong muốn cho khảo sát năng lực số|Set the expected level for the survey
+Lưu xong sẽ quay lại bước đặt hạn; danh sách người làm bài vẫn được giữ.|After saving you return to the deadline step; the participant list is kept.
+Quay lại khảo sát|Back to the survey
+Lưu & quay lại khảo sát|Save & back to the survey
+Xem theo|View by
+Khóa dùng chung cho cả doanh nghiệp|Courses shared by the whole company
+Chưa chọn cách đặt mức|No expected level chosen yet
+Bấm ô để xem khóa hoặc chọn mua|Click a cell to see the course or pick it to buy
+Bấm ô để đặt mức cần đạt|Click a cell to set the required level
+Đã có · nhân viên học được|Owned · employees can learn it
+Phòng ban đang cần|Needed by departments
+Ô đã có|Owned cell
+Đã gồm trong lộ trình|Included in the path
+Chưa mua · đặt trước, mua sau|Not bought · set first, buy later
+Đặt mức & lưu|Set the level & save
+theo vị trí trong phòng ban|from the department's positions
+Đã chọn mua · bấm để bỏ|Picked · click to remove
+Dùng mức các phòng ban đã đặt|Use the levels set for departments
+Đặt mức cần đạt cho từng phòng ban. Danh sách vừa nhập được giữ lại.|Set the required level per department. The list you entered is kept.
+Kết quả khảo sát (đường nét đứt trên biểu đồ) và lộ trình học của nhân viên sẽ theo mức này. Đổi lúc nào cũng được.|Survey results (the dashed line on the chart) and employees' learning paths follow this level. You can change it any time.
+ · bạn chưa đặt mức cho phòng ban nào| · no department has its own level yet
+Đổi mức phòng ban|Change department levels
+Đặt mức cần đạt cho từng phòng ban|Set the required level per department
+Kết quả khảo sát sẽ so với mức này; phòng ban chưa đặt theo đề xuất của hệ thống. Danh sách người làm bài vẫn được giữ.|Survey results are compared with this level; departments not set follow the system suggestion. The participant list is kept.
+Xong, quay lại khảo sát|Done, back to the survey
+Phòng ban chưa đặt theo đề xuất của hệ thống|Departments not set follow the system suggestion
+Bấm một ô là lưu ngay|A click saves at once
+Chưa lưu được mức năng lực.|Could not save the levels.
+lĩnh vực đã đặt| domains set
+Đã có|Owned
+Bỏ hết|Clear all
+Giỏ khóa học|Course cart
+Cấp {level} · {domain} · chưa có khóa|Level {level} · {domain} · no course yet
+Cấp {level} · {domain}|Level {level} · {domain}
+Thêm {code} vào giỏ|Add {code} to cart
+Bỏ {code} khỏi giỏ|Remove {code} from cart
+Khóa học theo lĩnh vực và cấp|Courses by domain and level
+Đã có {count}|Owned {count}
+Chỉ Cấp {level} · {domain}|Only level {level} · {domain}
+Bỏ lọc Cấp {level} · {domain}|Clear filter level {level} · {domain}
+Chọn lĩnh vực|Choose a domain
+Khai thác dữ liệu|Data literacy
+Giao tiếp & hợp tác|Communication & collaboration
+An toàn số|Digital safety
+Trí tuệ nhân tạo|Artificial intelligence
+khóa học đã có|courses owned
+Chạm lần nữa để mở|Tap again to open
+Đã thêm cả vào giỏ|All added to cart
+Thêm cả {count} khóa vào giỏ|Add all {count} courses to cart
+Bánh xe khóa học: 6 lĩnh vực, vòng trong Cơ bản, vòng ngoài Nâng cao|Course wheel: 6 domains, Foundation inside, Advanced outside
+Chưa mua · {price}|Not bought · {price}
+Lĩnh vực {count} · {domain}|Domain {count} · {domain}
+Ai học được|Who can learn
+Miễn phí, mọi nhân viên học được ngay.|Free, every employee can start now.
+Về trang Khóa học →|Back to Courses →
+Đủ cả 3 cấp cho lĩnh vực này|All 3 levels owned for this domain
+Còn {count} khóa · {total} ₫ để đủ lĩnh vực|{count} courses · {total} ₫ to complete the domain
+Mua đủ lĩnh vực|Buy the whole domain
+Đã trong giỏ|In cart
+Thanh toán & Ký online|Pay & sign online
 `.trim().split('\n').map(line => { const index=line.indexOf('|'); return [line.slice(0,index),line.slice(index+1)]; }));

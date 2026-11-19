@@ -230,3 +230,4 @@ route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, u
     body.inherit === true ? 'Bỏ mức riêng, học theo chuẩn vị trí' : undefined);
   return ceilingMatrixDto(data);
 }), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu phạm vi phòng ban.' });
+

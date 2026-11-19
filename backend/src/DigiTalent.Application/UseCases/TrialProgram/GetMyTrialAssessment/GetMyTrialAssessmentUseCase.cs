@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Competency.Common;
 using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Application.UseCases.Me;
@@ -57,13 +58,15 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
             var standard = positionId is Guid id
                 ? (await new PositionTargetsReader(_context).LoadAsync(trial.OrganizationId, [id])).GetValueOrDefault(id)
                 : null;
+            var expectation = await CapabilityExpectation.LoadAsync(_context, trial.OrganizationId);
 
             domainDetails = domains.Select(d =>
             {
                 byCategory.TryGetValue(d.CategoryId, out var dResult);
                 var lvl = dResult == null ? 0 : TrialAssessmentResults.EffectiveLevelOf(dResult);
-                var targetLevel = standard?.Levels.GetValueOrDefault(d.CategoryId) ?? 0;
-                var (levelLabel, statusText, gapText, recCourse) = TrialProgramReader.DescribeDomainResult(d.Number, d.Name, lvl, targetLevel);
+                var expected = expectation.ExpectedFor(employee.DepartmentId, d.CategoryId);
+                var targetLevel = expected ?? standard?.Levels.GetValueOrDefault(d.CategoryId) ?? 0;
+                var (levelLabel, statusText, gapText, recCourse) = TrialProgramReader.DescribeDomainResult(d.Number, d.Name, lvl, targetLevel, expected.HasValue);
                 return new TrialReportEmployeeDomainDetailDto
                 {
                     CategoryId = d.CategoryId,
@@ -71,7 +74,8 @@ public class GetMyTrialAssessmentUseCase : IUseCase<GetMyTrialAssessmentUseCaseI
                     Name = d.Name,
                     Level = lvl,
                     TargetLevel = targetLevel,
-                    UsesSystemReference = standard?.UsesSystemReference == true,
+                    UsesSystemReference = expected == null && standard?.UsesSystemReference == true,
+                    IsExpectation = expected.HasValue,
                     SkillGap = Math.Max(0, targetLevel - lvl),
                     LevelLabel = levelLabel,
                     StatusText = statusText,

@@ -95,3 +95,12 @@ html[data-theme='dark'] :is(.owner-filter-select, .owner-filter-select__menu)[da
 .native-filter-select { position: relative; display: inline-block; max-width: 100%; }
 .native-filter-select > svg { position: absolute; inset-inline-start: 11px; top: 50%; transform: translateY(-50%); color: #567582; pointer-events: none; }
 .native-filter-select > select { padding-inline-start: 34px; }
+
+.owner-filter-select__badge { flex: none; margin-left: auto; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-style: normal; font-weight: 700; }
+.owner-filter-select__badge[data-tone=warn] { background: #fff1d2; color: #8a5a00; }
+.owner-filter-select__badge[data-tone=ok] { background: #e3f4ef; color: #0d6b5f; }
+.owner-filter-select__badge + svg { margin-left: 6px; }
+/* The search row is the field: no second box or ring on the input inside it */
+.owner-filter-select__menu .owner-filter-select__search input,
+.owner-filter-select__menu .owner-filter-select__search input:focus,
+.owner-filter-select__menu .owner-filter-select__search input:focus-visible { min-height: 0; padding: 0; border: 0; border-radius: 0; outline: 0; box-shadow: none; background: transparent; }

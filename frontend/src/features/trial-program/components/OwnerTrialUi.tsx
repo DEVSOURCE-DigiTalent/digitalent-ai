@@ -227,9 +227,11 @@ function summarizeDomain(domain: TrialReport['summary'][number], index: number, 
   const standard = targetRange && targetRange[0] === targetRange[1] && compared.length === people.length ? targetRange[0] : null;
   // Average required level of the people who have a standard, for the line chart (same rounding as `average`).
   const targetAverage = compared.length ? Math.round((targets.reduce((sum, target) => sum + target, 0) / compared.length) * 10) / 10 : null;
+  // One clear required level for the people shown: their average, rounded like the current level.
+  const targetLevel = targetAverage == null ? null : Math.max(0, Math.min(3, Math.round(targetAverage)));
   return {
     ...domain, counts, average, level: Math.round(average),
-    hasStandard: compared.length > 0, compared: compared.length, gapCount: gaps.length, targetRange, courseRange, standard, targetAverage,
+    hasStandard: compared.length > 0, compared: compared.length, gapCount: gaps.length, targetRange, courseRange, standard, targetAverage, targetLevel,
   };
 }
 
@@ -243,7 +245,7 @@ type DomainRow = ReturnType<typeof summarizeDomain>;
 function CurrentLevelCell({ row }: { row: DomainRow }) {
   useUiLanguage();
   const level = Math.max(0, Math.min(3, Math.round(row.level)));
-  const tone = !row.targetRange ? 'neutral' : level < row.targetRange[0] ? 'below' : row.gapCount === 0 ? 'met' : 'neutral';
+  const tone = row.targetLevel == null ? 'neutral' : level < row.targetLevel ? 'below' : row.gapCount === 0 ? 'met' : 'neutral';
   return (
     <span className="trial-current" data-tone={tone}>
       {tone === 'met' && <Check size={14} aria-hidden="true" />}
@@ -252,18 +254,22 @@ function CurrentLevelCell({ row }: { row: DomainRow }) {
   );
 }
 
-/** Mức chuẩn vị trí của lĩnh vực (một mức, hoặc khoảng khi các vị trí khác nhau); chưa có thì mời đặt chuẩn. */
+/**
+ * Mức cần đạt của lĩnh vực: một mức rõ ràng (trung bình mức cần đạt của những người đang xem, làm tròn như mức hiện tại);
+ * khi mỗi người cần một mức khác nhau, khoảng đó nằm trong chú thích. Chưa có thì mời đặt mức cho phòng ban.
+ */
 function TargetCell({ row }: { row: DomainRow }) {
   useUiLanguage();
-  if (!row.targetRange) {
+  if (!row.targetRange || row.targetLevel == null) {
     return (
       <Link to={POSITION_STANDARD_PATH} className="inline-flex items-center gap-1 text-[13px] font-semibold text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-teal-800">
-        {translateUi('Cần đặt chuẩn vị trí')}<ArrowRight size={13} aria-hidden="true" />
+        {translateUi('Đặt mức cho phòng ban')}<ArrowRight size={13} aria-hidden="true" />
       </Link>
     );
   }
   const [low, high] = row.targetRange;
-  return <span className="trial-target">{translateUi(LEVEL_LABELS[low])}{high !== low && <> – {translateUi(LEVEL_LABELS[high])}</>}</span>;
+  const spread = high !== low ? translateUi(`Mỗi người cần từ ${LEVEL_LABELS[low]} tới ${LEVEL_LABELS[high]}`) : undefined;
+  return <span className="trial-target" title={spread}>{translateUi(LEVEL_LABELS[row.targetLevel])}</span>;
 }
 
 /** Khóa công ty cần cho lĩnh vực, lần lượt; mọi người đã đạt chuẩn thì không cần; chưa có chuẩn thì chưa gợi ý được. */
@@ -296,8 +302,8 @@ function DomainDetail({ row }: { row: DomainRow }) {
       <div className="trial-insight" data-status={status}>
         {status === 'none' ? (
           <>
-            <span className="trial-insight__label">{translateUi('Chưa có chuẩn vị trí để so sánh')}</span>
-            <Link to={POSITION_STANDARD_PATH} className="trial-insight__link">{translateUi('Đặt chuẩn vị trí')}<ArrowRight size={14} aria-hidden="true" /></Link>
+            <span className="trial-insight__label">{translateUi('Chưa có mức để so sánh')}</span>
+            <Link to={POSITION_STANDARD_PATH} className="trial-insight__link">{translateUi('Đặt mức cho phòng ban')}<ArrowRight size={14} aria-hidden="true" /></Link>
           </>
         ) : (
           <>
@@ -516,6 +522,8 @@ export function CompetencyReport({ report, participantCount, provisional = false
   };
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [isEmployeeTableOpen, setIsEmployeeTableOpen] = useState(false);
+  // Department level where the owner set one, else the position standard: one name for both.
+  const targetLabel = 'Mức cần đạt';
   const [employeePage, setEmployeePage] = useState(1);
 
   const filteredEmployees = report.employees.filter(
@@ -604,7 +612,7 @@ export function CompetencyReport({ report, participantCount, provisional = false
           short: DOMAIN_THEMES[row.number - 1]?.tableHeader ?? `${row.number}`,
           current: row.average,
           target: row.targetAverage,
-        }))} />
+        }))} targetLabel={targetLabel} />
 
         <div className="relative overflow-x-auto">
           <table className="trial-domain-table w-full border-collapse text-left">
@@ -612,7 +620,7 @@ export function CompetencyReport({ report, participantCount, provisional = false
               <tr>
                 <th scope="col" className="trial-domain-table__domain">{translateUi('Lĩnh vực')}</th>
                 <th scope="col">{translateUi('Mức hiện tại')}</th>
-                <th scope="col">{translateUi('Mức cần đạt')}</th>
+                <th scope="col">{translateUi(targetLabel)}</th>
                 <th scope="col">{translateUi('Khóa nên học')}</th>
                 <th scope="col"><span className="sr-only">{translateUi('Chi tiết')}</span></th>
               </tr>
@@ -638,7 +646,7 @@ export function CompetencyReport({ report, participantCount, provisional = false
                         </div>
                       </td>
                       <td className="py-3.5 px-3" data-cell="current" data-label={translateUi('Mức hiện tại')}><CurrentLevelCell row={row} /></td>
-                      <td className="py-3.5 px-3" data-cell="target" data-label={translateUi('Mức cần đạt')}><TargetCell row={row} /></td>
+                      <td className="py-3.5 px-3" data-cell="target" data-label={translateUi(targetLabel)}><TargetCell row={row} /></td>
                       <td className="py-3.5 px-3" data-cell="course" data-label={translateUi('Khóa nên học')}><CourseCell row={row} /></td>
                       <td className="py-3.5 px-4 text-right" data-cell="toggle">
                         <button type="button" className="trial-detail-toggle" aria-expanded={open} aria-controls={detailId} onClick={() => toggleDomain(row.categoryId)}>

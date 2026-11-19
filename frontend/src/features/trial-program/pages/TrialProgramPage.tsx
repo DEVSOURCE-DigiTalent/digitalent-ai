@@ -1,11 +1,9 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
   BarChart3,
-  BookOpen,
-  Briefcase,
   ChevronDown,
   CalendarClock,
   ChevronUp,
@@ -14,7 +12,9 @@ import {
   ListChecks,
   Search,
   Send,
-  TrendingUp,
+  SlidersHorizontal,
+  Sparkles,
+  Target,
   UserCheck,
   Users,
   Video,
@@ -34,6 +34,11 @@ import type {
   TrialProgram,
 } from '@/services/trial-program.service';
 import { apiErrorMessage } from '@/lib/utils';
+import { useCapabilityCeilings } from '@/hooks/use-capability-ceilings';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
+import { Modal } from '@/components/shared/Modal';
+import { clearSurveyDraft, readSurveyDraft, saveSurveyDraft, SURVEY_EXPECTATION_PATH } from '../lib/survey-draft';
 import { PageLoading } from '@/components/shared/LoadingState';
 import { PULSE_TOKENS } from '@/features/organization/owner-theme';
 import { ParticipantsEditor } from '../components/ParticipantsEditor';
@@ -43,16 +48,20 @@ import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilte
 import { OwnerSurveyAction } from '../components/OwnerSurveyAction';
 import { CompetencyReport, ParticipantStatus, Steps } from '../components/OwnerTrialUi';
 import { emptyRows, isRowEmpty, rowError } from '../lib/participant-rows';
-import { formatWhen, POSITION_STANDARD_PATH, toLocalInput } from '../lib/trial-format';
+import { formatWhen, toLocalInput } from '../lib/trial-format';
 import '../trial-program.css';
 import '../owner-team-assessment.css';
 import '@/features/organization/components/owner-filter-controls.css';
 
 /**
  * Three milestones: the owner acts in the first two; in the last one the team takes the test and the expert's
- * results arrive on this page, so waiting and results are one step whose detail says where it stands.
+ * results arrive on this page, so waiting and results are one step whose detail says where it stands. Between the list
+ * and the deadline a popup asks what the results are compared with: the levels set for departments (else the system
+ * suggestion), or set them in "Khung năng lực số" and come back to the deadline with the list kept.
  */
 const STEP_LABELS = ['Chọn người làm bài', 'Đặt hạn, gửi lời mời', 'Làm bài & nhận kết quả'];
+/** 0 = who takes the test, 1 = deadline + invitations. */
+type SetupStep = 0 | 1;
 const LIST_PAGE_SIZE = 10;
 /** Search and filters help from a handful of people on; pages start after LIST_PAGE_SIZE. */
 const LIST_TOOLS_MIN = 6;
@@ -108,11 +117,37 @@ export function TrialProgramPage() {
 
 function TrialProgramView({ program }: { program: TrialProgram }) {
   useUiLanguage();
-  const [setupStep, setSetupStep] = useState<0 | 1>(0);
-  const [rows, setRows] = useState<TrialParticipantRow[]>(emptyRows());
-  const [lastInvite, setLastInvite] = useState<TrialInviteResult | null>(null);
-
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const userId = useCurrentUser((state) => state.user?.id ?? '');
   const setup = program.stage === 'SETUP';
+  // Back from "Khung năng lực số" (?resume=1): the deadline step, with the people listed before leaving.
+  const resume = setup && searchParams.get('resume') === '1';
+  const [setupStep, setSetupStep] = useState<SetupStep>(resume ? 1 : 0);
+  const [rows, setRows] = useState<TrialParticipantRow[]>(() => (setup && userId && readSurveyDraft(userId)) || emptyRows());
+  const [lastInvite, setLastInvite] = useState<TrialInviteResult | null>(null);
+  const [choosing, setChoosing] = useState(false);
+  const ceilings = useCapabilityCeilings();
+  const { can } = usePermission();
+  const canSetExpectation = can(PERMISSIONS.POSITION_REQUIREMENT_MANAGE);
+  // Departments with their own levels (OW-05 tab 2): what the results are compared with; the others use the suggestion.
+  const levelsSet = ceilings.data ? { set: ceilings.data.departments.filter((d) => d.isCustomized).length, total: ceilings.data.departments.length } : undefined;
+
+  useEffect(() => {
+    if (searchParams.get('resume') == null) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('resume');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // The list is kept in this tab while the owner is away (e.g. setting the expected level), until the invitations go out.
+  useEffect(() => {
+    if (!setup || !userId) return;
+    const filled = rows.filter((row) => !isRowEmpty(row));
+    if (filled.length) saveSurveyDraft(userId, filled);
+    else clearSurveyDraft(userId);
+  }, [rows, setup, userId]);
+
   const reported = program.stage === 'REPORTED';
   const total = program.participants.length;
   const submitted = program.participants.filter(isSubmitted).length;
@@ -132,24 +167,105 @@ function TrialProgramView({ program }: { program: TrialProgram }) {
   ];
   const current = setup ? setupStep : 2;
 
+  // Step 1 done: ask what the results are compared with (only someone who may set it is asked).
+  const finishList = () => (canSetExpectation ? setChoosing(true) : setSetupStep(1));
+  const keepExpectation = () => { setChoosing(false); setSetupStep(1); };
+  const setOwnExpectation = () => {
+    if (userId) saveSurveyDraft(userId, rows.filter((row) => !isRowEmpty(row)));
+    navigate(SURVEY_EXPECTATION_PATH);
+  };
+
   return (
     <div className="space-y-6">
       <header className="trial-page-heading">
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#17243f]">
           {translateUi(reported ? 'Kết quả khảo sát năng lực số' : 'Khảo sát năng lực số')}
         </h1>
-        <p className="trial-page-lead">{translateUi('Đo năng lực số của nhân viên ở 6 lĩnh vực, để biết ai cần học gì.')}</p>
       </header>
 
       <Steps steps={steps} current={current} complete={reported} label="Tiến độ khảo sát" />
 
       {setup ? (
-        <SetupView program={program} rows={rows} onRowsChange={setRows} step={setupStep} onStepChange={setSetupStep} onInvited={setLastInvite} />
+        <SetupView program={program} rows={rows} onRowsChange={setRows} step={setupStep} onStepChange={setSetupStep}
+          onFinishList={finishList} onInvited={setLastInvite} onSent={() => userId && clearSurveyDraft(userId)}
+          levelsSet={levelsSet} canSetExpectation={canSetExpectation} />
       ) : (
         <div className="space-y-5">
           <InviteResult result={lastInvite} />
+          {/* Once results are out, the table and chart say it; the strip is only for while people are taking the test. */}
+          {levelsSet && !reported && !(program.report && program.report.assessed > 0) && (
+            <ExpectationStrip levelsSet={levelsSet} canChange={canSetExpectation} />
+          )}
           {reported ? <ReportedView program={program} /> : <TrackView program={program} />}
         </div>
+      )}
+
+      <ExpectationChoice open={choosing} setCount={levelsSet?.set ?? 0}
+        onKeep={keepExpectation} onSetOwn={setOwnExpectation} onClose={() => setChoosing(false)} />
+    </div>
+  );
+}
+
+type LevelsSet = { set: number; total: number };
+
+/** What the results are compared with, in a few words. */
+const comparisonText = ({ set, total }: LevelsSet) => (set > 0
+  ? `mức cần đạt của ${set}/${total} phòng ban đã đặt (phòng ban khác theo đề xuất của hệ thống)`
+  : 'chuẩn vị trí của từng người (đề xuất của hệ thống)');
+
+/**
+ * After the list: what will the results be compared with (the dashed line of the chart)? Keep what is in force — the
+ * levels set for departments, else the system suggestion — or set the department levels in "Khung năng lực số".
+ */
+function ExpectationChoice({ open, setCount, onKeep, onSetOwn, onClose }: {
+  open: boolean;
+  setCount: number;
+  onKeep: () => void;
+  onSetOwn: () => void;
+  onClose: () => void;
+}) {
+  useUiLanguage();
+  return (
+    <Modal open={open} onClose={onClose} size="md" title="Kết quả sẽ so với mức nào?"
+      description="Kết quả khảo sát (đường nét đứt trên biểu đồ) và lộ trình học của nhân viên sẽ theo mức này. Đổi lúc nào cũng được.">
+      <div className="trial-choice">
+        <button type="button" className="trial-choice__option" data-recommended onClick={onKeep}>
+          <span className="trial-choice__icon" aria-hidden="true"><Sparkles size={18} /></span>
+          <span className="trial-choice__copy">
+            <strong>{translateUi(setCount > 0 ? 'Dùng mức các phòng ban đã đặt' : 'Dùng đề xuất của hệ thống')}<em>{translateUi('Nhanh nhất')}</em></strong>
+            <span>{translateUi(setCount > 0
+              ? `${setCount} phòng ban đã đặt mức; phòng ban khác theo đề xuất của hệ thống. Tiếp tục đặt hạn ngay.`
+              : 'Mỗi người theo chuẩn vị trí của mình. Tiếp tục đặt hạn ngay.')}</span>
+          </span>
+          <ArrowRight size={16} className="trial-choice__arrow" aria-hidden="true" />
+        </button>
+        <button type="button" className="trial-choice__option" onClick={onSetOwn}>
+          <span className="trial-choice__icon" aria-hidden="true"><SlidersHorizontal size={18} /></span>
+          <span className="trial-choice__copy">
+            <strong>{translateUi('Tự đặt ở Khung năng lực số')}</strong>
+            <span>{translateUi('Đặt mức cần đạt cho từng phòng ban. Danh sách vừa nhập được giữ lại.')}</span>
+          </span>
+          <ArrowRight size={16} className="trial-choice__arrow" aria-hidden="true" />
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/** What the results are compared with, above the progress / results, with a link to the department levels. */
+function ExpectationStrip({ levelsSet, canChange }: { levelsSet: LevelsSet; canChange: boolean }) {
+  useUiLanguage();
+  return (
+    <div className="trial-expect-strip" data-mode={levelsSet.set > 0 ? 'DEPARTMENT' : 'NONE'}>
+      <Target size={16} aria-hidden="true" />
+      <p>
+        {translateUi('Kết quả được so với')} <strong>{translateUi(comparisonText(levelsSet))}</strong>
+        {levelsSet.set === 0 && <span>{translateUi(' · bạn chưa đặt mức cho phòng ban nào')}</span>}
+      </p>
+      {canChange && (
+        <Link to={SURVEY_EXPECTATION_PATH} className="trial-secondary-button">
+          {translateUi(levelsSet.set > 0 ? 'Đổi mức phòng ban' : 'Đặt mức cho phòng ban')}
+        </Link>
       )}
     </div>
   );
@@ -183,14 +299,21 @@ function SurveyFacts({ program }: { program: TrialProgram }) {
   );
 }
 
-/** Bước 1–2: danh sách người làm bài, rồi hạn nộp và gửi lời mời một lần. */
-function SetupView({ program, rows, onRowsChange, step, onStepChange, onInvited }: {
+/** Bước 1–2: danh sách người làm bài, rồi (sau hộp hỏi mức so sánh) hạn nộp và gửi lời mời một lần. */
+function SetupView({ program, rows, onRowsChange, step, onStepChange, onFinishList, onInvited, onSent, levelsSet, canSetExpectation }: {
   program: TrialProgram;
   rows: TrialParticipantRow[];
   onRowsChange: (rows: TrialParticipantRow[]) => void;
-  step: 0 | 1;
-  onStepChange: (step: 0 | 1) => void;
+  step: SetupStep;
+  onStepChange: (step: SetupStep) => void;
+  /** Step 1 done: asks about the expected level, then opens the deadline. */
+  onFinishList: () => void;
   onInvited: (result: TrialInviteResult) => void;
+  /** Invitations sent: the kept list is no longer needed. */
+  onSent: () => void;
+  /** undefined while unknown (not loaded). */
+  levelsSet?: LevelsSet;
+  canSetExpectation: boolean;
 }) {
   useUiLanguage();
   const [schedule, setSchedule] = useState(defaultSchedule);
@@ -226,6 +349,7 @@ function SetupView({ program, rows, onRowsChange, step, onStepChange, onInvited 
       }
       if (existing + invited === 0) return;
       await request.mutateAsync(toRequest(schedule));
+      onSent();
       toast.success('Đã gửi lời mời. Nhân viên có thể bắt đầu làm bài.');
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Chưa gửi được.'));
@@ -246,7 +370,7 @@ function SetupView({ program, rows, onRowsChange, step, onStepChange, onInvited 
         </section>
         <div className="trial-setup-footer">
           {listHint && <p role="status">{translateUi(listHint)}</p>}
-          <button type="button" className="trial-primary-button" disabled={busy || invalid || nobody} onClick={() => onStepChange(1)}>
+          <button type="button" className="trial-primary-button" disabled={busy || invalid || nobody} onClick={onFinishList}>
             {translateUi('Tiếp tục đặt hạn')}<ArrowRight size={16} aria-hidden="true" />
           </button>
         </div>
@@ -261,6 +385,13 @@ function SetupView({ program, rows, onRowsChange, step, onStepChange, onInvited 
         <h2 className="mb-3 border-b border-slate-100 pb-3 text-base sm:text-lg font-bold text-slate-900">{translateUi('Hạn nộp bài')}</h2>
         <ScheduleFields value={schedule} onChange={setSchedule} />
       </section>
+      {levelsSet && (
+        <p className="trial-expect-line">
+          <Target size={15} aria-hidden="true" />
+          <span>{translateUi('Kết quả sẽ so với:')} <strong>{translateUi(comparisonText(levelsSet))}</strong></span>
+          {canSetExpectation && <Link to={SURVEY_EXPECTATION_PATH}>{translateUi('Đổi')}</Link>}
+        </p>
+      )}
       <p className="trial-send-summary" aria-live="polite">
         <Send size={16} aria-hidden="true" />
         <span>
@@ -384,7 +515,6 @@ function ReportedView({ program }: { program: TrialProgram }) {
       {report
         ? <CompetencyReport report={report} participantCount={total} />
         : <div className="trial-live-report" role="status"><span className="trial-live-report__dot" aria-hidden="true" /><p>{translateUi('Đợt khảo sát đã kết thúc mà không có bài nộp nào.')}</p></div>}
-      <NextSteps />
       <OwnerSurveyAction program={program} />
       {/* With results the per-person table already lists who took part; the participant list stays only when nobody submitted. */}
       {!report && <section className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-xs overflow-hidden">
@@ -570,29 +700,6 @@ function ParticipantList({ program, closed, group, onGroupChange }: {
         </div>
       )}
     </div>
-  );
-}
-
-function NextSteps() {
-  useUiLanguage();
-  const actions = [
-    { to: POSITION_STANDARD_PATH, label: '1. Đặt chuẩn vị trí', Icon: Briefcase },
-    { to: '/enterprise/skill-gap', label: '2. Xem khoảng trống năng lực', Icon: TrendingUp },
-    { to: '/enterprise/courses', label: '3. Chọn khóa học', Icon: BookOpen },
-  ];
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-      <h3 className="text-base font-bold text-slate-900">{translateUi('Bước tiếp theo')}</h3>
-      <div className="mt-3 grid gap-2 lg:grid-cols-3">
-        {actions.map(({ to, label, Icon }) => (
-          <Link key={to} to={to} className="group flex items-center gap-2 rounded-xl border border-teal-100 bg-teal-50/50 px-3 py-2.5 text-sm font-semibold text-teal-900 transition-colors hover:bg-teal-100 motion-reduce:transition-none">
-            <Icon size={16} aria-hidden="true" className="shrink-0" />
-            {translateUi(label)}
-            <ArrowRight size={15} aria-hidden="true" className="ml-auto shrink-0 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5" />
-          </Link>
-        ))}
-      </div>
-    </section>
   );
 }
 

@@ -7,6 +7,8 @@ import './owner-filter-controls.css';
 export interface OwnerFilterOption {
   value: string;
   label: string;
+  /** Small pill after the label in the list, e.g. a status. */
+  badge?: { text: string; tone: 'warn' | 'ok' };
 }
 
 interface OwnerFilterSelectProps {
@@ -20,9 +22,13 @@ interface OwnerFilterSelectProps {
   loading?: boolean;
   variant?: 'owner' | 'manager';
   icon?: 'filter' | 'sort';
+  /** Text on the button instead of the selected option's label (e.g. just a name, the list showing more). */
+  valueLabel?: string;
+  /** The list is at least this wide (px), for a short button whose options say more. */
+  menuMinWidth?: number;
 }
 
-export function OwnerFilterSelect({ label, value, options, onChange, className = '', disabled = false, onSearchChange, loading = false, variant = 'owner', icon }: OwnerFilterSelectProps) {
+export function OwnerFilterSelect({ label, value, options, onChange, className = '', disabled = false, onSearchChange, loading = false, variant = 'owner', icon, valueLabel, menuMinWidth = 0 }: OwnerFilterSelectProps) {
   useUiLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -47,7 +53,7 @@ export function OwnerFilterSelect({ label, value, options, onChange, className =
       const idealHeight = Math.min(320, options.length * 39 + (searchable ? 52 : 12));
       const above = availableBelow < Math.min(230, idealHeight) && availableAbove > availableBelow;
       const height = Math.max(60, Math.min(idealHeight, above ? availableAbove : availableBelow));
-      const width = Math.min(rect.width, window.innerWidth - 16);
+      const width = Math.min(Math.max(rect.width, menuMinWidth), window.innerWidth - 16);
       setPosition({ top: Math.max(8, above ? rect.top - height - 6 : rect.bottom + 6), left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)), width, maxHeight: height });
     };
     const closeOutside = (event: PointerEvent) => {
@@ -69,7 +75,7 @@ export function OwnerFilterSelect({ label, value, options, onChange, className =
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [open, options.length, searchable]);
+  }, [open, options.length, searchable, menuMinWidth]);
 
   useEffect(() => {
     if (open && searchable) searchRef.current?.focus();
@@ -110,12 +116,12 @@ export function OwnerFilterSelect({ label, value, options, onChange, className =
   return <>
     <button ref={buttonRef} type="button" role="combobox" data-variant={variant} aria-activedescendant={open && visibleOptions[activeIndex] ? `${menuId}-option-${activeIndex}` : undefined} className={`owner-filter-select ${open ? 'is-open' : ''} ${className}`} aria-label={translateUi(label)} aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? menuId : undefined} disabled={disabled} onKeyDown={handleKeyDown} onClick={() => { setQuery(''); onSearchChange?.(''); setActiveIndex(Math.max(0, options.findIndex((option) => option.value === value))); setOpen((current) => !current); }}>
       {icon && <LeadingIcon size={15} className="owner-filter-select__icon" aria-hidden="true" />}
-      <span>{translateUi(selected?.label) ?? translateUi(options[0]?.label) ?? translateUi(label)}</span><ChevronDown size={17} className="owner-filter-select__chevron" aria-hidden="true" />
+      <span>{translateUi(valueLabel ?? selected?.label) ?? translateUi(options[0]?.label) ?? translateUi(label)}</span><ChevronDown size={17} className="owner-filter-select__chevron" aria-hidden="true" />
     </button>
     {open && createPortal(<div ref={menuRef} className="owner-filter-select__menu" data-variant={variant} style={{ top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }} onKeyDown={handleKeyDown}>
       {searchable && <label className="owner-filter-select__search"><Search size={15} aria-hidden="true" /><input ref={searchRef} value={query} onChange={(event) => { setQuery(event.target.value); onSearchChange?.(event.target.value); setActiveIndex(0); }} placeholder={translateUi("Tìm trong danh sách")} aria-label={translateUi(`Tìm ${label.toLocaleLowerCase('vi')}`)} /></label>}
       <div id={menuId} role="listbox" aria-label={translateUi(label)} className="owner-filter-select__options">
-        {visibleOptions.map((option, index) => <button key={option.value} id={`${menuId}-option-${index}`} type="button" role="option" aria-selected={option.value === value} className={`${option.value === value ? 'is-selected' : ''} ${index === activeIndex ? 'is-active' : ''}`} onMouseEnter={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onClick={() => choose(option)}><span>{translateUi(option.label)}</span>{option.value === value && <Check size={16} aria-hidden="true" />}</button>)}
+        {visibleOptions.map((option, index) => <button key={option.value} id={`${menuId}-option-${index}`} type="button" role="option" aria-selected={option.value === value} className={`${option.value === value ? 'is-selected' : ''} ${index === activeIndex ? 'is-active' : ''}`} onMouseEnter={() => setActiveIndex(index)} onFocus={() => setActiveIndex(index)} onClick={() => choose(option)}><span>{translateUi(option.label)}</span>{option.badge && <em className="owner-filter-select__badge" data-tone={option.badge.tone}>{translateUi(option.badge.text)}</em>}{option.value === value && <Check size={16} aria-hidden="true" />}</button>)}
         {visibleOptions.length === 0 && <p className="owner-filter-select__none">{loading ? 'Đang tìm phòng ban…' : translateUi('Không có kết quả phù hợp')}</p>}
       </div>
     </div>, document.body)}

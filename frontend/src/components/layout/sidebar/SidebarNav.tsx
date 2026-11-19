@@ -3,7 +3,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import type { SidebarConfig } from '@/lib/sidebars/types';
+import type { SidebarConfig, SidebarTrialRule } from '@/lib/sidebars/types';
+import { isEnterpriseTrial } from '@/lib/navigation';
 import type { LucideIcon } from 'lucide-react';
 import { findScreen } from '@/lib/screens';
 import { matchPath } from '@/lib/breadcrumbs';
@@ -29,8 +30,14 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
 
   const currentWorkspace = workspace ?? (pathname.startsWith('/platform') ? WORKSPACES.PLATFORM : pathname.startsWith('/mentor') ? WORKSPACES.MENTOR : WORKSPACES.ENTERPRISE);
 
-  const isVisible = (screenId?: string) => {
+  // Enterprise trial: a sidebar with trial rules keeps every entry, locking those not open in the trial.
+  const inTrial = Boolean(user && isEnterpriseTrial(user));
+  const hasTrialRules = config.some((entry) => entry.trial || entry.items?.some((item) => item.trial));
+  const trialLocked = (rule?: SidebarTrialRule) => inTrial && hasTrialRules && !rule;
+
+  const isVisible = (screenId?: string, rule?: SidebarTrialRule) => {
     if (!screenId) return true;
+    if (rule === 'only' && !inTrial) return false;
     const screen = findScreen(screenId, currentWorkspace);
     if (!screen) return true;
     if (screen.permission && !hasPermission(screen.permission)) return false;
@@ -103,10 +110,11 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
 
         // Single top-level link (e.g. Tổng quan, Báo cáo)
         if (section.screenId && !section.items?.length) {
-          if (!isVisible(section.screenId)) return null;
+          if (!isVisible(section.screenId, section.trial)) return null;
           const screen = findScreen(section.screenId, currentWorkspace);
           const path = screen?.path ?? '#';
-          const locked = !!screen?.entitlement && !hasEntitlement(screen.entitlement);
+          const lockedByTrial = trialLocked(section.trial);
+          const locked = lockedByTrial || (!!screen?.entitlement && !hasEntitlement(screen.entitlement));
           const Icon = section.icon as LucideIcon | undefined;
           const isActive = isScreenActive(section.screenId, section.activeFor);
           return (
@@ -117,6 +125,7 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
                 icon={Icon ? <Icon className={pulseManager ? undefined : 'w-4 h-4 shrink-0'} strokeWidth={pulseManager ? 1.8 : 1.5} /> : undefined}
                 isActive={isActive}
                 isLocked={locked}
+                lockReason={lockedByTrial ? 'trial' : 'plan'}
                 isRail={isRail}
                 onClick={onItemClick}
                 variant={variant}
@@ -128,7 +137,7 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
 
         // Group with children
         if (section.items && section.items.length > 0) {
-          const visibleItems = section.items.filter((item) => isVisible(item.screenId));
+          const visibleItems = section.items.filter((item) => isVisible(item.screenId, item.trial));
           if (visibleItems.length === 0) return null;
           const isExpanded = expanded[section.label] ?? false;
 
@@ -152,7 +161,8 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
                 {visibleItems.map((item) => {
                   const screen = findScreen(item.screenId, currentWorkspace);
                   const path = screen?.path ?? '#';
-                  const locked = !!screen?.entitlement && !hasEntitlement(screen.entitlement);
+                  const lockedByTrial = trialLocked(item.trial);
+                  const locked = lockedByTrial || (!!screen?.entitlement && !hasEntitlement(screen.entitlement));
                   const Icon = item.icon as LucideIcon | undefined;
                   const isActive = isScreenActive(item.screenId, item.activeFor);
                   return (
@@ -163,6 +173,7 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
                       icon={Icon ? <Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} /> : undefined}
                       isActive={isActive}
                       isLocked={locked}
+                      lockReason={lockedByTrial ? 'trial' : 'plan'}
                       isRail={isRail}
                       onClick={onItemClick}
                       dataTour={item.screenId}
