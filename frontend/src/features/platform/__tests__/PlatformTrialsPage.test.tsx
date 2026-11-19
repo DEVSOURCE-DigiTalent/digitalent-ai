@@ -11,6 +11,7 @@ const trialServiceMock = vi.hoisted(() => ({
   platformTrials: vi.fn(),
   mentors: vi.fn(),
   assignMentor: vi.fn(),
+  autoAssignMentors: vi.fn(),
   createMentor: vi.fn(),
 }));
 
@@ -23,6 +24,7 @@ vi.mock('@/services/trial-program.service', async (importOriginal) => {
       platformTrials: trialServiceMock.platformTrials,
       mentors: trialServiceMock.mentors,
       assignMentor: trialServiceMock.assignMentor,
+      autoAssignMentors: trialServiceMock.autoAssignMentors,
       createMentor: trialServiceMock.createMentor,
     },
   };
@@ -196,22 +198,24 @@ describe('PlatformTrialsPage (PA-14)', () => {
     expect(within(survey()).queryByText('Giáo dục Số EduGlobal')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /đang làm khảo sát/i }));
     expect(within(survey()).getByText('Giáo dục Số EduGlobal')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: /bảng mentor chấm bài học/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /bảng tổ chức và mentor phụ trách/i })).not.toBeInTheDocument();
   });
 
   it('lists the learning organizations and their mentor on the Mentor page', async () => {
     renderTrials('/platform/mentors');
-    const learning = () => screen.getByRole('region', { name: /bảng mentor chấm bài học/i });
+    const learning = () => screen.getByRole('region', { name: /bảng tổ chức và mentor phụ trách/i });
     await waitFor(() => expect(within(learning()).getByText('Bán lẻ Sao Mai')).toBeInTheDocument());
     expect(screen.queryByRole('region', { name: /bảng bài khảo sát/i })).not.toBeInTheDocument();
 
-    // Learning: only organizations with a report; the one without a mentor comes first with its waiting work.
-    expect(within(learning()).queryByText('Logistics Phương Đông')).not.toBeInTheDocument();
+    // Every organization that started its survey, with its mentor; no mentor and waiting work first.
     const rows = within(learning()).getAllByRole('row');
     expect(within(rows[1]).getByText('Bán lẻ Sao Mai')).toBeInTheDocument();
     expect(within(rows[1]).getByText('Chưa phân công')).toBeInTheDocument();
     expect(within(rows[1]).getByText('2 bài')).toBeInTheDocument();
-    expect(within(rows[2]).getByText('Nguyễn Thu Hương')).toBeInTheDocument();
+    expect(within(rows[2]).getByText('Logistics Phương Đông')).toBeInTheDocument();
+    expect(within(rows[2]).getByText('Đang làm khảo sát')).toBeInTheDocument();
+    expect(within(rows[3]).getByText('Nguyễn Thu Hương')).toBeInTheDocument();
+    expect(within(learning()).getByText('VinTech Solutions')).toBeInTheDocument();
 
     // Filter the learning table by mentor.
     fireEvent.click(screen.getByRole('button', { name: /lọc theo mentor/i }));
@@ -220,14 +224,27 @@ describe('PlatformTrialsPage (PA-14)', () => {
     expect(within(learning()).queryByText('Bán lẻ Sao Mai')).not.toBeInTheDocument();
   });
 
+  it('assigns every organization without a mentor in one click', async () => {
+    trialServiceMock.autoAssignMentors.mockResolvedValue({
+      data: { data: { assigned: [{ organizationId: 'org-learn', organizationName: 'Bán lẻ Sao Mai', mentorUserId: 'm-2', mentorName: 'Nguyễn Thu Hương' }], remaining: 0 } },
+    });
+    renderTrials('/platform/mentors');
+
+    // Logistics Phương Đông (taking the survey) and Bán lẻ Sao Mai (learning) have no mentor.
+    const button = await screen.findByRole('button', { name: /tự phân công \(2\)/i });
+    fireEvent.click(button);
+    await waitFor(() => expect(trialServiceMock.autoAssignMentors).toHaveBeenCalledTimes(1));
+  });
+
   it('opens TrialDetailDrawer and assigns a mentor, and supports CreateMentorDrawer', async () => {
     renderTrials('/platform/mentors');
 
-    const learning = () => screen.getByRole('region', { name: /bảng mentor chấm bài học/i });
+    const learning = () => screen.getByRole('region', { name: /bảng tổ chức và mentor phụ trách/i });
     await waitFor(() => expect(within(learning()).getByText('Bán lẻ Sao Mai')).toBeInTheDocument());
 
     // Open the assign drawer from the learning table
-    fireEvent.click(within(learning()).getByRole('button', { name: /^Phân công$/i }));
+    // First row = Bán lẻ Sao Mai (no mentor and assignments waiting).
+    fireEvent.click(within(learning()).getAllByRole('button', { name: /^Phân công$/i })[0]);
     expect(screen.getByRole('radiogroup', { name: /chọn mentor phụ trách/i })).toBeInTheDocument();
 
     // Select Nguyễn Thu Hương and submit

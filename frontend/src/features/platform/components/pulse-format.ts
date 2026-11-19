@@ -46,6 +46,13 @@ export const STAGE_LABELS: Record<string, { label: string; tone: PillTone }> = {
   PAID: { label: 'Đã mua khóa', tone: undefined },
 };
 
+/**
+ * Pausing the sale of a single course is hidden: courses are the levels of a domain learnt in order (Basic →
+ * Intermediate → Advanced), so pausing one level breaks the chain, and the purchase never checked the status anyway.
+ * Every paid course stays on sale; the price page only edits prices. The data (sales_status) is kept untouched.
+ */
+export const SALES_PAUSE_ENABLED = false;
+
 export const SALES_STATUS: Record<string, { label: string; tone: PillTone }> = {
   OPEN: { label: 'Đang mở bán', tone: 'green' },
   PAUSED: { label: 'Tạm ngưng bán', tone: 'coral' },
@@ -106,6 +113,7 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   PULSE_FINAL_DECIDED: 'Chấm bài cuối khóa',
   PULSE_PRE_ASSESSMENT_DECIDED: 'Duyệt bài đầu vào',
   TRIAL_MENTOR_ASSIGNED: 'Phân công mentor',
+  TRIAL_MENTOR_AUTO_ASSIGNED: 'Tự phân công mentor',
   TRIAL_CREATED: 'Tạo đợt dùng thử',
   TRIAL_FEEDBACK_SUBMITTED: 'Gửi góp ý dùng thử',
   MENTOR_CREATED: 'Tạo tài khoản mentor',

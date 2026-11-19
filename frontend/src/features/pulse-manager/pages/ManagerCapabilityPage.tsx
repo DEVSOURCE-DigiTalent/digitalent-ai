@@ -11,17 +11,14 @@ import { Bar, Empty, LoadError, PuLink } from '@/features/pulse-employee/compone
 import { ManagerPage, ManagerPageHeader, NoDepartment } from '../components/ManagerUi';
 import { buildCapability, type CapabilityDomain, type LevelStatus } from '../lib/capability';
 import { MANAGER_PATHS } from '../lib/paths';
+import { CAPABILITY_STATUS as STATUS, CapabilityMarks, CapabilityStatusIcon } from '../components/CapabilityVisuals';
 import './manager-capability.css';
 
-const STATUS: Record<LevelStatus, string> = {
-  MET: 'Đạt yêu cầu', GAP: 'Chưa đạt', PENDING: 'Chưa xác nhận mức', OUTSIDE_PATH: 'Ngoài lộ trình',
-};
 const DOMAIN_ICONS = [Database, MessagesSquare, Palette, ShieldCheck, Lightbulb, BrainCircuit];
 const STATUS_KEYS = Object.keys(STATUS) as LevelStatus[];
 const SOURCES: Record<EvidenceSource, string> = {
   MIGRATION: 'Dữ liệu chuyển đổi', ASSESSMENT: 'Bài đánh giá', TASK: 'Nhiệm vụ thực tế', MANUAL: 'Xác nhận thủ công',
 };
-const level = (value: number | null) => value != null && value > 0 ? `L${value}` : '—';
 const searchKey = (value: string) => value.toLocaleLowerCase('vi').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/đ/g, 'd');
 
 export function ManagerCapabilityPage() {
@@ -54,7 +51,7 @@ function DepartmentCapabilities({ people }: { people: WorkforceRow[] }) {
       <div className="mc-controls">
         <div className="mc-person-select">
           <span>{translateUi('Nhân sự')}</span>
-          <OwnerFilterSelect variant="manager" label="Nhân sự" value={employee.id}
+          <OwnerFilterSelect icon="filter" variant="manager" label="Nhân sự" value={employee.id}
             onChange={(id) => setParams({ employeeId: id }, { replace: true, preventScrollReset: true })}
             options={people.map(({ id, fullName }) => ({ value: id, label: fullName }))} />
         </div>
@@ -125,7 +122,7 @@ function EmployeeCapabilities({ data, model }: { data: EmployeeCapability; model
         {visible.length > 0 && (
           <>
             <ul className="mc-legend" aria-label={translateUi('Chú giải trạng thái')} role="list">
-              {STATUS_KEYS.map((key) => <li key={key} data-status={key}>{translateUi(STATUS[key])}</li>)}
+              {STATUS_KEYS.map((key) => <li key={key} data-status={key}><CapabilityStatusIcon status={key} />{translateUi(STATUS[key])}</li>)}
             </ul>
             <div className="mc-groups">
               {visible.map((domain) => {
@@ -146,7 +143,8 @@ function EmployeeCapabilities({ data, model }: { data: EmployeeCapability; model
                     </span>
                     <span className="mc-domain-card__counts">
                       <span>{domain.rows.length !== domain.allRows.length ? `${domain.rows.length}/${domain.allRows.length}` : domain.rows.length} {translateUi('năng lực')}</span>
-                      {stats.map(({ key, count }) => <span className="mc-domain-count" key={key} data-status={key}>
+                      {stats.map(({ key, count }) => <span className="mc-domain-count" key={key} data-status={key} title={translateUi(STATUS[key])}>
+                        <CapabilityStatusIcon status={key} />
                         <span className="sr-only">{translateUi(STATUS[key])}: </span>{count}
                       </span>)}
                     </span>
@@ -185,7 +183,7 @@ function CapabilityGroup({ domain, allRows, detail, onDetail }: {
   return <section className="mc-group">
     <header className="mc-detail-heading">
       <h3>{translateUi(domain.name)}</h3>
-      {sharedTarget && <span>{translateUi('Mức yêu cầu chung')} <b>{level(shared)}</b></span>}
+      {sharedTarget && <span>{translateUi('Mức yêu cầu chung')} <CapabilityMarks value={shared} target /></span>}
     </header>
     <div className="mc-table" tabIndex={0} role="region" aria-label={translateUi(domain.name)}>
         <table>
@@ -199,10 +197,10 @@ function CapabilityGroup({ domain, allRows, detail, onDetail }: {
             return <tbody key={row.competencyId}>
               <tr>
                 <th scope="row"><small>{row.frameworkCode}</small> {translateUi(row.name)}</th>
-                <td><span className="mc-level" data-status={row.status}>{level(row.currentLevel)}</span></td>
-                <td>{row.requiredLevel > 0 ? <span className="mc-level">{level(row.requiredLevel)}</span> : translateUi('Không yêu cầu')}</td>
+                <td><CapabilityMarks value={row.currentLevel} /></td>
+                <td><CapabilityMarks value={row.requiredLevel} target /></td>
                 <td><span className="mc-badge" data-status={row.status}>
-                  {translateUi(STATUS[row.status])}
+                  <CapabilityStatusIcon status={row.status} />{translateUi(STATUS[row.status])}
                   {row.status === 'GAP' && row.currentLevel != null && ` · ${translateUi(`Còn ${row.requiredLevel - row.currentLevel} mức`)}`}
                 </span></td>
                 <td><button type="button" className="mc-link" aria-expanded={showDetail} aria-label={`${translateUi(showDetail ? 'Thu gọn' : 'Xem chi tiết')} · ${translateUi(row.name)}`} onClick={() => onDetail(showDetail ? undefined : row.competencyId)}>

@@ -30,6 +30,7 @@ import {
   Table as TableIcon,
   Award,
 } from 'lucide-react';
+import { DEFAULT_PAGE_SIZE } from '../components/paging';
 
 function getActionStyle(action: string) {
   const upper = action.toUpperCase();
@@ -298,6 +299,7 @@ export function PlatformAuditLogPage() {
   const [action, setAction] = useState('');
   const [search, setSearch] = useState('');
   const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [category, setCategory] = useState<QuickFilterCategory>('all');
   const [selectedLog, setSelectedLog] = useState<PlatformAuditLog | null>(null);
   const [drawerTab, setDrawerTab] = useState<'diff' | 'raw'>('diff');
@@ -308,7 +310,7 @@ export function PlatformAuditLogPage() {
     action,
     search,
     pageIndex,
-    pageSize: 25,
+    pageSize,
   });
 
   const filter = <T,>(setter: (v: T) => void) => (value: T) => {
@@ -780,8 +782,14 @@ export function PlatformAuditLogPage() {
             <Pager
               pageIndex={data.pageIndex}
               totalPages={data.totalPages}
-              totalItems={filteredItems.length}
+              // All entries: the server total; a category filters only the rows of this page.
+              totalItems={category === 'all' ? data.totalItems : filteredItems.length}
               onChange={setPageIndex}
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPageIndex(1);
+              }}
             />
           </div>
         )}

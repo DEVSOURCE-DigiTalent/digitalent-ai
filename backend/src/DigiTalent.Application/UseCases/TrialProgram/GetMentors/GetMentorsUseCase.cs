@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants.Authorization;
+using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.TrialProgram;
@@ -9,21 +10,31 @@ namespace DigiTalent.Application.UseCases.TrialProgram;
 public class GetMentorsUseCase : IUseCase<GetMentorsUseCaseInput, GetMentorsUseCaseOutput>
 {
     private readonly IApplicationDbContext _context;
+    private readonly TimeProvider _clock;
 
-    public GetMentorsUseCase(IApplicationDbContext context)
+    public GetMentorsUseCase(IApplicationDbContext context, TimeProvider clock)
     {
         _context = context;
+        _clock = clock;
     }
 
     public async Task<GetMentorsUseCaseOutput> ExecuteAsync(GetMentorsUseCaseInput input)
     {
+        var now = _clock.GetUtcNow();
         var mentors = await (
                 from user in _context.Users.AsNoTracking()
                 join userRole in _context.UserRoles.AsNoTracking() on user.Id equals userRole.UserId
                 join role in _context.Roles.AsNoTracking() on userRole.RoleId equals role.Id
                 where role.Code == Roles.Mentor
                 orderby user.DisplayName
-                select new MentorItem { UserId = user.Id, FullName = user.DisplayName, Email = user.Email, Status = user.Status, CreatedAt = user.CreatedAt })
+                select new MentorItem
+                {
+                    UserId = user.Id, FullName = user.DisplayName, Email = user.Email, CreatedAt = user.CreatedAt,
+                    // A temporary lock after failed logins that has expired no longer blocks the account (as at login).
+                    Status = user.Status == Statuses.User.Locked && user.LockedUntil != null && user.LockedUntil <= now
+                        ? Statuses.User.Active
+                        : user.Status,
+                })
             .ToListAsync();
         // A mentor keeps a trial organization until it is converted: after the report its employees learn the Basic
         // courses and only the assigned mentor grades their course finals.

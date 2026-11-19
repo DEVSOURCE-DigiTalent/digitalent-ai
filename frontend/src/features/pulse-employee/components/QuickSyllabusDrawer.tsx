@@ -94,7 +94,6 @@ export function QuickSyllabusDrawer({
 
           <div className="pu-drawer-title-row">
             <h2 id="pu-drawer-title" className="pu-drawer-title">
-              <span className="pu-drawer-code">{course.code}</span>
               {toSentenceCase(course.title)}
             </h2>
             <button
@@ -198,7 +197,7 @@ export function QuickSyllabusDrawer({
           <div className="pu-drawer-facts-grid">
             <div className="pu-drawer-fact-item">
               <span className="pu-drawer-fact-label">Cấp độ năng lực</span>
-              <strong className="pu-drawer-fact-value">{levelName(course.tier)} (L{course.tier})</strong>
+              <strong className="pu-drawer-fact-value">Cấp {course.tier} · {levelName(course.tier)}</strong>
             </div>
             <div className="pu-drawer-fact-item">
               <span className="pu-drawer-fact-label">Thời lượng ước tính</span>

@@ -30,6 +30,7 @@ import {
   CreditCard,
   X,
 } from 'lucide-react';
+import { DEFAULT_PAGE_SIZE } from '../components/paging';
 
 const TABS = [
   { key: 'ALL', label: 'Tất cả', filter: {} },
@@ -48,11 +49,12 @@ export function PlatformOrganizationsPage() {
   const [tab, setTab] = useState<TabKey>(initialTab);
   const [search, setSearch] = useState('');
   const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [drawerOrgId, setDrawerOrgId] = useState<string | null>(null);
 
   const overviewQuery = usePlatformOverview();
   const filter = TABS.find((t) => t.key === tab)!.filter;
-  const { data, isLoading, error } = usePlatformOrganizations({ search, ...filter, pageIndex, pageSize: 20 });
+  const { data, isLoading, error } = usePlatformOrganizations({ search, ...filter, pageIndex, pageSize });
 
   const chooseTab = (key: TabKey) => {
     setTab(key);
@@ -333,6 +335,11 @@ export function PlatformOrganizationsPage() {
               totalPages={data.totalPages}
               totalItems={data.totalItems}
               onChange={setPageIndex}
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPageIndex(1);
+              }}
             />
           </>
         )}

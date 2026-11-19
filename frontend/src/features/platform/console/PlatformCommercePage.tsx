@@ -19,7 +19,7 @@ import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
 import { platformAdminService, type PlatformCourse, type SalesStatus } from '@/services/platform-admin.service';
 import { CSV_EXPORT_LIMIT, csvFileName, downloadCsv } from '../components/csv';
 import { Box, Footer, LoadError, Loading, Pager, Pill } from '../components/pulse-ui';
-import { LEVEL_NAMES, SALES_STATUS, errorMessage, formatDateTime, formatMoney, formatNumber } from '../components/pulse-format';
+import { LEVEL_NAMES, SALES_PAUSE_ENABLED, SALES_STATUS, errorMessage, formatDateTime, formatMoney, formatNumber } from '../components/pulse-format';
 import {
   ReceiptText,
   Building2,
@@ -38,6 +38,7 @@ import {
   AlertTriangle,
   ShoppingBag,
 } from 'lucide-react';
+import { DEFAULT_PAGE_SIZE } from '../components/paging';
 
 const CODE_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,29}$/;
 
@@ -57,10 +58,11 @@ export function PlatformCommercePage() {
   const activeTab: CommerceTab = rawTab === 'ORDERS' ? 'ORDERS' : 'PRICING';
 
   const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [orderSearch, setOrderSearch] = useState('');
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
 
-  const { data, isLoading, error } = usePlatformCommerce({ pageIndex, pageSize: 20 });
+  const { data, isLoading, error } = usePlatformCommerce({ pageIndex, pageSize });
   const versions = useCatalogVersions();
   const currentNo = versions.data?.currentVersionNo ?? null;
   const draftNo = versions.data?.draftVersionNo ?? null;
@@ -509,6 +511,11 @@ export function PlatformCommercePage() {
                       totalPages={data.orders.totalPages}
                       totalItems={data.orders.totalItems}
                       onChange={setPageIndex}
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPageIndex(1);
+              }}
                     />
                   </div>
                 </>
@@ -731,7 +738,7 @@ function PriceTable({
     });
   };
 
-  const totalColSpan = draftNo !== null && editable ? 7 : draftNo !== null ? 6 : 5;
+  const totalColSpan = (draftNo !== null && editable ? 7 : draftNo !== null ? 6 : 5) - (SALES_PAUSE_ENABLED ? 0 : 1);
 
   return (
     <Box>
@@ -829,7 +836,8 @@ function PriceTable({
           <option value="3">Nâng cao (Cấp 3)</option>
         </select>
 
-        {/* Sales status dropdown */}
+        {/* Sales status dropdown (hidden while pausing a sale is not supported) */}
+        {SALES_PAUSE_ENABLED && (
         <select
           value={salesFilter}
           onChange={(e) => setSalesFilter(e.target.value)}
@@ -840,6 +848,7 @@ function PriceTable({
           <option value="OPEN">Đang mở bán</option>
           <option value="PAUSED">Tạm ngưng bán</option>
         </select>
+        )}
 
         {/* Reset button if any filter active */}
         {isFiltered && (
@@ -892,7 +901,7 @@ function PriceTable({
                     Giá v{draftNo} (nháp)
                   </th>
                 )}
-                <th style={{ width: 140, textAlign: 'center' }}>Mở bán</th>
+                {SALES_PAUSE_ENABLED && <th style={{ width: 140, textAlign: 'center' }}>Mở bán</th>}
                 <th style={{ width: 140, textAlign: 'right' }}>Tổ chức đã mua</th>
                 {draftNo !== null && editable && (
                   <th style={{ width: 90, textAlign: 'center' }}>Thao tác</th>
@@ -983,7 +992,8 @@ function PriceTable({
                         {draftNo !== null && (
                           <td>
                             {c.isFree ? (
-                              <span style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>Luôn miễn phí</span>
+                              // Same width as the price input below, so the dash sits in this column, not next to "Miễn phí".
+                              <span style={{ display: 'inline-block', width: 120, textAlign: 'center', fontSize: 12, color: '#94a3b8' }} aria-label="Miễn phí">—</span>
                             ) : editable ? (
                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                 <input
@@ -1016,6 +1026,7 @@ function PriceTable({
                           </td>
                         )}
 
+                        {SALES_PAUSE_ENABLED && (
                         <td style={{ textAlign: 'center' }}>
                           {c.isFree ? (
                             // Basic courses are free for every organization: there is nothing to put on or off sale.
@@ -1040,10 +1051,11 @@ function PriceTable({
                             <Pill tone={SALES_STATUS[c.salesStatus]?.tone}>{translateUi(SALES_STATUS[c.salesStatus]?.label)}</Pill>
                           )}
                         </td>
+                        )}
 
                         <td style={{ textAlign: 'right', fontSize: 12, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
                           {c.isFree ? (
-                            <span style={{ color: '#64748b' }}>Miễn phí</span>
+                            <span style={{ color: '#94a3b8' }} aria-label="Không bán">—</span>
                           ) : (
                             <span>{c.purchaseCount} tổ chức</span>
                           )}

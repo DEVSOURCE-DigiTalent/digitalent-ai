@@ -148,6 +148,17 @@ export function useAssignMentor() {
   });
 }
 
+export function useAutoAssignMentors() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => trialProgramService.autoAssignMentors().then((res) => res.data.data),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.platform });
+      void client.invalidateQueries({ queryKey: TRIAL_PROGRAM_KEYS.mentors });
+    },
+  });
+}
+
 export function useCreateMentor() {
   const client = useQueryClient();
   return useMutation({

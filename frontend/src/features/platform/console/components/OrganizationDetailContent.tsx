@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import type { PlatformOrganization } from '@/services/platform-admin.service';
 import { useOrganizationAction, usePlatformOrganization } from '@/hooks/use-platform-admin';
 import { usePermission, PERMISSIONS } from '@/hooks/use-permission';
-import { LoadError, Loading, ReasonField } from '../../components/pulse-ui';
+import { ClientPaged, LoadError, Loading, ReasonField } from '../../components/pulse-ui';
 import {
   LEVEL_NAMES,
 
@@ -316,8 +316,10 @@ export function OrganizationDetailContent({ orgId }: OrganizationDetailContentPr
                 Chưa có nhân viên nào được mời vào tổ chức này.
               </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
-                {peopleList.map((p, i) => (
+              <ClientPaged items={peopleList}>
+                {(rows) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {rows.map((p, i) => (
                   <div
                     key={p.userId ?? `${p.fullName}-${i}`}
                     style={{
@@ -386,6 +388,8 @@ export function OrganizationDetailContent({ orgId }: OrganizationDetailContentPr
                   </div>
                 ))}
               </div>
+                )}
+              </ClientPaged>
             )}
           </div>
         </div>
@@ -456,8 +460,10 @@ export function OrganizationDetailContent({ orgId }: OrganizationDetailContentPr
                 Chưa có đơn mua khóa học nào.
               </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
-                {ordersList.map((order) => (
+              <ClientPaged items={ordersList}>
+                {(rows) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {rows.map((order) => (
                   <div
                     key={order.id}
                     style={{
@@ -487,6 +493,8 @@ export function OrganizationDetailContent({ orgId }: OrganizationDetailContentPr
                   </div>
                 ))}
               </div>
+                )}
+              </ClientPaged>
             )}
           </div>
         </div>

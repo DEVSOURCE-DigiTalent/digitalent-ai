@@ -163,15 +163,19 @@ describe('Manager overview', () => {
 
     const domain = await screen.findByRole('button', { name: 'Giao tiếp', exact: true });
     const baseline = () => screen.getByText('Đầu vào', { selector: 'dt' }).nextElementSibling;
+    expect(screen.queryByText('Số người theo mức hiện tại')).not.toBeInTheDocument();
+    const dataDomain = screen.getByRole('button', { name: 'Dữ liệu và thông tin', exact: true });
+    fireEvent.click(dataDomain);
     expect(baseline()).toHaveTextContent('Chưa có dữ liệu');
     fireEvent.click(domain);
-    expect(domain).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('heading', { name: 'Giao tiếp', exact: true })).toBeInTheDocument();
+    expect(domain).toHaveAttribute('aria-expanded', 'true');
     expect(baseline()).toHaveTextContent('Chưa đạt');
-    expect(screen.getByText('Còn thiếu')).toBeInTheDocument();
     const distribution = screen.getByText('Số người theo mức hiện tại').parentElement!;
     expect(within(distribution).getByText('Cơ bản').nextElementSibling).toHaveTextContent(/^1$/);
     expect(within(distribution).getByText('Nâng cao').nextElementSibling).toHaveTextContent(/^0$/);
+    fireEvent.keyDown(domain, { key: 'Escape' });
+    expect(domain).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Số người theo mức hiện tại')).not.toBeInTheDocument();
     const baselineToggle = screen.getByRole('button', { name: 'Đầu vào', exact: true });
     fireEvent.click(baselineToggle);
     expect(baselineToggle).toHaveAttribute('aria-pressed', 'false');
@@ -205,7 +209,7 @@ describe('Manager sidebar (Pulse)', () => {
   it('has the two prototype groups with their items in order', () => {
     expect(labelsOf(MANAGER_SIDEBAR)).toEqual([
       'Quản lý đội', 'Tổng quan', 'Nhân viên', 'Năng lực đội ngũ', 'Kết quả bài làm', 'Báo cáo chu kỳ',
-      'Các công cụ khác', 'Học tập của tôi', 'Hoạt động', 'Góp ý', 'Báo lỗi',
+      'Các công cụ khác', 'Học tập của tôi', 'Góp ý', 'Báo lỗi',
     ]);
   });
 
@@ -231,7 +235,6 @@ describe('Manager sidebar (Pulse)', () => {
     ['/enterprise/team/competency', 'Năng lực đội ngũ'],
     ['/enterprise/team/final-reviews', 'Kết quả bài làm'],
     ['/enterprise/team/reports', 'Báo cáo chu kỳ'],
-    ['/enterprise/notifications', 'Hoạt động'],
   ])('on %s highlights exactly "%s"', (path, label) => {
     render(
       <MemoryRouter initialEntries={[path]}>

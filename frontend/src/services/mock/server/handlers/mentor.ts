@@ -591,6 +591,26 @@ route(
 );
 
 route(
+  'POST',
+  '/platform/trials/auto-assign',
+  () => {
+    const assigned: { organizationId: string; organizationName: string; mentorUserId: string; mentorName: string }[] = [];
+    let remaining = 0;
+    for (const trial of MOCK_TRIALS.filter((t) => t.stage !== 'SETUP' && !t.mentorUserId && !t.converted)) {
+      const load = (id: string) => MOCK_TRIALS.filter((t) => t.mentorUserId === id && !t.converted).length;
+      const mentor = MOCK_MENTORS.filter((m) => m.status === 'ACTIVE' && load(m.userId) < 5).sort((a, b) => load(a.userId) - load(b.userId))[0];
+      if (!mentor) { remaining += 1; continue; }
+      trial.mentorUserId = mentor.userId;
+      trial.mentorName = mentor.fullName;
+      if (trial.stage === 'REQUESTED') trial.stage = 'ASSIGNED';
+      assigned.push({ organizationId: trial.organizationId, organizationName: trial.organizationName, mentorUserId: mentor.userId, mentorName: mentor.fullName });
+    }
+    return { assigned, remaining };
+  },
+  { roles: ['PLATFORM_ADMIN'] },
+);
+
+route(
   'PUT',
   '/platform/trials/:organizationId/mentor',
   (ctx) => {

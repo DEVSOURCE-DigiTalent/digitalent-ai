@@ -39,10 +39,15 @@ public class PulseDomainDto
     public string Name { get; set; } = string.Empty;
     /// <summary>Mục tiêu vị trí, 0 = vị trí không yêu cầu lĩnh vực.</summary>
     public int Target { get; set; }
-    /// <summary>Phạm vi năng lực doanh nghiệp đặt cho phòng ban (0..3).</summary>
+    /// <summary>Mức hiệu lực của phòng ban (0..3): mức riêng đã đặt, chưa đặt thì suy từ chuẩn vị trí của tổ chức.</summary>
     public int Ceiling { get; set; }
-    /// <summary>Đỉnh lộ trình = min(mục tiêu, phạm vi); 0 = ngoài lộ trình.</summary>
+    /// <summary>
+    /// Mức tối thiểu doanh nghiệp yêu cầu = đỉnh phần bắt buộc của lộ trình: mức phòng ban đã đặt, chưa đặt thì mục tiêu vị
+    /// trí; 0 = không yêu cầu.
+    /// </summary>
     public int PathTop { get; set; }
+    /// <summary>true = mức tối thiểu do chủ doanh nghiệp đặt cho phòng ban; false = theo chuẩn vị trí.</summary>
+    public bool RequiredByDepartment { get; set; }
     /// <summary>Mức đã xác nhận; 0 = chưa xác nhận.</summary>
     public int Verified { get; set; }
     /// <summary>NONE | COURSE | PRACTICAL_EVIDENCE.</summary>
@@ -81,7 +86,7 @@ public class PulseCourseSummaryDto
     public string DomainName { get; set; } = string.Empty;
     /// <summary>1 = Cơ bản, 2 = Trung cấp, 3 = Nâng cao.</summary>
     public int Tier { get; set; }
-    /// <summary>PATH | OPTIONAL | ABOVE_CEILING | OUTSIDE_PATH.</summary>
+    /// <summary>PATH (bắt buộc) | OPTIONAL (học vượt) | ABOVE_CEILING (chưa mua, trên mức yêu cầu) | OUTSIDE_PATH.</summary>
     public string Zone { get; set; } = string.Empty;
     public bool InPath { get; set; }
     /// <summary>FREE_FULL | PURCHASED | PREVIEW.</summary>
@@ -243,6 +248,7 @@ public static class PulseMapping
         Target = d.Target,
         Ceiling = d.Ceiling,
         PathTop = d.PathTop,
+        RequiredByDepartment = d.RequiredByDepartment,
         Verified = d.Verified,
         Source = d.Source,
         Status = d.Status,

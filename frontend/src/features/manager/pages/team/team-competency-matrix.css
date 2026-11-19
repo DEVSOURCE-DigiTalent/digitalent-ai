@@ -1,7 +1,7 @@
 .team-matrix {
   --matrix-met: #198365;
   --matrix-gap: #ce653c;
-  --matrix-pending: #7862cc;
+  --matrix-pending: #4c739d;
   --matrix-outside: #8190a6;
   min-width: 0;
   padding: clamp(14px, 2.4vw, 30px);
@@ -24,7 +24,7 @@
 .team-matrix-select .owner-filter-select { width: min(100%, 330px); }
 .team-matrix-legend, .team-matrix-columns { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 16px 0; color: var(--po-muted); font-size: 12px; }
 .team-matrix-legend li { display: inline-flex; align-items: center; gap: 6px; }
-.team-matrix-legend li::before { content: ''; width: 9px; height: 9px; border-radius: 3px; background: var(--matrix-state); }
+.team-matrix-legend li svg { color: var(--matrix-state); }
 .team-matrix-columns button, .manager-matrix-pagination button {
   padding: 7px 10px; border: 1px solid var(--po-line); border-radius: 8px; color: var(--po-accent-strong);
 }
@@ -41,10 +41,11 @@
 .team-matrix-table a:hover { text-decoration: underline; }
 .team-matrix-table small { display: block; margin-top: 3px; color: var(--po-muted); font-size: 11px; font-weight: 500; }
 .team-matrix-level {
-  display: inline-block; max-width: 100%; padding: 5px 9px; border-radius: 8px;
-  background: color-mix(in srgb, var(--matrix-state) 17%, var(--po-surface));
-  color: var(--po-ink); font-weight: 750; font-variant-numeric: tabular-nums;
-  box-shadow: inset 0 -2px var(--matrix-state);
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  min-height: 38px; min-width: 80px; padding: 7px; border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--matrix-state) 28%, var(--po-surface));
+  background: color-mix(in srgb, var(--matrix-state) 10%, var(--po-surface));
+  color: var(--matrix-state);
 }
 .team-matrix-mobile-code { display: none; }
 @media (max-width: 900px) {
@@ -62,3 +63,22 @@
   .team-matrix-table tbody { animation: matrix-reveal .22s ease-out; }
 }
 @keyframes matrix-reveal { from { opacity: 0; transform: translateY(4px); } }
+
+.team-matrix-marks { display: grid; gap: 4px; }
+.team-matrix-marks .cap-marks__track { width: 42px; }
+.team-matrix-key { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-block-end: 12px; font-size: 12px; color: var(--po-ink); }
+.team-matrix-key span { display: inline-flex; align-items: center; gap: 6px; }
+.team-matrix-key i { width: 14px; height: 6px; border-radius: 3px; background: #167a8e; }
+.team-matrix-key span + span i { border: 1px solid #426480; background: #d5e6f0; }
+.team-matrix-scroll { max-width: 100%; overflow-x: auto; }
+.team-matrix-table tr:focus-within { background: var(--po-raised); }
+.team-matrix-table td:hover .team-matrix-level { border-color: var(--matrix-state); }
+@media (min-width: 901px) {
+  .team-matrix-table { min-width: 740px; }
+  .team-matrix-table tr > :first-child { position: sticky; inset-inline-start: 0; z-index: 1; }
+  .team-matrix-table tbody th { background: var(--po-surface); }
+  .team-matrix-table tbody tr:is(:hover, :focus-within) th { background: var(--po-raised); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .team-matrix-level, .team-matrix-table tbody tr { transition: border-color .18s ease, background-color .18s ease; }
+}

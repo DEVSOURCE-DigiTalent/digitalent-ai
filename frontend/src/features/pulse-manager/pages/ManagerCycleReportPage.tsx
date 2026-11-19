@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ChevronDown, ClipboardList, GraduationCap, History, Search, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, Filter, GraduationCap, History, Search, TrendingUp } from 'lucide-react';
 import { PageLoading } from '@/components/shared/LoadingState';
 import { useManagedDepartment } from '@/hooks/use-managed-department';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
@@ -17,7 +17,6 @@ import './manager-cycle-report.css';
 
 const API_PAGE_SIZE = 100;
 const COURSES_PER_PAGE = 6;
-const TIMELINE_PREVIEW = 3;
 
 const courseName = (title: string, locale: string) => title === title.toLocaleUpperCase(locale)
   ? title.replace(/\p{L}[\p{L}\p{M}]*/gu, (word, index) => word.length <= 2 ? word : index === 0 ? word[0] + word.slice(1).toLocaleLowerCase(locale) : word.toLocaleLowerCase(locale))
@@ -62,7 +61,7 @@ function ReportCourses({ cohorts, reviewReady }: { cohorts: CourseCohort[]; revi
             {reviewReady && (
               <button type="button" aria-pressed={onlySupport}
                 onClick={() => { setOnlySupport(!onlySupport); setPage(1); }}>
-                {translateUi('Cần hỗ trợ')}
+                <Filter size={15} aria-hidden="true" />{translateUi('Cần hỗ trợ')}
               </button>
             )}
           </div>
@@ -94,7 +93,7 @@ function ReportCourses({ cohorts, reviewReady }: { cohorts: CourseCohort[]; revi
                           <td role="cell"><small aria-hidden="true">{translateUi('Hoàn thành')}</small>{count('APPROVED')}</td>
                           <td role="cell"><small aria-hidden="true">{translateUi('Chờ đánh giá / nộp lại')}</small>{reviewReady ? count('REVIEW') : '—'}</td>
                           <td role="cell"><small aria-hidden="true">{translateUi('Cần hỗ trợ')}</small><span className={support ? 'manager-cycle__badge warning' : undefined}>{support ?? '—'}</span></td>
-                          <td role="cell" className="manager-cycle__progress"><small aria-hidden="true">{translateUi('Tiến độ trung bình')}</small>
+                          <td role="cell" className="manager-cycle__progress" data-complete={progress === 100}><small aria-hidden="true">{translateUi('Tiến độ trung bình')}</small>
                             <strong>{progress}%</strong>
                             <Bar value={progress} label={`${translateUi('Tiến độ trung bình')} · ${courseTitle}`} />
                           </td>
@@ -108,8 +107,9 @@ function ReportCourses({ cohorts, reviewReady }: { cohorts: CourseCohort[]; revi
                 <span role="status">{offset + 1}–{Math.min(offset + COURSES_PER_PAGE, matching.length)} / {matching.length} {translateUi('khóa học')}</span>
                 {totalPages > 1 && (
                   <nav aria-label={translateUi('Phân trang khóa học')}>
-                    <button type="button" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>{translateUi('Trang trước')}</button>
-                    <button type="button" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)}>{translateUi('Trang sau')}</button>
+                    <button type="button" disabled={currentPage === 1} aria-label={translateUi('Trang trước')} onClick={() => setPage(currentPage - 1)}><ChevronLeft size={17} aria-hidden="true" /></button>
+                    <span aria-current="page">{currentPage} / {totalPages}</span>
+                    <button type="button" disabled={currentPage === totalPages} aria-label={translateUi('Trang sau')} onClick={() => setPage(currentPage + 1)}><ChevronRight size={17} aria-hidden="true" /></button>
                   </nav>
                 )}
               </footer>
@@ -123,7 +123,6 @@ function ReportCourses({ cohorts, reviewReady }: { cohorts: CourseCohort[]; revi
 
 export function ManagerCycleReportPage() {
   const locale = useUiLanguage();
-  const [expandedTimeline, setExpandedTimeline] = useState<string>();
   const { can } = usePermission();
   const canReview = can(PERMISSIONS.DASHBOARD_DEPARTMENT_READ);
   const canReadAssignments = can(PERMISSIONS.COURSE_ASSIGNMENT_READ);
@@ -168,9 +167,7 @@ export function ManagerCycleReportPage() {
         attempt.reviewerName,
       ].filter(Boolean).join(' · '),
     }] : [])),
-  ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 8);
-
-  const timelineOpen = expandedTimeline === department.id;
+  ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 
   return (
     <ManagerPage testId="manager-cycle-report">
@@ -180,7 +177,7 @@ export function ManagerCycleReportPage() {
           { label: 'Học viên', icon: <GraduationCap size={16} />, value: assignmentsReady ? new Set(learners.map((learner) => learner.employeeId)).size : '—' },
           { label: 'Lượt nộp bài', icon: <ClipboardList size={16} />, value: reviewReady ? queue.reduce((sum, item) => sum + item.attempts.length, 0) : '—' },
           { label: 'Lượt hoàn thành', icon: <BookOpen size={16} />, value: assignmentsReady ? completed.length : '—' },
-          { label: 'Tiến độ đang học', status: translateUi('Trung bình các lượt chưa hoàn thành'), icon: <TrendingUp size={16} />, value: assignmentsReady && avgProgress != null ? `${avgProgress}%` : '—' },
+          { label: 'Tiến độ đang học', icon: <TrendingUp size={16} />, value: assignmentsReady && avgProgress != null ? `${avgProgress}%` : '—' },
         ]} />
 
         <div className="manager-cycle__layout">
@@ -202,29 +199,26 @@ export function ManagerCycleReportPage() {
 
           <section className="manager-cycle__panel" aria-labelledby="cycle-timeline">
             <header><h2 id="cycle-timeline"><History size={19} aria-hidden="true" />{translateUi('Hoạt động gần đây')}</h2>
-              {canReview && <PuLink to={MANAGER_PATHS.finalReviews} small kind="outline">{translateUi('Kết quả bài làm')} →</PuLink>}
+              {canReview && <PuLink to={MANAGER_PATHS.finalReviews} small kind="outline">{translateUi('Kết quả bài làm')} <ArrowUpRight size={14} aria-hidden="true" /></PuLink>}
             </header>
             {canReview && reviews.isError && <LoadError message="Không tải được kết quả bài làm." onRetry={reviews.refetch} />}
             {canReview && reviews.isLoading && <p className="manager-cycle__note" role="status">{translateUi('Đang tải kết quả bài làm…')}</p>}
             {events.length > 0 ? (
-              <>
-              <ol id="cycle-events" className="manager-cycle__events">
-                {events.slice(0, timelineOpen ? events.length : TIMELINE_PREVIEW).map((event, index) => (
-                  <li key={`${event.at}-${index}`}>
-                    <div><time dateTime={event.at}>{formatDate(event.at)}</time><span className={`manager-cycle__badge ${event.tone}`}>{translateUi(event.status)}</span></div>
-                    <strong>{courseName(event.title, locale)}</strong>
-                    <small>{event.employee}</small>
-                    {event.detail && <details><summary>{translateUi('Chi tiết')}</summary><small>{event.detail}</small></details>}
-                  </li>
-                ))}
-              </ol>
-              {events.length > TIMELINE_PREVIEW && (
-                <button type="button" className="manager-cycle__more" aria-expanded={timelineOpen} aria-controls="cycle-events"
-                  onClick={() => setExpandedTimeline(timelineOpen ? undefined : department.id)}>
-                  {translateUi(timelineOpen ? 'Thu gọn' : 'Xem thêm')} <ChevronDown size={15} aria-hidden="true" />
-                </button>
-              )}
-              </>
+              <div className="manager-cycle__event-scroll" role="region" aria-labelledby="cycle-timeline" tabIndex={0} key={department.id}>
+                <ol className="manager-cycle__events">
+                  {events.map((event, index) => (
+                    <li key={`${event.at}-${index}`}>
+                      <span className="manager-cycle__event-marker" data-tone={event.tone} aria-hidden="true">
+                        {event.tone === 'success' ? <Check size={12} /> : <CircleAlert size={12} />}
+                      </span>
+                      <div><time dateTime={event.at}>{formatDate(event.at)}</time><span className={`manager-cycle__badge ${event.tone}`}>{translateUi(event.status)}</span></div>
+                      <strong>{courseName(event.title, locale)}</strong>
+                      <small>{event.employee}</small>
+                      {event.detail && <details><summary><ChevronDown size={13} aria-hidden="true" />{translateUi('Chi tiết')}</summary><small>{event.detail}</small></details>}
+                    </li>
+                  ))}
+                </ol>
+              </div>
             ) : (!canReview || reviewReady) && (!canReadAssignments || assignmentsReady) && (
               <p className="manager-cycle__note">{translateUi('Chưa ghi nhận mốc học tập hoặc đánh giá.')}</p>
             )}

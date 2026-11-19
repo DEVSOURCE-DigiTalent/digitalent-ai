@@ -27,6 +27,7 @@ import { Footer, Loading, LoadError, Pager } from '@/features/platform/component
 import { formatDate, formatDateTime, formatRelativeTime, formatTime } from '@/features/platform/components/pulse-format';
 import { PlatformDrawer } from '@/features/platform/components/PlatformDrawer';
 import { openScreenshot } from '../lib/open-screenshot';
+import { DEFAULT_PAGE_SIZE } from '@/features/platform/components/paging';
 
 const FEEDBACK_STATUS: Record<
   string,
@@ -329,6 +330,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
   const [orgFilter, setOrgFilter] = useState('ALL');
   const [starFilter, setStarFilter] = useState<number | null>(null);
   const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [viewingItem, setViewingItem] = useState<FeedbackItem | null>(null);
 
   // Form state inside drawer
@@ -344,7 +346,7 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
     queryFn: () =>
       feedbackService.getAll({
         pageIndex,
-        pageSize: 50,
+        pageSize,
         status: statusFilter || undefined,
         type,
         search: search || undefined,
@@ -1113,6 +1115,11 @@ function FeedbacksTable({ type }: { type: 'FEEDBACK' | 'BUG' }) {
               totalPages={totalPages}
               totalItems={displayedItems.length}
               onChange={setPageIndex}
+              pageSize={pageSize}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPageIndex(1);
+              }}
             />
           </div>
         )}
