@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import type { TrialParticipantRow } from '@/services/trial-program.service';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
+import { standardPositionChoices } from '@/lib/standard-positions';
 import { readParticipantFile, rowsFromCells } from '../lib/participant-file';
 import { EMPTY_ROW as EMPTY, isRowEmpty, rowError } from '../lib/participant-rows';
 
@@ -54,12 +55,8 @@ export function ParticipantsEditor({
     ]),
   );
 
-  const departmentKey = (name: string) => name.trim().toLocaleLowerCase('vi');
-  const positionsFor = (name: string) => {
-    const key = departmentKey(name);
-    const department = deptData?.items.find((item) => [item.name, item.code].some((value) => departmentKey(value) === key));
-    return department ? (posData?.items ?? []).filter((item) => item.departmentId === department.id) : [];
-  };
+  // Any department name; the position is one of the 5 standard ones, open in every department.
+  const positionChoices = standardPositionChoices(posData?.items);
 
   const [importOpen, setImportOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -386,17 +383,13 @@ export function ParticipantsEditor({
                         aria-label={translateUi(`Phòng ban dòng ${idx + 1}`)}
                         placeholder={translateUi('Phòng ban')}
                         value={row.department}
-                        onChange={(e) => {
-                          const department = e.target.value;
-                          const options = positionsFor(department);
-                          updateRow(idx, { department, position: options.length === 1 ? options[0].name : '' });
-                        }}
+                        onChange={(e) => updateRow(idx, { department: e.target.value })}
                         className="tp-participant-input"
                       />
                     </td>
                     <td className="py-1.5 px-2.5">
                       <input
-                        list={`${listId}-p-${idx}`}
+                        list={`${listId}-p`}
                         aria-label={translateUi(`Vị trí dòng ${idx + 1}`)}
                         placeholder={translateUi('Vị trí')}
                         value={row.position}
@@ -468,11 +461,9 @@ export function ParticipantsEditor({
           <option key={d} value={d} />
         ))}
       </datalist>
-      {rows.slice(start, start + pageSize).map((row, index) => (
-        <datalist key={start + index} id={`${listId}-p-${start + index}`}>
-          {positionsFor(row.department).map((item) => <option key={item.id} value={item.name} />)}
-        </datalist>
-      ))}
+      <datalist id={`${listId}-p`}>
+        {positionChoices.map((name) => <option key={name} value={name} />)}
+      </datalist>
     </div>
   );
 }

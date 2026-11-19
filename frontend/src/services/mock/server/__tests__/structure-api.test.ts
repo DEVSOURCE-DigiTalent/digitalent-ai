@@ -2,6 +2,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import apiClient from '../../../api-client';
 import { resetMockDb } from '../../mock-store';
 import { mockAdapter } from '../mock-adapter';
+import { updateOrgData } from '../org-store';
+import { ACME_ORGANIZATION_ID } from '../seed-acme';
 
 beforeAll(() => {
   apiClient.defaults.adapter = mockAdapter;
@@ -142,9 +144,21 @@ describe('position requirements', () => {
     expect(marketing.versions.map((v: { status: string }) => v.status)).toEqual(['DRAFT', 'ACTIVE']);
   });
 
+  it('only creates one of the 5 standard positions, once, shared by every department', async () => {
+    asUser('learning');
+    expect(await failure(call('post', '/job-positions', { code: 'LEGAL', name: 'Pháp chế' }))).toMatchObject({ status: 400 });
+    expect(await failure(call('post', '/job-positions', { code: 'MARKETING', name: 'Marketing', departmentId: 'dep-kd' })))
+      .toMatchObject({ status: 409 });
+    const marketing = await call('get', '/job-positions/pos-mkt');
+    expect(marketing.departmentId).toBeUndefined();
+    expect(marketing.departments.length).toBeGreaterThan(0);
+  });
+
   it('reports a position with no set at all as empty, so the editor starts a draft', async () => {
     asUser('learning');
-    const { id } = await call('post', '/job-positions', { code: 'LEGAL', name: 'Pháp chế' });
+    // the organization takes HR out of use, then adds it back as a new standard position with no set yet
+    updateOrgData(ACME_ORGANIZATION_ID, (data) => { data.positions = data.positions.filter((p) => p.code !== 'HR'); });
+    const { id } = await call('post', '/job-positions', { code: 'HR', name: 'Nhân sự (HR)' });
     const output = await call('get', '/position-requirements', { positionId: id });
 
     expect(output.id).toBeUndefined();

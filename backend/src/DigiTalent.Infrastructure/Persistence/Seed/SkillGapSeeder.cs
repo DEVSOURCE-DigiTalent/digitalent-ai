@@ -92,21 +92,10 @@ public static class SkillGapSeeder
 
         var competencies = SeedFramework(db, organizationId);
         var positions = SeedPositions(db, organizationId, ownerUserId, competencies);
-        await BindSeedPositionsAsync(db, organizationId, positions);
+        // positions are shared by every department (StandardPositions): nothing binds a position to a department
         var demoPosition = positions[DemoEmployeePosition];
-        if (!demoPosition.DepartmentId.HasValue)
-        {
-            var opsId = await db.Departments.Where(d => d.OrganizationId == organizationId && d.Code == "OPS")
-                .Select(d => (Guid?)d.Id).FirstOrDefaultAsync();
-            if (opsId.HasValue && !await db.JobPositions.AnyAsync(p => p.DepartmentId == opsId && p.Status != Statuses.MasterData.Archived))
-                demoPosition.DepartmentId = opsId;
-        }
-        var demoDepartmentId = demoPosition.DepartmentId;
-        if (demoDepartmentId is Guid departmentId)
-        {
-            await AssignDemoEmployeeAsync(db, organizationId, departmentId, DemoEmployeeEmail, demoPosition.Id);
-            await AssignDemoEmployeeAsync(db, organizationId, departmentId, DemoManagerEmail, demoPosition.Id);
-        }
+        await AssignDemoEmployeeAsync(db, organizationId, DemoEmployeeEmail, demoPosition.Id);
+        await AssignDemoEmployeeAsync(db, organizationId, DemoManagerEmail, demoPosition.Id);
         await SeedEmployeeProfileAsync(db, organizationId, ownerUserId, competencies);
         SeedCourses(db, organizationId, authorUserId, competencies);
 
@@ -177,12 +166,7 @@ public static class SkillGapSeeder
     {
         var codes = JobPositionCatalog.Positions.Keys.ToArray();
         if (await db.JobPositions.CountAsync(p => p.OrganizationId == organizationId && codes.Contains(p.Code)
-            && db.PositionRequirementSets.Any(s => s.JobPositionId == p.Id)) == codes.Length
-            && !await db.Departments.AnyAsync(d => d.OrganizationId == organizationId && d.Status == Statuses.MasterData.Active
-                && codes.Contains(d.Code)
-                && db.JobPositions.Any(p => p.OrganizationId == organizationId && p.Code == d.Code
-                    && p.DepartmentId == null && p.Status == Statuses.MasterData.Active)
-                && !db.JobPositions.Any(p => p.DepartmentId == d.Id && p.Status != Statuses.MasterData.Archived)))
+            && db.PositionRequirementSets.Any(s => s.JobPositionId == p.Id)) == codes.Length)
             return;
 
         await db.ExecuteInSerializableTransactionAsync(async () =>
@@ -217,23 +201,8 @@ public static class SkillGapSeeder
                     AddPositionStandard(db, position, author.Value, competencies, lines);
             }
 
-            await BindSeedPositionsAsync(db, organizationId, positions);
             await db.SaveChangesAsync();
         });
-    }
-
-    private static async Task BindSeedPositionsAsync(AppDbContext db, Guid organizationId, Dictionary<string, JobPosition> positions)
-    {
-        var departments = await db.Departments.Where(d => d.OrganizationId == organizationId && d.Status == Statuses.MasterData.Active)
-            .ToListAsync();
-        var occupied = await db.JobPositions.Where(p => p.OrganizationId == organizationId && p.DepartmentId != null
-            && p.Status != Statuses.MasterData.Archived).Select(p => p.DepartmentId!.Value).ToListAsync();
-        foreach (var department in departments)
-        {
-            if (!occupied.Contains(department.Id) && positions.TryGetValue(department.Code, out var position)
-                && position.DepartmentId == null && position.Status == Statuses.MasterData.Active)
-                position.DepartmentId = department.Id;
-        }
     }
 
     /// <summary>Khung TT02_2025, 6 nhóm = 6 miền, 24 năng lực (3 tiêu chí/mức) và 24 mapping DIRECT. Key = mã Thông tư ("4.2").</summary>
@@ -375,10 +344,10 @@ public static class SkillGapSeeder
         db.PositionRequirementSets.Add(set);
     }
 
-    private static async Task AssignDemoEmployeeAsync(AppDbContext db, Guid organizationId, Guid departmentId, string email, Guid positionId)
+    private static async Task AssignDemoEmployeeAsync(AppDbContext db, Guid organizationId, string email, Guid positionId)
     {
         var employee = await db.Employees
-            .FirstOrDefaultAsync(e => e.OrganizationId == organizationId && e.DepartmentId == departmentId && e.JobPositionId == null && e.WorkEmail == email);
+            .FirstOrDefaultAsync(e => e.OrganizationId == organizationId && e.JobPositionId == null && e.WorkEmail == email);
         if (employee != null)
         {
             employee.JobPositionId = positionId;

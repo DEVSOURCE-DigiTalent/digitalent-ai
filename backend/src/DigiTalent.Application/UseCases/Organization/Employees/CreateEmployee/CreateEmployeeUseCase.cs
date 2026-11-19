@@ -55,15 +55,15 @@ public class CreateEmployeeUseCase : IUseCase<CreateEmployeeUseCaseInput, Create
             throw new BadRequestException($"Department '{input.DepartmentId}' does not exist or is archived.");
         }
 
-        // 4. Vị trí công việc (nếu có) phải tồn tại trong tổ chức và chưa bị archive
+        // 4. Vị trí công việc (nếu có) phải tồn tại trong tổ chức và chưa bị archive; vị trí dùng chung mọi phòng ban
         var positionId = input.PositionId ?? input.JobPositionId;
         if (positionId.HasValue)
         {
             var positionExists = await _context.JobPositions
-                .AnyAsync(p => p.Id == positionId.Value && p.OrganizationId == organizationId && p.DepartmentId == input.DepartmentId && p.Status != Statuses.MasterData.Archived);
+                .AnyAsync(p => p.Id == positionId.Value && p.OrganizationId == organizationId && p.Status != Statuses.MasterData.Archived);
             if (!positionExists)
             {
-                throw new BadRequestException($"Job position '{positionId.Value}' không thuộc phòng ban đã chọn hoặc đã lưu trữ.");
+                throw new BadRequestException($"Job position '{positionId.Value}' does not exist or is archived.");
             }
         }
 

@@ -9,6 +9,7 @@ import type { TrialProgram } from '@/services/trial-program.service';
 import { apiErrorMessage } from '@/lib/utils';
 import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
+import { standardPositionChoices } from '@/lib/standard-positions';
 import { TrialDisclosure } from './TrialDisclosure';
 
 export function OwnerSurveyAction({ program }: { program: TrialProgram }) {
@@ -20,9 +21,8 @@ export function OwnerSurveyAction({ program }: { program: TrialProgram }) {
   const [open, setOpen] = useState(false);
   const [department, setDepartment] = useState(program.departments[0] ?? 'Ban lãnh đạo');
   const [selectedPosition, setPosition] = useState('');
-  const positionOptions = program.positionsByDepartment
-    ? (program.departments.length ? program.positionsByDepartment[department] ?? [] : ['Giám đốc'])
-    : (program.positions.length ? program.positions : ['Giám đốc']);
+  // the 5 standard positions are open in every department
+  const positionOptions = program.positions.length ? program.positions : standardPositionChoices();
   const position = positionOptions.includes(selectedPosition) ? selectedPosition : positionOptions[0] ?? '';
   const submitted = owner?.status === 'SUBMITTED' || owner?.status === 'REVIEWED';
   const ended = program.stage === 'REPORTED' || Boolean(program.testDeadline && Date.parse(program.testDeadline) <= Date.now());
@@ -38,6 +38,6 @@ export function OwnerSurveyAction({ program }: { program: TrialProgram }) {
   if (ended && !submitted) return null;
   return <section className="trial-owner-action">
     <div className="trial-owner-action__bar"><span className="trial-owner-action__icon"><ClipboardCheck size={23} /></span><div><h2>{submitted ? translateUi('Bài khảo sát của bạn đã hoàn thành') : 'Cùng đội ngũ làm khảo sát'}</h2><p>{translateUi("Cùng đề, cùng cách chấm như nhân viên.")}</p></div><button type="button" disabled={join.isPending} onClick={() => owner ? void enter() : setOpen(!open)} aria-expanded={!owner ? open : undefined}>{join.isPending ? 'Đang chuẩn bị…' : submitted ? translateUi('Xem kết quả của tôi') : owner ? translateUi('Làm bài khảo sát') : 'Tôi cũng tham gia'}<ArrowRight size={16} /></button></div>
-    <TrialDisclosure open={open}><div className="trial-owner-action__placement"><OwnerFilterSelect label={translateUi("Phòng ban của bạn")} value={department} options={(program.departments.length ? program.departments : ['Ban lãnh đạo']).map((name) => ({value:name,label:name}))} onChange={(name) => { setDepartment(name); setPosition(''); }}/>{positionOptions.length ? <OwnerFilterSelect label="Vị trí của bạn" value={position} options={positionOptions.map((name) => ({value:name,label:name}))} onChange={setPosition}/> : <span>{translateUi("Phòng ban chưa có vị trí")}</span>}<button type="button" disabled={join.isPending || !position} onClick={() => void enter()}>Đăng ký & vào bài khảo sát <ArrowRight size={16}/></button></div></TrialDisclosure>
+    <TrialDisclosure open={open}><div className="trial-owner-action__placement"><OwnerFilterSelect label={translateUi("Phòng ban của bạn")} value={department} options={(program.departments.length ? program.departments : ['Ban lãnh đạo']).map((name) => ({value:name,label:name}))} onChange={setDepartment}/><OwnerFilterSelect label="Vị trí của bạn" value={position} options={positionOptions.map((name) => ({value:name,label:name}))} onChange={setPosition}/><button type="button" disabled={join.isPending || !position} onClick={() => void enter()}>Đăng ký & vào bài khảo sát <ArrowRight size={16}/></button></div></TrialDisclosure>
   </section>;
 }

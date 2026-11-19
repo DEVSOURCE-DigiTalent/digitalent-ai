@@ -157,12 +157,12 @@ public class SkillGapSeederTests
             e.EmployeeId == employee.Id && e.SourceType == Statuses.EvidenceSourceType.Migration && e.IsLevelConfirming))
             .Should().Be(24);
 
-        accountant.DepartmentId.Should().Be(employee.DepartmentId);
+        accountant.DepartmentId.Should().BeNull(); // positions are shared by every department
         (await context.Employees.SingleAsync(e => e.WorkEmail == "manager@digitalent.ai")).JobPositionId.Should().Be(accountant.Id);
     }
 
     [Fact]
-    public async Task ExistingTemplatesBindToMatchingDepartmentCodesWithoutReplacingStandards()
+    public async Task ExistingTemplatesStayUnboundFromDepartments_AndKeepTheirStandards()
     {
         using var context = await SeededTwiceAsync();
         var templates = await context.JobPositions.Where(p => p.Code != "ACCOUNTANT").ToListAsync();
@@ -178,7 +178,8 @@ public class SkillGapSeederTests
         await SkillGapSeeder.EnsureOrganizationFrameworkAndCoursesAsync(context, org);
         await SkillGapSeeder.EnsureOrganizationFrameworkAndCoursesAsync(context, org);
 
-        templates.Should().HaveCount(4).And.OnlyContain(p => p.DepartmentId == departments[p.Code].Id);
+        // a department named like a position no longer takes that position: positions are shared by every department
+        templates.Should().HaveCount(4).And.OnlyContain(p => p.DepartmentId == null);
         (await context.PositionRequirementSets.CountAsync()).Should().Be(standards);
     }
 

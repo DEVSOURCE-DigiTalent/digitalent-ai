@@ -57,8 +57,10 @@ public class GetDepartmentByIdUseCase : IUseCase<GetDepartmentByIdUseCaseInput, 
         var stats = (await DepartmentRules.LoadStatsAsync(_context, new[] { department.Id }))[department.Id];
         department.Headcount = stats.Headcount;
         department.GradeDistribution = stats.GradeDistribution;
-        department.PositionCount = await _context.JobPositions
-            .CountAsync(p => p.DepartmentId == department.Id && p.Status != Statuses.MasterData.Archived);
+        // vị trí dùng chung mọi phòng ban: đếm các vị trí nhân viên đang làm trong phòng ban giữ
+        department.PositionCount = await _context.Employees
+            .Where(e => e.DepartmentId == department.Id && e.Status == Statuses.Employee.Active && e.JobPositionId.HasValue)
+            .Select(e => e.JobPositionId).Distinct().CountAsync();
         department.SubDepartmentCount = await _context.Departments
             .CountAsync(d => d.ParentDepartmentId == department.Id && d.Status != Statuses.MasterData.Archived);
 

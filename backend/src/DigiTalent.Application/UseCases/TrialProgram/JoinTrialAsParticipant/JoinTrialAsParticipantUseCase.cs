@@ -62,7 +62,7 @@ public class JoinTrialAsParticipantUseCase : IUseCase<JoinTrialAsParticipantUseC
             OrganizationId = trial.OrganizationId,
             UserId = owner.Id,
             DepartmentId = department.Id,
-            JobPositionId = structure.Position(department, positionName).Id,
+            JobPositionId = structure.Position(positionName).Id,
             DirectManagerId = department.ManagerEmployeeId,
             EmployeeCode = await EmployeeCodeGenerator.NextAsync(_context, trial.OrganizationId),
             FullName = owner.DisplayName,

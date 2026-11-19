@@ -7,8 +7,8 @@ public class GetPagedJobPositionsUseCaseInput
     public string? Search { get; set; }
     public string? Status { get; set; }
     public Guid? JobFamilyId { get; set; }
+    /// <summary>Only the positions the department's active employees hold.</summary>
     public Guid? DepartmentId { get; set; }
-    public bool IncludeAssignedPositions { get; set; }
     public string? JobGrade { get; set; } // G1 | G2 | G3
 }
 
@@ -20,12 +20,12 @@ public class JobPositionListItem
     public string? Description { get; set; }
     public Guid? JobFamilyId { get; set; }
     public string? JobFamilyName { get; set; }
-    public Guid? DepartmentId { get; set; }
-    public string? DepartmentName { get; set; }
+    /// <summary>Departments whose active employees hold the position (a position is shared by every department).</summary>
+    public List<string> Departments { get; set; } = new();
     public string? JobGrade { get; set; }
     public string? JobGradeName { get; set; }
 
-    /// <summary>ACTIVE employees holding the position.</summary>
+    /// <summary>ACTIVE employees holding the position (in the filtered department when one is given).</summary>
     public int Headcount { get; set; }
     public bool UsedByOtherDepartments { get; set; }
 

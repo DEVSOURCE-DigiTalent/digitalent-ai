@@ -4,6 +4,8 @@ import { badRequest, conflict, matchesSearch, notFound, paginate, pageRequest } 
 import { route, type RequestContext } from '../router';
 import type { DepartmentRecord, EmployeeRecord, JobFamilyRecord, JobPositionRecord, OrgData, RecordStatus } from '../types';
 import { recordAudit } from './audit';
+import { departmentsHolding } from '../standard-positions';
+import { STANDARD_POSITIONS, standardPositionCode } from '../../../../lib/standard-positions';
 
 /** Departments, job families, job positions and employees: the structure of the organization. */
 
@@ -165,15 +167,18 @@ route('DELETE', '/job-families/:id', ({ params, update }) => update((data) => {
 
 // ── Job positions ──
 
-function positionDto(data: OrgData, p: JobPositionRecord) {
-  const dept = data.departments.find((d) => d.id === p.departmentId);
+// A position is one of the 5 standard ones, shared by every department: its departments are those whose active
+// employees hold it (the legacy `departmentId` is not used).
+function positionDto(data: OrgData, p: JobPositionRecord, departmentId?: string) {
   const grade = data.jobGrades?.find((g) => g.code === p.jobGrade);
-  const headcount = data.employees.filter((e) => e.jobPositionId === p.id && e.status === 'ACTIVE').length;
+  const headcount = data.employees.filter((e) => e.jobPositionId === p.id && e.status === 'ACTIVE'
+    && (!departmentId || e.departmentId === departmentId)).length;
   const hasRequirementSet = data.requirementSets.some((s) => s.jobPositionId === p.id && s.status === 'ACTIVE');
+  const { departmentId: _legacy, ...position } = p;
 
   return {
-    ...p,
-    departmentName: dept?.name,
+    ...position,
+    departments: departmentsHolding(data, p.id),
     jobGradeName: grade?.name,
     jobFamilyName: data.jobFamilies.find((f) => f.id === p.jobFamilyId)?.name,
     headcount,
@@ -183,14 +188,17 @@ function positionDto(data: OrgData, p: JobPositionRecord) {
 
 route('GET', '/job-positions', ({ org, query }) => {
   const data = org();
+  const held = query.departmentId
+    ? new Set(data.employees.filter((e) => e.departmentId === query.departmentId && e.status === 'ACTIVE').map((e) => e.jobPositionId))
+    : null;
   const items = data.positions
     .filter((p) => visible(p.status, query.status)
       && (!query.jobFamilyId || p.jobFamilyId === query.jobFamilyId)
-      && (!query.departmentId || p.departmentId === query.departmentId)
+      && (!held || held.has(p.id))
       && (!query.jobGrade || p.jobGrade === query.jobGrade)
       && (matchesSearch(p.name, query.search) || matchesSearch(p.code, query.search)))
     .sort((a, b) => a.name.localeCompare(b.name, 'vi'))
-    .map((p) => positionDto(data, p));
+    .map((p) => positionDto(data, p, query.departmentId || undefined));
   return paginate(items, pageRequest(query));
 }, { permission: P.JOB_POSITION_READ });
 
@@ -202,14 +210,16 @@ route('GET', '/job-positions/:id', ({ org, params }) => {
 }, { permission: P.JOB_POSITION_READ });
 
 route('POST', '/job-positions', ({ body, session, update }) => update((data) => {
-  const code = required(body.code, 'Mã vị trí').toUpperCase();
-  if (data.positions.some((p) => p.code === code && p.status !== 'ARCHIVED')) throw conflict('Mã vị trí đã tồn tại.');
+  const code = standardPositionCode(required(body.code, 'Mã vị trí'));
+  if (!code) throw badRequest('Chọn một trong 5 vị trí chuẩn.');
+  if (data.positions.some((p) => p.code === code && p.status === 'ACTIVE')) {
+    throw conflict(`Vị trí ${STANDARD_POSITIONS[code]} đã có trong doanh nghiệp và dùng được ở mọi phòng ban.`);
+  }
   const position: JobPositionRecord = {
     id: newId('pos'),
     code,
-    name: required(body.name, 'Tên vị trí'),
+    name: STANDARD_POSITIONS[code],
     description: body.description as string | undefined,
-    departmentId: (body.departmentId as string) || undefined,
     jobGrade: (body.jobGrade as 'G1' | 'G2' | 'G3') || undefined,
     jobFamilyId: (body.jobFamilyId as string) || undefined,
     status: 'ACTIVE',
@@ -230,7 +240,7 @@ route('PUT', '/job-positions/:id', ({ body, params, session, update }) => update
     code,
     name: required(body.name, 'Tên vị trí'),
     description: body.description as string | undefined,
-    departmentId: (body.departmentId as string) || undefined,
+    departmentId: undefined,
     jobGrade: (body.jobGrade as 'G1' | 'G2' | 'G3') || undefined,
     jobFamilyId: (body.jobFamilyId as string) || undefined,
     status: body.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',

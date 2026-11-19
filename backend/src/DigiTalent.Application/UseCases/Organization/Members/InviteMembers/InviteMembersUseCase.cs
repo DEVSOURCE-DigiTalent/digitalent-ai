@@ -1,6 +1,7 @@
 using System.Net.Mail;
 using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
@@ -144,54 +145,34 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
                     };
                 }
 
+                // A position is one of the 5 standard ones, shared by every department (StandardPositions).
                 var positionName = row.JobPositionName?.Trim() ?? string.Empty;
-                var departmentPositions = department == null ? new List<JobPosition>()
-                    : allPositions.Where(p => p.DepartmentId == department.Id && p.Status != Statuses.MasterData.Archived).ToList();
-                bool MatchesPosition(JobPosition item) => item.Name.Equals(positionName, StringComparison.OrdinalIgnoreCase)
-                    || item.Code.Equals(positionName, StringComparison.OrdinalIgnoreCase)
-                    || item.Code.Equals(JobPositionCatalog.ResolveCode(positionName), StringComparison.OrdinalIgnoreCase);
-                var position = row.JobPositionId.HasValue
-                    ? departmentPositions.Find(p => p.Id == row.JobPositionId.Value)
-                    : departmentPositions.Find(MatchesPosition);
-                var nameBelongsToAnotherDepartment = positionName.Length > 0 && allPositions.Any(p =>
-                    p.DepartmentId.HasValue && p.DepartmentId != department?.Id && MatchesPosition(p));
-                if (position is { Status: not Statuses.MasterData.Active } ||
-                    (position == null && (row.JobPositionId.HasValue ||
-                        (positionName.Length > 0 && (departmentPositions.Count > 0 || nameBelongsToAnotherDepartment)))))
+                JobPosition? position = null;
+                if (row.JobPositionId.HasValue)
                 {
-                    output.Rejected.Add(new RejectedInvitation { Email = email, Reason = "Vị trí công việc không thuộc phòng ban đã chọn hoặc không còn hoạt động." });
-                    continue;
+                    position = allPositions.Find(p => p.Id == row.JobPositionId.Value);
+                    if (position is not { Status: Statuses.MasterData.Active })
+                    {
+                        output.Rejected.Add(new RejectedInvitation { Email = email, Reason = "Vị trí công việc không còn hoạt động." });
+                        continue;
+                    }
+                }
+                else if (positionName.Length > 0)
+                {
+                    var (resolved, error) = StandardPositions.Resolve(_context, organizationId, allPositions, positionName);
+                    if (resolved == null)
+                    {
+                        output.Rejected.Add(new RejectedInvitation { Email = email, Reason = error! });
+                        continue;
+                    }
+                    position = resolved;
+                    positions[position.Id] = position.Name;
                 }
 
                 if (position == null && (roleCode == Roles.Employee || roleCode == Roles.Manager))
                 {
-                    if (department == null || positionName.Length is 0 or > 150)
-                    {
-                        output.Rejected.Add(new RejectedInvitation { Email = email, Reason = "Nhập vị trí công việc hợp lệ cho phòng ban." });
-                        continue;
-                    }
-                    var code = JobPositionCatalog.ResolveCode(positionName);
-                    if (code == null)
-                    {
-                        output.Rejected.Add(new RejectedInvitation { Email = email, Reason = "Chọn một trong 5 vị trí chuẩn." });
-                        continue;
-                    }
-
-                    position = allPositions.Find(p => p.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
-                    if (position != null && (position.DepartmentId.HasValue || position.Status != Statuses.MasterData.Active))
-                    {
-                        output.Rejected.Add(new RejectedInvitation { Email = email, Reason = "Vị trí chuẩn đã được dùng tại phòng khác hoặc đã ngừng sử dụng." });
-                        continue;
-                    }
-
-                    if (position == null)
-                    {
-                        position = new JobPosition { OrganizationId = organizationId, Code = code, Name = JobPositionCatalog.Positions[code] };
-                        _context.JobPositions.Add(position);
-                        allPositions.Add(position);
-                    }
-                    position.DepartmentId = department.Id;
-                    positions[position.Id] = position.Name;
+                    output.Rejected.Add(new RejectedInvitation { Email = email, Reason = StandardPositions.NotStandard });
+                    continue;
                 }
 
                 if (newDepartment)

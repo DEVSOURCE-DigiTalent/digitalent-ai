@@ -219,7 +219,10 @@ public sealed class AssistantDataReader
         if (search != null)
             query = query.Where(p => p.Name.ToLower().Contains(search) || p.Code.ToLower().Contains(search));
         if (f.Status != null) query = query.Where(p => p.Status == f.Status);
-        if (f.DepartmentId is { } departmentId) query = query.Where(p => p.DepartmentId == departmentId);
+        // positions are shared by every department: those the department's active employees hold
+        if (f.DepartmentId is { } departmentId)
+            query = query.Where(p => _context.Employees.Any(e => e.JobPositionId == p.Id && e.DepartmentId == departmentId
+                && e.Status == Domain.Constants.Statuses.Employee.Active));
 
         var total = await query.CountAsync();
         var rows = await query.OrderBy(p => p.Name).Take(limit)

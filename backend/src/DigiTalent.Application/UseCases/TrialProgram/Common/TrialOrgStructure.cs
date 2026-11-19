@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -7,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.TrialProgram;
 
 /// <summary>
-/// Phòng ban và vị trí của doanh nghiệp dùng thử. Vị trí mới chỉ dùng mã trong danh mục chuẩn.
-/// Thêm vào DbContext, người gọi lưu trong cùng giao dịch.
+/// Phòng ban và vị trí của doanh nghiệp dùng thử. Phòng ban đặt tên tùy ý; vị trí là 1 trong 5 vị trí chuẩn, dùng chung cho
+/// mọi phòng ban (<see cref="StandardPositions"/>). Thêm vào DbContext, người gọi lưu trong cùng giao dịch.
 /// </summary>
 public sealed class TrialOrgStructure
 {
@@ -59,28 +60,11 @@ public sealed class TrialOrgStructure
         return department;
     }
 
-    public JobPosition Position(Department department, string name)
+    /// <summary>The organization's position for one of the 5 standard positions, whatever the department.</summary>
+    public JobPosition Position(string name)
     {
-        var code = JobPositionCatalog.ResolveCode(name);
-        var position = _positions.Find(p => p.DepartmentId == department.Id && p.Status == Statuses.MasterData.Active
-            && (Same(p.Name, name) || Same(p.Code, name) || p.Code.Equals(code, StringComparison.OrdinalIgnoreCase)));
-        if (position == null)
-        {
-            if (code == null || _positions.Any(p => p.DepartmentId == department.Id && p.Status != Statuses.MasterData.Archived))
-                throw new BadRequestException("Vị trí công việc không thuộc phòng ban đã chọn hoặc ngoài 5 vị trí chuẩn.", "position", "INVALID_JOB_POSITION");
-            position = _positions.Find(p => p.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
-            if (position != null && (position.DepartmentId.HasValue || position.Status != Statuses.MasterData.Active))
-                throw new BadRequestException("Vị trí chuẩn đã được dùng tại phòng khác hoặc đã ngừng sử dụng.", "position", "INVALID_JOB_POSITION");
-            if (position == null)
-            {
-                position = new JobPosition { OrganizationId = _organizationId, Code = code, Name = JobPositionCatalog.Positions[code] };
-                _context.JobPositions.Add(position);
-                _positions.Add(position);
-            }
-            position.DepartmentId = department.Id;
-        }
-
-        return position;
+        var (position, error) = StandardPositions.Resolve(_context, _organizationId, _positions, name);
+        return position ?? throw new BadRequestException(error!, "position", "INVALID_JOB_POSITION");
     }
 
     private static bool Same(string a, string b) => string.Equals(a.Trim(), b, StringComparison.OrdinalIgnoreCase);

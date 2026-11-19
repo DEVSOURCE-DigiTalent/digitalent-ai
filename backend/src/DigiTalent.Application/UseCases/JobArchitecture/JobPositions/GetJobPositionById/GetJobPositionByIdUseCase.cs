@@ -40,11 +40,12 @@ public class GetJobPositionByIdUseCase : IUseCase<GetJobPositionByIdUseCaseInput
                     .Where(f => f.Id == p.JobFamilyId)
                     .Select(f => f.Name)
                     .FirstOrDefault(),
-                DepartmentId = p.DepartmentId,
-                DepartmentName = _context.Departments
-                    .Where(d => d.Id == p.DepartmentId)
-                    .Select(d => d.Name)
-                    .FirstOrDefault(),
+                Departments = (
+                        from e in _context.Employees
+                        join d in _context.Departments on e.DepartmentId equals d.Id
+                        where e.JobPositionId == p.Id && e.Status == Statuses.Employee.Active
+                        select d.Name)
+                    .Distinct().OrderBy(name => name).ToList(),
                 JobGrade = p.JobGrade,
                 Headcount = _context.Employees
                     .Count(e => e.JobPositionId == p.Id && e.Status == Statuses.Employee.Active),
