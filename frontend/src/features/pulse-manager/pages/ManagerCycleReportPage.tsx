@@ -197,7 +197,7 @@ export function ManagerCycleReportPage() {
             <p className="manager-cycle__note">{translateUi('Tài khoản chưa có quyền xem tiến độ học tập.')}</p>
           )}
 
-          <section className="manager-cycle__panel" aria-labelledby="cycle-timeline">
+          <section className="manager-cycle__panel manager-cycle__timeline" aria-labelledby="cycle-timeline">
             <header><h2 id="cycle-timeline"><History size={19} aria-hidden="true" />{translateUi('Hoạt động gần đây')}</h2>
               {canReview && <PuLink to={MANAGER_PATHS.finalReviews} small kind="outline">{translateUi('Kết quả bài làm')} <ArrowUpRight size={14} aria-hidden="true" /></PuLink>}
             </header>
