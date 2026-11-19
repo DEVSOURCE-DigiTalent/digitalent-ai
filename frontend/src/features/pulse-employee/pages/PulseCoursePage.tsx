@@ -11,15 +11,13 @@ import {
   Lock,
   PlayCircle,
   RotateCcw,
-  ShieldCheck,
   Sparkles,
-  Target,
   Zap,
 } from 'lucide-react';
 import { usePulseCourse } from '@/hooks/use-pulse';
 import type { PulseCourseDetail } from '@/services/pulse.service';
 import { LoadError, PageSkeleton } from '../components/ui';
-import { ACCESS_LABELS, levelName, pad2, pulseErrorMessage } from '../lib/labels';
+import { pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import '../pulse-skip-test.css';
 
@@ -40,10 +38,9 @@ function toSentenceCase(str: string): string {
  * PulseCoursePage — Chi tiết Khóa học & Đề cương
  * Nâng cấp theo Phương án 1 (Sequential Timeline Stepper):
  * 1. Tiêu đề Canvas thanh thoát viết trực tiếp trên nền (loại bỏ Hero hộp đen cồng kềnh)
- * 2. Cụm Badge tóm tắt nhanh (Thời lượng, Mô đun, Mini-quiz, Thi kết thúc môn)
- * 3. Thẻ Hành động & Mục tiêu Trọng tâm (Chuẩn đầu ra thực tế + Tiến độ % + CTA ưu tiên)
- * 4. Lộ trình Học tập Tuần tự Dọc (Timeline 01 -> 02 -> 03 -> Chặng đích: Kỳ thi Proctored)
- * 5. Chuẩn Brand Blue (#1e40af), Zero emoji, icon SVG vector chuyên nghiệp
+ * 2. Thẻ Tiến độ & Hành động Trọng tâm (Tiến độ % + CTA ưu tiên)
+ * 3. Lộ trình Học tập Tuần tự Dọc (Timeline 01 -> 02 -> 03 -> Chặng đích: Kỳ thi Proctored)
+ * 4. Chuẩn Brand Blue (#1e40af), Zero emoji, icon SVG vector chuyên nghiệp
  */
 export function PulseCoursePage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -60,17 +57,11 @@ export function PulseCoursePage() {
 function CourseView({ detail }: { detail: PulseCourseDetail }) {
   const { course, modules } = detail;
   const passed = modules.filter((m) => m.passed).length;
-  const quizCount = modules.filter((m) => m.hasQuiz).length;
   const firstOpen = modules.find((m) => !m.passed);
-  const tier = levelName(course.tier);
   const approved = course.approved;
   const viaPre = course.approvedVia === 'PRE_ASSESSMENT';
   const preAssessmentPath = PULSE_PATHS.preAssessment(course.courseId);
   const formattedTitle = toSentenceCase(course.title);
-
-  // Tính tổng thời lượng ước tính
-  const totalMinutes = modules.reduce((sum, m) => sum + (m.estimatedMinutes || 60), 0);
-  const totalHours = Math.ceil(totalMinutes / 60);
 
   // Trạng thái hành động
   const canPreAssess = course.preStatus === 'REQUIRED' || detail.nextAction === 'PRE_ASSESSMENT';
@@ -93,91 +84,14 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
           </Link>
           <ChevronRight size={13} className="pu-c-bc-separator" aria-hidden />
           <span className="pu-c-bc-domain">{detail.domain.name}</span>
-          <ChevronRight size={13} className="pu-c-bc-separator" aria-hidden />
-          <span className="pu-c-bc-tag">{course.code} · Cấp {course.tier} ({tier})</span>
         </nav>
 
         <h1 className="pu-c-main-title">{formattedTitle}</h1>
-
-        <p className="pu-c-main-desc">
-          {detail.description?.trim() ||
-            `Khóa học chuẩn hóa thuộc lĩnh vực ${detail.domain.name}, cấp độ ${tier}. Cung cấp các kiến thức và kỹ năng thực tế với hệ thống bài giảng tương tác, câu hỏi ôn tập và đánh giá có giám sát.`}
-        </p>
-
-        {/* Dải thông số tóm tắt nhanh */}
-        <div className="pu-c-meta-row">
-          <span className="pu-c-meta-pill">
-            <BookOpen size={13} className="text-blue-700" />
-            <span>{pad2(modules.length)} mô-đun bài học</span>
-          </span>
-          <span className="pu-c-meta-pill">
-            <Clock size={13} className="text-blue-700" />
-            <span>Ước tính ~{totalHours > 0 ? pad2(totalHours) : '08'} giờ ({totalMinutes} phút)</span>
-          </span>
-          <span className="pu-c-meta-pill">
-            <HelpCircle size={13} className="text-blue-700" />
-            <span>{pad2(quizCount)} bài kiểm tra củng cố</span>
-          </span>
-          <span className="pu-c-meta-pill">
-            <GraduationCap size={13} className="text-blue-700" />
-            <span>01 bài đánh giá proctored cuối khóa</span>
-          </span>
-          <span className={`pu-c-meta-pill ${approved ? 'approved' : 'access'}`}>
-            <ShieldCheck size={13} className={approved ? 'text-emerald-700' : 'text-blue-700'} />
-            <span>{approved ? 'Đã công nhận năng lực' : ACCESS_LABELS[course.access] || 'Đã mở khóa học'}</span>
-          </span>
-        </div>
       </header>
 
-      {/* ── 2. Thẻ Mục tiêu & Hành động Trọng tâm ──────────────────────── */}
-      <section className="pu-c-summary-card" aria-labelledby="pu-summary-heading">
-        {/* Cột trái: Chuẩn đầu ra thực tế */}
-        <div className="pu-c-outcomes-col">
-          <div className="pu-c-card-header">
-            <Target size={16} className="text-blue-700" />
-            <h2 id="pu-summary-heading" className="pu-c-card-heading">
-              Mục tiêu & Chuẩn đầu ra thực tế
-            </h2>
-          </div>
-          <p className="pu-c-card-subheading">
-            {detail.purpose?.trim() ||
-              `Áp dụng kiến thức ${detail.domain.name.toLowerCase()} ở cấp độ ${tier.toLowerCase()} với các kết quả công việc đo lường được trong nghiệp vụ thực tế:`}
-          </p>
-
-          <div className="pu-c-outcome-list">
-            {detail.learningOutcomes.length > 0 ? (
-              detail.learningOutcomes.slice(0, 3).map((outcome, idx) => (
-                <div key={idx} className="pu-c-outcome-pill">
-                  <span className="pu-c-outcome-idx">{pad2(idx + 1)}</span>
-                  <span className="pu-c-outcome-txt">{outcome}</span>
-                </div>
-              ))
-            ) : (
-              <>
-                <div className="pu-c-outcome-pill">
-                  <span className="pu-c-outcome-idx">01</span>
-                  <span className="pu-c-outcome-txt">
-                    <strong>Hiểu bối cảnh nghiệp vụ:</strong> Nhận diện đúng mục đích và đối tượng tiếp nhận trong môi trường số.
-                  </span>
-                </div>
-                <div className="pu-c-outcome-pill">
-                  <span className="pu-c-outcome-idx">02</span>
-                  <span className="pu-c-outcome-txt">
-                    <strong>Quyết định có kiểm chứng:</strong> Áp dụng công cụ và phương pháp số đúng quy chuẩn của doanh nghiệp.
-                  </span>
-                </div>
-                <div className="pu-c-outcome-pill">
-                  <span className="pu-c-outcome-idx">03</span>
-                  <span className="pu-c-outcome-txt">
-                    <strong>Minh chứng rõ ràng:</strong> Xây dựng sản phẩm đầu ra có thể đo lường và bàn giao trong công việc thực tế.
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Cột phải: Tiến độ học tập & Khối CTA hành động */}
+      {/* ── 2. Thẻ Tiến độ & Hành động Trọng tâm ───────────────────────── */}
+      <section className="pu-c-summary-card" aria-label="Tiến độ và bước tiếp theo">
+        {/* Tiến độ học tập (trái) & Khối CTA hành động (phải) */}
         <div className="pu-c-action-col">
           <div className="pu-c-progress-box">
             <div className="pu-c-prog-head">
@@ -324,21 +238,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
       </section>
 
       {/* ── 3. Lộ trình Học tập Tuần tự Dọc (Sequential Stepper) ───────── */}
-      <section className="pu-c-timeline-section" aria-labelledby="pu-timeline-heading">
-        <div className="pu-c-timeline-header">
-          <div>
-            <h2 id="pu-timeline-heading" className="pu-c-section-title">
-              Lộ trình học tập tuần tự ({modules.length} mô-đun bài học & 01 bài đánh giá cuối khóa)
-            </h2>
-            <p className="pu-c-section-subtitle">
-              Hoàn thành bài học và câu hỏi kiểm tra theo thứ tự từ trên xuống dưới để mở khóa bài đánh giá năng lực cuối khóa.
-            </p>
-          </div>
-          <div className="pu-c-timeline-badge">
-            <span>{passed}/{modules.length} mô-đun đạt chuẩn</span>
-          </div>
-        </div>
-
+      <section className="pu-c-timeline-section" aria-label="Lộ trình học tập">
         {skip && (skipOpen || skipPassed || skip.status === 'EXHAUSTED') && (
           <SkipTestCard skipPath={skipPath} test={skip} />
         )}
@@ -587,9 +487,6 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
           <ArrowLeft size={15} />
           <span>Quay lại Bản đồ Lộ trình Năng lực</span>
         </Link>
-        <span className="pu-c-footer-meta">
-          Khóa {course.code} · Phiên bản v{detail.versionNo} · Lĩnh vực {detail.domain.name} / Cấp độ {tier}
-        </span>
       </footer>
     </div>
   );
