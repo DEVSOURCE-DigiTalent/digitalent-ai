@@ -19,7 +19,6 @@ export const PULSE_KEYS = {
   preAssessment: (courseId?: string) => ['pulse', 'courses', courseId, 'pre-assessment'] as const,
   final: (courseId?: string) => ['pulse', 'courses', courseId, 'final'] as const,
   skipTest: (courseId?: string) => ['pulse', 'courses', courseId, 'skip-test'] as const,
-  practice: ['pulse', 'practice'] as const,
   outcomes: ['pulse', 'outcomes'] as const,
   outcome: (outcomeId?: string) => ['pulse', 'outcomes', outcomeId] as const,
   finalReviews: (includeReviewed = false, organizationId?: string, departmentId?: string) =>
@@ -132,10 +131,6 @@ export function usePulseFinal(courseId?: string) {
     queryFn: () => pulseService.getFinal(courseId!).then((r) => r.data.data!),
     enabled: Boolean(courseId),
   });
-}
-
-export function usePulsePractice() {
-  return useQuery({ queryKey: PULSE_KEYS.practice, queryFn: () => pulseService.getPractice().then((r) => r.data.data!) });
 }
 
 export function usePulseOutcomes() {

@@ -511,24 +511,6 @@ export interface PulsePreAssessment {
   submission?: PulsePreAssessmentSubmission | null;
 }
 
-export interface PulsePracticeItem {
-  course: PulseCourseSummary;
-  lastSubmittedAt?: string | null;
-  lastDecision?: PulseDecision | null;
-  lastDecisionReason?: string | null;
-  lastReviewedAt?: string | null;
-  retryOpensAt?: string | null;
-  retryDueAt?: string | null;
-  supportAction?: PulseSupportAction | null;
-}
-
-export interface PulsePractice {
-  finals: PulsePracticeItem[];
-  /** Bài đánh giá trước khi học đã nộp (chờ chấm trước). */
-  preAssessments: PulsePracticeItem[];
-  criteria: PulseCriterion[];
-}
-
 export type PulseOutcomeKind = 'COURSE' | 'PRE_ASSESSMENT' | 'CERTIFICATE' | 'PRACTICAL_TASK';
 
 export interface PulseOutcome {
@@ -596,7 +578,6 @@ export const pulseService = {
   getFinal: (courseId: string) => apiClient.get<ApiResponse<PulseFinal>>(`/me/pulse/courses/${courseId}/final`),
   submitFinal: (courseId: string, evidenceText: string, proctoringSessionId: string, answers: PulseAnswer[]) =>
     apiClient.post<ApiResponse<PulseSubmitFinalResult>>(`/me/pulse/courses/${courseId}/final`, { evidenceText, proctoringSessionId, answers }),
-  getPractice: () => apiClient.get<ApiResponse<PulsePractice>>('/me/pulse/practice'),
   getOutcomes: () => apiClient.get<ApiResponse<{ items: PulseOutcome[] }>>('/me/pulse/outcomes'),
   getOutcome: (outcomeId: string) => apiClient.get<ApiResponse<PulseOutcome>>(`/me/pulse/outcomes/${encodeURIComponent(outcomeId)}`),
 

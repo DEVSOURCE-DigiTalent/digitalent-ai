@@ -7,7 +7,6 @@ import {
   PulsePathSkeleton,
   PulseCourseDetailSkeleton,
   PulseModulePlayerSkeleton,
-  PulsePracticeSkeleton,
   PulseOutcomesSkeleton,
   PulseExamReadySkeleton,
 } from './loading/PulseEmployeeSkeletons';
@@ -81,7 +80,6 @@ export function PageSkeleton({ blocks: _blocks }: { blocks?: number[] } = {}) {
   if (path.includes('/modules/')) return <PulseModulePlayerSkeleton />;
   if (path.includes('/courses/')) return <PulseCourseDetailSkeleton />;
   if (path.includes('/path')) return <PulsePathSkeleton />;
-  if (path.includes('/practice') || path.includes('/tasks')) return <PulsePracticeSkeleton />;
   if (path.includes('/outcomes') || path.includes('/achievements')) return <PulseOutcomesSkeleton />;
   if (
     path.includes('/exam') ||

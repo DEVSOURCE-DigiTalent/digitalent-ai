@@ -5,16 +5,14 @@ import {
   Award,
   Bell,
   Bug,
-  ClipboardCheck,
   LayoutDashboard,
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   Route,
-  UserRound,
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-platform';
-import { PULSE_PATHS, isExamPath, isModulePath } from '../lib/paths';
+import { PULSE_PATHS, isModulePath } from '../lib/paths';
 
 /**
  * Pulse Employee Sidebar — Thiết kế khung nhỏ dạng Card nổi chuẩn phong cách Personal
@@ -49,13 +47,6 @@ const SIDEBAR_ITEMS: NavItem[] = [
     match: [PULSE_PATHS.path, '/enterprise/me/courses'],
   },
   {
-    to: PULSE_PATHS.practice,
-    label: 'Khảo thí & Đánh giá',
-    icon: ClipboardCheck,
-    screenId: 'EM-03',
-    match: [PULSE_PATHS.practice],
-  },
-  {
     to: PULSE_PATHS.outcomes,
     label: 'Chứng nhận số',
     icon: Award,
@@ -69,13 +60,7 @@ const SIDEBAR_ITEMS: NavItem[] = [
     screenId: 'EM-10',
     match: [PULSE_PATHS.activity],
   },
-  {
-    to: PULSE_PATHS.profile,
-    label: 'Hồ sơ cá nhân',
-    icon: UserRound,
-    screenId: 'EM-11',
-    match: [PULSE_PATHS.profile],
-  },
+  // Hồ sơ cá nhân (EM-11) chỉ mở từ menu ảnh đại diện ở thanh trên cùng, không nằm trong menu bên.
   {
     to: PULSE_PATHS.feedbacks,
     label: 'Góp ý',
@@ -133,15 +118,11 @@ export function PulseSidebar({ trialLearning = false, manager = false }: { trial
     });
   };
 
-  const onExam = isExamPath(pathname);
-  const isItemActive = (item: NavItem) => {
-    if (onExam) {
-      return item.to === PULSE_PATHS.practice;
-    }
-    return item.match.some((prefix) =>
+  // Trang làm bài nằm dưới /enterprise/me/courses nên mục Lộ trình năng lực sáng lên.
+  const isItemActive = (item: NavItem) =>
+    item.match.some((prefix) =>
       item.end ? pathname === prefix : pathname === prefix || pathname.startsWith(`${prefix}/`)
     );
-  };
 
   return (
     <aside

@@ -8,7 +8,6 @@ import {
   BriefcaseBusiness,
   Clock,
   Compass,
-  FileCheck,
   FileText,
   LogOut,
   Search,
@@ -28,7 +27,7 @@ import { useMyTrialAssessment } from '@/hooks/use-trial-program';
 import { usePulseOverview } from '@/hooks/use-pulse';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { initials } from '../lib/labels';
-import { PULSE_PATHS, isExamPath } from '../lib/paths';
+import { PULSE_PATHS } from '../lib/paths';
 import { trialGateOf, type TrialGateState } from '../lib/trial-gate';
 
 type NavItem = { to: string; label: string; end?: boolean; match: string[]; screenId: string };
@@ -37,14 +36,12 @@ type NavItem = { to: string; label: string; end?: boolean; match: string[]; scre
 const NAV: NavItem[] = [
   { to: PULSE_PATHS.today, label: 'Tổng quan', end: true, match: [PULSE_PATHS.today], screenId: 'EM-01' },
   { to: PULSE_PATHS.path, label: 'Lộ trình', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
-  { to: PULSE_PATHS.practice, label: 'Đánh giá', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
 ];
 
 function getPageTitle(pathname: string): string {
   if (pathname === PULSE_PATHS.today) return 'Tổng quan học tập';
   if (pathname === PULSE_PATHS.path) return 'Lộ trình năng lực';
   if (pathname.startsWith('/enterprise/me/courses')) return 'Chi tiết khóa học';
-  if (pathname === PULSE_PATHS.practice) return 'Đánh giá năng lực';
   if (pathname === PULSE_PATHS.trialTest) return 'Báo cáo năng lực đầu vào';
   if (pathname === PULSE_PATHS.outcomes) return 'Chứng nhận và kết quả';
   if (pathname.startsWith('/enterprise/me/outcomes/')) return 'Chi tiết chứng nhận';
@@ -58,7 +55,6 @@ function getPageTitle(pathname: string): string {
 const QUICK_SEARCH_ITEMS = [
   { title: 'Tổng quan học tập', category: 'Điều hướng', path: PULSE_PATHS.today, icon: Compass },
   { title: 'Lộ trình năng lực', category: 'Điều hướng', path: PULSE_PATHS.path, icon: BookOpen },
-  { title: 'Đánh giá năng lực', category: 'Điều hướng', path: PULSE_PATHS.practice, icon: FileCheck },
   { title: 'Chứng nhận và kết quả', category: 'Hồ sơ', path: PULSE_PATHS.outcomes, icon: Award },
   { title: 'Hồ sơ cá nhân', category: 'Hồ sơ', path: PULSE_PATHS.profile, icon: UserRound },
   { title: 'M1-F Tìm kiếm và lưu trữ thông tin cơ bản', category: 'Khóa học', path: '/enterprise/me/courses/course-a1cd1c6e-1be2-4bf9-8f8b-eb1baacfa3f1', icon: BookOpen },
@@ -69,7 +65,6 @@ const QUICK_SEARCH_ITEMS = [
 const TRIAL_NAV: NavItem[] = [
   { to: PULSE_PATHS.path, label: 'Học thử', match: [PULSE_PATHS.path, '/enterprise/me/courses'], screenId: 'EM-02' },
   { to: PULSE_PATHS.trialTest, label: 'Bài đánh giá', match: [PULSE_PATHS.trialTest], screenId: 'EM-T1' },
-  { to: PULSE_PATHS.practice, label: 'Thực hành', match: [PULSE_PATHS.practice], screenId: 'EM-03' },
 ];
 
 export interface PulseHeaderProps {
@@ -153,11 +148,9 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
     };
   }, [open]);
 
-  const onFinal = isExamPath(pathname);
+  // Trang làm bài nằm dưới /courses (Lộ trình) hoặc /trial-test (Bài đánh giá): so khớp tiền tố là đủ.
   const isActive = (match: string[], end?: boolean) =>
-    onFinal
-      ? match.includes(PULSE_PATHS.practice)
-      : match.some((prefix) => (end ? pathname === prefix : pathname === prefix || pathname.startsWith(`${prefix}/`)));
+    match.some((prefix) => (end ? pathname === prefix : pathname === prefix || pathname.startsWith(`${prefix}/`)));
 
   const signOut = () =>
     logout.mutate(undefined, { onSettled: () => navigate('/login', { replace: true }) });
