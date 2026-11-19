@@ -12,6 +12,14 @@ import { WORKFORCE_KEY } from './use-workforce';
 
 export const SKILL_GAPS_KEY = ['skill-gaps'];
 
+/** Gaps now and since the survey for the whole organization or one department. */
+export function useCapabilityProgress(departmentId?: string) {
+  return useQuery({
+    queryKey: [...SKILL_GAPS_KEY, 'progress', departmentId ?? 'all'],
+    queryFn: () => skillGapService.getProgress(departmentId ? { departmentId } : undefined).then((r) => r.data.data!),
+  });
+}
+
 export function useLearningNeeds(params?: SkillGapRunListParams, enabled = true) {
   return useQuery({
     queryKey: [...SKILL_GAPS_KEY, 'learning-needs', params],
