@@ -29,3 +29,14 @@ it('draws current and required levels as lines, shades the shortfall and explain
   fireEvent.focus(screen.getByRole('img', { name: /Lĩnh vực 2/ }));
   expect(screen.getByRole('status')).toHaveTextContent('Đạt chuẩn trung bình');
 });
+
+it('names the dashed line after the expected level when the owner set one, and paints both lines with gradients', () => {
+  const { container } = render(<DomainLineChart points={points} targetLabel="Mức mong muốn" />);
+  expect(screen.getByRole('figure')).toHaveTextContent('Mức mong muốn');
+  expect(container.querySelector('.trial-line__current')?.getAttribute('stroke')).toMatch(/^url\(#trial-line-current-/);
+  expect(container.querySelector('.trial-line__target')?.getAttribute('stroke')).toMatch(/^url\(#trial-line-target-/);
+  expect(container.querySelector('.trial-line__area')).not.toBeNull();
+
+  fireEvent.focus(screen.getByRole('img', { name: /Lĩnh vực 2 Giao tiếp và hợp tác: hiện tại 2,5, mong muốn 2,0/ }));
+  expect(screen.getByRole('status')).toHaveTextContent('Đạt mức mong muốn');
+});
