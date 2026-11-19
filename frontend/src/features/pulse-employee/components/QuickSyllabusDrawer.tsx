@@ -42,7 +42,7 @@ export function QuickSyllabusDrawer({
 }: QuickSyllabusDrawerProps) {
   useUiLanguage();
   // Fetch deep course details (modules, description, learning outcomes)
-  const { data: detail, isLoading } = usePulseCourse(course?.courseId);
+  const { data: detail, isLoading, isError, refetch } = usePulseCourse(open ? course?.courseId : undefined);
 
   // Close on Escape key
   useEffect(() => {
@@ -63,14 +63,17 @@ export function QuickSyllabusDrawer({
 
   if (!open || !course) return null;
 
-  const isCompleted = course.slotStatus === 'COMPLETED' || course.approved;
-  const isPreAssessment = course.slotStatus === 'PRE_ASSESSMENT' || course.canStartPreAssessment;
-  const isInProgress = course.slotStatus === 'IN_PROGRESS';
-  const isFinalReady = course.slotStatus === 'FINAL_READY';
-  const isWaitingReview = course.slotStatus === 'PRE_REVIEW' || course.slotStatus === 'IN_REVIEW';
-  const isLocked = course.slotStatus === 'AFTER_PRIOR_LEVEL' || course.zone === 'ABOVE_CEILING';
+  const currentCourse = detail?.course ?? course;
+  const isLocked = detail?.nextAction === 'LOCKED' || currentCourse.slotStatus === 'AFTER_PRIOR_LEVEL' || currentCourse.zone === 'ABOVE_CEILING';
+  const isCompleted = currentCourse.slotStatus === 'COMPLETED' || currentCourse.approved;
+  const isPreAssessment = !isLocked && (detail?.skipTest
+    ? detail.skipTest.status === 'AVAILABLE' || detail.skipTest.status === 'IN_PROGRESS'
+    : currentCourse.slotStatus === 'PRE_ASSESSMENT' || currentCourse.canStartPreAssessment);
+  const isInProgress = !isLocked && currentCourse.slotStatus === 'IN_PROGRESS';
+  const isFinalReady = !isLocked && (currentCourse.slotStatus === 'FINAL_READY' || currentCourse.canStartFinal);
+  const isWaitingReview = currentCourse.slotStatus === 'PRE_REVIEW' || currentCourse.slotStatus === 'IN_REVIEW';
 
-  const reviewerName = overview?.reviewer?.name ?? 'Quản lý phụ trách';
+  const reviewerName = detail?.reviewer?.name ?? overview?.reviewer?.name ?? 'Quản lý phụ trách';
 
   return (
     <div className="pu-drawer-portal" role="dialog" aria-modal="true" aria-labelledby="pu-drawer-title">
@@ -164,7 +167,7 @@ export function QuickSyllabusDrawer({
                   Bài làm đang chờ Mentor đánh giá
                 </strong>
                 <p className="pu-drawer-status-desc waiting">
-                  Quản lý thẩm định {reviewerName} đang rà soát bài nộp và đánh giá tiêu chí. Kết quả sẽ được cập nhật trong vòng 48 giờ làm việc.
+                  {reviewerName} đang rà soát bài nộp và đánh giá tiêu chí.
                 </p>
               </div>
             </div>
@@ -201,11 +204,11 @@ export function QuickSyllabusDrawer({
             </div>
             <div className="pu-drawer-fact-item">
               <span className="pu-drawer-fact-label">Thời lượng ước tính</span>
-              <strong className="pu-drawer-fact-value">06 giờ học</strong>
+              <strong className="pu-drawer-fact-value">{detail?.estimatedMinutes ? detail.estimatedMinutes + ' phút học' : '—'}</strong>
             </div>
             <div className="pu-drawer-fact-item">
               <span className="pu-drawer-fact-label">Cấu trúc chuyên đề</span>
-              <strong className="pu-drawer-fact-value">{course.moduleCount || 3} mô đun bài học</strong>
+              <strong className="pu-drawer-fact-value">{currentCourse.moduleCount} mô đun bài học</strong>
             </div>
             <div className="pu-drawer-fact-item">
               <span className="pu-drawer-fact-label">Hình thức đánh giá</span>
@@ -218,12 +221,12 @@ export function QuickSyllabusDrawer({
             <div className="pu-drawer-prog-block">
               <div className="pu-drawer-prog-head">
                 <span>Tiến độ học tập hiện tại</span>
-                <strong>{course.progressPercent}%</strong>
+                <strong>{currentCourse.progressPercent}%</strong>
               </div>
               <div className="pu-drawer-prog-track">
-                <div className="pu-drawer-prog-fill" style={{ width: `${course.progressPercent}%` }} />
+                <div className="pu-drawer-prog-fill" style={{ width: `${currentCourse.progressPercent}%` }} />
               </div>
-              <span className="pu-drawer-prog-hint">{translateUi("Đã đạt ")}{course.modulesPassed} / {course.moduleCount || 3} mô đun kiến thức
+              <span className="pu-drawer-prog-hint">{translateUi("Đã đạt ")}{currentCourse.modulesPassed} / {currentCourse.moduleCount} mô đun kiến thức
               </span>
             </div>
           )}
@@ -246,17 +249,25 @@ export function QuickSyllabusDrawer({
                 <BookOpen size={15} /> Đề cương các mô đun bài học
               </h3>
               <span className="pu-drawer-module-counter">
-                {course.modulesPassed}/{course.moduleCount || 3} Đạt
+                {currentCourse.modulesPassed}/{currentCourse.moduleCount} Đạt
               </span>
             </div>
 
             <div className="pu-drawer-modules-list">
               {isLoading ? (
                 <div className="pu-drawer-loading">Đang tải đề cương chi tiết...</div>
-              ) : (detail?.modules || course.modules)?.map((mod, index) => {
-                const modTitle = typeof mod === 'string' ? mod : mod.title;
-                const isModPassed = typeof mod === 'object' && 'passed' in mod ? mod.passed : index < course.modulesPassed;
-                const moduleId = typeof mod === 'object' && 'moduleId' in mod ? (mod as any).moduleId : null;
+              ) : isError ? (
+                <div className="pu-drawer-loading" role="alert">
+                  Không tải được đề cương chi tiết.
+                  <button type="button" className="pu-drawer-mod-btn" onClick={() => void refetch()}>Thử lại</button>
+                </div>
+              ) : (detail?.modules ?? currentCourse.modules).map((mod, index) => {
+                const module = detail?.modules[index];
+                const isModPassed = mod.passed;
+                const moduleOpen = module != null && module.viewable &&
+                  (module.unlocked || isModPassed || currentCourse.access === 'PREVIEW');
+                const canEnter = !isLocked && moduleOpen;
+                const quizCount = module?.quizQuestionCount;
 
                 return (
                   <div key={index} className={`pu-drawer-mod-item ${isModPassed ? 'passed' : ''}`}>
@@ -265,22 +276,25 @@ export function QuickSyllabusDrawer({
                         {isModPassed ? <CheckCircle2 size={13} /> : `0${index + 1}`}
                       </span>
                       <div className="pu-drawer-mod-info">
-                        <h4 className="pu-drawer-mod-name">{modTitle}</h4>
+                        <h4 className="pu-drawer-mod-name">{mod.title}</h4>
                         <span className="pu-drawer-mod-sub">
-                          {isModPassed ? 'Đã hoàn thành lý thuyết & quiz' : 'Lý thuyết tương tác · Quiz ôn tập 2 câu'}
+                          {isModPassed ? 'Đã hoàn thành' : module && !canEnter ? 'Chưa mở' :
+                            quizCount ? 'Quiz ôn tập ' + quizCount + ' câu' : 'Nội dung bài học'}
                         </span>
                       </div>
                     </div>
 
-                    {!isLocked && moduleId && (
+                    {canEnter && module ? (
                       <Link
-                        to={PULSE_PATHS.module(course.courseId, moduleId)}
+                        to={PULSE_PATHS.module(currentCourse.courseId, module.moduleId)}
                         className="pu-drawer-mod-btn"
                         onClick={onClose}
                       >
                         {isModPassed ? 'Ôn lại' : 'Vào học'} →
                       </Link>
-                    )}
+                    ) : module && <span className="pu-drawer-module-locked" title={translateUi('Hoàn thành mô đun trước để mở bài học này')}>
+                      <Lock size={14} aria-hidden="true" /><span className="sr-only">Chưa mở</span>
+                    </span>}
                   </div>
                 );
               })}
@@ -293,7 +307,7 @@ export function QuickSyllabusDrawer({
               <ShieldCheck size={15} /> Tiêu chuẩn công nhận năng lực
             </h3>
             <ul className="pu-drawer-rules-list">
-              <li>Đọc đầy đủ nội dung của từng mô đun và hoàn thành câu hỏi kiểm tra đạt 2/2 câu.</li>
+              <li>Đọc đầy đủ nội dung và đạt câu hỏi ôn tập của từng mô đun để mở mô đun tiếp theo.</li>
               <li>Làm bài đánh giá cuối khóa có AI giám sát (Webcam, Mic, Chia sẻ màn hình) bảo đảm tính minh bạch.</li>
               <li>Mentor đánh giá bài làm và công nhận đạt chuẩn kỹ năng số.</li>
             </ul>
