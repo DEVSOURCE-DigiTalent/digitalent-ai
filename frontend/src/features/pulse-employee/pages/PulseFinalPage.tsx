@@ -1,3 +1,5 @@
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { ROLES } from '@/lib/roles';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -86,6 +88,7 @@ export function PulseFinalPage() {
 }
 
 function FinalView({ final }: { final: PulseFinal }) {
+  const manager = useCurrentUser((state) => Boolean(state.user?.roles.includes(ROLES.MANAGER)));
   const { course, status, attempts } = final;
   const submitted = attempts.length;
   const allPassed = final.moduleCount > 0 && final.modulesPassed === final.moduleCount;
@@ -145,6 +148,7 @@ function FinalView({ final }: { final: PulseFinal }) {
 
       <div className="pu-course-footer">
         <PuLink to={PULSE_PATHS.course(course.courseId)} kind="ghost" small>← Tổng quan khóa học</PuLink>
+        {manager && <PuLink to={PULSE_PATHS.path} kind="ghost" small>Lộ trình năng lực →</PuLink>}
       </div>
     </div>
   );
