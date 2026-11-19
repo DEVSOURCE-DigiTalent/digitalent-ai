@@ -8,7 +8,8 @@ namespace DigiTalent.Application.UseCases.Pulse;
 /// <summary>
 /// GET /me/pulse/courses/{courseId}/modules/{moduleId} — trang học mô đun (§9.2): các trang nội dung theo thứ tự và
 /// bộ câu ôn tập của lần làm kế tiếp (không kèm đáp án). Sau lần chưa đạt, câu hỏi chỉ hiện lại khi đã mở lại các trang
-/// liên quan. Khóa có phí doanh nghiệp chưa mua chỉ xem trang đầu tiên của mô đun 1 (§8).
+/// liên quan. Khóa có phí doanh nghiệp chưa mua chỉ xem trang đầu tiên của mô đun 1 (§8). Mô đun học tuần tự: mô đun
+/// chưa mở (mô đun trước chưa qua) trả 403 (<see cref="PulseCourseWorkspace.EnsureModuleUnlocked"/>).
 /// </summary>
 public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPulseModuleUseCaseOutput>
 {
@@ -33,15 +34,17 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
             throw new ForbiddenException(PulseCourseWorkspace.BlockMessage(PulseBlockReason.PurchaseRequired));
         }
 
+        if (!sample)
+        {
+            PulseCourseWorkspace.EnsureModuleUnlocked(state, module);
+        }
+
         var slides = sample ? module.Slides.Take(1).ToList() : module.Slides.ToList();
         var content = await _quiz.LoadSlideContentAsync(slides.Select(s => s.LessonId).ToList());
         var media = _content == null ? new Dictionary<Guid, List<LessonMediaDto>>() : await _content.MediaAsync(slides.Select(s => s.LessonId).ToList());
         var progress = state.Progress?.GetValueOrDefault(module.ModuleId);
-        var previous = module.Index == 0 ? null : state.Modules[module.Index - 1];
-        var previousPassed = previous == null || (state.Progress?.GetValueOrDefault(previous.ModuleId) is { } p && p.Passed(previous));
-
         var quizBlock = state.BlockReason
-                        ?? (previousPassed ? null : PulseBlockReason.PreviousModuleRequired);
+                        ?? (PulseCourseWorkspace.IsModuleUnlocked(state, module) ? null : PulseBlockReason.PreviousModuleRequired);
         PulseQuizDto? quiz = null;
         PulseQuizReviewDto? review = null;
         if (!sample && quizBlock == null && module.QuizAssessmentId is { } assessmentId)
@@ -86,6 +89,7 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
                 Title = m.Title,
                 Passed = state.Progress?.GetValueOrDefault(m.ModuleId)?.Passed(m) ?? false,
                 Viewable = !sample || m.Index == 0,
+                Unlocked = sample ? m.Index == 0 : PulseCourseWorkspace.IsModuleUnlocked(state, m),
             }).ToList(),
             Sample = sample,
             Slides = slides.Select(s => new PulseSlideDto

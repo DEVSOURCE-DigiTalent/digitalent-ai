@@ -134,3 +134,22 @@ describe('after passing a module quiz', () => {
     expect(screen.getByRole('link', { name: 'Đến bài đánh giá cuối khóa →' })).toBeTruthy();
   });
 });
+
+describe('sequential modules in the course outline', () => {
+  it('links only to unlocked modules and tells which module opens the next one', async () => {
+    const withOutline = {
+      ...detail('mod-2'),
+      modules: [
+        { moduleId: 'mod-1', index: 0, title: 'Nguồn tin cậy', passed: false, viewable: true, unlocked: true },
+        { moduleId: 'mod-2', index: 1, title: 'Lưu trữ thông tin', passed: false, viewable: true, unlocked: false },
+      ],
+    } as PulseModuleDetail;
+    vi.spyOn(pulseService, 'getModule').mockResolvedValue(ok(withOutline));
+    renderModule();
+
+    const outline = await screen.findByRole('navigation', { name: 'Đề cương các mô-đun trong khóa học' });
+    expect(outline.querySelector(`a[href="${PULSE_PATHS.module('course-1', 'mod-1')}"]`)).not.toBeNull();
+    expect(outline.querySelector(`a[href="${PULSE_PATHS.module('course-1', 'mod-2')}"]`)).toBeNull();
+    expect(outline.textContent).toContain('Hoàn thành Mô-đun 01 để mở');
+  });
+});

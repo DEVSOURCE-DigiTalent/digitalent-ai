@@ -26,6 +26,7 @@ public class MarkPulseModuleViewedUseCase : IUseCase<MarkPulseModuleViewedUseCas
     {
         var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
         var module = PulseCourseWorkspace.FindModule(state, input.ModuleId);
+        PulseCourseWorkspace.EnsureModuleUnlocked(state, module);
         if (module.Slides.Count == 0)
         {
             throw new BadRequestException("Mô đun chưa có trang nội dung.", "moduleId", "MODULE_EMPTY");

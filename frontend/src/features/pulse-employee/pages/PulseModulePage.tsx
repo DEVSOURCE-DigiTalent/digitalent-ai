@@ -205,8 +205,9 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
             {detail.modules.map((item) => {
               const isActive = item.moduleId === module.moduleId;
               const isPassed = item.passed;
+              const isOpen = item.viewable && (item.unlocked ?? true);
 
-              return item.viewable ? (
+              return isOpen ? (
                 <Link
                   key={item.moduleId}
                   to={PULSE_PATHS.module(courseId, item.moduleId)}
@@ -243,7 +244,9 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                   <span className="pu-nav-text">
                     <strong>{toSentenceCase(item.title)}</strong>
                     <span className="pu-nav-sub-meta">
-                      <span className="pu-nav-status locked">Khóa theo thứ tự</span>
+                      <span className="pu-nav-status locked">
+                        {detail.sample ? 'Mở khi doanh nghiệp mua khóa' : `Hoàn thành Mô-đun ${pad2(item.index)} để mở`}
+                      </span>
                     </span>
                   </span>
                 </div>

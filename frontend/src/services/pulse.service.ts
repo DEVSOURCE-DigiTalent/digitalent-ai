@@ -369,7 +369,8 @@ export interface PulseModuleQuiz {
 export interface PulseModuleDetail {
   course: PulseCourseSummary;
   module: { moduleId: string; index: number; title: string; description?: string | null; estimatedMinutes?: number | null; quizBankQuestionCount?: number };
-  modules: { moduleId: string; index: number; title: string; passed: boolean; viewable: boolean }[];
+  /** unlocked: học tuần tự — mô-đun đầu, mô-đun đã đạt, hoặc mô-đun ngay trước đã đạt. */
+  modules: { moduleId: string; index: number; title: string; passed: boolean; viewable: boolean; unlocked?: boolean }[];
   sample: boolean;
   slides: PulseSlide[];
   viewed: boolean;

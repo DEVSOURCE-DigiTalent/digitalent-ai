@@ -36,9 +36,6 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
         var modules = state.Modules.Select(m =>
         {
             var progress = state.Progress?.GetValueOrDefault(m.ModuleId);
-            var previous = m.Index == 0 ? null : state.Modules[m.Index - 1];
-            var previousPassed = previous == null
-                || (state.Progress?.GetValueOrDefault(previous.ModuleId) is { } p && p.Passed(previous));
             return new PulseCourseModuleDto
             {
                 ModuleId = m.ModuleId,
@@ -52,7 +49,7 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
                 QuizBankQuestionCount = m.QuizQuestionCount,
                 Viewed = progress?.Viewed ?? false,
                 Passed = progress?.Passed(m) ?? false,
-                Unlocked = previousPassed,
+                Unlocked = PulseCourseWorkspace.IsModuleUnlocked(state, m),
                 Viewable = full || m.Index == 0,
             };
         }).ToList();

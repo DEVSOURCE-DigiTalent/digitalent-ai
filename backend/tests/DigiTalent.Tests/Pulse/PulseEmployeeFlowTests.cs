@@ -407,9 +407,19 @@ public class PulseEmployeeFlowTests
         (await beforeViewing.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be(PulseBlockReason.SlidesNotViewed);
         world.Context.ChangeTracker.Clear();
 
-        var secondModule = await uc.GetModule.ExecuteAsync(new GetPulseModuleUseCaseInput { CourseId = course.CourseId, ModuleId = second.ModuleId });
-        secondModule.Quiz.Should().BeNull();
-        secondModule.QuizBlockReason.Should().Be(PulseBlockReason.PreviousModuleRequired);
+        // Học tuần tự: mô đun 2 đóng hẳn (trang học, ghi tiến độ, câu ôn tập) tới khi mô đun 1 qua.
+        module.Modules.Select(m => m.Unlocked).Should().StartWith(new[] { true, false });
+        var openSecond = () => uc.GetModule.ExecuteAsync(new GetPulseModuleUseCaseInput { CourseId = course.CourseId, ModuleId = second.ModuleId });
+        (await openSecond.Should().ThrowAsync<ForbiddenException>()).WithMessage("Mô-đun 02 chỉ mở khi bạn hoàn thành Mô-đun 01*");
+        var viewSecond = () => uc.MarkViewed.ExecuteAsync(new MarkPulseModuleViewedUseCaseInput { CourseId = course.CourseId, ModuleId = second.ModuleId });
+        await viewSecond.Should().ThrowAsync<ForbiddenException>();
+        var secondPage = (await world.Context.Lessons.AsNoTracking().FirstAsync(l => l.ModuleId == second.ModuleId && l.Status == Statuses.CourseContent.Active)).Id;
+        var viewSecondPage = () => uc.MarkPage.ExecuteAsync(new MarkPulsePageViewedUseCaseInput { CourseId = course.CourseId, ModuleId = second.ModuleId, LessonId = secondPage });
+        await viewSecondPage.Should().ThrowAsync<ForbiddenException>();
+        var quizSecond = () => uc.SubmitQuiz.ExecuteAsync(new SubmitPulseModuleQuizUseCaseInput { CourseId = course.CourseId, ModuleId = second.ModuleId, Answers = wrongAnswers });
+        await quizSecond.Should().ThrowAsync<ForbiddenException>();
+        world.Context.ChangeTracker.Clear();
+        (await world.Context.LessonProgresses.CountAsync(p => p.LessonId == secondPage)).Should().Be(0, "mô đun chưa mở không ghi tiến độ");
 
         await uc.MarkViewed.ExecuteAsync(new MarkPulseModuleViewedUseCaseInput { CourseId = course.CourseId, ModuleId = first.ModuleId });
         world.Context.ChangeTracker.Clear();
@@ -429,6 +439,10 @@ public class PulseEmployeeFlowTests
         var passed = await world.PassModuleAsync(uc, course.CourseId, first.ModuleId);
         passed.Passed.Should().BeTrue();
         passed.NextModuleId.Should().Be(second.ModuleId);
+        var unlocked = await uc.GetModule.ExecuteAsync(new GetPulseModuleUseCaseInput { CourseId = course.CourseId, ModuleId = second.ModuleId });
+        unlocked.Slides.Should().NotBeEmpty("mô đun 1 qua thì mô đun 2 mở");
+        unlocked.Modules.Select(m => m.Unlocked).Should().StartWith(new[] { true, true });
+        world.Context.ChangeTracker.Clear();
 
         var enrollment = await world.Context.Enrollments.SingleAsync(e => e.CourseId == course.CourseId);
         enrollment.Status.Should().Be(Statuses.Enrollment.InProgress, "khóa Cơ bản tự mở lượt học khi bắt đầu");
