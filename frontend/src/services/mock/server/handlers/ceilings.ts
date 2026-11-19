@@ -1,5 +1,6 @@
 import { PERMISSIONS } from '../../../../hooks/use-permission';
-import { badRequest, notFound } from '../http';
+import { STANDARD_POSITION_CODES, STANDARD_POSITIONS, standardPositionCode } from '../../../../lib/standard-positions';
+import { badRequest } from '../http';
 import { route } from '../router';
 import { CATEGORIES, COMPETENCIES, COMPETENCY_BY_ID, courseFor } from '../catalog';
 import { ACME_ORGANIZATION_ID } from '../seed-acme';
@@ -9,7 +10,8 @@ import { readReferencePositionLevels } from './reference-positions';
 
 /**
  * Matrix of OW-05 "Khung năng lực số", mirror of CapabilityCeilingsController: the whole company = every course it owns
- * (Basic free, Intermediate / Advanced once bought); departments get their own level per domain, never above an owned course.
+ * (Basic free, Intermediate / Advanced once bought); the 5 standard positions (shared by every department) get the level
+ * their people must reach per domain, else the system suggestion (TT02 sample). A level may be above an owned course.
  */
 
 const P = PERMISSIONS;
@@ -17,15 +19,15 @@ const MAX_LEVEL = 3;
 const LEVEL_NAMES = ['Cơ bản', 'Trung cấp', 'Nâng cao'];
 
 /**
- * Demo organization: a mid-size company that keeps 13 of the 18 courses (budget first) and narrows two departments.
+ * Demo organization: a mid-size company that keeps 13 of the 18 courses (budget first) and sets two positions.
  * Kế toán needs data and safety, little content creation; Marketing needs content and communication.
  */
 function demoCeilings(): CapabilityCeilingRecord {
   return {
     organization: { 'cat-1': 3, 'cat-2': 2, 'cat-3': 3, 'cat-4': 2, 'cat-5': 1, 'cat-6': 2 },
-    departments: {
-      'dep-kt': { 'cat-1': 2, 'cat-2': 1, 'cat-3': 1, 'cat-4': 2, 'cat-5': 1, 'cat-6': 1 },
-      'dep-mkt': { 'cat-1': 3, 'cat-2': 2, 'cat-3': 3, 'cat-4': 1, 'cat-5': 1, 'cat-6': 2 },
+    positions: {
+      ACCOUNTANT: { 'cat-1': 2, 'cat-2': 1, 'cat-3': 1, 'cat-4': 2, 'cat-5': 1, 'cat-6': 1 },
+      MARKETING: { 'cat-1': 3, 'cat-2': 2, 'cat-3': 3, 'cat-4': 1, 'cat-5': 1, 'cat-6': 2 },
     },
     updatedAt: '2026-10-08T09:30:00.000Z',
     updatedByName: 'Nguyễn Văn Chủ',
@@ -84,33 +86,30 @@ export function ceilingMatrixDto(data: OrgData) {
   const organizationCeiling = new Map(domains.map((d) => [d.id, maxLicensedLevel(data, d.id)]));
 
   const activeEmployees = data.employees.filter((e) => e.status === 'ACTIVE');
-  const departments = data.departments
-    .filter((d) => d.status === 'ACTIVE')
-    .sort((a, b) => a.name.localeCompare(b.name, 'vi'))
-    .map((department) => {
-      const positionIds = new Set([
-        ...activeEmployees.filter((e) => e.departmentId === department.id && e.jobPositionId).map((e) => e.jobPositionId!),
-        ...data.positions.filter((p) => p.departmentId === department.id && p.status === 'ACTIVE').map((p) => p.id),
-      ]);
-      const hasSuggestion = [...positionIds].some((id) => requirements.has(id) || Boolean(positionReferences.get(id)));
-      const own = saved?.departments[department.id] ?? {};
+  const sample = (code: string, categoryId: string) => {
+    const index = CATEGORIES.findIndex((category) => category.id === categoryId);
+    return Math.min(MAX_LEVEL, index >= 0 ? reference[code]?.[index] ?? 0 : 0);
+  };
+  const positions = STANDARD_POSITION_CODES
+    .map((code) => ({ code, row: positionRowOf(data, code) }))
+    .filter(({ row }) => !row || row.status === 'ACTIVE')
+    .map(({ code, row }) => {
+      const own = saved?.positions?.[code] ?? {};
+      const holders = activeEmployees.filter((e) => row && e.jobPositionId === row.id);
       const ceilings = domains.map((d) => {
-        const orgLevel = organizationCeiling.get(d.id)!;
         const isCustomized = own[d.id] !== undefined;
-        // A department may aim above the owned courses: set first, buy later.
-        return {
-          categoryId: d.id,
-          level: isCustomized ? own[d.id] : orgLevel,
-          suggested: suggest(positionIds, d.id),
-          isCustomized,
-        };
+        const suggested = sample(code, d.id);
+        // A position may aim above the owned courses: set first, buy later.
+        return { categoryId: d.id, level: isCustomized ? own[d.id] : Math.max(1, suggested), suggested, isCustomized };
       });
       return {
-        departmentId: department.id,
-        code: department.code,
-        name: department.name,
-        employeeCount: activeEmployees.filter((e) => e.departmentId === department.id).length,
-        hasSuggestion,
+        positionId: row?.id ?? null,
+        code,
+        name: row?.name ?? STANDARD_POSITIONS[code],
+        employeeCount: holders.length,
+        departments: [...new Set(holders.map((e) => data.departments.find((d) => d.id === e.departmentId)?.name).filter((n): n is string => Boolean(n)))]
+          .sort((a, b) => a.localeCompare(b, 'vi')),
+        hasSuggestion: ceilings.every((c) => c.suggested > 0),
         isCustomized: ceilings.some((c) => c.isCustomized),
         courseCount: ceilings.reduce((sum, c) => sum + c.level, 0),
         ceilings,
@@ -119,7 +118,7 @@ export function ceilingMatrixDto(data: OrgData) {
 
   return {
     platformMaxLevel: MAX_LEVEL,
-    isConfigured: Boolean(saved),
+    isConfigured: Object.keys(saved?.positions ?? {}).length > 0,
     updatedAt: saved?.updatedAt ?? null,
     updatedByName: saved?.updatedByName ?? null,
     levels: LEVEL_NAMES.map((name, i) => ({ level: i + 1, name })),
@@ -142,10 +141,16 @@ export function ceilingMatrixDto(data: OrgData) {
         };
       }),
     })),
-    departments,
+    positions,
     organizationCourseCount: [...organizationCeiling.values()].reduce((sum, level) => sum + level, 0),
     platformCourseCount: domains.length * MAX_LEVEL,
   };
+}
+
+/** The organization's row for a standard position: its code, else an older row naming the same position. */
+function positionRowOf(data: OrgData, code: string) {
+  return data.positions.find((p) => p.code.toUpperCase() === code && p.status !== 'ARCHIVED')
+    ?? data.positions.find((p) => p.status !== 'ARCHIVED' && !standardPositionCode(p.code) && standardPositionCode(p.name) === code);
 }
 
 interface CeilingInput {
@@ -186,48 +191,37 @@ route('PUT', '/capability-ceilings/organization', ({ body, session, update }) =>
     throw badRequest('Cần mua khóa học của cấp này trước khi mở rộng phạm vi doanh nghiệp.', 'COURSE_LICENSE_REQUIRED', 'ceilings');
   }
 
-  const record: CapabilityCeilingRecord = ceilingsOf(data) ?? { organization: {}, departments: {}, updatedAt: '', updatedByName: '' };
+  // Legacy (no longer used by OW-05): the company keeps every owned course; position levels are untouched.
+  const record: CapabilityCeilingRecord = ceilingsOf(data) ?? { organization: {}, positions: {}, updatedAt: '', updatedByName: '' };
   for (const item of ceilings) record.organization[item.categoryId] = item.level;
-
-  // Department ceilings above the new organization ceiling are lowered to it.
-  let adjusted = 0;
-  for (const own of Object.values(record.departments)) {
-    let changed = false;
-    for (const [categoryId, level] of Object.entries(own)) {
-      if (level > record.organization[categoryId]) {
-        own[categoryId] = record.organization[categoryId];
-        changed = true;
-      }
-    }
-    if (changed) adjusted++;
-  }
 
   stamp(record, session.fullName);
   data.capabilityCeilings = record;
-  recordAudit(data, session, 'CAPABILITY_CEILING_UPDATED', 'Phạm vi năng lực', 'Phạm vi doanh nghiệp',
-    adjusted > 0 ? `Thu hẹp phạm vi của ${adjusted} phòng ban theo phạm vi mới` : undefined);
-  return { ...ceilingMatrixDto(data), adjustedDepartmentCount: adjusted };
+  recordAudit(data, session, 'CAPABILITY_CEILING_UPDATED', 'Phạm vi năng lực', 'Phạm vi doanh nghiệp');
+  return { ...ceilingMatrixDto(data), adjustedDepartmentCount: 0 };
 }), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu phạm vi doanh nghiệp.' });
 
-route('PUT', '/capability-ceilings/departments/:id', ({ body, params, session, update }) => update((data) => {
-  const department = data.departments.find((d) => d.id === params.id && d.status === 'ACTIVE');
-  if (!department) throw notFound('Không tìm thấy phòng ban.');
+route('PUT', '/capability-ceilings/positions/:code', ({ body, params, session, update }) => update((data) => {
+  const code = standardPositionCode(decodeURIComponent(params.code));
+  if (!code) throw badRequest('Chọn một trong 5 vị trí chuẩn: CEO, Nhân sự, Marketing, Sales, Kế toán.', 'INVALID_JOB_POSITION', 'code');
+  const row = positionRowOf(data, code);
+  if (row && row.status !== 'ACTIVE') throw badRequest('Vị trí chuẩn này đã ngừng sử dụng trong doanh nghiệp.', 'INVALID_JOB_POSITION', 'code');
 
-  const record: CapabilityCeilingRecord = ceilingsOf(data) ?? { organization: {}, departments: {}, updatedAt: '', updatedByName: '' };
-
+  const record: CapabilityCeilingRecord = ceilingsOf(data) ?? { organization: {}, positions: {}, updatedAt: '', updatedByName: '' };
+  record.positions ??= {};
   if (body.inherit === true) {
-    delete record.departments[department.id];
+    delete record.positions[code];
   } else {
     const ceilings = readCeilings(body);
-    if (ceilings.length === 0) throw badRequest('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.');
-    const own = (record.departments[department.id] ??= {});
+    if (ceilings.length === 0 || ceilings.some((item) => item.level < 1)) throw badRequest('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra lại.');
+    const own = (record.positions[code] ??= {});
     for (const item of ceilings) own[item.categoryId] = item.level;
   }
 
   stamp(record, session.fullName);
   data.capabilityCeilings = record;
-  recordAudit(data, session, 'CAPABILITY_CEILING_UPDATED', 'Phạm vi năng lực', `Phạm vi phòng ban ${department.name}`,
-    body.inherit === true ? 'Bỏ mức riêng, học theo chuẩn vị trí' : undefined);
+  recordAudit(data, session, 'CAPABILITY_CEILING_UPDATED', 'Khung năng lực số', `Vị trí ${row?.name ?? STANDARD_POSITIONS[code]}`,
+    body.inherit === true ? 'Bỏ mức đã đặt, theo đề xuất của hệ thống' : undefined);
   return ceilingMatrixDto(data);
-}), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu phạm vi phòng ban.' });
+}), { permission: P.POSITION_REQUIREMENT_MANAGE, message: 'Đã lưu mức cần đạt của vị trí.' });
 

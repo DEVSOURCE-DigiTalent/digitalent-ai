@@ -174,14 +174,14 @@ public class UpdateMemberUseCase : IUseCase<UpdateMemberUseCaseInput, UpdateMemb
             ? await _context.Employees.FirstAsync(e => e.Id == member.EmployeeId.Value)
             : await CreateProfileAsync(organizationId, member, departmentId);
 
-        var targetDepartmentId = departmentId ?? employee.DepartmentId;
+        // a position is one of the standard ones, shared by every department
         var targetPositionId = jobPositionIdText == null ? employee.JobPositionId : jobPositionId;
-        if (targetPositionId.HasValue && (targetPositionId != employee.JobPositionId || targetDepartmentId != employee.DepartmentId))
+        if (targetPositionId.HasValue && targetPositionId != employee.JobPositionId)
         {
             var validPosition = await _context.JobPositions.AnyAsync(p => p.Id == targetPositionId.Value
-                && p.OrganizationId == organizationId && p.DepartmentId == targetDepartmentId && p.Status == Statuses.MasterData.Active);
+                && p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active);
             if (!validPosition)
-                throw new BadRequestException("Vị trí công việc không thuộc phòng ban đã chọn.", "jobPositionId", "INVALID_JOB_POSITION");
+                throw new BadRequestException("Vị trí công việc không còn hoạt động.", "jobPositionId", "INVALID_JOB_POSITION");
         }
 
         var changed = false;

@@ -3,7 +3,7 @@ import {
   capabilityCeilingService,
   type CapabilityCeilings,
   type CeilingInput,
-  type UpdateDepartmentCeilingsRequest,
+  type UpdatePositionCeilingsRequest,
 } from '../services/capability-ceiling.service';
 
 export const CAPABILITY_CEILINGS_KEY = ['capability-ceilings'] as const;
@@ -35,11 +35,12 @@ export function useUpdateOrganizationCeilings() {
   });
 }
 
-export function useUpdateDepartmentCeilings() {
+/** OW-05 "Năng lực từng vị trí": saves the required levels of one of the 5 standard positions (by code). */
+export function useUpdatePositionCeilings() {
   const store = useStoreMatrix();
   return useMutation({
-    mutationFn: async ({ departmentId, data }: { departmentId: string; data: UpdateDepartmentCeilingsRequest }) =>
-      (await capabilityCeilingService.updateDepartment(departmentId, data)).data.data,
+    mutationFn: async ({ code, data }: { code: string; data: UpdatePositionCeilingsRequest }) =>
+      (await capabilityCeilingService.updatePosition(code, data)).data.data,
     onSuccess: store,
   });
 }

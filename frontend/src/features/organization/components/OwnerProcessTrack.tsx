@@ -8,6 +8,7 @@ import {
 import type { OrganizationOverview } from '@/services/organization.service';
 import type { DashboardDto } from '@/services/analytics.service';
 import { useTrialProgram } from '@/hooks/use-trial-program';
+import { SKILL_GAP_PATH, useSurveyOver } from '@/hooks/use-survey-over';
 
 interface OwnerProcessTrackProps {
   org: OrganizationOverview;
@@ -25,6 +26,7 @@ const MILESTONES = [
 export function OwnerProcessTrack({ org, cap }: OwnerProcessTrackProps) {
   useUiLanguage();
   const { data: trialProgram } = useTrialProgram();
+  const surveyOver = useSurveyOver();
   const hasTrialParticipants = (trialProgram?.participants?.length ?? 0) > 0;
 
   const hasStartedAssessment =
@@ -77,7 +79,7 @@ export function OwnerProcessTrack({ org, cap }: OwnerProcessTrackProps) {
           return (
             <Link
               key={m.step}
-              to={m.path}
+              to={surveyOver && m.path === '/enterprise/trial' ? SKILL_GAP_PATH : m.path}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                 isDone
                   ? 'text-emerald-800 bg-emerald-50 border border-emerald-200/70'

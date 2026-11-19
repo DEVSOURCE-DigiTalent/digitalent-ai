@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useTrialProgram } from '@/hooks/use-trial-program';
+import { SKILL_GAP_PATH, useSurveyOver } from '@/hooks/use-survey-over';
 import { LevelBadge } from '@/features/trial-program/components/TrialUi';
 import '@/features/trial-program/trial-program.css';
 
@@ -15,6 +16,7 @@ const LEVEL_COLORS = [
 
 export function OwnerTrialAssessmentWidget() {
   useUiLanguage();
+  const surveyOver = useSurveyOver();
   const { data: program, isLoading, isError } = useTrialProgram();
   const [showEmployees, setShowEmployees] = useState(false);
   const [chartMode, setChartMode] = useState<'distribution' | 'score'>('distribution');
@@ -321,9 +323,9 @@ export function OwnerTrialAssessmentWidget() {
       <div className="flex items-center justify-between pb-4 border-b border-slate-100">
         <h2 className="text-base sm:text-lg font-black text-[#17243f]">{translateUi("Khảo sát Năng lực Đội ngũ")}</h2>
         <Link
-          to="/enterprise/trial"
+          to={surveyOver ? SKILL_GAP_PATH : '/enterprise/trial'}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#137b84] to-[#0d9488] text-white text-xs font-bold hover:shadow-xs transition-all"
-        >{translateUi("Quản lý đợt thi")}<ArrowRight className="size-3.5" />
+        >{translateUi(surveyOver ? "Xem khoảng trống năng lực" : "Quản lý đợt thi")}<ArrowRight className="size-3.5" />
         </Link>
       </div>
 

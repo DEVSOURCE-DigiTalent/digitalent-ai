@@ -120,7 +120,6 @@ export interface TrialProgram {
   participants: TrialParticipant[];
   departments: string[];
   positions: string[];
-  positionsByDepartment?: Record<string, string[]>;
   report?: TrialReport | null;
 }
 

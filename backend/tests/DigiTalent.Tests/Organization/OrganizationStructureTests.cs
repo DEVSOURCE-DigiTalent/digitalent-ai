@@ -364,7 +364,7 @@ public class OrganizationStructureTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task JobPositions_StoreDepartmentAndGrade_AndExposeHeadcountAndRequirementSet()
+    public async Task JobPositions_AreSharedByDepartments_AndExposeGradeHeadcountAndRequirementSet()
     {
         var f = await Fixture.CreateAsync();
         var created = await new CreateJobPositionUseCase(f.Context, f.CurrentUser, f.Audit.Object).ExecuteAsync(new CreateJobPositionUseCaseInput
@@ -376,11 +376,12 @@ public class OrganizationStructureTests
         });
 
         var list = await new GetPagedJobPositionsUseCase(f.Context, f.CurrentUser)
-            .ExecuteAsync(new GetPagedJobPositionsUseCaseInput { DepartmentId = f.World.DepartmentB.Id, JobGrade = JobGrades.G3 });
+            .ExecuteAsync(new GetPagedJobPositionsUseCaseInput { JobGrade = JobGrades.G3 });
         var row = list.Items.Should().ContainSingle().Subject;
         row.Id.Should().Be(created.Id);
-        row.DepartmentName.Should().Be("Finance");
+        row.Departments.Should().BeEmpty(); // nobody holds it yet; the department sent is ignored
         row.JobGradeName.Should().Be(JobGrades.Defaults[JobGrades.G3].Name);
+        (await f.Context.JobPositions.FindAsync(created.Id))!.DepartmentId.Should().BeNull();
 
         var analyst = await new GetJobPositionByIdUseCase(f.Context, f.CurrentUser)
             .ExecuteAsync(new GetJobPositionByIdUseCaseInput { Id = f.World.DataAnalyst.Id });
@@ -390,7 +391,7 @@ public class OrganizationStructureTests
 
         var archiveDepartment = () => new ArchiveDepartmentUseCase(f.Context, f.CurrentUser, f.Audit.Object)
             .ExecuteAsync(new ArchiveDepartmentUseCaseInput { Id = f.World.DepartmentB.Id });
-        await archiveDepartment.Should().ThrowAsync<ConflictException>(); // still has employees and a position
+        await archiveDepartment.Should().ThrowAsync<ConflictException>(); // still has employees
     }
 
     /// <summary>

@@ -6,26 +6,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateJobPosition, useJobPositions, useUpdateJobPosition } from '@/hooks/use-job-positions';
-import { useDepartments } from '@/hooks/use-departments';
 import type { JobPositionListItem } from '@/services/job-position.service';
 import { toast } from 'sonner';
 import { organizationErrorMessage } from '@/lib/organization-errors';
 import { INPUT_CLASS } from '@/features/onboarding/components/styles';
 import { useDialogFocus } from '@/hooks/use-dialog-focus';
+import { STANDARD_POSITIONS } from '@/lib/standard-positions';
 import './job-position-form.css';
-
-const standardPositions = {
-  CEO: 'CEO / Giám đốc',
-  HR: 'Nhân sự (HR)',
-  MARKETING: 'Marketing',
-  SALES_CRM: 'Sales / CRM',
-  ACCOUNTANT: 'Kế toán',
-} as const;
 
 const formSchema = z.object({
   code: z.string().min(1, 'Vui lòng nhập mã'),
   description: z.string().optional(),
-  departmentId: z.string().min(1, 'Vui lòng chọn phòng ban'),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
@@ -45,14 +36,11 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
   const createMutation = useCreateJobPosition();
   const updateMutation = useUpdateJobPosition();
 
-  const { data: deptData, isError: departmentError } = useDepartments({ pageSize: 100, status: 'ACTIVE' });
-  const { data: positionData, isError: positionError } = useJobPositions({ pageSize: 100 });
-  const occupied = new Map(positionData?.items
-    .filter((item) => item.id !== position?.id && item.status !== 'ARCHIVED' && item.departmentId)
-    .map((item) => [item.departmentId, item]));
-  const departments = (deptData?.items ?? []).filter((item) => item.id === position?.departmentId || !occupied.has(item.id));
-  const placementUnavailable = !position?.departmentId && departments.length === 0;
-  const placementLoading = !deptData || !positionData;
+  // One position per standard code, shared by every department: only the codes the organization has not in use yet.
+  const { data: positionData } = useJobPositions({ pageSize: 100 });
+  const available = Object.entries(STANDARD_POSITIONS)
+    .filter(([code]) => !positionData?.items.some((item) => item.code === code && item.status === 'ACTIVE'));
+  const nothingToAdd = !isEditing && positionData != null && available.length === 0;
 
   const {
     register,
@@ -64,7 +52,6 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
     defaultValues: {
       code: '',
       description: '',
-      departmentId: '',
       status: 'ACTIVE',
     },
   });
@@ -75,14 +62,12 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
         reset({
           code: position.code,
           description: position.description ?? '',
-          departmentId: position.departmentId || '',
           status: position.status === 'ARCHIVED' ? 'ACTIVE' : position.status,
         });
       } else {
         reset({
           code: '',
           description: '',
-          departmentId: '',
           status: 'ACTIVE',
         });
       }
@@ -94,9 +79,8 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
   const onSubmit = async (data: FormData) => {
     const fields = {
       code: data.code.trim().toUpperCase(),
-      name: standardPositions[data.code as keyof typeof standardPositions] ?? position?.name ?? data.code,
+      name: STANDARD_POSITIONS[data.code as keyof typeof STANDARD_POSITIONS] ?? position?.name ?? data.code,
       description: data.description?.trim(),
-      departmentId: data.departmentId,
     };
     try {
       if (isEditing && position) {
@@ -144,50 +128,13 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
             {position ? <input id="position-code" {...register('code')} className={INPUT_CLASS} readOnly /> : (
               <select id="position-code" {...register('code')} className={INPUT_CLASS} disabled={isSubmitting}>
                 <option value="">{translateUi('Chọn vị trí chuẩn')}</option>
-                {Object.entries(standardPositions)
-                  .filter(([code]) => !positionData?.items.some((item) => item.code === code && item.departmentId))
-                  .map(([code, name]) => <option key={code} value={code}>{name} ({code})</option>)}
+                {available.map(([code, name]) => <option key={code} value={code}>{name} ({code})</option>)}
               </select>
             )}
+            {nothingToAdd
+              ? <p className="mt-1.5 text-xs text-slate-600">{translateUi('Doanh nghiệp đã có đủ 5 vị trí chuẩn.')}</p>
+              : <p className="mt-1.5 text-xs text-slate-600">{translateUi('Vị trí dùng được ở mọi phòng ban.')}</p>}
             {errors.code && <p className="mt-1 text-sm text-red-500">{translateUi(errors.code.message)}</p>}
-          </div>
-
-          <div className="position-form-full">
-            <label htmlFor="position-department" className="block text-sm font-semibold text-slate-700 mb-1.5">{translateUi("Phòng ban")} <span className="text-rose-600">*</span></label>
-            <select
-              id="position-department"
-              {...register('departmentId')}
-              className={INPUT_CLASS}
-              disabled={isSubmitting || placementUnavailable}
-              aria-describedby="position-department-help"
-            >
-              <option value="">{translateUi("Chọn phòng ban")}</option>
-              {position?.departmentId && !departments.some((d) => d.id === position.departmentId) && (
-                <option value={position.departmentId}>{position.departmentName ?? translateUi('Phòng ban hiện tại')}</option>
-              )}
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-            <div id="position-department-help" className="mt-1.5 text-xs text-slate-600">
-              {placementUnavailable ? (
-                departmentError || positionError ? <p>{translateUi('Không tải được danh sách phòng ban hoặc vị trí.')}</p>
-                  : placementLoading ? <p>{translateUi('Đang tải phòng ban…')}</p>
-                  : deptData.items.length === 0 ? <p>{translateUi('Chưa có phòng ban đang hoạt động. Tạo phòng ban trước khi gắn vị trí.')}</p>
-                  : <>
-                    <p>{translateUi('Các phòng ban đang hoạt động đều đã có vị trí. Hãy mở dòng vị trí đang dùng của phòng để sửa.')}</p>
-                    <ul className="mt-2 space-y-1">
-                      {deptData.items.map((department) => {
-                        const assigned = occupied.get(department.id);
-                        return assigned && <li key={department.id}>{department.name} · {assigned.name} ({assigned.code})</li>;
-                      })}
-                    </ul>
-                  </>
-              ) : <p>{translateUi('Mỗi phòng ban có một vị trí công việc.')}</p>}
-            </div>
-            {errors.departmentId && <p className="mt-1 text-sm text-red-600">{translateUi(errors.departmentId.message)}</p>}
           </div>
 
           <div className="position-form-full">
@@ -227,7 +174,7 @@ export function JobPositionFormDialog({ open, onClose, position }: JobPositionFo
             <button
               type="submit"
               className="position-form-save rounded-xl px-6 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-              disabled={isSubmitting || placementUnavailable}
+              disabled={isSubmitting || nothingToAdd}
             >
               {isSubmitting ? translateUi('Đang lưu…') : translateUi('Lưu')}
             </button>

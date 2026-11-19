@@ -9,6 +9,8 @@ import { RequireRole } from '@/components/guards/RequireRole';
 import { RequirePermission } from '@/components/guards/RequirePermission';
 import { RequireEntitlement } from '@/components/guards/RequireEntitlement';
 import { RequireActiveSubscription } from '@/components/guards/RequireActiveSubscription';
+import { RequireTrialOpen } from '@/components/guards/RequireTrialOpen';
+import { TRIAL_LOCKED_SCREEN_IDS } from '../../trial-lock';
 import { ROLES } from '../../roles';
 import { ENTITLEMENTS } from '../../entitlements';
 
@@ -29,7 +31,7 @@ function guardsOf(element: unknown): unknown[] {
   let current = element;
   while (isValidElement(current)) {
     const { type } = current as ReactElement;
-    if (type !== RequireRole && type !== RequirePermission && type !== RequireEntitlement && type !== RequireActiveSubscription) break;
+    if (type !== RequireRole && type !== RequirePermission && type !== RequireEntitlement && type !== RequireActiveSubscription && type !== RequireTrialOpen) break;
     guards.push(type);
     current = (current as ReactElement<{ children: unknown }>).props.children;
   }
@@ -58,6 +60,7 @@ describe.each(PORTALS)('$name sitemap', ({ screens, routes, base }) => {
     expect(guards.includes(RequirePermission)).toBe(Boolean(screen.permission));
     expect(guards.includes(RequireEntitlement)).toBe(Boolean(screen.entitlement));
     expect(guards.includes(RequireActiveSubscription)).toBe(!screen.allowUnpaid);
+    expect(guards.includes(RequireTrialOpen)).toBe(base === '/enterprise' && TRIAL_LOCKED_SCREEN_IDS.has(screen.id));
   });
 });
 

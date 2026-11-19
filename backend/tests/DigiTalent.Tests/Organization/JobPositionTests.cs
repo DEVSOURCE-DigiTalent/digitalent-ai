@@ -36,11 +36,9 @@ public class JobPositionTests
             Description = "Designs and develops software",
         };
 
-        await FluentActions.Invoking(() => useCase.ExecuteAsync(input)).Should().ThrowAsync<BadRequestException>();
+        // a position is one of the 5 standard ones, shared by every department: a department sent is ignored
         var department = new Department { OrganizationId = orgId, Code = "ENG", Name = "Engineering" };
         context.Departments.Add(department);
-        var template = new JobPosition { OrganizationId = orgId, Code = "ACCOUNTANT", Name = "Kế toán" };
-        context.JobPositions.Add(template);
         await context.SaveChangesAsync();
         input.DepartmentId = department.Id;
 
@@ -48,20 +46,16 @@ public class JobPositionTests
 
         var created = await context.JobPositions.FindAsync(result.Id);
         created.Should().NotBeNull();
-        result.Id.Should().Be(template.Id);
         created!.OrganizationId.Should().Be(orgId);
-        created.DepartmentId.Should().Be(department.Id);
+        created.DepartmentId.Should().BeNull();
+        created.Name.Should().Be("Kế toán");
         await FluentActions.Invoking(() => useCase.ExecuteAsync(new CreateJobPositionUseCaseInput
         {
-            Code = "CEO", Name = "CEO", DepartmentId = department.Id,
-        })).Should().ThrowAsync<ConflictException>();
-
-        var otherDepartment = new Department { OrganizationId = orgId, Code = "FIN", Name = "Finance" };
-        context.Departments.Add(otherDepartment);
-        await context.SaveChangesAsync();
+            Code = "ACCOUNTANT", Name = "Kế toán",
+        })).Should().ThrowAsync<ConflictException>().WithMessage("*mọi phòng ban*");
         await FluentActions.Invoking(() => useCase.ExecuteAsync(new CreateJobPositionUseCaseInput
         {
-            Code = "SWE2", Name = "software engineer", DepartmentId = otherDepartment.Id,
+            Code = "SWE2", Name = "software engineer",
         })).Should().ThrowAsync<BadRequestException>();
 
         created.Code.Should().Be("ACCOUNTANT");
@@ -97,7 +91,7 @@ public class JobPositionTests
         };
 
         var action = async () => await useCase.ExecuteAsync(input);
-        await action.Should().ThrowAsync<ConflictException>().WithMessage("*already exists*");
+        await action.Should().ThrowAsync<ConflictException>().WithMessage("*đã có trong doanh nghiệp*");
     }
 
     [Fact]
@@ -191,31 +185,32 @@ public class JobPositionTests
     }
 
     [Fact]
-    public async Task GetPagedJobPositions_CanIncludePositionsHeldByActiveDepartmentMembers()
+    public async Task GetPagedJobPositions_ForADepartment_ListsThePositionsItsActiveEmployeesHold()
     {
         using var context = new AppDbContext(GetOptions(Guid.NewGuid().ToString()));
         var org = Guid.NewGuid();
-        var department = Guid.NewGuid();
-        var otherDepartment = Guid.NewGuid();
-        var shared = new JobPosition { Id = Guid.NewGuid(), OrganizationId = org, Code = "SHARED", Name = "Shared" };
-        var owned = new JobPosition { Id = Guid.NewGuid(), OrganizationId = org, DepartmentId = department, Code = "OWNED", Name = "Owned" };
-        var unrelated = new JobPosition { Id = Guid.NewGuid(), OrganizationId = org, Code = "UNRELATED", Name = "Unrelated" };
-        context.JobPositions.AddRange(shared, owned, unrelated);
+        var department = new Department { OrganizationId = org, Code = "KT", Name = "Kế toán tổng hợp" };
+        var otherDepartment = new Department { OrganizationId = org, Code = "MKT", Name = "Phòng Marketing" };
+        context.Departments.AddRange(department, otherDepartment);
+        var shared = new JobPosition { Id = Guid.NewGuid(), OrganizationId = org, Code = "ACCOUNTANT", Name = "Kế toán" };
+        // a legacy binding to the department no longer makes the position "belong" to it
+        var legacy = new JobPosition { Id = Guid.NewGuid(), OrganizationId = org, DepartmentId = department.Id, Code = "HR", Name = "Nhân sự (HR)" };
+        var unrelated = new JobPosition { Id = Guid.NewGuid(), OrganizationId = org, Code = "CEO", Name = "CEO / Giám đốc" };
+        context.JobPositions.AddRange(shared, legacy, unrelated);
         context.Employees.AddRange(
-            new Employee { OrganizationId = org, DepartmentId = department, JobPositionId = shared.Id, Status = "ACTIVE" },
-            new Employee { OrganizationId = org, DepartmentId = otherDepartment, JobPositionId = shared.Id, Status = "ACTIVE" },
-            new Employee { OrganizationId = org, DepartmentId = department, JobPositionId = unrelated.Id, Status = "ARCHIVED" });
+            new Employee { OrganizationId = org, DepartmentId = department.Id, JobPositionId = shared.Id, Status = "ACTIVE" },
+            new Employee { OrganizationId = org, DepartmentId = otherDepartment.Id, JobPositionId = shared.Id, Status = "ACTIVE" },
+            new Employee { OrganizationId = org, DepartmentId = department.Id, JobPositionId = unrelated.Id, Status = "ARCHIVED" });
         await context.SaveChangesAsync();
         var user = new Mock<ICurrentUser>();
         user.Setup(c => c.GetRequiredOrganizationId()).Returns(org);
         var useCase = new GetPagedJobPositionsUseCase(context, user.Object);
-        var input = new GetPagedJobPositionsUseCaseInput { DepartmentId = department };
 
-        (await useCase.ExecuteAsync(input)).Items.Select(p => p.Id).Should().Equal(owned.Id);
-        input.IncludeAssignedPositions = true;
-        var positions = (await useCase.ExecuteAsync(input)).Items;
-        positions.Select(p => p.Id).Should().Equal(owned.Id, shared.Id);
-        positions.Single(p => p.Id == shared.Id).Headcount.Should().Be(1);
+        var positions = (await useCase.ExecuteAsync(new GetPagedJobPositionsUseCaseInput { DepartmentId = department.Id })).Items;
+        positions.Select(p => p.Id).Should().Equal(shared.Id);
+        positions.Single().Headcount.Should().Be(1);
+        positions.Single().Departments.Should().Equal("Kế toán tổng hợp", "Phòng Marketing");
+        (await useCase.ExecuteAsync(new GetPagedJobPositionsUseCaseInput())).Items.Should().HaveCount(3);
     }
 
     [Fact]

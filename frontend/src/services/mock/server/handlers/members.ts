@@ -9,6 +9,7 @@ import { activeHolders, listMembers, seatsInUse, type MemberView } from '../memb
 import { route, type RequestContext } from '../router';
 import type { EmployeeRecord, OrgData } from '../types';
 import { recordAudit } from './audit';
+import { resolveStandardPosition } from '../standard-positions';
 
 /** People with access to the organization: list, detail, invitations, role changes, deactivation (spec ADM-02 to ADM-05, FLOW-02, FLOW-08). */
 
@@ -82,8 +83,11 @@ route('POST', '/members/invitations', ({ body, org, session, update }) => {
       else if (taken.has(email) || findMockAccountByEmail(email) || findUserByEmail(email)) reject('Email đã có tài khoản hoặc đã được mời.');
       else if (seatLimit !== undefined && used >= seatLimit) reject('Đã hết quyền sử dụng của gói.');
       else {
-        const departmentName = data.departments.find((d) => d.id === row.departmentId)?.name;
-        const positionName = data.positions.find((p) => p.id === row.jobPositionId)?.name;
+        const departmentName = data.departments.find((d) => d.id === row.departmentId)?.name ?? (row.departmentName as string | undefined);
+        // any department name; the position is one of the 5 standard ones, shared by every department
+        const typed = !row.jobPositionId && row.jobPositionName ? resolveStandardPosition(live, String(row.jobPositionName)) : null;
+        if (typed?.error) { reject(typed.error); continue; }
+        const positionName = typed?.position?.name ?? data.positions.find((p) => p.id === row.jobPositionId)?.name;
         const invitation = {
           token: newToken(), organizationId: live.organizationId, email, fullName, departmentName, positionName,
           role, status: 'pending' as const, createdAt: new Date().toISOString(),

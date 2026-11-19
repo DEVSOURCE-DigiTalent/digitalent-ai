@@ -103,6 +103,49 @@ public class DepartmentScopeTests
     }
 
     [Fact]
+    public async Task DepartmentsHaveAnyNameAndShareTheFiveStandardPositions()
+    {
+        using var context = new DigiTalent.Infrastructure.Persistence.AppDbContext(GetOptions(Guid.NewGuid().ToString()));
+        var orgId = Guid.NewGuid();
+        context.Roles.AddRange(new Role { Code = "MANAGER", Name = "Manager" }, new Role { Code = "EMPLOYEE", Name = "Employee" });
+        await context.SaveChangesAsync();
+        var currentUser = new Mock<ICurrentUser>();
+        currentUser.Setup(c => c.GetRequiredOrganizationId()).Returns(orgId);
+        var permissions = new Mock<IPermissionService>();
+        permissions.Setup(p => p.HasAnyAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<IReadOnlyCollection<string>>()))
+            .ReturnsAsync(true);
+        var sender = new Mock<IInvitationSender>();
+        sender.Setup(s => s.SendAsync(It.IsAny<InvitationMessage>(), It.IsAny<CancellationToken>())).ReturnsAsync("test-link");
+        var invite = new InviteMembersUseCase(context, currentUser.Object, permissions.Object, sender.Object,
+            Mock.Of<IAuditService>(), new MemberDirectory(context));
+        InviteMemberRow Row(string email, string department, string position, string role = "MANAGER") => new()
+        {
+            Email = email, FullName = email, Role = role, DepartmentName = department, JobPositionName = position,
+        };
+
+        var result = await invite.ExecuteAsync(new InviteMembersUseCaseInput
+        {
+            Rows = new()
+            {
+                Row("north@example.test", "Kinh doanh miền Bắc", "Sales"),
+                Row("south@example.test", "Kinh doanh miền Nam", "Sales / CRM"),
+                Row("ops@example.test", "Vận hành", "Kế toán"),
+                Row("dev@example.test", "Công nghệ", "Lập trình viên"),
+            },
+        });
+
+        result.Created.Select(m => m.Email).Should().BeEquivalentTo("north@example.test", "south@example.test", "ops@example.test");
+        result.Rejected.Should().ContainSingle().Which.Reason.Should().Contain("5 vị trí chuẩn");
+        var positions = await context.JobPositions.ToListAsync();
+        positions.Select(p => p.Code).Should().BeEquivalentTo("SALES_CRM", "ACCOUNTANT");
+        positions.Should().OnlyContain(p => p.DepartmentId == null);
+        var sales = positions.Single(p => p.Code == "SALES_CRM").Id;
+        (await context.MemberInvitations.CountAsync(i => i.JobPositionId == sales)).Should().Be(2);
+        (await context.Departments.Select(d => d.Name).ToListAsync())
+            .Should().BeEquivalentTo("Kinh doanh miền Bắc", "Kinh doanh miền Nam", "Vận hành");
+    }
+
+    [Fact]
     public async Task InvitingAHeadFirstReservesTheDepartmentAndActivationAssignsManagerAccess()
     {
         using var context = new DigiTalent.Infrastructure.Persistence.AppDbContext(GetOptions(Guid.NewGuid().ToString()));
@@ -141,7 +184,10 @@ public class DepartmentScopeTests
         });
         batch.Created.Select(m => m.Email).Should().Equal("manager@example.test", "employee@example.test");
         batch.Rejected.Should().ContainSingle().Which.Email.Should().Be("second@example.test");
-        (await context.JobPositions.SingleAsync()).DepartmentId.Should().Be((await context.Departments.SingleAsync()).Id);
+        // one shared "Kế toán" position, bound to no department; both invitations use it
+        (await context.JobPositions.SingleAsync()).DepartmentId.Should().BeNull();
+        (await context.MemberInvitations.Select(i => i.JobPositionId).Distinct().ToListAsync())
+            .Should().Equal((await context.JobPositions.SingleAsync()).Id);
 
         var hasher = new Mock<IPasswordHasher>();
         hasher.Setup(h => h.Hash(It.IsAny<string>())).Returns("hashed");

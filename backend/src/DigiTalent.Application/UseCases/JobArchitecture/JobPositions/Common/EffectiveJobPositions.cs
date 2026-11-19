@@ -13,17 +13,15 @@ internal static class EffectiveJobPositions
         public Guid? PositionId { get; init; }
     }
 
-    // Preserve a valid assignment. A legacy mismatch can only fall back to an unambiguous position in the same department.
+    // The employee's own position while it is active in the organization. Positions are shared by every department
+    // (StandardPositions), so the department plays no part.
     public static IQueryable<Placement> Resolve(IApplicationDbContext context, IQueryable<Employee> employees)
     {
         var active = context.JobPositions.AsNoTracking().Where(p => p.Status == Statuses.MasterData.Active);
         return employees.Select(employee => new Placement
         {
             Employee = employee,
-            PositionId = active.Where(p => p.OrganizationId == employee.OrganizationId
-                && p.DepartmentId == employee.DepartmentId
-                && (p.Id == employee.JobPositionId || !active.Any(other => other.OrganizationId == p.OrganizationId
-                    && other.DepartmentId == p.DepartmentId && other.Id != p.Id)))
+            PositionId = active.Where(p => p.OrganizationId == employee.OrganizationId && p.Id == employee.JobPositionId)
                 .Select(p => (Guid?)p.Id).FirstOrDefault(),
         });
     }

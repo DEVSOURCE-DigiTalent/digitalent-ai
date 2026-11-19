@@ -6,6 +6,7 @@ import { useCertificates } from '@/hooks/use-learning';
 import { useOrganizationOverview } from '@/hooks/use-organization';
 import { useLearningNeeds } from '@/hooks/use-skill-gaps';
 import { useTrialProgram } from '@/hooks/use-trial-program';
+import { SKILL_GAP_PATH, useSurveyOver } from '@/hooks/use-survey-over';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import './owner-business-map.css';
 
@@ -23,6 +24,7 @@ type Metric = readonly [string, number | string | null | undefined];
 
 export function OwnerBusinessMap() {
   useUiLanguage();
+  const surveyOver = useSurveyOver();
   const [selected, setSelected] = useState<BranchId>('courses');
   const organization = useOrganizationOverview().data;
   const trial = useTrialProgram().data;
@@ -89,7 +91,7 @@ export function OwnerBusinessMap() {
           <header>
             <span className="business-map__icon"><active.icon size={20} aria-hidden="true" /></span>
             <h3 id="business-map-branch-title">{translateUi(active.label)}</h3>
-            <Link className="owner-heatmap__link" to={active.path}>{translateUi('Xem chi tiết')}<ArrowRight size={15} aria-hidden="true" /></Link>
+            <Link className="owner-heatmap__link" to={surveyOver && active.id === 'assessment' ? SKILL_GAP_PATH : active.path}>{translateUi('Xem chi tiết')}<ArrowRight size={15} aria-hidden="true" /></Link>
           </header>
           <div className="business-map__detail-grid">
             {selected === 'courses' && (

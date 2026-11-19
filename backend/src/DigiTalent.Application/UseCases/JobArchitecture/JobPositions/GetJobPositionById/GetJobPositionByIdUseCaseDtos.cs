@@ -13,8 +13,8 @@ public class GetJobPositionByIdUseCaseOutput
     public string? Description { get; set; }
     public Guid? JobFamilyId { get; set; }
     public string? JobFamilyName { get; set; }
-    public Guid? DepartmentId { get; set; }
-    public string? DepartmentName { get; set; }
+    /// <summary>Departments whose active employees hold the position (a position is shared by every department).</summary>
+    public List<string> Departments { get; set; } = new();
     public string? JobGrade { get; set; }
     public string? JobGradeName { get; set; }
 

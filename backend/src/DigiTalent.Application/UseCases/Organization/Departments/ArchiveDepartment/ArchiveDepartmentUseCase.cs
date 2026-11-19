@@ -55,15 +55,7 @@ public class ArchiveDepartmentUseCase : IUseCase<ArchiveDepartmentUseCaseInput, 
             throw new ConflictException("Department still has sub-departments. Archive or move them first.");
         }
 
-        // 4. Còn vị trí công việc đang thuộc phòng ban → không cho archive
-        var hasPositions = await _context.JobPositions
-            .AnyAsync(p => p.DepartmentId == department.Id && p.Status != Statuses.MasterData.Archived);
-        if (hasPositions)
-        {
-            throw new ConflictException("Department still has job positions. Move or archive them first.");
-        }
-
-        // 5. Đổi trạng thái rồi lưu
+        // 4. Đổi trạng thái rồi lưu (vị trí dùng chung mọi phòng ban, không thuộc phòng ban nào)
         department.Status = Statuses.MasterData.Archived;
         await _context.SaveChangesAsync();
 

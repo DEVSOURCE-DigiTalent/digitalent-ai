@@ -24,17 +24,17 @@ public sealed class PulseDomainState
     public string Name { get; init; } = string.Empty;
     /// <summary>Mục tiêu vị trí (0 = vị trí không yêu cầu lĩnh vực).</summary>
     public int Target { get; init; }
-    /// <summary>Mức hiệu lực của phòng ban (mức riêng đã đặt, chưa đặt thì suy từ chuẩn vị trí của tổ chức), 0..3.</summary>
+    /// <summary>Mức cần đạt hiệu lực của vị trí (mức chủ doanh nghiệp đặt, chưa đặt thì chuẩn vị trí), 0..3.</summary>
     public int Ceiling { get; init; } = PulseRules.MaxLevel;
-    /// <summary>Mức chủ doanh nghiệp đặt riêng cho phòng ban của nhân viên; null = chưa đặt, theo mục tiêu vị trí.</summary>
-    public int? DepartmentLevel { get; init; }
-    /// <summary>Mức tối thiểu đến từ mức chủ doanh nghiệp đặt cho phòng ban (không phải chuẩn vị trí).</summary>
-    public bool RequiredByDepartment => Target > 0 && DepartmentLevel.HasValue;
+    /// <summary>Mức chủ doanh nghiệp đặt cho vị trí của nhân viên ở Khung năng lực số; null = chưa đặt, theo chuẩn vị trí.</summary>
+    public int? OwnerLevel { get; init; }
+    /// <summary>Mức tối thiểu đến từ mức chủ doanh nghiệp đặt cho vị trí (không phải đề xuất của hệ thống).</summary>
+    public bool RequiredByPosition => Target > 0 && OwnerLevel.HasValue;
     /// <summary>
-    /// Mức tối thiểu doanh nghiệp yêu cầu = đỉnh phần bắt buộc của lộ trình: mức phòng ban đã đặt, chưa đặt thì mục tiêu vị
-    /// trí; 0 = không yêu cầu. Khóa doanh nghiệp đã có ở cấp cao hơn là học vượt.
+    /// Mức tối thiểu doanh nghiệp yêu cầu = đỉnh phần bắt buộc của lộ trình: mức vị trí đã đặt, chưa đặt thì chuẩn vị trí;
+    /// 0 = không yêu cầu. Khóa doanh nghiệp đã có ở cấp cao hơn là học vượt.
     /// </summary>
-    public int PathTop => Target == 0 ? 0 : DepartmentLevel ?? Target;
+    public int PathTop => Target == 0 ? 0 : OwnerLevel ?? Target;
     /// <summary>Mức đã xác nhận = max(cấp khóa được công nhận, minh chứng thực tế được duyệt).</summary>
     public int Verified { get; init; }
     public string Source { get; init; } = PulseLevelSource.None;
@@ -243,8 +243,9 @@ public class PulseLearnerReader
                 RequiredLevel = targets.GetValueOrDefault(row.CategoryId, row.Requirement.RequiredLevel),
             })).ToList();
         }
-        var departmentLevels = await _ceilings.ForDepartmentAsync(organizationId, employee.DepartmentId, categoryIds);
-        var ceilings = departmentLevels.ToDictionary(row => row.Key, row => row.Value.Level);
+        // Khung năng lực số theo vị trí: mức chủ doanh nghiệp đặt cho vị trí, chưa đặt thì chuẩn vị trí.
+        var positionLevels = await _ceilings.ForPositionAsync(organizationId, placement, categoryIds);
+        var ceilings = positionLevels.ToDictionary(row => row.Key, row => row.Value.Level);
 
         // Khung năng lực & Lộ trình của nhân viên:
         // 1. Nếu vị trí công việc đã có requirements cụ thể trong PositionRequirementSets ACTIVE thì lấy theo vị trí.
@@ -389,8 +390,8 @@ public class PulseLearnerReader
             var source = verified == 0 ? PulseLevelSource.None
                 : courseLevel >= evidenceLevel ? PulseLevelSource.Course
                 : PulseLevelSource.PracticalEvidence;
-            int? departmentLevel = departmentLevels.TryGetValue(category.Id, out var level) && level.IsCustom ? level.Level : null;
-            var pathTop = target == 0 ? 0 : departmentLevel ?? target;
+            int? ownerLevel = positionLevels.TryGetValue(category.Id, out var level) && level.IsCustom ? level.Level : null;
+            var pathTop = target == 0 ? 0 : ownerLevel ?? target;
             var status = pathTop == 0 ? PulseDomainStatus.OutsidePath
                 : verified >= pathTop ? PulseDomainStatus.Met
                 : verified == 0 ? PulseDomainStatus.Pending
@@ -403,7 +404,7 @@ public class PulseLearnerReader
                 Name = DisplayName(category.Name),
                 Target = target,
                 Ceiling = ceiling,
-                DepartmentLevel = departmentLevel,
+                OwnerLevel = ownerLevel,
                 Verified = verified,
                 Source = source,
                 Status = status,

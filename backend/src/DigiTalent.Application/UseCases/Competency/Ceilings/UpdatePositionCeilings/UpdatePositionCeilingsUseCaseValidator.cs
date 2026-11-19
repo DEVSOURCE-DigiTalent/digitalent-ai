@@ -3,12 +3,12 @@ using FluentValidation;
 
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
-/// <summary>Mỗi lĩnh vực một dòng, cấp trong 0..3; phạm vi doanh nghiệp được kiểm tra trong use case.</summary>
-public class UpdateDepartmentCeilingsUseCaseValidator : AbstractValidator<UpdateDepartmentCeilingsUseCaseInput>
+/// <summary>Mỗi lĩnh vực một dòng, mức 1..3 (Cơ bản..Nâng cao).</summary>
+public class UpdatePositionCeilingsUseCaseValidator : AbstractValidator<UpdatePositionCeilingsUseCaseInput>
 {
-    public UpdateDepartmentCeilingsUseCaseValidator()
+    public UpdatePositionCeilingsUseCaseValidator()
     {
-        RuleFor(x => x.DepartmentId).NotEmpty();
+        RuleFor(x => x.Code).NotEmpty();
         RuleFor(x => x.Ceilings).NotEmpty().When(x => !x.Inherit);
         RuleFor(x => x.Ceilings)
             .Must(items => items.Select(i => i.CategoryId).Distinct().Count() == items.Count)
@@ -16,7 +16,7 @@ public class UpdateDepartmentCeilingsUseCaseValidator : AbstractValidator<Update
         RuleForEach(x => x.Ceilings).ChildRules(item =>
         {
             item.RuleFor(i => i.CategoryId).NotEmpty();
-            item.RuleFor(i => i.Level).InclusiveBetween(0, CapabilityCeiling.MaxLevel);
+            item.RuleFor(i => i.Level).InclusiveBetween(1, CapabilityCeiling.MaxLevel);
         });
     }
 }

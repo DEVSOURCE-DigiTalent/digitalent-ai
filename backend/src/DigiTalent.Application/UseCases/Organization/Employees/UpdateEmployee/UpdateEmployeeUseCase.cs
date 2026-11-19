@@ -70,10 +70,10 @@ public class UpdateEmployeeUseCase : IUseCase<UpdateEmployeeUseCaseInput, Update
 
         // 5. Vị trí công việc (nếu có) phải tồn tại trong tổ chức và chưa bị archive
         var positionId = input.PositionId ?? input.JobPositionId;
-        if (positionId.HasValue && (positionId != employee.JobPositionId || input.DepartmentId != employee.DepartmentId))
+        if (positionId.HasValue && positionId != employee.JobPositionId)
         {
             var positionExists = await _context.JobPositions
-                .AnyAsync(p => p.Id == positionId.Value && p.OrganizationId == organizationId && p.DepartmentId == input.DepartmentId && p.Status != Statuses.MasterData.Archived);
+                .AnyAsync(p => p.Id == positionId.Value && p.OrganizationId == organizationId && p.Status != Statuses.MasterData.Archived);
             if (!positionExists)
             {
                 throw new BadRequestException($"Job position '{positionId.Value}' does not exist or is archived.");

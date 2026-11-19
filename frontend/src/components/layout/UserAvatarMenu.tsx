@@ -1,3 +1,4 @@
+import { useTrialLock } from '@/hooks/use-trial-lock';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { useState, useRef, useEffect } from 'react';
@@ -30,6 +31,7 @@ export function UserAvatarMenu({
   learningPath,
 }: UserAvatarMenuProps) {
   useUiLanguage();
+  const { isLocked } = useTrialLock();
   const navigate = useNavigate();
   const user = useCurrentUser((s) => s.user);
   const logout = useLogout();
@@ -158,19 +160,19 @@ export function UserAvatarMenu({
             )}
 
             {!hideFeedbackLinks && <>
-              <button
+              {!isLocked('/enterprise/feedbacks') && <button
                 type="button"
                 onClick={() => { navigate('/enterprise/feedbacks'); setIsOpen(false); }}
                 className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
               >
-                <MessageSquare className="w-4 h-4 text-ent-fg-3" />{translateUi("Góp ý")}</button>
+                <MessageSquare className="w-4 h-4 text-ent-fg-3" />{translateUi("Góp ý")}</button>}
 
-              <button
+              {!isLocked('/enterprise/bug-reports') && <button
                 type="button"
                 onClick={() => { navigate('/enterprise/bug-reports'); setIsOpen(false); }}
                 className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
               >
-                <Bug className="w-4 h-4 text-ent-fg-3" />{translateUi("Báo lỗi")}</button>
+                <Bug className="w-4 h-4 text-ent-fg-3" />{translateUi("Báo lỗi")}</button>}
 
             </>}
 

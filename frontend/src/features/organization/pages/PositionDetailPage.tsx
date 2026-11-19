@@ -56,7 +56,7 @@ export function PositionDetailPage() {
         <div className="position-detail-hero__main">
           <span className="position-detail-kicker">{translateUi("HỒ SƠ VỊ TRÍ")}</span>
           <h1>{p.name}</h1>
-          <div className="position-detail-meta"><span>{translateUi("Mã ")}{p.code}</span>{p.departmentName && <span>{p.departmentName}</span>}<StatusBadge label={translateUi(p.status === 'ACTIVE' ? translateUi('Đang dùng') : translateUi('Ngừng dùng'))} variant={getStatusVariant(p.status)} /></div>
+          <div className="position-detail-meta"><span>{translateUi("Mã ")}{p.code}</span>{p.departments?.length ? <span>{p.departments.join(', ')}</span> : null}<StatusBadge label={translateUi(p.status === 'ACTIVE' ? translateUi('Đang dùng') : translateUi('Ngừng dùng'))} variant={getStatusVariant(p.status)} /></div>
         </div>
         <div className="position-detail-actions">
           <Link to={`/enterprise/setup?tab=ceilings&positionId=${id}`} className={PRIMARY_BUTTON}>{translateUi("Thiết lập chuẩn theo khóa học")}</Link>

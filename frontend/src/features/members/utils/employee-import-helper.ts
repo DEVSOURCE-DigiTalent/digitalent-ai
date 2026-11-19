@@ -1,4 +1,5 @@
 import type { MemberRole } from '@/types/commerce';
+import { NOT_STANDARD_POSITION, STANDARD_POSITIONS, standardPositionCode } from '@/lib/standard-positions';
 
 export interface ParsedEmployeeRow {
   id: string;
@@ -202,17 +203,21 @@ export function parseSmartEmployeeCsv(
     }
 
     const matchedDept = deptRaw ? deptMap.get(normalizeStr(deptRaw)) : undefined;
+    // Any department name; the position is one of the 5 standard ones, shared by every department.
     const positionKey = normalizeStr(posRaw);
+    const standardCode = standardPositionCode(posRaw);
     const matchedPos = posRaw ? positions.find((position) =>
-      Boolean(matchedDept && position.departmentId === matchedDept.id) &&
-      (normalizeStr(position.name) === positionKey || normalizeStr(position.code ?? '') === positionKey),
+      normalizeStr(position.name) === positionKey || normalizeStr(position.code ?? '') === positionKey
+      || (standardCode != null && position.code?.toUpperCase() === standardCode),
     ) : undefined;
+    const standardName = standardCode ? STANDARD_POSITIONS[standardCode] : posRaw;
 
     // Khớp Vai trò
     const importedRole = parseEmployeeImportRole(roleRaw);
     const role: MemberRole = importedRole === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
     if (importedRole !== 'EMPLOYEE' && importedRole !== 'MANAGER') errors.push('Vai trò phải là Nhân viên hoặc Trưởng phòng.');
     if (!posRaw) errors.push('Chưa có thông tin vị trí.');
+    else if (!matchedPos && !standardCode) errors.push(NOT_STANDARD_POSITION);
 
     // Không bắt buộc phải có sẵn phòng ban trong hệ thống — file có gì sẽ tự động tạo phòng ban đó
     if (!matchedDept && !deptRaw) {
@@ -226,8 +231,8 @@ export function parseSmartEmployeeCsv(
       employeeCode,
       departmentId: matchedDept ? matchedDept.id : (deptRaw ? `new:${deptRaw}` : ''),
       departmentName: matchedDept ? matchedDept.name : deptRaw,
-      jobPositionId: matchedPos ? matchedPos.id : (posRaw ? `new:${posRaw}` : ''),
-      positionName: matchedPos ? matchedPos.name : posRaw,
+      jobPositionId: matchedPos ? matchedPos.id : (posRaw ? `new:${standardName}` : ''),
+      positionName: matchedPos ? matchedPos.name : standardName,
       role,
       isValid: errors.length === 0,
       errors,

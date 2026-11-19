@@ -3,7 +3,8 @@ import type { PulseCourseSummary, PulseDomain, PulseOverview, PulsePerson } from
 /**
  * Mức tối thiểu doanh nghiệp yêu cầu và khóa học vượt trên lộ trình của nhân viên.
  *
- * - Mức tối thiểu (`domain.pathTop`) = mức chủ doanh nghiệp đặt cho phòng ban; phòng ban chưa đặt thì theo chuẩn vị trí.
+ * - Mức tối thiểu (`domain.pathTop`) = mức chủ doanh nghiệp đặt cho vị trí ở Khung năng lực số; chưa đặt thì theo chuẩn
+ *   vị trí (đề xuất của hệ thống).
  * - Khóa bắt buộc (`zone` PATH) = Cơ bản → mức tối thiểu. Khóa doanh nghiệp đã có (Cơ bản miễn phí, khóa đã mua) ở cấp cao
  *   hơn (`zone` OPTIONAL) là học vượt: định hướng riêng của nhân viên, được khuyến khích. Khóa chưa mua ở trên mức tối
  *   thiểu (`ABOVE_CEILING`) không hiện.
@@ -36,8 +37,8 @@ export function departmentTitle(name: string | null | undefined): string | null 
   return trimmed.toLowerCase().startsWith('phòng') ? trimmed : `Phòng ${trimmed}`;
 }
 
-/** Ai đặt mức tối thiểu của lĩnh vực: phòng ban (mức chủ doanh nghiệp đặt riêng) hoặc chuẩn vị trí. */
+/** Ai đặt mức tối thiểu của lĩnh vực: doanh nghiệp (mức đặt cho vị trí) hoặc chuẩn vị trí (đề xuất của hệ thống). */
 export function requirementSource(domain: PulseDomain, person: PulsePerson): string {
-  if (domain.requiredByDepartment) return departmentTitle(person.departmentName) ?? 'Phòng ban của bạn';
+  if (domain.requiredByPosition) return person.positionName ? `Doanh nghiệp đặt cho ${person.positionName}` : 'Doanh nghiệp đặt cho vị trí của bạn';
   return person.positionName ? `Chuẩn vị trí ${person.positionName}` : 'Chuẩn vị trí của bạn';
 }

@@ -1,3 +1,4 @@
+import { useTrialLock } from '@/hooks/use-trial-lock';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +13,7 @@ interface NotificationPopoverProps {
 
 export function NotificationPopover({ notificationsPath }: NotificationPopoverProps) {
   useUiLanguage();
+  const { isLocked } = useTrialLock();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -128,7 +130,7 @@ export function NotificationPopover({ notificationsPath }: NotificationPopoverPr
             )}
           </div>
 
-          <div className="p-2 border-t border-slate-100 bg-slate-50/50 text-center">
+          {!isLocked(notificationsPath) && <div className="p-2 border-t border-slate-100 bg-slate-50/50 text-center">
             <button
               type="button"
               onClick={() => {
@@ -138,7 +140,7 @@ export function NotificationPopover({ notificationsPath }: NotificationPopoverPr
               className="text-xs font-medium text-primary-600 hover:text-primary-700 inline-flex items-center gap-1.5 py-1"
             >{translateUi("Xem tất cả thông báo")}<ExternalLink className="size-3" />
             </button>
-          </div>
+          </div>}
         </div>
       )}
     </div>

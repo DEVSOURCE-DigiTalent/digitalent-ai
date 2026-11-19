@@ -21,7 +21,6 @@ public class GetTrialProgramUseCaseOutput
     /// <summary>Tên phòng ban / vị trí đang có (gợi ý khi nhập).</summary>
     public List<string> Departments { get; set; } = new();
     public List<string> Positions { get; set; } = new();
-    public Dictionary<string, List<string>> PositionsByDepartment { get; set; } = new();
     /// <summary>Bảng năng lực — chỉ có khi mentor đã công bố.</summary>
     public TrialReportDto? Report { get; set; }
 }

@@ -38,9 +38,10 @@ public class CreateJobPositionUseCase : IUseCase<CreateJobPositionUseCaseInput, 
             throw new BadRequestException("Chọn một trong 5 vị trí chuẩn.", "code", "INVALID_POSITION_CODE");
 
         var position = await _context.JobPositions.SingleOrDefaultAsync(p => p.OrganizationId == organizationId && p.Code == code);
-        if (position is not null && (position.DepartmentId.HasValue || position.Status != Statuses.MasterData.Active))
+        // One position per standard code, shared by every department: an active one already exists.
+        if (position is not null && position.Status == Statuses.MasterData.Active)
         {
-            throw new ConflictException($"Job position code '{code}' already exists in your organization.");
+            throw new ConflictException($"Vị trí {name} đã có trong doanh nghiệp và dùng được ở mọi phòng ban.");
         }
 
         if (input.JobFamilyId.HasValue)
@@ -55,8 +56,6 @@ public class CreateJobPositionUseCase : IUseCase<CreateJobPositionUseCaseInput, 
             }
         }
 
-        await JobPositionRules.EnsureDepartmentSlotAsync(_context, organizationId, input.DepartmentId);
-
         await JobPositionRules.EnsureNameAvailableAsync(_context, organizationId, name, position?.Id);
 
         if (position == null)
@@ -65,7 +64,7 @@ public class CreateJobPositionUseCase : IUseCase<CreateJobPositionUseCaseInput, 
             _context.JobPositions.Add(position);
         }
         position.JobFamilyId = input.JobFamilyId;
-        position.DepartmentId = input.DepartmentId;
+        position.DepartmentId = null; // legacy binding: a position is not owned by one department
         position.Name = name;
         position.Description = input.Description;
         position.JobGrade = JobPositionRules.NormalizeGrade(input.JobGrade);
@@ -73,7 +72,7 @@ public class CreateJobPositionUseCase : IUseCase<CreateJobPositionUseCaseInput, 
         await _context.SaveChangesAsync();
 
         await _auditService.LogAsync("POSITION_CREATED", "job_positions", position.Id,
-            newValues: new { position.Code, position.Name, position.DepartmentId, position.JobGrade }, entityLabel: position.Name);
+            newValues: new { position.Code, position.Name, position.JobGrade }, entityLabel: position.Name);
 
         return new CreateJobPositionUseCaseOutput { Id = position.Id };
     }

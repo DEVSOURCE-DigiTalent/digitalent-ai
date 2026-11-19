@@ -21,11 +21,11 @@ function signInOwner(enterpriseTrialStatus: SessionUser['enterpriseTrialStatus']
 const renderSidebar = () => render(<MemoryRouter><SidebarNav config={OWNER_SIDEBAR} isRail={false} /></MemoryRouter>);
 afterEach(() => { cleanup(); useCurrentUser.setState({ user: null, isAuthenticated: false }); });
 
-it('opens only the survey, the competency framework and the courses during the trial; the rest is listed but locked', () => {
+it('opens only the survey, the competency framework, the courses, feedback and bug reports during the trial; the rest is listed but locked', () => {
   signInOwner('trial_active');
   renderSidebar();
 
-  for (const name of ['Khảo sát năng lực số', 'Khung năng lực số', 'Khóa học']) {
+  for (const name of ['Khảo sát năng lực số', 'Khung năng lực số', 'Khóa học', 'Góp ý', 'Báo lỗi']) {
     expect(screen.getByRole('link', { name })).toHaveAttribute('href');
   }
   const people = screen.getByRole('link', { name: /^Nhân sự \(chưa mở trong bản dùng thử\)$/ });

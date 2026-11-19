@@ -8,8 +8,8 @@ export interface JobPositionDto {
   code: string;
   name: string;
   description?: string;
-  departmentId?: string;
-  departmentName?: string;
+  /** Departments whose active employees hold the position (a position is shared by every department). */
+  departments?: string[];
   jobFamilyId?: string;
   jobFamilyName?: string;
   jobGrade?: 'G1' | 'G2' | 'G3';
@@ -28,22 +28,22 @@ export interface JobPositionListItem {
   code: string;
   name: string;
   description?: string;
-  departmentId?: string;
-  departmentName?: string;
+  /** Departments whose active employees hold the position (a position is shared by every department). */
+  departments?: string[];
   jobFamilyId?: string;
   jobFamilyName?: string;
   jobGrade?: 'G1' | 'G2' | 'G3';
   jobGradeName?: string;
+  /** Active employees holding it (in the filtered department when one is given). */
   headcount?: number;
-  usedByOtherDepartments?: boolean;
   hasRequirementSet?: boolean;
   status: JobPositionStatus;
 }
 
 export interface JobPositionListParams extends PaginationRequest {
   status?: JobPositionStatus;
+  /** Only the positions the department's active employees hold. */
   departmentId?: string;
-  includeAssignedPositions?: boolean;
   jobGrade?: string;
   jobFamilyId?: string;
 }
@@ -52,12 +52,11 @@ export interface CreateJobPositionRequest {
   code: string;
   name: string;
   description?: string;
-  departmentId?: string;
   jobGrade?: 'G1' | 'G2' | 'G3';
   jobFamilyId?: string;
 }
 
-/** PUT replaces every field: one left out is cleared (department, grade, job family, description). */
+/** PUT replaces every field: one left out is cleared (grade, job family, description). */
 export interface UpdateJobPositionRequest extends CreateJobPositionRequest {
   status: Exclude<JobPositionStatus, 'ARCHIVED'>;
 }

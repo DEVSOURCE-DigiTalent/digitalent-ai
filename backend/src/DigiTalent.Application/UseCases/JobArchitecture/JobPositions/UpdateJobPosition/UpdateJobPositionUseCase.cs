@@ -70,35 +70,22 @@ public class UpdateJobPositionUseCase : IUseCase<UpdateJobPositionUseCaseInput, 
             }
         }
 
-        await JobPositionRules.EnsureValidDepartmentAsync(_context, organizationId, input.DepartmentId);
-        if (position.DepartmentId != input.DepartmentId)
-        {
-            await JobPositionRules.EnsureDepartmentSlotAsync(_context, organizationId, input.DepartmentId, position.Id);
-            var usedByOtherDepartments = await _context.Employees.AnyAsync(e => e.OrganizationId == organizationId
-                && e.JobPositionId == position.Id && e.DepartmentId != input.DepartmentId && e.Status != Statuses.Employee.Archived);
-            var hasOtherInvitations = await _context.MemberInvitations.AnyAsync(i => i.OrganizationId == organizationId
-                && i.JobPositionId == position.Id && i.DepartmentId != input.DepartmentId
-                && i.Status == Statuses.MemberInvitation.Pending && i.ExpiresAt > DateTimeOffset.UtcNow);
-            if (usedByOtherDepartments || hasOtherInvitations)
-                throw new ConflictException("Vị trí đang được dùng bởi nhân sự hoặc lời mời ở phòng ban khác. Cập nhật các phân công đó trước.");
-        }
-
         if (!string.Equals(position.Name.Trim(), name, StringComparison.OrdinalIgnoreCase))
             await JobPositionRules.EnsureNameAvailableAsync(_context, organizationId, name, position.Id);
 
-        var oldValues = new { position.Code, position.Name, position.DepartmentId, position.JobGrade, position.Status };
+        var oldValues = new { position.Code, position.Name, position.JobGrade, position.Status };
         position.Code = code;
         position.Name = name;
         position.Description = input.Description;
         position.JobFamilyId = input.JobFamilyId;
-        position.DepartmentId = input.DepartmentId;
+        position.DepartmentId = null; // legacy binding: a position is shared by every department
         position.JobGrade = JobPositionRules.NormalizeGrade(input.JobGrade);
         position.Status = input.Status;
 
         await _context.SaveChangesAsync();
 
         await _auditService.LogAsync("POSITION_UPDATED", "job_positions", position.Id, oldValues,
-            new { position.Code, position.Name, position.DepartmentId, position.JobGrade, position.Status }, position.Name);
+            new { position.Code, position.Name, position.JobGrade, position.Status }, position.Name);
 
         return new UpdateJobPositionUseCaseOutput { Id = position.Id };
     }

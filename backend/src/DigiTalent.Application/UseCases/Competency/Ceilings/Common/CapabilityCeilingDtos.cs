@@ -1,22 +1,23 @@
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
 /// <summary>
-/// Ma trận phạm vi năng lực của tổ chức (OW-05 "Phạm vi năng lực"): 6 lĩnh vực × 3 cấp = 18 khóa là phạm vi Digital AI,
-/// phạm vi doanh nghiệp và thiết lập riêng từng phòng ban nằm lồng bên trong.
+/// Khung năng lực số của tổ chức (OW-05): 6 lĩnh vực × 3 cấp = 18 khóa, khóa doanh nghiệp đã có, và mức cần đạt từng lĩnh
+/// vực của 5 vị trí chuẩn (dùng chung ở mọi phòng ban; chưa đặt thì theo đề xuất của hệ thống).
 /// </summary>
 public class CapabilityCeilingsDto
 {
     /// <summary>Danh mục Digital AI (số cấp của mỗi lĩnh vực).</summary>
     public int PlatformMaxLevel { get; set; }
 
-    /// <summary>false = doanh nghiệp chưa lưu phạm vi; phạm vi doanh nghiệp đang hiển thị là gợi ý từ yêu cầu vị trí.</summary>
+    /// <summary>true = chủ doanh nghiệp đã đặt mức cho ít nhất một vị trí.</summary>
     public bool IsConfigured { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
     public string? UpdatedByName { get; set; }
 
     public List<CeilingLevelDto> Levels { get; set; } = new();
     public List<CeilingDomainDto> Domains { get; set; } = new();
-    public List<CeilingDepartmentDto> Departments { get; set; } = new();
+    /// <summary>5 vị trí chuẩn theo thứ tự danh mục (vị trí doanh nghiệp đã ngừng dùng không có).</summary>
+    public List<CeilingPositionDto> Positions { get; set; } = new();
 
     /// <summary>Số khóa nằm dưới phạm vi doanh nghiệp.</summary>
     public int OrganizationCourseCount { get; set; }
@@ -72,19 +73,24 @@ public class CeilingCourseCompetencyDto
     public int TargetLevel { get; set; }
 }
 
-public class CeilingDepartmentDto
+public class CeilingPositionDto
 {
-    public Guid DepartmentId { get; set; }
+    /// <summary>null = doanh nghiệp chưa có dòng vị trí này (được tạo khi lưu mức).</summary>
+    public Guid? PositionId { get; set; }
+    /// <summary>Mã chuẩn: CEO, HR, MARKETING, SALES_CRM, ACCOUNTANT.</summary>
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+    /// <summary>Nhân viên đang làm vị trí này (mọi phòng ban).</summary>
     public int EmployeeCount { get; set; }
-    /// <summary>False when no position in the department has active requirements or a supported reference mapping.</summary>
+    /// <summary>Phòng ban có nhân viên đang làm vị trí này.</summary>
+    public List<string> Departments { get; set; } = new();
+    /// <summary>Có đề xuất của hệ thống (mẫu TT02 của vị trí) cho mọi lĩnh vực.</summary>
     public bool HasSuggestion { get; set; }
 
-    /// <summary>true khi phòng ban có ít nhất một thiết lập riêng; false = kế thừa phạm vi doanh nghiệp.</summary>
+    /// <summary>true khi chủ doanh nghiệp đã đặt mức cho ít nhất một lĩnh vực của vị trí.</summary>
     public bool IsCustomized { get; set; }
 
-    /// <summary>Số khóa nằm dưới phạm vi phòng ban (lộ trình của phòng ban).</summary>
+    /// <summary>Số khóa nằm trong mức cần đạt của vị trí.</summary>
     public int CourseCount { get; set; }
     public List<CeilingValueDto> Ceilings { get; set; } = new();
 }
@@ -93,10 +99,10 @@ public class CeilingValueDto
 {
     public Guid CategoryId { get; set; }
 
-    /// <summary>Phạm vi hiệu lực: thiết lập riêng nếu có, không thì phạm vi doanh nghiệp.</summary>
+    /// <summary>Mức cần đạt hiệu lực: mức chủ doanh nghiệp đặt, không thì chuẩn vị trí (đề xuất của hệ thống).</summary>
     public int Level { get; set; }
 
-    /// <summary>Mức yêu cầu cao nhất của các vị trí trong phòng ban, không vượt phạm vi doanh nghiệp.</summary>
+    /// <summary>Đề xuất của hệ thống: mẫu TT02 của vị trí.</summary>
     public int Suggested { get; set; }
     public bool IsCustomized { get; set; }
 }

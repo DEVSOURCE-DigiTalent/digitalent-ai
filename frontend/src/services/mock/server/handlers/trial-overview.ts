@@ -4,6 +4,8 @@ import { CATEGORIES, COURSES } from '../catalog';
 import { badRequest, conflict, forbidden } from '../http';
 import { newId } from '../../mock-store';
 import type { OrgData } from '../types';
+import { resolveStandardPosition } from '../standard-positions';
+import { standardPositionChoices } from '../../../../lib/standard-positions';
 import { getCourseAssessment } from '../../../../features/learning/data/course-content';
 
 /** Owner demo: varied, deterministic assessment progress for the five seeded departments. */
@@ -46,7 +48,7 @@ function initialProgram(data: OrgData): TrialProgram {
     testDeadline: new Date(Date.now() + 3 * 86400000).toISOString(),
     participants,
     departments: data.departments.filter((department) => department.status === 'ACTIVE').map((department) => department.name),
-    positions: data.positions.filter((position) => position.status === 'ACTIVE').map((position) => position.name),
+    positions: standardPositionChoices(data.positions),
     report: null,
   } satisfies TrialProgram;
 }
@@ -115,8 +117,9 @@ route('POST','/trial/participants',async ({body,session,org,update}) => {
     const now=new Date().toISOString();
     let department=data.departments.find((entry) => entry.name.toLowerCase()===row.department.trim().toLowerCase());
     if(!department){ department={id:newId('dept'),code:newId('PB'),name:row.department.trim(),status:'ACTIVE',createdAt:now,updatedAt:now};data.departments.push(department); }
-    let position=data.positions.find((entry) => entry.name.toLowerCase()===row.position.trim().toLowerCase());
-    if(!position){ position={id:newId('pos'),code:newId('VT'),name:row.position.trim(),departmentId:department.id,status:'ACTIVE',createdAt:now,updatedAt:now};data.positions.push(position); }
+    // any department name; the position is one of the 5 standard ones, shared by every department
+    const {position,error}=resolveStandardPosition(data,row.position);
+    if(!position) throw badRequest(`${row.email}: ${error}`);
     return {...row,departmentId:department.id,jobPositionId:position.id,role:'EMPLOYEE'};
   }));
   const response=await dispatch({method:'POST',path:'/members/invitations',query:{},body:{rows:mapped},userId:session.id});
@@ -130,8 +133,9 @@ route('POST','/trial/me/join',({session,body,update}) => update((data) => {
   const state=survey(data);let employee=data.employees.find((entry) => entry.userId===session.id);
   if(!employee){
     if(state.program.stage==='REPORTED') throw conflict('Đợt khảo sát đã kết thúc.');
-    const department=data.departments.find((entry)=>entry.name===body.department);const position=data.positions.find((entry)=>entry.name===body.position);
-    if(!department||!position)throw badRequest('Chọn phòng ban và vị trí hợp lệ.');
+    const department=data.departments.find((entry)=>entry.name===body.department);const {position,error}=resolveStandardPosition(data,String(body.position??''));
+    if(!department) throw badRequest('Chọn phòng ban hợp lệ.');
+    if(!position) throw badRequest(error!);
     const now=new Date().toISOString();employee={id:newId('emp'),userId:session.id,fullName:session.fullName,workEmail:session.email,employeeCode:newId('NV'),departmentId:department.id,jobPositionId:position.id,status:'ACTIVE',createdAt:now,updatedAt:now};data.employees.push(employee);
   }
   data.memberOverrides[session.id]={...data.memberOverrides[session.id],roles:[...new Set([...session.roles,'EMPLOYEE'])]};

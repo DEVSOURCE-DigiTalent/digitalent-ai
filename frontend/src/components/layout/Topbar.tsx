@@ -20,6 +20,7 @@ import { findEnterpriseScreen } from '@/lib/screens/enterprise';
 import { useDirectionalHeader } from './use-directional-header';
 import './owner-header.css';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
+import { useTrialLock } from '@/hooks/use-trial-lock';
 
 interface TopbarProps {
   portal: PortalConfig;
@@ -54,9 +55,10 @@ function QuickCreateMenu() {
   const hasPermission = useCurrentUser((s) => s.hasPermission);
   const [open, setOpen] = useState(false);
 
+  const { isLocked } = useTrialLock();
   const actions = [
     { label: 'Mời thành viên', perm: PERMISSIONS.USER_CREATE, href: '/enterprise/members?invite=1' },
-  ].filter((a) => hasPermission(a.perm));
+  ].filter((a) => hasPermission(a.perm) && !isLocked(a.href));
 
   if (actions.length === 0) return null;
 
@@ -105,6 +107,7 @@ export function Topbar({ portal, sidebarConfig, onOpenMobileNav, isMobileNavOpen
   const isPlatform = portal.workspace === WORKSPACES.PLATFORM;
   const isManager = sidebarConfig === MANAGER_SIDEBAR;
   const screens = isPlatform ? PLATFORM_SCREENS : undefined;
+  const { isLocked: isTrialLocked } = useTrialLock();
   const breadcrumbs = buildBreadcrumbs(pathname, screens, isPlatform ? PLATFORM_SIDEBAR : isManager ? MANAGER_SIDEBAR : undefined);
 
   // Global Ctrl+K shortcut
@@ -170,7 +173,7 @@ export function Topbar({ portal, sidebarConfig, onOpenMobileNav, isMobileNavOpen
                 {breadcrumbs.map((crumb, i) => (
                   <span key={i} className="flex items-center gap-2">
                     {i > 0 && <span className="text-slate-300 font-light">/</span>}
-                    {crumb.href && i < breadcrumbs.length - 1 ? (
+                    {crumb.href && i < breadcrumbs.length - 1 && !isTrialLocked(crumb.href) ? (
                       <Link
                         to={crumb.href}
                         className="text-slate-500 hover:text-[#137b84] font-medium transition-colors truncate max-w-[180px]"

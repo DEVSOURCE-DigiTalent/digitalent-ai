@@ -1,10 +1,8 @@
 import {
   Award,
-  Bell,
   BookOpen,
   Bug,
   Compass,
-  FileBarChart,
   ClipboardCheck,
   LayoutDashboard,
   MessageSquare,
@@ -16,8 +14,9 @@ import type { SidebarConfig } from './types';
 /**
  * Owner sidebar — Pulse prototype flat layout.
  * Two groups: primary owner tasks + secondary tools.
- * Enterprise trial: only the survey, "Khung năng lực số" and the courses are open, every other item shows locked;
- * the survey is a trial screen and disappears once the organization uses the platform for real.
+ * Enterprise trial: only the survey, "Khung năng lực số", the courses, "Góp ý" and "Báo lỗi" are open, every other item
+ * shows locked; the survey is a trial screen and disappears once the organization uses the platform for real.
+ * "Báo cáo chu kỳ" (OW-40) and "Thông báo" (SHR-03) are not in the owner menu (pages still exist: links, the bell).
  */
 export const OWNER_SIDEBAR: SidebarConfig = [
   // ── CHỦ DOANH NGHIỆP ──
@@ -28,12 +27,10 @@ export const OWNER_SIDEBAR: SidebarConfig = [
   { label: 'Nhân sự', icon: Users, screenId: 'OW-02', activeFor: ['OW-03', 'OW-06', 'OW-07', 'OW-09', 'OW-10', 'OW-13'] },
   { label: 'Khoảng trống năng lực', icon: TrendingUp, screenId: 'OW-21', activeFor: ['OW-22', 'OW-19', 'OW-20'] },
   { label: 'Khóa học', icon: BookOpen, screenId: 'OW-23', activeFor: ['OW-24', 'OW-28', 'OW-29', 'OW-30', 'OW-31', 'OW-32', 'OW-33', 'OW-34'], trial: 'open' },
-  { label: 'Báo cáo chu kỳ', icon: FileBarChart, screenId: 'OW-40' },
 
   // ── CÁC CÔNG CỤ KHÁC ──
   { label: 'Các công cụ khác' },
   { label: 'Chứng nhận', icon: Award, screenId: 'OW-46', activeFor: ['OW-47'] },
-  { label: 'Thông báo', icon: Bell, screenId: 'SHR-03' },
-  { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04' },
-  { label: 'Báo lỗi', icon: Bug, screenId: 'SHR-05' },
+  { label: 'Góp ý', icon: MessageSquare, screenId: 'SHR-04', trial: 'open' },
+  { label: 'Báo lỗi', icon: Bug, screenId: 'SHR-05', trial: 'open' },
 ];

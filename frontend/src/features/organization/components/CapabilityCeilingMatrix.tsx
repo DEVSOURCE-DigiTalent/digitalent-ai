@@ -1,3 +1,4 @@
+import { useTrialLock } from '@/hooks/use-trial-lock';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -7,12 +8,11 @@ import {
   ArrowRight, BookOpenCheck, BrainCircuit, Check, ChevronDown, Compass, Database, Flag, Info, Layers3,
   Lightbulb, Loader2, Lock, MessagesSquare, PenTool, RotateCcw, ShieldCheck, ShoppingCart, Sparkles, Target, Users, X,
 } from 'lucide-react';
-import { useCapabilityCeilings, useUpdateDepartmentCeilings } from '@/hooks/use-capability-ceilings';
-import { useJobPosition } from '@/hooks/use-job-positions';
+import { useCapabilityCeilings, useUpdatePositionCeilings } from '@/hooks/use-capability-ceilings';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { organizationErrorMessage } from '@/lib/organization-errors';
 import { SectionLoading } from '@/components/shared/LoadingState';
-import type { CeilingCourse, CeilingDepartment, CeilingDomain } from '@/services/capability-ceiling.service';
+import type { CeilingCourse, CeilingDomain, CeilingPosition } from '@/services/capability-ceiling.service';
 import { SURVEY_RESUME_PATH } from '@/features/trial-program/lib/survey-draft';
 import { CoursePositionStandardPanel } from './CoursePositionStandardPanel';
 import { CapabilityCeilingGuide } from './CapabilityCeilingGuide';
@@ -25,15 +25,16 @@ import './owner-filter-controls.css';
  * OW-05 · Khung năng lực số, two views kept apart:
  * - "Khóa học của doanh nghiệp" (buying): every course the company owns (Basic free, Intermediate / Advanced once bought)
  *   and where it is used; a course not bought goes to the cart.
- * - "Năng lực từng phòng ban" (setting): one department at a time, per domain the highest level its people must reach.
- *   This is the level the survey results are compared with and the end of their learning path; a domain not set
- *   follows the system suggestion. A click saves at once (with undo). A level may be set before its course is bought.
+ * - "Năng lực từng vị trí" (setting): one of the 5 standard positions at a time (shared by every department, whatever
+ *   its name), per domain the level the people holding it must reach. This is the level the survey results are compared
+ *   with and the end of their learning path; a domain not set follows the system suggestion (TT02 sample of the
+ *   position). A click saves at once (with undo). A level may be set before its course is bought.
  */
-type View = 'courses' | 'departments';
+type View = 'courses' | 'positions';
 type Levels = Record<string, number>;
 type CourseSelection = { categoryId: string; level: number };
 type CartItem = { code: string; title: string; level: number; domainName: string; price: number };
-type SaveState = { status: 'idle' | 'saving' | 'saved'; departmentId?: string; previous?: Levels };
+type SaveState = { status: 'idle' | 'saving' | 'saved'; code?: string; previous?: Levels };
 
 const DOMAIN_ICONS = [Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit];
 const LEVEL_NAMES = ['—', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
@@ -42,34 +43,34 @@ const isOwned = (course: CeilingCourse) => Boolean(course.courseId) && (course.l
 const money = (value: number) => `${value.toLocaleString('vi-VN')} đ`;
 const courseCode = (course: CeilingCourse, domain: CeilingDomain) => course.code || `M${domain.sortOrder}-${course.level === 2 ? 'I' : 'A'}`;
 
-/** Levels the owner set for a department (only the domains set on purpose). */
-function ownLevels(department: CeilingDepartment | undefined): Levels {
-  return Object.fromEntries((department?.ceilings ?? []).filter((c) => c.isCustomized).map((c) => [c.categoryId, c.level]));
+/** Levels the owner set for a position (only the domains set on purpose). */
+function ownLevels(position: CeilingPosition | undefined): Levels {
+  return Object.fromEntries((position?.ceilings ?? []).filter((c) => c.isCustomized).map((c) => [c.categoryId, c.level]));
 }
 
 const sameLevels = (a: Levels, b: Levels) =>
   Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((key) => a[key] === b[key]);
 
 function viewFromQuery(tab: string | null, positionId: string | null): View {
-  if (positionId || tab === 'departments' || tab === 'positions') return 'departments';
+  // `departments` is the old name of the second tab
+  if (positionId || tab === 'positions' || tab === 'departments') return 'positions';
   return 'courses';
 }
 
 export function CapabilityCeilingMatrix() {
   useUiLanguage();
+  const trialLock = useTrialLock();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialPositionId = searchParams.get('positionId');
-  // Opened from the survey ("Tự đặt ở Khung năng lực số"): set the department levels, then back to the survey.
+  // Opened from the survey ("Tự đặt ở Khung năng lực số"): set the position levels, then back to the survey.
   const fromSurvey = searchParams.get('from') === 'survey';
   const { data: matrix, isLoading, isError } = useCapabilityCeilings();
-  // A link from an employee's position opens the department of that position.
-  const { data: initialPosition } = useJobPosition(initialPositionId ?? '');
   const { can } = usePermission();
   const canEdit = can(PERMISSIONS.POSITION_REQUIREMENT_MANAGE);
-  const saveDepartment = useUpdateDepartmentCeilings();
+  const savePosition = useUpdatePositionCeilings();
   const [view, setView] = useState<View>(() => viewFromQuery(searchParams.get('tab'), initialPositionId));
-  const [departmentId, setDepartmentId] = useState('');
+  const [positionCode, setPositionCode] = useState('');
   // Levels being saved or just saved, shown at once; they give way to the server data once it has caught up.
   const [drafts, setDrafts] = useState<Record<string, Levels>>({});
   const draftsRef = useRef(drafts);
@@ -112,23 +113,24 @@ export function CapabilityCeilingMatrix() {
     };
   }, [actionDock]);
 
-  const departments = useMemo(() => matrix?.departments ?? [], [matrix?.departments]);
+  const positions = useMemo(() => matrix?.positions ?? [], [matrix?.positions]);
   // A draft the server already shows is no longer needed.
   useEffect(() => {
     setDrafts((all) => {
-      const left = Object.fromEntries(Object.entries(all).filter(([id, levels]) =>
-        !sameLevels(levels, ownLevels(departments.find((d) => d.departmentId === id)))));
+      const left = Object.fromEntries(Object.entries(all).filter(([code, levels]) =>
+        !sameLevels(levels, ownLevels(positions.find((p) => p.code === code)))));
       return Object.keys(left).length === Object.keys(all).length ? all : left;
     });
-  }, [departments]);
-  const toneOf = useMemo(() => new Map(departments.map((d, index) => [d.departmentId, index % 6])), [departments]);
-  const department = departments.find((d) => d.departmentId === departmentId)
-    ?? departments.find((d) => d.departmentId === initialPosition?.departmentId)
-    ?? departments[0];
-  const departmentIndex = Math.max(0, departments.findIndex((d) => d.departmentId === department?.departmentId));
-  const isSet = (d: CeilingDepartment) => Object.keys(drafts[d.departmentId] ?? ownLevels(d)).length > 0;
-  // The next department without its own levels, after the current one (wrapping), for a quick "do the next one".
-  const nextUnset = [...departments.slice(departmentIndex + 1), ...departments.slice(0, departmentIndex)].find((d) => !isSet(d));
+  }, [positions]);
+  const toneOf = useMemo(() => new Map(positions.map((p, index) => [p.code, index % 6])), [positions]);
+  const position = positions.find((p) => p.code === positionCode)
+    // a link from a position page (?positionId=) opens that position
+    ?? positions.find((p) => p.positionId != null && p.positionId === initialPositionId)
+    ?? positions[0];
+  const positionIndex = Math.max(0, positions.findIndex((p) => p.code === position?.code));
+  const isSet = (p: CeilingPosition) => Object.keys(drafts[p.code] ?? ownLevels(p)).length > 0;
+  // The next position without its own levels, after the current one (wrapping), for a quick "do the next one".
+  const nextUnset = [...positions.slice(positionIndex + 1), ...positions.slice(0, positionIndex)].find((p) => !isSet(p));
 
   const cartItem = (course: CeilingCourse, domain: CeilingDomain): CartItem => {
     const code = courseCode(course, domain);
@@ -163,37 +165,37 @@ export function CapabilityCeilingMatrix() {
     return <section className="cc-root cx-root">{header()}<p className="cc-note">{translateUi('Chưa tải được khung năng lực. Vui lòng thử lại sau.')}</p></section>;
   }
 
-  const activeDepartmentId = department?.departmentId ?? '';
-  const saved = ownLevels(department);
-  const current = drafts[activeDepartmentId] ?? saved;
-  const suggestionOf = (domain: CeilingDomain) => Math.min(3, department?.ceilings.find((c) => c.categoryId === domain.categoryId)?.suggested ?? 0);
+  const activeCode = position?.code ?? '';
+  const saved = ownLevels(position);
+  const current = drafts[activeCode] ?? saved;
+  const suggestionOf = (domain: CeilingDomain) => Math.min(3, position?.ceilings.find((c) => c.categoryId === domain.categoryId)?.suggested ?? 0);
   const suggested: Levels = Object.fromEntries(matrix.domains.map((d) => [d.categoryId, suggestionOf(d)]).filter(([, level]) => Number(level) > 0));
   const canSuggest = Object.keys(suggested).length > 0 && !sameLevels({ ...current, ...suggested }, current);
 
   const courses = matrix.domains.flatMap((domain) => domain.courses.filter((c) => c.courseId).map((course) => ({ domain, course })));
   const ownedCount = courses.filter(({ course }) => isOwned(course)).length;
   const courseTotal = courses.length;
-  const customizedCount = departments.filter(isSet).length;
-  const levelOf = (d: CeilingDepartment, domain: CeilingDomain) => d.ceilings.find((c) => c.categoryId === domain.categoryId)?.level ?? 0;
-  const usedBy = (domain: CeilingDomain, level: number) => departments.filter((d) => levelOf(d, domain) >= level);
+  const customizedCount = positions.filter(isSet).length;
+  const levelOf = (p: CeilingPosition, domain: CeilingDomain) => p.ceilings.find((c) => c.categoryId === domain.categoryId)?.level ?? 0;
+  const usedBy = (domain: CeilingDomain, level: number) => positions.filter((p) => levelOf(p, domain) >= level);
   const setDomains = Object.keys(current).length;
 
-  /** Saves the department's levels right away (empty = back to the system suggestion); the previous ones can be restored. */
-  const persist = async (target: CeilingDepartment, levels: Levels, previous: Levels, undoable = true) => {
-    const id = target.departmentId;
+  /** Saves the position's levels right away (empty = back to the system suggestion); the previous ones can be restored. */
+  const persist = async (target: CeilingPosition, levels: Levels, previous: Levels, undoable = true) => {
+    const id = target.code;
     setDrafts((all) => ({ ...all, [id]: levels }));
-    setSaveState({ status: 'saving', departmentId: id });
+    setSaveState({ status: 'saving', code: id });
     try {
-      // A domain taken off needs the department cleared first: the save only changes the domains it sends.
+      // A domain taken off needs the position cleared first: the save only changes the domains it sends.
       const removed = Object.keys(previous).some((key) => !(key in levels));
       if (removed || Object.keys(levels).length === 0) {
-        await saveDepartment.mutateAsync({ departmentId: id, data: { inherit: true, ceilings: [] } });
+        await savePosition.mutateAsync({ code: id, data: { inherit: true, ceilings: [] } });
       }
       if (Object.keys(levels).length > 0) {
         const ceilings = Object.entries(levels).map(([categoryId, level]) => ({ categoryId, level }));
-        await saveDepartment.mutateAsync({ departmentId: id, data: { inherit: false, ceilings } });
+        await savePosition.mutateAsync({ code: id, data: { inherit: false, ceilings } });
       }
-      setSaveState({ status: 'saved', departmentId: id, previous: undoable ? previous : undefined });
+      setSaveState({ status: 'saved', code: id, previous: undoable ? previous : undefined });
     } catch (error) {
       setDrafts((all) => ({ ...all, [id]: previous }));
       setSaveState({ status: 'idle' });
@@ -202,17 +204,17 @@ export function CapabilityCeilingMatrix() {
   };
 
   const pick = (domain: CeilingDomain, level: number) => {
-    if (!canEdit || !department) return;
+    if (!canEdit || !position) return;
     // A level may be set before its course is bought; buying happens in "Khóa học của doanh nghiệp".
     if (!domain.courses.some((c) => c.level === level && c.courseId)) return;
-    const before = draftsRef.current[department.departmentId] ?? saved;
+    const before = draftsRef.current[position.code] ?? saved;
     if (before[domain.categoryId] === level) return;
-    void persist(department, { ...before, [domain.categoryId]: level }, before);
+    void persist(position, { ...before, [domain.categoryId]: level }, before);
   };
   const undo = () => {
-    const target = departments.find((d) => d.departmentId === saveState.departmentId);
+    const target = positions.find((p) => p.code === saveState.code);
     if (!target || !saveState.previous) return;
-    const now = draftsRef.current[target.departmentId] ?? ownLevels(target);
+    const now = draftsRef.current[target.code] ?? ownLevels(target);
     void persist(target, saveState.previous, now, false);
   };
 
@@ -293,7 +295,7 @@ export function CapabilityCeilingMatrix() {
     );
   };
 
-  /** Domain on the left of a row: icon, "Lĩnh vực N" (and "· chưa đặt" for a department) above the name. */
+  /** Domain on the left of a row: icon, "Lĩnh vực N" (and "· chưa đặt" for a position) above the name. */
   const domainRow = (domain: CeilingDomain, note?: string) => {
     const DomainIcon = DOMAIN_ICONS[domain.sortOrder - 1] ?? Layers3;
     return (
@@ -318,7 +320,7 @@ export function CapabilityCeilingMatrix() {
     </>
   );
   const saving = saveState.status === 'saving';
-  const justSaved = saveState.status === 'saved' && saveState.departmentId === activeDepartmentId;
+  const justSaved = saveState.status === 'saved' && saveState.code === activeCode;
 
   return (
     <section ref={bindMatrix} className="cc-root cx-root" aria-label={translateUi('Khung năng lực số')}>
@@ -336,11 +338,11 @@ export function CapabilityCeilingMatrix() {
                 <BookOpenCheck className="size-3.5 text-emerald-700" aria-hidden="true" />
                 {translateUi('Khóa học của doanh nghiệp')}
               </button>
-              <button type="button" role="tab" id="cx-tab-departments" aria-controls="cx-panel-departments" aria-selected={view === 'departments'}
-                className={`cc-scope-option${view === 'departments' ? ' is-active' : ''}`} onClick={() => switchView('departments')}>
+              <button type="button" role="tab" id="cx-tab-positions" aria-controls="cx-panel-positions" aria-selected={view === 'positions'}
+                className={`cc-scope-option${view === 'positions' ? ' is-active' : ''}`} onClick={() => switchView('positions')}>
                 <span className="cx-scope-step" aria-hidden="true">2</span>
                 <Users className="size-3.5 text-emerald-700" aria-hidden="true" />
-                {translateUi('Năng lực từng phòng ban')}
+                {translateUi('Năng lực từng vị trí')}
               </button>
             </div>
           </div>
@@ -355,7 +357,7 @@ export function CapabilityCeilingMatrix() {
                 {domainRow(domain)}
                 {domain.courses.map((course) => (
                   <CourseCell key={course.level} domain={domain} course={course} inCart={cart.has(courseCode(course, domain))}
-                    usedBy={usedBy(domain, course.level)} departmentCount={departments.length} canBuy={canEdit}
+                    usedBy={usedBy(domain, course.level)} positionCount={positions.length} canBuy={canEdit}
                     onToggleCart={() => toggleCart(course, domain)} onInspect={() => inspect(domain, course.level)} />
                 ))}
                 {coursePanel(domain)}
@@ -378,38 +380,38 @@ export function CapabilityCeilingMatrix() {
           </div>
         </div>
       ) : (
-        <div className="cx-view" role="tabpanel" id="cx-panel-departments" aria-labelledby="cx-tab-departments">
-          {departments.length === 0 ? (
+        <div className="cx-view" role="tabpanel" id="cx-panel-positions" aria-labelledby="cx-tab-positions">
+          {positions.length === 0 ? (
             <div className="cx-empty">
               <Users size={22} aria-hidden="true" />
-              <p>{translateUi('Chưa có phòng ban nào. Tạo phòng ban để đặt mức năng lực cho từng nhóm nhân viên.')}</p>
-              <Link to="/enterprise/members" className="cx-link">{translateUi('Đến Nhân sự')}<ArrowRight size={14} aria-hidden="true" /></Link>
+              <p>{translateUi('Doanh nghiệp đã ngừng dùng cả 5 vị trí chuẩn.')}</p>
+              {!trialLock.limited && <Link to="/enterprise/positions" className="cx-link">{translateUi('Đến Vị trí công việc')}<ArrowRight size={14} aria-hidden="true" /></Link>}
             </div>
-          ) : department && (
-            <div className="cx-dpanel" data-tone={toneOf.get(department.departmentId)}>
-              {/* One header for the department being set, joined to its grid: who, how far, what to do. */}
+          ) : position && (
+            <div className="cx-dpanel" data-tone={toneOf.get(position.code)}>
+              {/* One header for the position being set, joined to its grid: who, how far, what to do. */}
               <div className="cx-dhead">
                 <div className="cx-dhead__pick">
                   <OwnerFilterSelect
-                    label={translateUi('Chọn phòng ban')}
-                    value={activeDepartmentId}
-                    valueLabel={department.name}
-                    onChange={setDepartmentId}
+                    label={translateUi('Chọn vị trí')}
+                    value={activeCode}
+                    valueLabel={position.name}
+                    onChange={setPositionCode}
                     className="cx-dhead__select"
                     menuMinWidth={320}
-                    options={departments.map((d) => ({
-                      value: d.departmentId,
-                      label: `${d.name} · ${translateUi(`${d.employeeCount} người`)}`,
-                      badge: isSet(d) ? { text: 'Đã đặt', tone: 'ok' as const } : { text: 'Chưa đặt', tone: 'warn' as const },
+                    options={positions.map((p) => ({
+                      value: p.code,
+                      label: `${p.name} · ${translateUi(`${p.employeeCount} người`)}`,
+                      badge: isSet(p) ? { text: 'Đã đặt', tone: 'ok' as const } : { text: 'Chưa đặt', tone: 'warn' as const },
                     }))}
                   />
-                  <span className="cx-dhead__state" data-set={isSet(department) || undefined}>
-                    {isSet(department) ? <Check size={13} aria-hidden="true" /> : <Flag size={13} aria-hidden="true" />}
-                    {translateUi(isSet(department) ? 'Đã đặt' : 'Chưa đặt')}
+                  <span className="cx-dhead__state" data-set={isSet(position) || undefined}>
+                    {isSet(position) ? <Check size={13} aria-hidden="true" /> : <Flag size={13} aria-hidden="true" />}
+                    {translateUi(isSet(position) ? 'Đã đặt' : 'Chưa đặt')}
                   </span>
                   {nextUnset && (
-                    <button type="button" className="cx-dhead__next" onClick={() => setDepartmentId(nextUnset.departmentId)}>
-                      <span>{translateUi(`Còn ${departments.length - customizedCount} phòng ban chưa đặt`)}</span>
+                    <button type="button" className="cx-dhead__next" onClick={() => setPositionCode(nextUnset.code)}>
+                      <span>{translateUi(`Còn ${positions.length - customizedCount} vị trí chưa đặt`)}</span>
                       <span className="cx-dhead__next-to">{translateUi('Tiếp:')} <strong>{nextUnset.name}</strong></span>
                       <ArrowRight size={14} aria-hidden="true" />
                     </button>
@@ -427,17 +429,17 @@ export function CapabilityCeilingMatrix() {
                     </span>
                   )}
                   {canEdit && canSuggest && (
-                    <button type="button" className="cc-btn" onClick={() => void persist(department, { ...current, ...suggested }, current)}>
+                    <button type="button" className="cc-btn" onClick={() => void persist(position, { ...current, ...suggested }, current)}>
                       <Sparkles size={14} aria-hidden="true" />{translateUi('Dùng mức đề xuất')}
                     </button>
                   )}
                   {canEdit && setDomains > 0 && (
-                    <button type="button" className="cc-btn" onClick={() => void persist(department, {}, current)}>{translateUi('Bỏ mức đã đặt')}</button>
+                    <button type="button" className="cc-btn" onClick={() => void persist(position, {}, current)}>{translateUi('Bỏ mức đã đặt')}</button>
                   )}
                 </div>
               </div>
 
-              <div className="cc-mx" role="group" aria-label={translateUi(`Mức năng lực của ${department.name}`)}>
+              <div className="cc-mx" role="group" aria-label={translateUi(`Mức năng lực của ${position.name}`)}>
                 {levelHeads('Bấm ô để đặt mức cần đạt')}
                 {matrix.domains.map((domain) => {
                   const level = current[domain.categoryId];
@@ -455,7 +457,7 @@ export function CapabilityCeilingMatrix() {
             </div>
           )}
 
-          {departments.length > 0 && (
+          {positions.length > 0 && (
             <div className="cc-legend" aria-label={translateUi('Chú giải mức năng lực')}>
               <span className="cc-legend__title">{translateUi('Trạng thái')}</span>
               <span className="cc-legend__chip"><i className="route" />{translateUi('Mức cần đạt')}</span>
@@ -503,12 +505,12 @@ export function CapabilityCeilingMatrix() {
 }
 
 /** "Khóa học của doanh nghiệp": an owned course (where it is used) or a course still to buy. */
-function CourseCell({ domain, course, inCart, usedBy, departmentCount, canBuy, onToggleCart, onInspect }: {
+function CourseCell({ domain, course, inCart, usedBy, positionCount, canBuy, onToggleCart, onInspect }: {
   domain: CeilingDomain;
   course: CeilingCourse;
   inCart: boolean;
-  usedBy: CeilingDepartment[];
-  departmentCount: number;
+  usedBy: CeilingPosition[];
+  positionCount: number;
   canBuy: boolean;
   onToggleCart: () => void;
   onInspect: () => void;
@@ -519,10 +521,10 @@ function CourseCell({ domain, course, inCart, usedBy, departmentCount, canBuy, o
     return <div className="cc-cell empty">{translateUi('Chưa có khóa')}</div>;
   }
   if (isOwned(course)) {
-    const users = departmentCount === 0 ? translateUi('Cả doanh nghiệp')
-      : usedBy.length === departmentCount ? translateUi('Mọi phòng ban')
-      : usedBy.length === 0 ? translateUi('Chưa phòng ban nào')
-      : translateUi(`${usedBy.length}/${departmentCount} phòng ban`);
+    const users = positionCount === 0 ? translateUi('Cả doanh nghiệp')
+      : usedBy.length === positionCount ? translateUi('Mọi vị trí')
+      : usedBy.length === 0 ? translateUi('Chưa vị trí nào')
+      : translateUi(`${usedBy.length}/${positionCount} vị trí`);
     return (
       <div className="cc-purchase-cell cc-course-cell">
         <button type="button" className="cc-cell route cx-tile" data-level={course.level} aria-label={translateUi(`Xem khóa ${code}`)}
@@ -550,7 +552,7 @@ function CourseCell({ domain, course, inCart, usedBy, departmentCount, canBuy, o
 }
 
 /**
- * "Năng lực từng phòng ban": one level of a domain. The levels below the chosen one are included, the chosen one carries a
+ * "Năng lực từng vị trí": one level of a domain. The levels below the chosen one are included, the chosen one carries a
  * flag. A level whose course is not bought can still be set.
  */
 function LevelCell({ domain, course, level, suggested, editable, onPick }: {
@@ -595,8 +597,8 @@ function SurveyReturn() {
     <div className="cx-survey-return" role="status">
       <span className="cx-survey-return__icon" aria-hidden="true"><Target size={16} /></span>
       <p>
-        <strong>{translateUi('Đặt mức cần đạt cho từng phòng ban')}</strong>
-        <span>{translateUi('Kết quả khảo sát sẽ so với mức này; phòng ban chưa đặt theo đề xuất của hệ thống. Danh sách người làm bài vẫn được giữ.')}</span>
+        <strong>{translateUi('Đặt mức cần đạt cho từng vị trí')}</strong>
+        <span>{translateUi('Kết quả khảo sát sẽ so với mức này; vị trí chưa đặt theo đề xuất của hệ thống. Danh sách người làm bài vẫn được giữ.')}</span>
       </p>
       <Link to={SURVEY_RESUME_PATH} className="cc-btn">{translateUi('Xong, quay lại khảo sát')}<ArrowRight size={14} aria-hidden="true" /></Link>
     </div>

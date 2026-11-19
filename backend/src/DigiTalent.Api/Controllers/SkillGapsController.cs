@@ -3,6 +3,7 @@ using DigiTalent.Api.Common;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Intelligence.SkillGap;
 using DigiTalent.Application.UseCases.Intelligence.SkillGap.Common;
+using DigiTalent.Application.UseCases.Intelligence.SkillGap.GetCapabilityProgress;
 using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,6 +23,16 @@ public class SkillGapsController : ControllerBase
         [FromServices] IUseCase<GetSkillGapRunsUseCaseInput, GetLearningNeedsOutput> useCase)
     {
         return Ok(ApiResponse<GetLearningNeedsOutput>.Ok(await useCase.ExecuteAsync(input)));
+    }
+
+    // GET api/v1/intelligence/skill-gaps/progress — gaps now and since the survey, per domain, department and employee.
+    [HttpGet("progress")]
+    [HasPermission(Permissions.Intelligence.SkillGapRead)]
+    public async Task<ActionResult<ApiResponse<GetCapabilityProgressOutput>>> GetProgress(
+        [FromQuery] GetCapabilityProgressInput input,
+        [FromServices] IUseCase<GetCapabilityProgressInput, GetCapabilityProgressOutput> useCase)
+    {
+        return Ok(ApiResponse<GetCapabilityProgressOutput>.Ok(await useCase.ExecuteAsync(input)));
     }
 
     // POST api/v1/intelligence/skill-gaps/calculate

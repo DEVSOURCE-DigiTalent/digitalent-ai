@@ -97,7 +97,8 @@ public class GetPositionRequirementsUseCase : IUseCase<GetPositionRequirementsUs
                 foreach (var item in items)
                 {
                     item.RequiredLevel = targets.Levels.GetValueOrDefault(item.CategoryId, item.RequiredLevel);
-                    if (item.Note == DigiTalent.Application.UseCases.Platform.References.ReferencePositionMatrixService.SeedItemNote)
+                    if (item.Note is DigiTalent.Application.UseCases.Platform.References.ReferencePositionMatrixService.SeedItemNote
+                        or PositionTargets.OwnerItemNote)
                         item.Note = null;
                 }
             }

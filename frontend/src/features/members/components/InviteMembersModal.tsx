@@ -21,6 +21,7 @@ import { Modal } from '@/components/shared';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
+import { NOT_STANDARD_POSITION, standardPositionOptions } from '@/lib/standard-positions';
 import { useInviteMembers } from '@/hooks/use-members';
 import { organizationErrorMessage } from '@/lib/organization-errors';
 import { assignableRoles } from '@/lib/role-policy';
@@ -96,9 +97,10 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
   const [submitError, setSubmitError] = useState<string>();
   const [result, setResult] = useState<InviteResult>();
 
-  const visiblePositions = positions.filter(
-    (position) => position.departmentId === draft.departmentId,
-  );
+  // Any department name; the position is one of the 5 standard ones, open in every department.
+  const positionOptions = standardPositionOptions(positions);
+  const positionLabel = (id?: string) => positionOptions.find((option) => option.value === id)?.label
+    ?? positions.find((position) => position.id === id)?.name;
 
   const setDraftField = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
@@ -110,8 +112,6 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
     if (!EMAIL_PATTERN.test(email)) return setDraftError('Địa chỉ email không hợp lệ.');
     if (draft.role !== 'OWNER' && !draft.departmentId) return setDraftError('Vui lòng chọn phòng ban.');
     if (!draft.jobPositionId) return setDraftError('Vui lòng chọn vị trí công việc.');
-    if (draft.jobPositionId && !visiblePositions.some((p) => p.id === draft.jobPositionId))
-      return setDraftError('Vị trí công việc không thuộc phòng ban đã chọn.');
     if (queue.some((q) => q.email === email)) return setDraftError('Email này đã có trong danh sách chờ gửi.');
 
     const department = departments.find((item) => item.id === draft.departmentId);
@@ -121,7 +121,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
     if (roleError) return setDraftError(roleError);
 
     setDraftError(undefined);
-    setQueue((curr) => [...curr, { ...draft, email, key: email }]);
+    setQueue((curr) => [...curr, { ...draft, email, key: email, positionName: positionLabel(draft.jobPositionId) }]);
     setDraft({
       ...EMPTY_DRAFT,
       departmentId: draft.departmentId,
@@ -159,7 +159,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
         if (row.id !== id) return row;
         const updated = { ...row, ...updates };
 
-        // Tự động cập nhật tên phòng ban và lọc lại vị trí nếu đổi phòng ban
+        // Tự động cập nhật tên phòng ban nếu đổi phòng ban (vị trí dùng chung mọi phòng ban, giữ nguyên)
         if (updates.departmentId !== undefined) {
           if (updates.departmentId.startsWith('new:')) {
             updated.departmentName = updates.departmentId.replace('new:', '');
@@ -167,24 +167,11 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
             const matchedDept = departments.find((d) => d.id === updates.departmentId);
             updated.departmentName = matchedDept ? matchedDept.name : '';
           }
-          // Nếu vị trí hiện tại không thuộc phòng ban mới, reset vị trí
-          const validPos = positions.some(
-            (p) => p.id === updated.jobPositionId && (p.departmentId === updates.departmentId),
-          );
-          if (!validPos && !updated.jobPositionId?.startsWith('new:')) {
-            updated.jobPositionId = '';
-            updated.positionName = '';
-          }
         }
 
         // Tự động cập nhật tên vị trí nếu đổi vị trí
         if (updates.jobPositionId !== undefined) {
-          if (updates.jobPositionId.startsWith('new:')) {
-            updated.positionName = updates.jobPositionId.replace('new:', '');
-          } else {
-            const matchedPos = positions.find((p) => p.id === updates.jobPositionId);
-            updated.positionName = matchedPos ? matchedPos.name : '';
-          }
+          updated.positionName = positionLabel(updates.jobPositionId) ?? updates.jobPositionId.replace(/^new:/, '');
         }
 
         // Cập nhật trạng thái hợp lệ
@@ -193,6 +180,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
         if (!EMAIL_PATTERN.test(updated.email.trim().toLowerCase())) errors.push('Email không hợp lệ');
         if (!updated.departmentId) errors.push('Chưa chọn phòng ban');
         if (!updated.jobPositionId) errors.push('Chưa chọn vị trí');
+        else if (!positionOptions.some((option) => option.value === updated.jobPositionId)) errors.push(NOT_STANDARD_POSITION);
         if (!updates.role && row.errors.some((error) => error.startsWith('Vai trò'))) errors.push('Vai trò phải là Nhân viên hoặc Trưởng phòng.');
         updated.isValid = errors.length === 0;
         updated.errors = errors;
@@ -585,10 +573,6 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {previewRows.map((row, idx) => {
-                        const deptPositions = positions.filter(
-                          (p) => p.departmentId === row.departmentId,
-                        );
-
                         return (
                           <tr key={row.id} className={row.isValid ? 'hover:bg-slate-50/70' : 'bg-red-50/40'}>
                             <td className="py-2 px-3 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
@@ -641,15 +625,13 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                                 className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-800 outline-none"
                               >
                                 <option value="">-- Vị trí --</option>
-                                {row.jobPositionId?.startsWith('new:') && (
+                                {row.jobPositionId && !positionOptions.some((option) => option.value === row.jobPositionId) && (
                                   <option value={row.jobPositionId}>
-                                    {row.positionName || row.jobPositionId.replace('new:', '')} (Mới từ file)
+                                    {row.positionName || row.jobPositionId.replace('new:', '')} (không phải vị trí chuẩn)
                                   </option>
                                 )}
-                                {deptPositions.map((p) => (
-                                  <option key={p.id} value={p.id}>
-                                    {p.name} {p.code ? `(${p.code})` : ''}
-                                  </option>
+                                {positionOptions.map((option) => (
+                                  <option key={option.value} value={option.value}>{option.label}</option>
                                 ))}
                               </select>
                             </td>
@@ -779,13 +761,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                 <select
                   id={`${base}-department`}
                   value={draft.departmentId}
-                  onChange={(e) =>
-                    setDraft((curr) => ({
-                      ...curr,
-                      departmentId: e.target.value,
-                      jobPositionId: '',
-                    }))
-                  }
+                  onChange={(e) => setDraftField('departmentId', e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#304bdf] focus:ring-2 focus:ring-[#304bdf]/20"
                 >
                   <option value="">-- Chọn phòng ban --</option>
@@ -807,10 +783,8 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#304bdf] focus:ring-2 focus:ring-[#304bdf]/20"
                 >
                   <option value="">-- Chọn vị trí công việc --</option>
-                  {visiblePositions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
+                  {positionOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
               </div>
@@ -857,7 +831,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
             <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
               {queue.map((person) => {
                 const deptName = departments.find((d) => d.id === person.departmentId)?.name || 'Chưa xếp phòng ban';
-                const posName = positions.find((p) => p.id === person.jobPositionId)?.name;
+                const posName = person.positionName || positionLabel(person.jobPositionId);
 
                 return (
                   <div

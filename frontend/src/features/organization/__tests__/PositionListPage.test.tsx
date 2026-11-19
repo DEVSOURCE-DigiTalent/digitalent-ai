@@ -43,8 +43,8 @@ describe('PositionListPage', () => {
     vi.spyOn(posHooks, 'useJobPositions').mockReturnValue({
       data: {
         items: [
-          { id: '1', code: 'SWE', name: 'Software Engineer', jobFamilyName: 'Engineering', status: 'ACTIVE' },
-          { id: '2', code: 'PM', name: 'Product Manager', jobFamilyName: 'Product', status: 'INACTIVE' },
+          { id: '1', code: 'SWE', name: 'Software Engineer', jobFamilyName: 'Engineering', departments: ['Kế toán tổng hợp', 'Phòng Marketing'], status: 'ACTIVE' },
+          { id: '2', code: 'PM', name: 'Product Manager', jobFamilyName: 'Product', departments: [], status: 'INACTIVE' },
         ],
         totalItems: 2,
         pageIndex: 1,
@@ -62,7 +62,9 @@ describe('PositionListPage', () => {
 
     expect(screen.getByText('Software Engineer')).toBeInTheDocument();
     expect(screen.getByText('Product Manager')).toBeInTheDocument();
-    expect(screen.getByText('Engineering')).toBeInTheDocument();
+    // a position is shared by every department: the column lists where it is held
+    expect(screen.getByText('Kế toán tổng hợp, Phòng Marketing')).toBeInTheDocument();
+    expect(screen.getByText('Chưa có ai')).toBeInTheDocument();
 
     // Empty state
     vi.spyOn(posHooks, 'useJobPositions').mockReturnValue({
@@ -176,11 +178,12 @@ describe('PositionListPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Vui lòng nhập mã')).toBeInTheDocument();
-      expect(screen.getByText('Vui lòng chọn phòng ban')).toBeInTheDocument();
     });
+    // no department on a position: it is open in every department
+    expect(screen.queryByLabelText(/Phòng ban/)).toBeNull();
+    expect(screen.getByText('Vị trí dùng được ở mọi phòng ban.')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/Mã vị trí/), { target: { value: 'ACCOUNTANT' } });
-    fireEvent.change(screen.getByLabelText(/Phòng ban/), { target: { value: 'dept-1' } });
 
     fireEvent.click(saveBtn);
 
@@ -189,9 +192,9 @@ describe('PositionListPage', () => {
         expect.objectContaining({
           code: 'ACCOUNTANT',
           name: 'Kế toán',
-          departmentId: 'dept-1',
         }),
       );
+      expect(createMutateAsync.mock.calls[0][0]).not.toHaveProperty('departmentId');
     });
   });
 

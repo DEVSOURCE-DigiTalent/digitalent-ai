@@ -14,6 +14,7 @@ using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Organization.Workforce;
 using Moq;
+using DigiTalent.Tests.TestSupport;
 
 namespace DigiTalent.Tests.Pulse;
 
@@ -37,7 +38,7 @@ public class PulseEmployeeFlowTests
         overview.Reviewer!.Name.Should().Be("Mentor DigiTalent");
         overview.Reviewer.Role.Should().Be("Mentor DigiTalent");
         overview.Domains.Select(d => d.Target).Should().Equal(3, 2, 1, 3, 2, 1);
-        overview.Domains.Select(d => d.PathTop).Should().Equal(new[] { 3, 2, 1, 3, 2, 1 }, "phòng ban chưa đặt mức riêng: lộ trình đi tới chuẩn vị trí");
+        overview.Domains.Select(d => d.PathTop).Should().Equal(new[] { 3, 2, 1, 3, 2, 1 }, "vị trí chưa đặt mức: lộ trình đi tới chuẩn vị trí");
         overview.Domains.Should().OnlyContain(d => d.Status == PulseDomainStatus.Pending || d.Number == 2, "chưa có bài nào được chấm; M2-F đã xong ở luồng cũ");
         overview.Domains.Sum(d => d.Competencies.Count).Should().Be(21);
         overview.Stats.RequiredCompetencies.Should().Be(21);
@@ -56,29 +57,25 @@ public class PulseEmployeeFlowTests
         overview.Courses.Single(c => c.Code == "M4-I").PreStatus.Should().Be(PulsePreStatus.NotNeeded, "đã bắt đầu học trước khi có bài đánh giá");
         overview.NextSteps.Select(c => c.Code).Should().Equal("M4-I", "M1-F", "M2-I");
 
-        // Chủ doanh nghiệp đặt mức riêng cho phòng OPS: Giao tiếp, Giải quyết vấn đề tới Trung cấp; An toàn, AI ở Cơ bản.
-        // A company-wide row has no effect any more: the whole company means every course it owns.
+        // Chủ doanh nghiệp đặt mức cho vị trí của nhân viên ở Khung năng lực số: Giao tiếp, Giải quyết vấn đề tới Trung cấp;
+        // An toàn, AI ở Cơ bản. A company-wide row has no effect any more: the whole company means every course it owns.
         var employee = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
+        var position = await world.Context.JobPositions.AsNoTracking().SingleAsync(p => p.Id == employee.JobPositionId);
         var categories = overview.Domains.Select(d => d.CategoryId).ToList();
-        var levels = new short[] { 3, 2, 3, 1, 2, 1 };
+        var levels = new[] { 3, 2, 3, 1, 2, 1 };
         world.Context.CapabilityCeilings.Add(new CapabilityCeiling
         {
             OrganizationId = employee.OrganizationId, CompetencyCategoryId = categories[0], CeilingLevel = 1,
         });
-        world.Context.CapabilityCeilings.AddRange(categories.Select((id, i) => new CapabilityCeiling
-        {
-            OrganizationId = employee.OrganizationId,
-            DepartmentId = employee.DepartmentId,
-            CompetencyCategoryId = id,
-            CeilingLevel = levels[i],
-        }));
         await world.Context.SaveChangesAsync();
+        await PositionLevels.SetAsync(world.Context, employee.OrganizationId, position.Code,
+            categories.Select((id, i) => (id, levels[i])).ToArray());
         world.Context.ChangeTracker.Clear();
 
-        // The department level is the minimum the company requires, also above the position standard (Sáng tạo nội dung: 3 > 1).
+        // The position level is the minimum the company requires, also above the TT02 suggestion (Sáng tạo nội dung: 3 > 1).
         var capped = await uc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
-        overview.Domains.Should().OnlyContain(d => !d.RequiredByDepartment, "phòng ban chưa đặt mức: theo chuẩn vị trí");
-        capped.Domains.Should().OnlyContain(d => d.RequiredByDepartment);
+        overview.Domains.Should().OnlyContain(d => !d.RequiredByPosition, "vị trí chưa đặt mức: theo đề xuất của hệ thống");
+        capped.Domains.Should().OnlyContain(d => d.RequiredByPosition);
         capped.Domains.Select(d => d.Ceiling).Should().Equal(3, 2, 3, 1, 2, 1);
         capped.Domains.Select(d => d.PathTop).Should().Equal(3, 2, 3, 1, 2, 1);
         // Only Basic is free and nothing is bought: higher levels above the requirement stay closed, except a course

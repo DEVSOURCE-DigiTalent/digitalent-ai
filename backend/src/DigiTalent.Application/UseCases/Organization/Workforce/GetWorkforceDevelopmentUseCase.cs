@@ -53,55 +53,9 @@ public sealed class GetWorkforceDevelopmentUseCase(
             ? (await new PositionTargetsReader(context).LoadAsync(department.OrganizationId, [id])).GetValueOrDefault(id)
             : null;
 
-        var assessments = await context.TrialAssessments.AsNoTracking()
-            .Where(a => employeeIds.Contains(a.EmployeeId)).OrderBy(a => a.SubmittedAt).ThenBy(a => a.Id).ToListAsync();
-        var assessmentIds = assessments.Select(a => a.Id).ToList();
-        var details = (await context.TrialAssessmentDomains.AsNoTracking()
-            .Where(d => assessmentIds.Contains(d.TrialAssessmentId)).ToListAsync()).ToLookup(d => d.TrialAssessmentId);
-        var baseline = new Dictionary<(Guid EmployeeId, Guid CategoryId), int>();
-        var current = new Dictionary<(Guid EmployeeId, Guid CategoryId), int>();
-
-        foreach (var assessment in assessments)
-        {
-            var domains = details[assessment.Id].ToList();
-            if (!TrialAssessmentResults.IsReady(assessment, domains)) continue;
-            foreach (var domain in domains)
-            {
-                var key = (assessment.EmployeeId, domain.CategoryId);
-                var level = TrialAssessmentResults.EffectiveLevelOf(domain);
-                baseline.TryAdd(key, level);
-                ConfirmLevel(key, level);
-            }
-        }
-
-        if (employeeIds.Count > 0)
-        {
-            var completed = await (
-                from enrollment in context.Enrollments.AsNoTracking()
-                join course in context.Courses.AsNoTracking() on enrollment.CourseId equals course.Id
-                where employeeIds.Contains(enrollment.EmployeeId) && course.OrganizationId == department.OrganizationId
-                    && enrollment.Status == Statuses.Enrollment.Completed
-                select new { enrollment.EmployeeId, course.Code }).Distinct().ToListAsync();
-            if (completed.Count > 0)
-            {
-                var courses = (await catalog.LoadAsync(department.OrganizationId))
-                    .SelectMany(course => CourseCodes.Aliases(course.Code).Select(code => (Code: code, Course: course)))
-                    .ToLookup(row => row.Code, row => row.Course, StringComparer.OrdinalIgnoreCase);
-                foreach (var row in completed)
-                foreach (var course in courses[row.Code])
-                    ConfirmLevel((row.EmployeeId, course.CategoryId), course.Tier);
-            }
-
-            var evidence = await (
-                from item in context.CompetencyEvidences.AsNoTracking()
-                join competency in context.Competencies.AsNoTracking() on item.CompetencyId equals competency.Id
-                where employeeIds.Contains(item.EmployeeId) && categoryIds.Contains(competency.CategoryId)
-                    && item.SourceType == Statuses.EvidenceSourceType.PracticalTask && item.Status == Statuses.EvidenceStatus.Confirmed
-                    && item.IsLevelConfirming && item.ConfirmedLevel != null
-                select new { item.EmployeeId, competency.CategoryId, Level = item.ConfirmedLevel!.Value }).ToListAsync();
-            foreach (var item in evidence)
-                ConfirmLevel((item.EmployeeId, item.CategoryId), item.Level);
-        }
+        var levels = await new EmployeeDomainLevelsReader(context, catalog).LoadAsync(department.OrganizationId, employeeIds, categoryIds);
+        var baseline = levels.Baseline;
+        var current = levels.Current;
 
         return new GetWorkforceDevelopmentOutput(employeeIds.Count, categories.Select(category =>
         {
@@ -117,9 +71,6 @@ public sealed class GetWorkforceDevelopmentUseCase(
                     verified.Count(level => level == 2), verified.Count(level => level == 3),
                     employeeIds.Count - verified.Count));
         }).ToList());
-
-        void ConfirmLevel((Guid EmployeeId, Guid CategoryId) key, int level) =>
-            current[key] = Math.Max(current.GetValueOrDefault(key), Math.Clamp(level, 0, PulseRules.MaxLevel));
     }
 
     private static decimal? Average(List<int> levels) =>

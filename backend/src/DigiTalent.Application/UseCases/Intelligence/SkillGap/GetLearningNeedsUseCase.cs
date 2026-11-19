@@ -79,7 +79,7 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
         if (!string.IsNullOrWhiteSpace(input.Search)) { var search = input.Search.Trim().ToLower(); query = query.Where(e => e.FullName.ToLower().Contains(search) || e.EmployeeCode.ToLower().Contains(search)); }
         var pageSize = Math.Clamp(input.PageSize, 1, 100);
         var activePositions = await _db.JobPositions.AsNoTracking()
-            .Where(p => p.OrganizationId == orgId && p.Status == Statuses.MasterData.Active && p.DepartmentId != null)
+            .Where(p => p.OrganizationId == orgId && p.Status == Statuses.MasterData.Active)
             .ToListAsync();
         var positionsById = activePositions.ToDictionary(p => p.Id);
 
@@ -132,7 +132,6 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
             .ToLookup(a => a.EmployeeId);
         var profiles = await _db.EmployeeCompetencyProfiles.AsNoTracking().Where(p => employeeIds.Contains(p.EmployeeId)).ToDictionaryAsync(p => new { p.EmployeeId, p.CompetencyId });
         var catalog = await new PulseCatalogReader(_db).LoadAsync(orgId);
-        var expectation = await CapabilityExpectation.LoadAsync(_db, orgId);
         foreach (var (employee, position) in employees)
         {
             var row = new EmployeeLearningNeeds { EmployeeId = employee.Id, EmployeeName = employee.FullName, PositionId = position?.Id,
@@ -151,8 +150,8 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
                 .GroupBy(r => r.CategoryId).OrderBy(g => g.First().SortOrder))
             {
                 var first = domain.First();
-                // The department level set in Khung năng lực số wins over the position standard (as in the survey).
-                var target = expectation.ExpectedFor(employee.DepartmentId, domain.Key) ?? targets.Levels[domain.Key];
+                // The position level set in Khung năng lực số is part of the position standard (as in the survey).
+                var target = targets.Levels[domain.Key];
                 var need = new LearningNeedDomain { CategoryId = first.CategoryId, Name = first.CategoryName, Number = first.SortOrder, RequiredLevel = target };
                 row.Domains.Add(need);
                 need.Competencies = domain.Select(r => new LearningNeedCompetency { CompetencyId = r.CompetencyId, Name = r.Name, RequiredLevel = target }).ToList();

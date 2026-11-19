@@ -1,5 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
+import { useSurveyOver } from '@/hooks/use-survey-over';
 import {
   BookOpen,
   ClipboardCheck,
@@ -9,7 +10,8 @@ import {
 
 export function OwnerQuickOperations() {
   useUiLanguage();
-  const operations = [
+  const surveyOver = useSurveyOver();
+  const allOperations = [
     {
       title: 'Khảo sát năng lực số',
       to: '/enterprise/trial',
@@ -39,6 +41,7 @@ export function OwnerQuickOperations() {
       hoverBorder: 'group-hover:border-amber-300',
     },
   ];
+  const operations = surveyOver ? allOperations.filter((op) => op.to !== '/enterprise/trial') : allOperations;
 
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-xs p-5 shadow-xs hover:shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all flex flex-col justify-between">

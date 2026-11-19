@@ -168,8 +168,8 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
 
         if (invitation.JobPositionId.HasValue && !await _context.JobPositions.AnyAsync(p =>
             p.Id == invitation.JobPositionId.Value && p.OrganizationId == invitation.OrganizationId
-            && (p.DepartmentId == null || p.DepartmentId == department.Id) && p.Status == Statuses.MasterData.Active))
-            throw new ConflictException("Vị trí trong lời mời không còn hợp lệ cho phòng ban. Hãy nhờ doanh nghiệp kiểm tra lại lời mời.");
+            && p.Status == Statuses.MasterData.Active))
+            throw new ConflictException("Vị trí trong lời mời đã ngừng sử dụng. Hãy nhờ doanh nghiệp kiểm tra lại lời mời.");
 
         var directManagerId = roleCode == Roles.Manager
             ? null

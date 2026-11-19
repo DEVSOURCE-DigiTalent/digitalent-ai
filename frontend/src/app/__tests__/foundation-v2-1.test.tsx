@@ -43,10 +43,11 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
     expect(within(nav).getByText('Nhân sự')).toBeInTheDocument();
     expect(within(nav).getByText('Khoảng trống năng lực')).toBeInTheDocument();
     expect(within(nav).getByText('Khóa học')).toBeInTheDocument();
-    expect(within(nav).getByText('Báo cáo chu kỳ')).toBeInTheDocument();
+    // "Báo cáo chu kỳ" and "Thông báo" are not in the owner menu (pages reachable from links and the bell).
+    expect(within(nav).queryByText('Báo cáo chu kỳ')).not.toBeInTheDocument();
     expect(within(nav).queryByText('Đợt đào tạo')).not.toBeInTheDocument();
     expect(within(nav).getByText('Chứng nhận')).toBeInTheDocument();
-    expect(within(nav).getByText('Thông báo')).toBeInTheDocument();
+    expect(within(nav).queryByText('Thông báo')).not.toBeInTheDocument();
   });
 
   it('renders the Pulse Manager sidebar with the team group and the other tools', async () => {

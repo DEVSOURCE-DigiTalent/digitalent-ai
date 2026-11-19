@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, ChevronLeft, ChevronRight, Mail, Send, ClipboardCheck, ArrowRight, Search, X, Building2, UsersRound, BriefcaseBusiness, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useSurveyOver } from '@/hooks/use-survey-over';
 import { useDepartments } from '@/hooks/use-departments';
 import { useJobPositions } from '@/hooks/use-job-positions';
 import { useMembers, useResendInvitation } from '@/hooks/use-members';
@@ -32,6 +33,7 @@ export function OwnerMembersPage() {
   useUiLanguage();
   const navigate = useNavigate();
   const user = useCurrentUser((s) => s.user)!;
+  const surveyOver = useSurveyOver();
   const canInvite =
     useCurrentUser((s) => s.hasPermission)(PERMISSIONS.USER_CREATE) &&
     assignableRoles(user.roles).length > 0;
@@ -175,7 +177,7 @@ export function OwnerMembersPage() {
           <div className="members-invite__copy"><h2>{translateUi("Thêm nhân sự vào tổ chức")}</h2></div>
           <div className="members-invite__actions">
             {canInvite && <button type="button" className="members-invite__primary" onClick={() => setInviting(true)}><UserPlus size={18} />{translateUi(" Mời thành viên ")}<ArrowRight size={16} /></button>}
-            <Link to="/enterprise/trial" className="members-invite__secondary"><ClipboardCheck size={17} />{translateUi(" Khảo sát năng lực số")}</Link>
+            {!surveyOver && <Link to="/enterprise/trial" className="members-invite__secondary"><ClipboardCheck size={17} />{translateUi(" Khảo sát năng lực số")}</Link>}
           </div>
         </section>
 

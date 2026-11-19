@@ -22,7 +22,8 @@ const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', INACTIVE:
  * OW-09: Position List (UI/UX spec v2.1 §3.2, §10).
  * - Removed Job Family tab (hidden from UI per frozen design decision §9).
  * - Filters: Department · Grade · Status.
- * - Columns: Code · Position Name · Department · Grade · Headcount · Requirement Status · Status.
+ * - Columns: Code · Position Name · Departments using it · Grade · Headcount · Requirement Status · Status.
+ * - A position is one of the 5 standard ones, shared by every department (a department has any name).
  * - Actions: Add Position (OW-11), Edit, Archive.
  */
 export function PositionListPage() {
@@ -98,8 +99,10 @@ export function PositionListPage() {
     },
     {
       key: 'department',
-      header: 'Phòng ban',
-      cell: (row) => row.departmentName || (row as any).jobFamilyName || <span className="text-slate-400">{translateUi("Chưa gắn")}</span>,
+      header: 'Đang dùng ở',
+      cell: (row) => row.departments?.length
+        ? <span title={row.departments.join(', ')}>{row.departments.join(', ')}</span>
+        : <span className="text-slate-400">{translateUi('Chưa có ai')}</span>,
     },
     {
       key: 'jobGrade',
