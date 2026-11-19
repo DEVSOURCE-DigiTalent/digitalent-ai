@@ -37,10 +37,13 @@ public static class PulseRules
     /// </summary>
     public const int ModuleQuizQuestionsPerPage = 2;
 
-    /// <summary>Số câu trắc nghiệm của bài làm có giám sát (đánh giá trước khi học, bài cuối khóa), rút từ câu ôn tập của khóa.</summary>
-    public const int ExamChoiceCount = 10;
+    /// <summary>
+    /// Số câu trắc nghiệm của bài làm có giám sát (bài cuối khóa): câu cuối khóa của giáo trình (questions.is_final_quiz)
+    /// trước, khóa chưa đủ thì bù bằng câu ôn của các mô đun.
+    /// </summary>
+    public const int ExamChoiceCount = 20;
 
-    /// <summary>Tỉ lệ câu đúng tối thiểu (phần mười) để phần trắc nghiệm đạt: 10 câu → 7 câu.</summary>
+    /// <summary>Tỉ lệ câu đúng tối thiểu (phần mười) để phần trắc nghiệm đạt: 20 câu → 14 câu.</summary>
     public const int ExamChoicePassTenths = 7;
 
     /// <summary>Số câu đúng tối thiểu của đề <paramref name="total"/> câu.</summary>
