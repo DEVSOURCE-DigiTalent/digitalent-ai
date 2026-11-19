@@ -1,13 +1,13 @@
 import { canonicalCourseCode, courseCodeKey } from '@/features/courses/course-code';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, Filter, Search, Sparkles, X } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowRight, BookOpen, Check, ChevronRight, Lock, Plus, ShoppingCart, Sparkles, X } from 'lucide-react';
 import { useCourseCatalog } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import { courseCategories } from '@/features/courses/course-catalog';
 import type { CourseListItem } from '@/services/assignment.service';
-import { CourseArtwork, CourseDomainIcon } from '../components/CourseArtwork';
+import { CourseDomainIcon } from '../components/CourseArtwork';
 import {
   LEVELS,
   buildCourseTree,
@@ -16,556 +16,530 @@ import {
   findGapCourse,
   levelName,
   levelPricing,
-  matchesSearch,
   type DomainBranch,
 } from '../components/course-tree';
 import { PULSE_TOKENS } from '../owner-theme';
 import { SectionLoading } from '@/components/shared/LoadingState';
 import './owner-course-catalog.css';
+import './owner-course-catalog-v2.css';
 
-/** One color per level, used by the tree nodes, the legend and the detail panel. */
-const LEVEL_TONES: Record<number, { bg: string; fg: string; ring: string }> = {
-  1: { bg: '#edf7dd', fg: '#557327', ring: '#b9dc8c' },
-  2: { bg: 'var(--po-soft)', fg: '#137b84', ring: '#aebcf6' },
-  3: { bg: '#fdeee9', fg: '#c4553f', ring: '#f4b6a6' },
-};
+/**
+ * OW-23 · Khóa học as a "bánh xe năng lực số": 6 slices (domains) × 3 rings (Cơ bản inside → Nâng cao outside).
+ * A course the company has is filled with its domain colour, a course to buy is an outline with a lock and its price.
+ * Hover / focus previews a course in the hub, a click opens the course page; the panel beside shows one domain's
+ * courses as a ladder with the cart buttons. Status switch and ?level= dim the rest of the wheel instead of hiding it.
+ */
+type StatusFilter = 'all' | 'toBuy' | 'owned';
+type CartItem = { code: string; title: string; level: number; price: number };
 
-type Selection = { kind: 'course'; id: string } | null;
+const SIZE = 700;
+const CENTER = SIZE / 2;
+const RINGS: Record<number, [number, number]> = { 1: [128, 184], 2: [190, 246], 3: [252, 308] };
+/** Same colours as [data-course-domain] in owner-course-catalog.css. */
+const DOMAIN_COLORS = ['#328e9c', '#588fc0', '#9674ba', '#329b79', '#bd805b', '#716bb0'];
+/** Gradient of a filled (owned) segment per domain: [inner ring, outer ring]. */
+const DOMAIN_GRADIENTS: [string, string][] = [
+  ['#5fd8cb', '#1f97c4'],
+  ['#8fb6fb', '#4766e0'],
+  ['#ee9cf7', '#8d5cf6'],
+  ['#6fdea4', '#11a07a'],
+  ['#fdb27a', '#e5603f'],
+  ['#b6a6fb', '#6552e6'],
+];
+const DOMAIN_LABELS = ['Khai thác dữ liệu', 'Giao tiếp & hợp tác', 'Sáng tạo nội dung', 'An toàn số', 'Giải quyết vấn đề', 'Trí tuệ nhân tạo'];
+
+const levelLabel = (level: number) => `Cấp ${level} · ${levelName(level)}`;
+const isOwnedCourse = (course: CourseListItem) => courseLevel(course) <= 1 || Boolean(course.hasLicense || course.isPurchased);
+const pickCourse = (courses: CourseListItem[]) => courses.find((course) => course.status === 'PUBLISHED') ?? courses[0];
+const domainNumber = (domain: number) => String(domain).padStart(2, '0');
+
+// ── Wheel geometry ──
+const round = (n: number) => Math.round(n * 100) / 100;
+const polar = (r: number, deg: number): [number, number] =>
+  [round(CENTER + r * Math.cos((deg * Math.PI) / 180)), round(CENTER + r * Math.sin((deg * Math.PI) / 180))];
+const domainMid = (domain: number) => -90 + (domain - 1) * 60;
+
+function sectorPath(r0: number, r1: number, a0: number, a1: number) {
+  const [x0, y0] = polar(r1, a0);
+  const [x1, y1] = polar(r1, a1);
+  const [x2, y2] = polar(r0, a1);
+  const [x3, y3] = polar(r0, a0);
+  return `M${x0} ${y0}A${r1} ${r1} 0 0 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 0 0 ${x3} ${y3}Z`;
+}
+
+/** Arc for a curved label; on the lower half it runs the other way so the text stays upright. */
+function labelArc(domain: number) {
+  const mid = domainMid(domain);
+  const lower = Math.sin((mid * Math.PI) / 180) > 0.01;
+  const r = lower ? 332 : 320;
+  const [sx, sy] = polar(r, lower ? mid + 28 : mid - 28);
+  const [ex, ey] = polar(r, lower ? mid - 28 : mid + 28);
+  return `M${sx} ${sy}A${r} ${r} 0 0 ${lower ? 0 : 1} ${ex} ${ey}`;
+}
+
+/** Arc under a domain name (the chosen domain's band). */
+function bandArc(mid: number) {
+  const r = 326;
+  const [sx, sy] = polar(r, mid - 27);
+  const [ex, ey] = polar(r, mid + 27);
+  return `M${sx} ${sy}A${r} ${r} 0 0 1 ${ex} ${ey}`;
+}
+
+/** Rotation that lays text along the ring at this angle, kept between -90° and 90° so it stays upright. */
+function labelTurn(mid: number) {
+  const turn = (((mid + 90) % 180) + 180) % 180;
+  return turn > 90 ? turn - 180 : turn;
+}
+
+function mix(a: string, b: string, share: number) {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const channel = (shift: number) => Math.round(((pa >> shift) & 255) * (1 - share) + ((pb >> shift) & 255) * share);
+  return `#${[16, 8, 0].map((shift) => channel(shift).toString(16).padStart(2, '0')).join('')}`;
+}
+
+const shortPrice = (price: number) => (price >= 1_000_000 ? `${(price / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}tr` : `${Math.round(price / 1000)}k`);
 
 export function OwnerCourseCatalogPage() {
   useUiLanguage();
-  const [search, setSearch] = useState('');
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const gapCode = searchParams.get('gap') ?? '';
-  const gapDomain = Number(gapCode.split('.')[0]);
   const gapTargetLevel = Number(searchParams.get('level'));
   const focusCode = searchParams.get('focus') ?? '';
-  // ?level=2 → mở sẵn bộ lọc bậc (nút "Mua khóa học" của doanh nghiệp dùng thử dẫn tới khóa Trung cấp).
+  // ?level=2 → that ring stands out (the trial owner's "Mua khóa học" button leads to the Intermediate courses); removable.
   const [levelFilter, setLevelFilter] = useState(() => {
     const level = Number(searchParams.get('level'));
-    return LEVELS.some((l) => l.level === level) ? level : 0;
+    return !gapCode && LEVELS.some((l) => l.level === level) ? level : 0;
   });
-  const [activeDomain, setActiveDomain] = useState<number | null>(null);
-  const [selection, setSelection] = useState<Selection>(null);
-
-  const appliedSelectedParam = useRef<string | null>(null);
-
-  // Danh sách mã khóa học được chọn trước từ trang Thiết lập Khung năng lực (?selected=M1-I,M2-A...)
-  const selectedParam = searchParams.get('selected');
-  const preselectedCodes = useMemo(() => {
-    if (!selectedParam) return new Set<string>();
-    return new Set(
-      selectedParam
-        .split(',')
-        .map(courseCodeKey)
-        .filter(Boolean)
-    );
-  }, [selectedParam]);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
+  const [spotDomain, setSpotDomain] = useState(1);
+  const [preview, setPreview] = useState<CourseListItem | null>(null);
 
   const { data: apiCategories = [] } = useCompetencyCategories();
   const categories = useMemo(() => courseCategories(apiCategories), [apiCategories]);
   const { data: coursesData, isLoading, isError, refetch } = useCourseCatalog({});
-
-  const { branches, others } = useMemo(
-    () => buildCourseTree(categories, coursesData?.items ?? []),
-    [categories, coursesData?.items],
-  );
-
-  const query = search.trim();
-  const visibleBranches = query
-    ? branches.filter((branch) => matchesSearch(`${branch.category.name} ${translateUi(branch.category.name)}`, query)
-      || branch.slots.some((slot) => slot.courses.some((course) => courseMatches(course, query))))
-    : branches;
-  const activeBranch = visibleBranches.find((branch) => branch.domain === activeDomain) ?? visibleBranches[0];
-
+  const { branches, others } = useMemo(() => buildCourseTree(categories, coursesData?.items ?? []), [categories, coursesData?.items]);
   const allCourses = useMemo(() => branches.flatMap((branch) => branch.slots.flatMap((slot) => slot.courses)), [branches]);
+  const everyCourse = useMemo(() => allCourses.concat(others), [allCourses, others]);
+  const branchOf = (course: CourseListItem) => branches.find((branch) => branch.slots.some((slot) => slot.courses.includes(course)));
+
   const gapCourse = findGapCourse(branches, gapCode, gapTargetLevel);
-  const focusCourse = focusCode ? allCourses.concat(others).find((course) => course.id === focusCode)
-    ?? allCourses.concat(others).find((course) => courseCodeKey(course.code) === courseCodeKey(focusCode)) : undefined;
-  const contextDomain = branches.find((branch) => branch.slots.some((slot) => slot.courses.some((course) => course.id === (gapCourse ?? focusCourse)?.id)))?.domain;
-  const visibleOthers = query ? others.filter((course) => courseMatches(course, query)) : others;
-  const totalAssigned = allCourses.reduce((sum, course) => sum + course.assignedCount, 0);
+  const focusCourse = focusCode
+    ? everyCourse.find((course) => course.id === focusCode) ?? everyCourse.find((course) => courseCodeKey(course.code) === courseCodeKey(focusCode))
+    : undefined;
+  const referred = gapCourse ?? focusCourse;
+  const referredDomain = referred ? branchOf(referred)?.domain : undefined;
 
-  const defaultCourse = (levelFilter ? activeBranch?.slots.find((slot) => slot.level === levelFilter)?.courses : activeBranch?.slots.flatMap((slot) => slot.courses))?.find((course) => course.status === 'PUBLISHED');
-  const selectedCourse = selection ? allCourses.concat(others).find((course) => course.id === selection.id) : defaultCourse;
-  const selectedBranch = selectedCourse ? branches.find((branch) => branch.slots.some((slot) => slot.courses.includes(selectedCourse))) : activeBranch;
-  const displaySelection = selectedCourse ? { kind: 'course' as const, id: selectedCourse.id } : null;
-
-  // Tự động chọn khóa học đầu tiên trong danh sách chọn trước để hiện thông tin chi tiết ngay lập tức
+  // Courses picked in "Khung năng lực số" (?selected=M1-I,M2-A): the paid ones not owned yet start in the cart.
+  const selectedParam = searchParams.get('selected');
+  const appliedSelected = useRef<string | null>(null);
   useEffect(() => {
-    if (!selectedParam) { appliedSelectedParam.current = null; return; }
-    if (selectedParam && appliedSelectedParam.current !== selectedParam && preselectedCodes.size > 0 && allCourses.length > 0) {
-      const match = allCourses.find((c) => preselectedCodes.has(courseCodeKey(c.code)));
-      if (match) {
-        appliedSelectedParam.current = selectedParam;
-        setSearch('');
-        setLevelFilter(0);
-        setSelection({ kind: 'course', id: match.id });
-        const branch = branches.find((item) => item.slots.some((slot) => slot.courses.includes(match)));
-        if (branch) setActiveDomain(branch.domain);
-        const timer = window.setTimeout(() => document.getElementById('course-tree')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
-        return () => window.clearTimeout(timer);
-      }
-    }
-  }, [preselectedCodes, selectedParam, allCourses, branches]);
+    if (!selectedParam || allCourses.length === 0 || appliedSelected.current === selectedParam) return;
+    appliedSelected.current = selectedParam;
+    const codes = new Set(selectedParam.split(',').map(courseCodeKey).filter(Boolean));
+    const picked = allCourses.filter((course) => codes.has(courseCodeKey(course.code)) && !isOwnedCourse(course));
+    setCart(new Map(picked.map((course) => [canonicalCourseCode(course.code), toCartItem(course)])));
+  }, [selectedParam, allCourses]);
 
   useEffect(() => {
-    if (!gapCode || !gapCourse) return;
-    setSelection({ kind: 'course', id: gapCourse.id });
-    setActiveDomain(gapDomain);
-    const timer = window.setTimeout(() => document.getElementById('gap-target-course')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
-    return () => window.clearTimeout(timer);
-  }, [gapCode, gapCourse, gapDomain]);
-
-  useEffect(() => {
-    if (!focusCode || !focusCourse) return;
-    setSearch('');
+    if (!referred) return;
     setLevelFilter(0);
-    setSelection({ kind: 'course', id: focusCourse.id });
-    const branch = branches.find((item) => item.slots.some((slot) => slot.courses.some((course) => course.id === focusCourse.id)));
-    if (branch) setActiveDomain(branch.domain);
+    setStatusFilter('all');
+    if (referredDomain) setSpotDomain(referredDomain);
     const timer = window.setTimeout(() => document.getElementById('gap-target-course')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
     return () => window.clearTimeout(timer);
-  }, [focusCode, focusCourse, branches]);
+  }, [referred, referredDomain]);
+
+  const matches = (course: CourseListItem) =>
+    (!levelFilter || courseLevel(course) === levelFilter)
+    && (statusFilter === 'all' || (statusFilter === 'owned') === isOwnedCourse(course));
+  const ownedCount = allCourses.filter(isOwnedCourse).length;
+  const toBuy = allCourses.filter((course) => !isOwnedCourse(course));
+
+  const toggleCart = (course: CourseListItem) => setCart((current) => {
+    const next = new Map(current);
+    const code = canonicalCourseCode(course.code);
+    if (next.has(code)) next.delete(code);
+    else next.set(code, toCartItem(course));
+    return next;
+  });
+  const addToCart = (list: CourseListItem[]) => setCart((current) => new Map([...current, ...list.map((course) => [canonicalCourseCode(course.code), toCartItem(course)] as const)]));
+  const addAllToBuy = () => addToCart(toBuy);
+  const allInCart = toBuy.length > 0 && toBuy.every((course) => cart.has(canonicalCourseCode(course.code)));
+  const cartTotal = [...cart.values()].reduce((sum, item) => sum + item.price, 0);
+  const spot = branches.find((branch) => branch.domain === spotDomain) ?? branches[0];
+  const hubCourse = preview ?? referred ?? null;
 
   return (
-    <div
-      className="po-owner course-catalog-page -m-4 md:-m-6 min-h-screen"
-      data-course-domain={activeBranch?.domain}
-      style={{ ...PULSE_TOKENS }}
-    >
-      <div className="course-catalog-container">
-        {/* ── Header ── */}
-        <header className="course-catalog-header mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="font-bold tracking-[-0.03em] heading-gradient">{translateUi("Khóa học")}</h1>
+    <div className="po-owner course-catalog-page ck-page -m-4 md:-m-6 min-h-screen" style={{ ...PULSE_TOKENS }}>
+      <div className="course-catalog-container ck-container" data-cart={cart.size > 0 || undefined}>
+        <header className="ck-header">
+          <h1 className="font-bold tracking-[-0.03em] heading-gradient">{translateUi('Khóa học')}</h1>
+          <div className="ck-tools">
+            <div className="ck-segment" role="group" aria-label={translateUi('Trạng thái')}>
+              {([['all', 'Tất cả'], ['toBuy', 'Chưa mua'], ['owned', 'Đã có']] as const).map(([value, name]) => (
+                <button key={value} type="button" data-tone={value} aria-pressed={statusFilter === value} onClick={() => setStatusFilter(value)}>
+                  {translateUi(name)}
+                </button>
+              ))}
+            </div>
+            {levelFilter > 0 && (
+              <button type="button" className="ck-level-filter" data-level={levelFilter} onClick={() => setLevelFilter(0)}
+                aria-label={translateUi(`Bỏ lọc ${levelLabel(levelFilter)}`)}>
+                {translateUi(`Chỉ ${levelLabel(levelFilter)}`)}<X size={14} aria-hidden="true" />
+              </button>
+            )}
           </div>
-          <dl className="course-catalog-stats grid grid-cols-3 gap-2 text-center">
-            <Stat label={translateUi("Lĩnh vực")} value={branches.length} />
-            <Stat label={translateUi("Khóa học")} value={allCourses.length} />
-            <Stat label={translateUi("Đang phân công")} value={totalAssigned} />
-          </dl>
         </header>
 
         {gapCode && !isLoading && !isError && (
-          <div className="course-gap-context" data-course-domain={contextDomain} role="status">
+          <div className="course-gap-context" data-course-domain={referredDomain} role="status">
             <span className="course-gap-context-icon"><Sparkles size={18} /></span>
-            <div><strong>{gapCourse ? translateUi(`Khóa học bù đắp cho năng lực ${gapCode}`) : translateUi(`Chưa tìm thấy khóa học cho năng lực ${gapCode}`)}</strong><span>{gapCourse ? `${gapCourse.code} · ${gapCourse.title} · ${levelName(gapTargetLevel)}` : 'Bạn có thể xem các cấp độ khác trong lĩnh vực này.'}</span></div>
-            <Link to="/enterprise/skill-gap">{translateUi("← Về khoảng trống năng lực")}</Link>
+            <div><strong>{gapCourse ? translateUi(`Khóa học bù đắp cho năng lực ${gapCode}`) : translateUi(`Chưa tìm thấy khóa học cho năng lực ${gapCode}`)}</strong><span>{gapCourse ? `${canonicalCourseCode(gapCourse.code)} · ${gapCourse.title} · ${levelName(gapTargetLevel)}` : translateUi('Bạn có thể xem các cấp độ khác trong lĩnh vực này.')}</span></div>
+            <Link to="/enterprise/skill-gap">{translateUi('← Về khoảng trống năng lực')}</Link>
           </div>
         )}
-        {focusCode && !gapCode && !isLoading && !isError && <div className="course-gap-context" data-course-domain={contextDomain} role="status"><span className="course-gap-context-icon"><BookOpen size={18} /></span><div><strong>{focusCourse ? translateUi('Khóa học đề xuất cho nhân viên') : 'Chưa tìm thấy khóa học'}</strong><span>{focusCourse ? `${focusCourse.code} · ${focusCourse.title}` : translateUi(`Mã khóa học ${focusCode}`)}</span></div><Link to="/enterprise/skill-gap">{translateUi("← Về khoảng trống năng lực")}</Link></div>}
-
-        {/* ── Banner làm nổi bật các khóa học đã chọn từ Khung năng lực ── */}
-        {preselectedCodes.size > 0 && (
-          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-500 text-white shadow-xs">
-                <Sparkles className="size-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-semibold text-slate-800">{translateUi("Khóa học đã chọn từ Thiết lập Khung năng lực (")}{preselectedCodes.size}{translateUi(" khóa)")}</h3>
-                  <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-800 border border-amber-300">{translateUi("Đang làm nổi bật")}</span>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  {Array.from(preselectedCodes).map((code) => (
-                    <button
-                      key={code}
-                      type="button"
-                      className="course-picked-shortcut"
-                      data-course-domain={Number(code.match(/^[AM](\d)/)?.[1]) || undefined}
-                      aria-label={translateUi(`Xem khóa đã chọn ${code}`)}
-                      onClick={() => {
-                        const match = allCourses.find((course) => courseCodeKey(course.code) === code);
-                        const branch = branches.find((item) => item.slots.some((slot) => slot.courses.some((course) => course.id === match?.id)));
-                        if (!match || !branch) return;
-                        setSearch(''); setLevelFilter(0); setActiveDomain(branch.domain); setSelection({ kind: 'course', id: match.id });
-                        document.getElementById('course-tree')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }}
-                    >
-                      <span>{code}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 shrink-0 self-end md:self-center">
-              <Link
-                to="/enterprise/setup"
-                className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
-              >{translateUi("← Về Khung năng lực")}</Link>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = new URLSearchParams(searchParams);
-                  next.delete('selected');
-                  setSearchParams(next, { replace: true });
-                }}
-                className="rounded-xl border border-amber-200 bg-amber-100/70 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-200 transition-colors"
-              >{translateUi("Tắt làm nổi bật")}</button>
-              <Link
-                to={`/enterprise/courses/checkout?courses=${encodeURIComponent(Array.from(preselectedCodes).join(','))}`}
-                className="rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm hover:brightness-105 transition-all flex items-center gap-1.5"
-                style={{ background: 'var(--po-accent)' }}
-              >
-                <span>Thanh toán & Ký online ({preselectedCodes.size}{translateUi(" khóa) →")}</span>
-              </Link>
-            </div>
+        {focusCode && !gapCode && !isLoading && !isError && (
+          <div className="course-gap-context" data-course-domain={referredDomain} role="status">
+            <span className="course-gap-context-icon"><BookOpen size={18} /></span>
+            <div><strong>{focusCourse ? translateUi('Khóa học đề xuất cho nhân viên') : translateUi('Chưa tìm thấy khóa học')}</strong><span>{focusCourse ? `${canonicalCourseCode(focusCourse.code)} · ${focusCourse.title}` : translateUi(`Mã khóa học ${focusCode}`)}</span></div>
+            <Link to="/enterprise/skill-gap">{translateUi('← Về khoảng trống năng lực')}</Link>
           </div>
         )}
-
-        {/* ── Toolbar ── */}
-        <div
-          className="course-catalog-toolbar mb-4 grid gap-3 rounded-[16px] border px-4 py-3"
-          style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}
-        >
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="owner-filter-search relative flex min-w-[220px] flex-1 items-center">
-              <Search className="pointer-events-none size-4" style={{ color: 'var(--po-muted)' }} />
-              <input
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setSelection(null); }}
-                placeholder={translateUi("Tìm miền, tên hoặc mã khóa (VD: A4-I)…")}
-                aria-label={translateUi("Tìm khóa học")}
-                className="w-full text-sm"
-              />
-              {search && (
-                <button type="button" aria-label={translateUi("Xóa tìm kiếm")} onClick={() => { setSearch(''); setSelection(null); }} className="owner-filter-search__clear" style={{ color: 'var(--po-muted)' }}>
-                  <X className="size-4" />
-                </button>
-              )}
-            </label>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <ChipGroup label={translateUi("Cấp độ")}>
-              {[{ level: 0, name: 'Tất cả' }, ...LEVELS].map(({ level, name }) => {
-                const active = levelFilter === level;
-                const tone = LEVEL_TONES[level];
-                return (
-                  <button
-                    key={level}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => { setLevelFilter(level); setSelection(null); }}
-                    className="rounded-full border px-3 py-1.5 text-xs font-bold transition-colors"
-                    style={active
-                      ? { background: tone?.fg ?? 'var(--po-ink)', borderColor: tone?.fg ?? 'var(--po-ink)', color: '#fff' }
-                      : { background: tone?.bg ?? 'var(--po-surface)', borderColor: tone ? 'transparent' : 'var(--po-line)', color: tone?.fg ?? 'var(--po-muted)' }}
-                  >
-                    {level ? `${level} · ${name}` : name}
-                  </button>
-                );
-              })}
-            </ChipGroup>
-          </div>
-        </div>
 
         {isLoading ? (
-          <SectionLoading label={translateUi("Đang tải khóa học")} />
+          <SectionLoading label={translateUi('Đang tải khóa học')} />
         ) : isError ? (
-          <div className="rounded-[18px] border p-8 text-center text-sm" style={{ borderColor: '#fecdd3', background: '#fff1f2', color: '#be123c' }}>{translateUi("Không tải được danh mục.")}{' '}
-            <button type="button" className="font-bold underline" onClick={() => refetch()}>{translateUi("Thử lại")}</button>
+          <div className="ck-error">{translateUi('Không tải được danh mục.')}{' '}
+            <button type="button" onClick={() => refetch()}>{translateUi('Thử lại')}</button>
           </div>
         ) : (
-          <>
-            <nav className="course-domain-nav" aria-label={translateUi("Lĩnh vực năng lực")}>
-              {visibleBranches.map((branch) => (
-                <button key={branch.domain} data-course-domain={branch.domain} type="button" aria-current={activeBranch?.domain === branch.domain ? 'true' : undefined} onClick={() => { setActiveDomain(branch.domain); setSelection(null); }}>
-                  <span className="course-domain-number"><CourseDomainIcon domain={branch.domain} size={19} /><small>{String(branch.domain).padStart(2, '0')}</small></span>
-                  <span className="course-domain-info"><strong>{translateUi(branch.category.name)}</strong><small>{branch.slots.reduce((sum, slot) => sum + slot.courses.length, 0)}{translateUi(" khóa học")}{branch.assignedCount ? translateUi(` · ${branch.assignedCount} phân công`) : ''}</small></span>
-                  {branch.slots.some((slot) => slot.courses.some((course) => preselectedCodes.has(courseCodeKey(course.code)))) && <span className="course-domain-selected">{translateUi("Đã chọn")}</span>}
-                </button>
-              ))}
-              {visibleBranches.length === 0 && <p>{visibleOthers.length ? 'Xem thêm khóa học khác bên dưới.' : translateUi(`Không có lĩnh vực hoặc khóa học nào khớp “${query}”.`)}</p>}
-            </nav>
-            <div className="course-catalog-main">
-            <section id="course-tree" className="course-domain-panel scroll-mt-[72px]">
-              {activeBranch && <BranchNode
-                branch={activeBranch}
-                query={matchesSearch(`${activeBranch.category.name} ${translateUi(activeBranch.category.name)}`, query) ? '' : query}
-                levelFilter={levelFilter}
-                selection={displaySelection}
-                onSelect={setSelection}
-                preselectedCodes={preselectedCodes}
-                gapCourseId={gapCourse?.id ?? focusCourse?.id}
-              />}
-
-              {visibleOthers.length > 0 && (
-                <div className="mt-6 border-t pt-4" style={{ borderColor: 'var(--po-line)' }}>
-                  <p className="mb-2 text-xs font-black uppercase tracking-[0.12em]" style={{ color: 'var(--po-muted)' }}>{translateUi("Khóa học khác")}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {visibleOthers.map((course) => (
-                      <button
-                        key={course.id}
-                        id={course.id === focusCourse?.id ? 'gap-target-course' : undefined}
-                        type="button"
-                        onClick={() => setSelection({ kind: 'course', id: course.id })}
-                        className={`rounded-[10px] border px-3 py-2 text-left text-xs font-semibold ${course.id === focusCourse?.id ? 'course-gap-target' : ''}`}
-                        style={{ borderColor: 'var(--po-line)', color: 'var(--po-ink)' }}
-                      >
-                        {canonicalCourseCode(course.code)} · {translateUi(course.title)}
-                      </button>
-                    ))}
-                  </div>
+          <div className="ck-stage">
+            <div className="ck-wheel-wrap">
+              <div className="ck-wheel">
+                <CourseWheel branches={branches} matches={matches} previewId={hubCourse?.id} referredId={referred?.id} spotDomain={spot?.domain}
+                  onPreview={setPreview} onSpot={setSpotDomain} onOpen={(course) => navigate(`/enterprise/courses/${course.id}`)} />
+                <div className="ck-hub" data-course-domain={hubCourse ? branchOf(hubCourse)?.domain : undefined}>
+                  {hubCourse ? <HubPreview course={hubCourse} inCart={cart.has(canonicalCourseCode(hubCourse.code))} /> : (
+                    <>
+                      <strong className="ck-hub__num">{ownedCount}<small>/{allCourses.length}</small></strong>
+                      <span className="ck-hub__caption">{translateUi('khóa học đã có')}</span>
+                      {toBuy.length > 0 && (
+                        <button type="button" className="ck-hub__all" onClick={addAllToBuy} disabled={allInCart}>
+                          {allInCart ? <><Check size={13} aria-hidden="true" />{translateUi('Đã thêm cả vào giỏ')}</> : <><Plus size={13} aria-hidden="true" />{translateUi(`Thêm cả ${toBuy.length} khóa vào giỏ`)}</>}
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
-              )}
-            </section>
-
-            {/* ── Detail ── */}
-            <aside data-course-domain={selectedBranch?.domain} className="course-catalog-detail lg:sticky lg:top-[84px]">
-              {selectedCourse ? (
-                <CourseDetail course={selectedCourse} branch={selectedBranch} />
-              ) : <div className="course-detail-empty"><BookOpen size={26} /><strong>{translateUi("Chọn khóa học")}</strong><span>{translateUi("Chi tiết sẽ hiển thị tại đây.")}</span></div>}
-            </aside>
+              </div>
             </div>
-          </>
+
+            {spot && (
+              <DomainSpotlight branches={branches} branch={spot} onPick={setSpotDomain} matches={matches} referredId={referred?.id}
+                cart={cart} onToggleCart={toggleCart} onAddMany={addToCart} others={others} />
+            )}
+          </div>
         )}
-
       </div>
+
+      {cart.size > 0 && (
+        <div className="ck-cart" role="region" aria-label={translateUi('Giỏ khóa học')}>
+          <span className="ck-cart__count" title={translateUi(`${cart.size} khóa`)}><ShoppingCart size={16} aria-hidden="true" />{cart.size}</span>
+          <div className="ck-cart__copy">
+            <strong>{`${cartTotal.toLocaleString('vi-VN')} ₫`}</strong>
+            <span>{[...cart.values()].map((item) => translateUi(item.title)).join(' · ')}</span>
+          </div>
+          <button type="button" className="ck-cart__clear" onClick={() => setCart(new Map())}>{translateUi('Bỏ hết')}</button>
+          <Link className="ck-cart__pay" to={`/enterprise/courses/checkout?courses=${encodeURIComponent([...cart.keys()].join(','))}`}>
+            {translateUi('Thanh toán & Ký online')}<ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
 
-function courseMatches(course: CourseListItem, query: string) {
-  return matchesSearch(course.title, query) || matchesSearch(course.code, query) || matchesSearch(canonicalCourseCode(course.code), query) || matchesSearch(canonicalCourseCode(course.code).replace(/^M(?=[1-6]-[FIA]$)/, 'A'), query);
+function toCartItem(course: CourseListItem): CartItem {
+  const level = courseLevel(course);
+  return { code: canonicalCourseCode(course.code), title: course.title, level, price: levelPricing(level, course.price).price };
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function statusText(course: CourseListItem) {
+  const level = courseLevel(course);
+  if (level <= 1) return 'Miễn phí';
+  return isOwnedCourse(course) ? 'Đã mua' : levelPricing(level, course.price).badge;
+}
+
+/** The wheel itself: slices = domains, rings = levels; a segment is a link to its course. */
+function CourseWheel({ branches, matches, previewId, referredId, spotDomain, onPreview, onSpot, onOpen }: {
+  branches: DomainBranch[];
+  matches: (course: CourseListItem) => boolean;
+  previewId?: string;
+  referredId?: string;
+  spotDomain?: number;
+  onPreview: (course: CourseListItem | null) => void;
+  onSpot: (domain: number) => void;
+  onOpen: (course: CourseListItem) => void;
+}) {
   useUiLanguage();
+  const hoverTimer = useRef<number | undefined>(undefined);
+  // With a finger the first tap shows the course (hub + panel), a second tap on the same course opens it.
+  const pointerType = useRef('mouse');
+  const armed = useRef<string | null>(null);
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
+
   return (
-    <div className="min-w-[88px] rounded-[14px] border px-3 py-2" style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)' }}>
-      <dd className="text-xl font-bold" style={{ color: 'var(--po-ink)' }}>{value}</dd>
-      <dt className="text-[11px] font-semibold" style={{ color: 'var(--po-muted)' }}>{translateUi(label)}</dt>
-    </div>
+    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="group" aria-label={translateUi('Bánh xe khóa học: 6 lĩnh vực, vòng trong Cơ bản, vòng ngoài Nâng cao')}>
+      <defs>
+        {DOMAIN_GRADIENTS.map(([from, to], index) => (
+          <radialGradient key={from} id={`ck-fill-${index + 1}`} gradientUnits="userSpaceOnUse" cx={CENTER} cy={CENTER} r={RINGS[3][1]}>
+            <stop offset="0.4" stopColor={from} />
+            <stop offset="0.72" stopColor={mix(from, to, 0.55)} />
+            <stop offset="1" stopColor={to} />
+          </radialGradient>
+        ))}
+        {/* The chosen domain's label sits on a band in its own gradient */}
+        {DOMAIN_GRADIENTS.map(([from, to], index) => (
+          <linearGradient key={to} id={`ck-band-${index + 1}`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor={mix(from, to, 0.35)} />
+            <stop offset="1" stopColor={to} />
+          </linearGradient>
+        ))}
+        <filter id="ck-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10" /></filter>
+        {branches.map((branch) => <path key={branch.domain} id={`ck-arc-${branch.domain}`} d={labelArc(branch.domain)} />)}
+      </defs>
+      <circle className="ck-wheel__guide" cx={CENTER} cy={CENTER} r={RINGS[3][1] + 4} />
+      {branches.map((branch) => {
+        const color = DOMAIN_COLORS[branch.domain - 1] ?? DOMAIN_COLORS[0];
+        const mid = domainMid(branch.domain);
+        // Ring labels run along the ring (tangent), turned so they never read upside down.
+        const turn = labelTurn(mid);
+        return (
+          <g
+            key={branch.domain}
+            className="ck-slice"
+            data-spot={branch.domain === spotDomain || undefined}
+            style={{ '--sx': `${round(Math.cos((mid * Math.PI) / 180) * 9)}px`, '--sy': `${round(Math.sin((mid * Math.PI) / 180) * 9)}px` } as React.CSSProperties}
+          >
+            {/* The domain shown in the panel: a blurred halo behind it and a coloured band under its name */}
+            <path className="ck-slice__glow" d={sectorPath(RINGS[1][0] - 10, RINGS[3][1] + 14, mid - 31, mid + 31)} fill={DOMAIN_GRADIENTS[branch.domain - 1]?.[1] ?? color} filter="url(#ck-blur)" aria-hidden="true" />
+            <path className="ck-slice__band" d={bandArc(mid)} stroke={`url(#ck-band-${branch.domain})`} aria-hidden="true" onClick={() => onSpot(branch.domain)} />
+            <text className="ck-slice__label" onClick={() => onSpot(branch.domain)} aria-hidden="true" style={{ '--label': mix(color, '#14233a', 0.42) } as React.CSSProperties}>
+              <textPath href={`#ck-arc-${branch.domain}`} startOffset="50%" textAnchor="middle">
+                {`${domainNumber(branch.domain)} · ${translateUi(DOMAIN_LABELS[branch.domain - 1] ?? branch.category.name)}`}
+              </textPath>
+            </text>
+            {LEVELS.map(({ level }, ringIndex) => {
+              const [r0, r1] = RINGS[level];
+              const pad = (3 / ((r0 + r1) / 2)) * (180 / Math.PI);
+              const path = sectorPath(r0, r1, mid - 30 + pad, mid + 30 - pad);
+              const [lx, ly] = polar((r0 + r1) / 2, mid);
+              const course = pickCourse(branch.slots.find((slot) => slot.level === level)?.courses ?? []);
+              if (!course) {
+                return <path key={level} className="ck-seg__empty" d={path} aria-hidden="true" />;
+              }
+              const owned = isOwnedCourse(course);
+              const status = statusText(course);
+              const delay = `${(branch.domain - 1) * 70 + ringIndex * 90}ms`;
+              const dx = round(Math.cos((mid * Math.PI) / 180) * 7);
+              const dy = round(Math.sin((mid * Math.PI) / 180) * 7);
+              return (
+                <g
+                  key={level}
+                  className="ck-seg"
+                  role="link"
+                  tabIndex={0}
+                  data-owned={owned || undefined}
+                  data-dim={!matches(course) || undefined}
+                  data-active={course.id === previewId || undefined}
+                  data-referred={course.id === referredId || undefined}
+                  aria-label={`${translateUi(course.title)} · ${translateUi(levelLabel(level))} · ${translateUi(owned ? status : `Chưa mua · ${status}`)}`}
+                  style={{ '--dx': `${dx}px`, '--dy': `${dy}px`, animationDelay: delay } as React.CSSProperties}
+                  onMouseEnter={() => {
+                    onPreview(course);
+                    window.clearTimeout(hoverTimer.current);
+                    hoverTimer.current = window.setTimeout(() => onSpot(branch.domain), 350);
+                  }}
+                  onMouseLeave={() => { window.clearTimeout(hoverTimer.current); if (pointerType.current !== 'touch') onPreview(null); }}
+                  onFocus={() => { onPreview(course); onSpot(branch.domain); }}
+                  onBlur={() => { if (pointerType.current !== 'touch') onPreview(null); }}
+                  onPointerDown={(event) => { pointerType.current = event.pointerType; }}
+                  onClick={() => {
+                    if (pointerType.current === 'touch' && armed.current !== course.id) {
+                      armed.current = course.id;
+                      onPreview(course);
+                      onSpot(branch.domain);
+                      return;
+                    }
+                    onOpen(course);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(course); }
+                  }}
+                >
+                  <path
+                    className="ck-seg__shape"
+                    d={path}
+                    fill={owned ? `url(#ck-fill-${branch.domain})` : mix(color, '#ffffff', 0.92)}
+                    stroke={owned ? '#ffffff' : color}
+                    strokeWidth={owned ? 3 : undefined}
+                  />
+                  <g className="ck-seg__label" transform={`translate(${lx} ${ly}) rotate(${turn})`} style={{ color: owned ? '#ffffff' : mix(color, '#14233a', 0.35) }} aria-hidden="true">
+                    <text className="ck-seg__text" x={0} y={-2} textAnchor="middle">{levelName(level)}</text>
+                    {owned ? <Check x={-7} y={4} size={14} strokeWidth={3} /> : (
+                      <>
+                        <Lock x={-25} y={5} size={12} strokeWidth={2.5} />
+                        <text className="ck-seg__sub" x={7} y={16} textAnchor="middle">{shortPrice(levelPricing(level, course.price).price)}</text>
+                      </>
+                    )}
+                  </g>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
-function ChipGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function HubPreview({ course, inCart }: { course: CourseListItem; inCart: boolean }) {
   useUiLanguage();
-  return (
-    <div role="group" aria-label={translateUi(label)} className="flex flex-wrap items-center gap-1.5">
-      <span className="mr-1 inline-flex items-center gap-1.5 text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}><Filter size={14} aria-hidden="true" />{translateUi(label)}</span>
-      {children}
-    </div>
-  );
-}
-
-interface BranchNodeProps {
-  branch: DomainBranch;
-  query: string;
-  levelFilter: number;
-  selection: Selection;
-  onSelect: (selection: Selection) => void;
-  preselectedCodes: Set<string>;
-  gapCourseId?: string;
-}
-
-function BranchNode({ branch, query, levelFilter, selection, onSelect, preselectedCodes, gapCourseId }: BranchNodeProps) {
-  useUiLanguage();
-  const courseCount = branch.slots.reduce((sum, slot) => sum + slot.courses.length, 0);
-  return (
-    <div>
-      <div className="course-domain-panel-heading">
-        <span>{String(branch.domain).padStart(2, '0')}</span>
-        <div><h2>{translateUi(branch.category.name)}</h2><p>{courseCount}{translateUi(" khóa học · 3 cấp độ")}</p></div>
-      </div>
-        <ol role="group" aria-label={translateUi(`Khóa học ${branch.category.name}`)} className="course-level-grid">
-          {branch.slots.map((slot, index) => (
-            <LevelSlotNode
-              key={slot.level}
-              slot={slot}
-              domain={branch.domain}
-              arrow={index > 0}
-              query={query}
-              levelFilter={levelFilter}
-              selection={selection}
-              onSelect={onSelect}
-              preselectedCodes={preselectedCodes}
-              gapCourseId={gapCourseId}
-            />
-          ))}
-        </ol>
-    </div>
-  );
-}
-
-interface LevelSlotNodeProps {
-  slot: { level: number; courses: CourseListItem[] };
-  domain: number;
-  arrow: boolean;
-  query: string;
-  levelFilter: number;
-  selection: Selection;
-  onSelect: (selection: Selection) => void;
-  preselectedCodes: Set<string>;
-  gapCourseId?: string;
-}
-
-function LevelSlotNode({ slot, domain, arrow, query, levelFilter, selection, onSelect, preselectedCodes, gapCourseId }: LevelSlotNodeProps) {
-  useUiLanguage();
-  const tone = LEVEL_TONES[slot.level];
-  const level = LEVELS.find((l) => l.level === slot.level)!;
+  const level = courseLevel(course);
+  const owned = isOwnedCourse(course);
+  const duration = formatDuration(course.estimatedDurationMinutes);
   return (
     <>
-      {arrow && (
-        <li aria-hidden className="hidden items-center justify-center text-sm sm:flex" style={{ color: '#a9b5cf' }}>→</li>
-      )}
-      <li className="flex flex-col gap-2">
-        {slot.courses.length === 0 ? (
-          <div className="flex h-full min-h-[96px] flex-col justify-center rounded-[14px] border border-dashed px-3 py-2.5 text-xs" style={{ borderColor: '#d5ddec', color: 'var(--po-muted)' }}>
-            <span className="font-black" style={{ color: tone.fg }}>{level.code} · {translateUi(level.name)}</span>{translateUi("Chưa có khóa học")}</div>
-        ) : slot.courses.map((course) => {
-          const selected = selection?.kind === 'course' && selection.id === course.id;
-          const isPreselected = preselectedCodes.has(courseCodeKey(course.code));
-          const isGapTarget = course.id === gapCourseId;
-          const dimmed = (levelFilter && levelFilter !== slot.level) || (query && !courseMatches(course, query));
-          const duration = formatDuration(course.estimatedDurationMinutes);
-          const pricing = levelPricing(slot.level, course.price);
-          const isLicensed = level.level === 1 || course.hasLicense || Boolean(course.isPurchased);
-          return (
-            <button
-              key={course.id}
-              id={isGapTarget ? 'gap-target-course' : undefined}
-              data-domain={domain}
-              data-course-domain={domain}
-              data-preselected={isPreselected || undefined}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => onSelect({ kind: 'course', id: course.id })}
-              className={`flex h-full min-h-[96px] flex-col rounded-[14px] border px-3 py-2.5 text-left transition-all hover:-translate-y-px hover:shadow-md ${isGapTarget ? 'course-gap-target' : ''}`}
-              style={{
-                borderColor: isPreselected ? '#f59e0b' : selected ? tone.fg : tone.ring,
-                background: isPreselected ? '#fffdf7' : selected ? tone.bg : 'var(--po-surface)',
-                boxShadow: isPreselected
-                  ? '0 0 0 3px rgba(245, 158, 11, 0.4), 0 8px 22px -4px rgba(245, 158, 11, 0.25)'
-                  : selected
-                  ? `0 0 0 3px ${tone.bg}`
-                  : undefined,
-                opacity: dimmed ? 0.35 : 1,
-              }}
-            >
-              <CourseArtwork domain={domain} level={slot.level} compact />
-              {isPreselected && (
-                <span className="course-preselected-badge mb-1.5 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs">
-                  <Sparkles className="size-2.5" />{translateUi("Đã chọn từ Khung năng lực")}</span>
-              )}
-              <span className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.04em]">
-                <span className="whitespace-nowrap rounded px-1.5 py-0.5" style={{ background: tone.bg, color: tone.fg }}>{level.code} · {translateUi(level.name)}</span>
-                <span className="whitespace-nowrap" style={{ color: isPreselected ? '#b45309' : 'var(--po-muted)', fontWeight: isPreselected ? 800 : undefined }}>
-                  {canonicalCourseCode(course.code)}
-                </span>
-                <span className={`ml-auto whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-bold ${
-                  pricing.isFree
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : isLicensed
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : isPreselected
-                    ? 'bg-amber-100 text-amber-900 border border-amber-300 font-extrabold'
-                    : 'bg-slate-100 text-slate-700 border border-slate-200'
-                }`}>
-                  {pricing.isFree ? pricing.badge : isLicensed ? translateUi('Đã mua') : pricing.badge}
-                </span>
-                {course.status === 'DRAFT' && <span className="rounded px-1.5 py-0.5" style={{ background: '#f0f2f6', color: '#66748d' }}>{translateUi("Nháp")}</span>}
-              </span>
-              <span className="mt-1.5 line-clamp-2 text-[13px] font-semibold leading-snug" style={{ color: 'var(--po-ink)' }}>{translateUi(course.title)}</span>
-              <span className="course-card-footer mt-auto pt-1.5 text-[11px]">
-                {[`${course.modules} học phần`, duration, course.assignedCount ? `${course.assignedCount} đang học` : null].filter(Boolean).join(' · ')}
-              </span>
-            </button>
-          );
-        })}
-      </li>
+      <span className="ck-hub__level" data-level={level}>{translateUi(levelLabel(level))}</span>
+      <strong className="ck-hub__title">{translateUi(course.title)}</strong>
+      <span className="ck-hub__meta">{[translateUi(`${course.modules} học phần`), duration].filter(Boolean).join(' · ')}</span>
+      <span className="ck-hub__status" data-tone={owned ? 'owned' : 'buy'}>
+        {owned ? <Check size={13} aria-hidden="true" /> : <Lock size={12} aria-hidden="true" />}
+        {translateUi(inCart ? 'Trong giỏ' : statusText(course))}
+      </span>
+      <span className="ck-hub__hint">{translateUi('Chạm lần nữa để mở')}</span>
     </>
   );
 }
 
-function Panel({ children, onClose }: { children: React.ReactNode; onClose?: () => void }) {
+/** One domain beside the wheel: a domain picker, then its courses as a ladder (Cơ bản → Nâng cao), each a link. */
+function DomainSpotlight({ branches, branch, onPick, matches, referredId, cart, onToggleCart, onAddMany, others }: {
+  branches: DomainBranch[];
+  branch: DomainBranch;
+  onPick: (domain: number) => void;
+  matches: (course: CourseListItem) => boolean;
+  referredId?: string;
+  cart: Map<string, CartItem>;
+  onToggleCart: (course: CourseListItem) => void;
+  onAddMany: (courses: CourseListItem[]) => void;
+  others: CourseListItem[];
+}) {
   useUiLanguage();
+  const courses = branch.slots.flatMap((slot) => slot.courses);
+  const missing = courses.filter((course) => !isOwnedCourse(course));
+  const missingTotal = missing.reduce((sum, course) => sum + levelPricing(courseLevel(course), course.price).price, 0);
+  const missingInCart = missing.length > 0 && missing.every((course) => cart.has(canonicalCourseCode(course.code)));
   return (
-    <div className="relative rounded-[20px] border p-5" style={{ borderColor: 'var(--po-line)', background: 'var(--po-surface)', boxShadow: '0 10px 35px rgba(29,48,102,.04)' }}>
-      {onClose && (
-        <button type="button" aria-label={translateUi("Đóng")} onClick={onClose} className="absolute right-3 top-3 grid size-7 place-items-center rounded-md hover:bg-[var(--po-soft)]" style={{ color: 'var(--po-muted)' }}>
-          <X className="size-4" />
-        </button>
-      )}
-      {children}
-    </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  useUiLanguage();
-  return (
-    <div className="flex justify-between gap-3 border-b py-2 text-xs last:border-0" style={{ borderColor: 'var(--po-line)' }}>
-      <dt style={{ color: 'var(--po-muted)' }}>{translateUi(label)}</dt>
-      <dd className="text-right font-semibold" style={{ color: 'var(--po-ink)' }}>{children}</dd>
-    </div>
-  );
-}
-
-function CourseDetail({ course, branch }: { course: CourseListItem; branch?: DomainBranch }) {
-  useUiLanguage();
-  const level = courseLevel(course);
-  const tone = LEVEL_TONES[level] ?? LEVEL_TONES[1];
-  const pricing = levelPricing(level, course.price);
-  const isLicensed = level === 1 || course.hasLicense || Boolean(course.isPurchased);
-
-  return (
-    <Panel>
-      <CourseArtwork domain={branch?.domain ?? 0} level={level} />
-      <p className="pr-8 text-[11px] font-bold" style={{ color: 'var(--po-muted)' }}>
-        {branch ? translateUi(`Lĩnh vực ${String(branch.domain).padStart(2, '0')} · ${branch.category.name}`) : translateUi('Khóa học khác')}
-      </p>
-      <div className="mt-3 flex items-center gap-2">
-        <span className="inline-block rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em]" style={{ background: tone.bg, color: tone.fg }}>{translateUi("Bậc ")}{level} · {levelName(level)}
-        </span>
-        <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-          level === 1
-            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            : isLicensed
-            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            : 'bg-amber-50 text-amber-800 border border-amber-200'
-        }`}>
-          {level === 1 ? pricing.formatted : isLicensed ? translateUi('Đã mua') : pricing.formatted}
-        </span>
+    <aside className="ck-spot" data-course-domain={branch.domain} aria-label={translateUi(`Lĩnh vực ${domainNumber(branch.domain)} · ${branch.category.name}`)}>
+      <div className="ck-picker" role="group" aria-label={translateUi('Chọn lĩnh vực')}>
+        {branches.map((item) => {
+          return (
+            <button key={item.domain} type="button" data-course-domain={item.domain} aria-pressed={item.domain === branch.domain} onClick={() => onPick(item.domain)}
+              aria-label={translateUi(`Lĩnh vực ${domainNumber(item.domain)} · ${item.category.name}`)} title={translateUi(item.category.name)}>
+              <CourseDomainIcon domain={item.domain} size={17} />
+            </button>
+          );
+        })}
       </div>
-      <h2 className="mt-2 text-[20px] font-bold leading-tight" style={{ color: 'var(--po-ink)', letterSpacing: '-0.03em' }}>{translateUi(course.title)}</h2>
 
-      <dl className="mt-4">
-        <Row label={translateUi("Mã khóa")}>{canonicalCourseCode(course.code)}</Row>
-        <Row label={translateUi("Học phần")}>{course.modules}</Row>
-        {formatDuration(course.estimatedDurationMinutes) && <Row label={translateUi("Thời lượng")}>{formatDuration(course.estimatedDurationMinutes)}</Row>}
-        <Row label={translateUi("Điều kiện")}>{course.prerequisiteTitle ?? translateUi('Không yêu cầu')}</Row>
-        {level > 1 && <Row label={translateUi("Người học")}>{isLicensed ? translateUi('Mọi nhân viên') : translateUi('Cần mua khóa')}</Row>}
-        <Row label={translateUi("Phân công")}>{course.assignedCount}{translateUi(" nhân viên")}</Row>
-      </dl>
+      <header className="ck-spot__head">
+        <span className="ck-spot__name">
+          <small>{translateUi(`Lĩnh vực ${domainNumber(branch.domain)}`)}</small>
+          <strong>{translateUi(branch.category.name)}</strong>
+        </span>
+      </header>
 
-      <div className="mt-4 grid gap-2">
-        <Link
-          to={`/enterprise/courses/${course.id}`}
-          className="rounded-[11px] px-3 py-2.5 text-center text-xs font-bold text-white shadow-sm"
-          style={{ background: 'var(--po-accent)' }}
-        >
-          {isLicensed ? 'Xem chi tiết khóa học →' : 'Xem mô tả khóa học →'}
-        </Link>
-        {isLicensed ? (
-          <Link
-            to={`/enterprise/assignments?courseId=${course.id}`}
-            className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold transition-all hover:bg-slate-50"
-            style={{ borderColor: '#cdd7f5', color: 'var(--po-accent)' }}
-          >{translateUi("Giao khóa học")}</Link>
+      <ol className="ck-steps">
+        {LEVELS.map(({ level }) => {
+          const slotCourses = branch.slots.find((slot) => slot.level === level)?.courses ?? [];
+          if (slotCourses.length === 0) {
+            return <li key={level} className="ck-step ck-step--none" data-level={level}><span className="ck-step__dot">{level}</span><span>{translateUi(`${levelLabel(level)} · chưa có khóa`)}</span></li>;
+          }
+          return slotCourses.map((course) => (
+            <SpotStep key={course.id} course={course} domain={branch.domain} dim={!matches(course)} referred={course.id === referredId}
+              inCart={cart.has(canonicalCourseCode(course.code))} onToggleCart={() => onToggleCart(course)} />
+          ));
+        })}
+      </ol>
+
+      <div className="ck-spot__foot" data-full={missing.length === 0 || undefined}>
+        {missing.length === 0 ? (
+          <span><Check size={15} aria-hidden="true" />{translateUi('Đủ cả 3 cấp cho lĩnh vực này')}</span>
         ) : (
-          <Link
-            to={`/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`}
-            className="rounded-[11px] border px-3 py-2.5 text-center text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm hover:brightness-95"
-            style={{ borderColor: '#f59e0b', color: '#b45309', background: '#fffbeb' }}
-          >
-            <span>🔒 Mua khóa học & Ký online ({pricing.formatted}) →</span>
-          </Link>
+          <>
+            <span>{translateUi(`Còn ${missing.length} khóa · ${missingTotal.toLocaleString('vi-VN')} ₫ để đủ lĩnh vực`)}</span>
+            <button type="button" onClick={() => onAddMany(missing)} disabled={missingInCart}>
+              {missingInCart ? <><Check size={14} aria-hidden="true" />{translateUi('Đã trong giỏ')}</> : <><ShoppingCart size={14} aria-hidden="true" />{translateUi('Mua đủ lĩnh vực')}</>}
+            </button>
+          </>
         )}
       </div>
-    </Panel>
+
+      {others.length > 0 && (
+        <div className="ck-others">
+          <strong>{translateUi('Khóa học khác')}</strong>
+          {others.map((course) => (
+            <Link key={course.id} to={`/enterprise/courses/${course.id}`}>{translateUi(course.title)}<ChevronRight size={14} aria-hidden="true" /></Link>
+          ))}
+        </div>
+      )}
+    </aside>
+  );
+}
+
+function SpotStep({ course, domain, dim, referred, inCart, onToggleCart }: {
+  course: CourseListItem;
+  domain: number;
+  dim: boolean;
+  referred: boolean;
+  inCart: boolean;
+  onToggleCart: () => void;
+}) {
+  useUiLanguage();
+  const level = courseLevel(course);
+  const owned = isOwnedCourse(course);
+  const code = canonicalCourseCode(course.code);
+  const duration = formatDuration(course.estimatedDurationMinutes);
+  return (
+    <li className="ck-step" data-level={level} data-owned={owned || undefined} data-dim={dim || undefined} data-cart={inCart || undefined}>
+      <span className="ck-step__dot" aria-hidden="true">{owned ? <Check size={13} /> : level}</span>
+      <Link
+        to={`/enterprise/courses/${course.id}`}
+        id={referred ? 'gap-target-course' : undefined}
+        className={`ck-step__link${referred ? ' course-gap-target' : ''}`}
+        data-domain={domain}
+        data-course-domain={domain}
+        aria-current={referred || undefined}
+      >
+        <small>{levelName(level)}</small>
+        <strong>{translateUi(course.title)}</strong>
+        <span className="ck-step__meta">
+          {[translateUi(`${course.modules} học phần`), duration].filter(Boolean).join(' · ')}
+          {course.status === 'DRAFT' && <em>{translateUi('Nháp')}</em>}
+        </span>
+        <span className="ck-step__status" data-tone={owned ? 'owned' : 'buy'}>
+          {owned ? <Check size={13} aria-hidden="true" /> : <Lock size={12} aria-hidden="true" />}{translateUi(statusText(course))}
+        </span>
+      </Link>
+      {!owned && (
+        <button type="button" className="ck-step__cart" aria-pressed={inCart} onClick={onToggleCart}
+          aria-label={translateUi(inCart ? `Bỏ ${code} khỏi giỏ` : `Thêm ${code} vào giỏ`)}>
+          {inCart ? <><Check size={13} aria-hidden="true" />{translateUi('Trong giỏ')}</> : <><Plus size={13} aria-hidden="true" />{translateUi('Thêm vào giỏ')}</>}
+        </button>
+      )}
+    </li>
   );
 }
