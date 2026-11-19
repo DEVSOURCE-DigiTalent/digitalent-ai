@@ -39,7 +39,7 @@ public sealed record PulseSkipAttemptRow(
 
 /// <summary>
 /// Bài kiểm tra vượt học của một khóa: <see cref="PulseRules.SkipTestQuestionCount"/> câu trắc nghiệm rút từ ngân hàng ôn tập
-/// các mô đun của khóa (câu trắc nghiệm cuối khóa của giáo trình trước, câu ôn tập sau, xen kẽ các mô đun), làm trong
+/// các mô đun của khóa (câu ôn tập, xen kẽ đều các mô đun; câu cuối khóa của giáo trình để dành cho bài cuối khóa), làm trong
 /// <see cref="PulseRules.SkipTestTimeLimitMinutes"/> phút, tối đa <see cref="PulseRules.SkipTestMaxAttempts"/> lần. Đúng từ
 /// <see cref="PulseRules.SkipTestPassPercent"/>% thì mọi mô đun được tính là đã qua (<see cref="PulseModuleReader.LoadProgressAsync"/>)
 /// và bài cuối khóa có giám sát mở ra như khi học xong. Bài kiểm tra không công nhận khóa: chỉ bài cuối khóa mới làm việc đó.
@@ -164,9 +164,9 @@ public class PulseSkipTest
         Math.Min(PulseRules.SkipTestQuestionCount, Sequence(pool, new Random(0)).Count);
 
     /// <summary>
-    /// Đề của lần làm thứ <paramref name="attemptNo"/>: dãy câu cố định cho nhân viên × khóa (câu cuối khóa của giáo trình
-    /// trước, rồi câu ôn tập; mỗi nhóm xen kẽ các mô đun, bỏ câu trùng nội dung), lần làm thứ k lấy đoạn thứ k của dãy (vòng lại
-    /// khi hết câu). Thứ tự câu và phương án trộn theo lần làm.
+    /// Đề của lần làm thứ <paramref name="attemptNo"/>: dãy câu cố định cho nhân viên × khóa (câu ôn tập xen kẽ đều các mô
+    /// đun, bỏ câu trùng nội dung; câu cuối khóa chỉ bù vào khi khóa có ít hơn <see cref="PulseRules.SkipTestMinQuestions"/> câu
+    /// ôn), lần làm thứ k lấy đoạn thứ k của dãy (vòng lại khi hết câu). Thứ tự câu và phương án trộn theo lần làm.
     /// </summary>
     public static IReadOnlyList<PulseSkipPoolQuestion> Draw(IReadOnlyList<PulseSkipPoolQuestion> pool, Guid employeeId, Guid courseId, int attemptNo)
     {
@@ -189,8 +189,14 @@ public class PulseSkipTest
     {
         var order = new List<PulseSkipPoolQuestion>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var finalQuiz in new[] { true, false })
+        foreach (var finalQuiz in new[] { false, true })
         {
+            // Câu cuối khóa dành cho bài cuối khóa: chỉ dùng ở đây khi khóa thiếu câu ôn để ra đề.
+            if (finalQuiz && order.Count >= PulseRules.SkipTestMinQuestions)
+            {
+                break;
+            }
+
             var queues = pool
                 .Where(p => p.IsFinalQuiz == finalQuiz)
                 .GroupBy(p => p.ModuleIndex)
@@ -236,7 +242,7 @@ public class PulseSkipTest
 
     /// <summary>Khóa có đủ câu ôn tập (theo cỡ ngân hàng của các mô đun) để ra bài kiểm tra đầu vào.</summary>
     public static bool Offered(IReadOnlyList<PulseModuleInfo> modules) =>
-        modules.Where(m => m.QuizAssessmentId.HasValue).Sum(m => m.QuizQuestionCount) >= PulseRules.SkipTestMinQuestions;
+        modules.Where(m => m.QuizAssessmentId.HasValue).Sum(m => m.QuizTotalQuestionCount) >= PulseRules.SkipTestMinQuestions;
 
     /// <summary>
     /// Có thể làm bài lúc này: khóa học được, hoặc chỉ còn chờ chính bài đầu vào này (bắt buộc trước khi học), và đã có quyền
