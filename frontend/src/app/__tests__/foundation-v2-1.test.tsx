@@ -82,7 +82,7 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
     const nav = await screen.findByRole('navigation', { name: 'Học tập của tôi' });
     expect(within(nav).getByRole('link', { name: 'Tổng quan' })).toHaveClass('active');
     expect(within(nav).getByRole('link', { name: 'Lộ trình' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Đánh giá' })).toBeInTheDocument();
+    expect(within(nav).queryByRole('link', { name: 'Đánh giá' })).not.toBeInTheDocument();
   });
 
   // ── Last Owner Invariant Tests ──

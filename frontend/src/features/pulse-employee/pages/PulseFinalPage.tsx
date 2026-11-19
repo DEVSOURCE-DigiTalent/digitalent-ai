@@ -145,7 +145,6 @@ function FinalView({ final }: { final: PulseFinal }) {
 
       <div className="pu-course-footer">
         <PuLink to={PULSE_PATHS.course(course.courseId)} kind="ghost" small>← Tổng quan khóa học</PuLink>
-        <PuLink to={PULSE_PATHS.practice} kind="ghost" small>Tất cả bài đã nộp →</PuLink>
       </div>
     </div>
   );

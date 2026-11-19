@@ -12,7 +12,6 @@ import {
   BookOpen,
   GraduationCap,
   ExternalLink,
-  Target,
   Copy,
   Check,
   Search,
@@ -34,10 +33,38 @@ const KIND_LABELS: Record<PulseOutcomeKind, string> = {
 
 type OutcomeFilter = 'ALL' | 'COURSE' | 'PRE_ASSESSMENT' | 'PRACTICAL_TASK';
 
+/** Tiêu đề danh sách theo bộ lọc đang chọn. */
+const LIST_TITLES: Record<OutcomeFilter, string> = {
+  ALL: 'Tất cả kết quả đã đạt',
+  COURSE: 'Huy hiệu khóa học',
+  PRE_ASSESSMENT: 'Kết quả đánh giá đầu vào',
+  PRACTICAL_TASK: 'Minh chứng thực tế',
+};
+
+/** Trạng thái trống theo bộ lọc đang chọn (khi không tìm kiếm). */
+const EMPTY_STATES: Record<OutcomeFilter, { title: string; body: string }> = {
+  ALL: {
+    title: 'Bạn chưa có kết quả nào được công nhận',
+    body: 'Khi bài thi cuối khóa của bạn được chấm đạt, huy hiệu khóa học sẽ xuất hiện ở đây.',
+  },
+  COURSE: {
+    title: 'Bạn chưa có huy hiệu khóa học nào',
+    body: 'Học xong khóa và đạt bài thi cuối khóa để nhận huy hiệu. Huy hiệu được cấp ngay khi bài thi được chấm đạt.',
+  },
+  PRE_ASSESSMENT: {
+    title: 'Chưa có kết quả đánh giá đầu vào',
+    body: 'Mục này lưu các khóa đã được công nhận qua bài đánh giá đầu vào trước đây. Đạt bài kiểm tra miễn học hiện nay chỉ mở bài thi cuối khóa, chưa cấp chứng nhận.',
+  },
+  PRACTICAL_TASK: {
+    title: 'Chưa có minh chứng thực tế',
+    body: 'Khi nhiệm vụ thực tế của bạn được quản lý duyệt, minh chứng sẽ xuất hiện ở đây.',
+  },
+};
+
 /**
  * Hồ sơ Chứng nhận & Minh chứng Số:
  * - Khối 1: Header trang + 4 Thẻ KPI tóm tắt năng lực số.
- * - Khối 2: Chứng chỉ Chuẩn Năng lực Chức danh (Grand Milestone) kèm Mini Domain Tracker 6 lĩnh vực.
+ * - Khối 2: Chứng chỉ Chuẩn Năng lực Chức danh (Grand Milestone) với thanh tiến độ.
  * - Khối 3: Thanh công cụ Lọc phân loại & Tìm kiếm mã tra cứu.
  * - Khối 4: Danh sách Huy hiệu & Chứng nhận từng môn học với thao tác 1-Click (Xem A4 & Copy link tra cứu).
  */
@@ -54,7 +81,6 @@ export function PulseOutcomesPage() {
   const approvedCourses = overview?.stats.approvedPathCourses ?? 1;
   const isAllCompleted = totalCourses > 0 && approvedCourses >= totalCourses;
   const pct = totalCourses > 0 ? Math.round((approvedCourses / totalCourses) * 100) : 0;
-  const domains = overview?.domains ?? [];
 
   const allOutcomes = data ?? [];
   const courseCerts = useMemo(() => allOutcomes.filter((o) => o.kind === 'COURSE'), [allOutcomes]);
@@ -96,9 +122,6 @@ export function PulseOutcomesPage() {
             <span>Hệ thống Chứng nhận & Minh chứng Số</span>
           </div>
           <h1 className="pu-path-main-title">Chứng chỉ & Kết quả Đào tạo</h1>
-          <p className="pu-path-sub-title">
-            Hồ sơ văn bằng chuẩn chức danh và chứng nhận hoàn thành năng lực số trên hệ thống DigiTalent AI.
-          </p>
         </div>
       </header>
 
@@ -110,20 +133,11 @@ export function PulseOutcomesPage() {
               <GraduationCap className="w-4 h-4 text-blue-700" />
               CHỨNG NHẬN CHUẨN NĂNG LỰC CHỨC DANH
             </span>
-            <span className={`pu-job-cert-status-pill ${isAllCompleted ? 'issued' : 'in-progress'}`}>
-              {isAllCompleted ? 'Đã cấp chính thức' : `Đang hoàn thiện: ${approvedCourses}/${totalCourses} khóa (${pct}%)`}
-            </span>
           </div>
 
           <h2 className="pu-job-cert-title">
-            Chuẩn Năng lực Chức danh: {position}
+            {isAllCompleted ? 'Đã đạt chuẩn chức danh' : 'Tiến độ đạt chuẩn chức danh'} {position}
           </h2>
-
-          <p className="pu-job-cert-desc">
-            {isAllCompleted
-              ? 'Bạn đã hoàn thành đủ các khóa học theo khung năng lực chức danh. Chứng chỉ chính thức đã được hội đồng thẩm định phê duyệt.'
-              : `Chứng chỉ Chuẩn Chức danh sẽ được cấp khi bạn hoàn thành toàn bộ ${totalCourses} khóa học trong lộ trình. Hiện bạn đã đạt ${approvedCourses} khóa.`}
-          </p>
 
           <div className="pu-job-cert-progress-row">
             <div className="pu-job-cert-bar-track">
@@ -132,41 +146,15 @@ export function PulseOutcomesPage() {
             <span className="pu-job-cert-pct">{pct}%</span>
           </div>
 
-          {/* Mini Domain Tracker: Độ phủ qua 6 Lĩnh vực chuẩn hóa */}
-          {domains.length > 0 && (
-            <div className="pu-mini-domain-tracker">
-              <span className="pu-mini-domain-label">Độ phủ 6 Lĩnh vực:</span>
-              {domains.map((d) => {
-                const isMet = d.status === 'MET';
-                return (
-                  <span
-                    key={d.categoryId || d.number}
-                    className={`pu-domain-mini-pill${isMet ? ' met' : ''}`}
-                    title={`Lĩnh vực 0${d.number}: ${d.name} (${isMet ? 'Đã đạt chuẩn' : 'Chưa hoàn thành'})`}
-                  >
-                    {isMet ? <Check size={11} strokeWidth={3} /> : <span className="text-slate-400">·</span>}
-                    <span>LV 0{d.number}</span>
-                  </span>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="pu-job-cert-actions">
-            {isAllCompleted ? (
+          {isAllCompleted && (
+            <div className="pu-job-cert-actions">
               <Link to={PULSE_PATHS.outcome('job-role-cert')} className="pu-btn-view-cert">
                 <Award size={15} />
                 <span>Xem & in chứng chỉ A4</span>
                 <ArrowRight size={14} className="pu-btn-arrow" />
               </Link>
-            ) : (
-              <Link to={PULSE_PATHS.path} className="pu-btn-view-path">
-                <Target size={15} />
-                <span>Xem các khóa cần học tiếp trong lộ trình</span>
-                <ArrowRight size={14} className="pu-btn-arrow" />
-              </Link>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="pu-job-cert-visual" aria-hidden="true">
@@ -238,11 +226,8 @@ export function PulseOutcomesPage() {
         <div className="pu-badges-sec-head">
           <div>
             <h2 id="sec-badges-title" className="pu-badges-title">
-              Danh mục Huy hiệu Khóa học & Minh chứng ({filteredOutcomes.length})
+              {LIST_TITLES[activeFilter]} ({filteredOutcomes.length})
             </h2>
-            <p className="pu-badges-sub">
-              Bản ghi công nhận chính thức qua bài đánh giá cuối khóa hoặc bài đánh giá công nhận năng lực theo 6 lĩnh vực.
-            </p>
           </div>
         </div>
 
@@ -253,7 +238,7 @@ export function PulseOutcomesPage() {
         ) : filteredOutcomes.length === 0 ? (
           <Empty
             icon={<Award size={24} />}
-            title={searchQuery ? 'Không tìm thấy chứng nhận phù hợp' : 'Chưa có bản ghi khóa học được xác nhận'}
+            title={searchQuery ? 'Không tìm thấy kết quả phù hợp' : EMPTY_STATES[activeFilter].title}
             action={
               searchQuery ? (
                 <button
@@ -269,8 +254,8 @@ export function PulseOutcomesPage() {
             }
           >
             {searchQuery
-              ? `Không có kết quả nào khớp với từ khóa "${searchQuery}". Hãy thử tìm kiếm với từ khóa khác.`
-              : 'Khi mentor duyệt bài cuối khóa hoặc bài đánh giá đầu vào, bản ghi chứng nhận sẽ xuất hiện ở đây.'}
+              ? `Không có kết quả nào khớp với từ khóa "${searchQuery}". Hãy thử từ khóa khác.`
+              : EMPTY_STATES[activeFilter].body}
           </Empty>
         ) : (
           <div className="pu-cert-grid">

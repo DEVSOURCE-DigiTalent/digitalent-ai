@@ -44,6 +44,33 @@ public class PulseCourseWorkspace
         ?? throw new NotFoundException("Không tìm thấy mô đun trong khóa học này.");
 
     /// <summary>
+    /// Mô đun học tuần tự: mô đun đầu luôn mở; mô đun sau chỉ mở khi mô đun ngay trước đã qua (đọc hết trang, đạt câu
+    /// ôn tập nếu có). Mô đun đã qua vẫn mở để xem lại; đạt bài kiểm tra đầu vào tính mọi mô đun là đã qua.
+    /// </summary>
+    public static bool IsModuleUnlocked(PulseCourseState state, PulseModuleInfo module)
+    {
+        if (module.Index == 0 || ModulePassed(state, module))
+        {
+            return true;
+        }
+
+        return ModulePassed(state, state.Modules[module.Index - 1]);
+    }
+
+    /// <summary>Chặn trang học, ghi tiến độ và câu ôn tập của mô đun chưa mở (mô đun trước chưa qua) → 403.</summary>
+    public static void EnsureModuleUnlocked(PulseCourseState state, PulseModuleInfo module)
+    {
+        if (!IsModuleUnlocked(state, module))
+        {
+            throw new ForbiddenException(
+                $"Mô-đun {module.Index + 1:00} chỉ mở khi bạn hoàn thành Mô-đun {module.Index:00}: đọc hết các trang và đạt câu hỏi ôn tập.");
+        }
+    }
+
+    private static bool ModulePassed(PulseCourseState state, PulseModuleInfo module) =>
+        state.Progress?.GetValueOrDefault(module.ModuleId) is { } progress && progress.Passed(module);
+
+    /// <summary>
     /// Lượt học (được theo dõi) để ghi tiến độ. Khóa Cơ bản tự mở lượt học khi nhân viên đủ điều kiện;
     /// khóa có phí cần doanh nghiệp đã mua khóa. Lượt NOT_STARTED chuyển sang IN_PROGRESS.
     /// </summary>
@@ -92,7 +119,7 @@ public class PulseCourseWorkspace
         PulseBlockReason.PreAssessmentRequired => "Hãy làm bài kiểm tra đầu vào (trắc nghiệm, tự chấm) của khóa này trước. Đạt 80% thì bỏ qua phần học và mở bài đánh giá cuối khóa; chưa đạt thì học tuần tự từng mô-đun.",
         PulseBlockReason.PreAssessmentPending => "Bài đánh giá trước khi học đang chờ chấm. Khóa mở để học nếu bài chưa đạt.",
         PulseBlockReason.PurchaseRequired => "Khóa học có phí: doanh nghiệp cần mua khóa học để mở toàn bộ nội dung cho nhân viên.",
-        PulseBlockReason.PreviousModuleRequired => "Hãy đạt câu hỏi ôn tập của mô đun trước.",
+        PulseBlockReason.PreviousModuleRequired => "Hãy hoàn thành mô-đun trước (đọc hết các trang và đạt câu hỏi ôn tập) rồi mới học mô-đun này.",
         PulseBlockReason.SlidesNotViewed => "Hãy đọc hết các trang nội dung của mô đun trước khi làm câu hỏi ôn tập.",
         PulseBlockReason.ReviewRequired => "Hãy mở lại trang nội dung của câu chưa đúng trước khi làm lần tiếp theo.",
         PulseBlockReason.QuizChanged => "Bộ câu hỏi đã đổi sang lần làm mới. Hãy tải lại trang để làm với câu hỏi mới.",

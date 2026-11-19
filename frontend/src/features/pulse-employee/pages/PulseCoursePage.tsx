@@ -450,7 +450,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
 
                   {/* Cột Hành động của Thẻ */}
                   <div className="pu-c-card-action-side">
-                    {module.viewable ? (
+                    {module.viewable && !isLocked ? (
                       <Link
                         to={PULSE_PATHS.module(course.courseId, module.moduleId)}
                         className={`pu-c-step-btn ${
@@ -474,7 +474,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
                     ) : (
                       <div className="pu-c-step-locked-hint">
                         <Lock size={12} />
-                        <span>Khóa · Học Mô-đun {pad2(module.index)} trước</span>
+                        <span>{preview ? 'Mở khi doanh nghiệp mua khóa' : `Hoàn thành Mô-đun ${pad2(module.index)} để mở`}</span>
                       </div>
                     )}
                   </div>

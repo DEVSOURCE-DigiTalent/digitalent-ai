@@ -41,6 +41,8 @@ public class PulseModuleNavDto
     public string Title { get; set; } = string.Empty;
     public bool Passed { get; set; }
     public bool Viewable { get; set; }
+    /// <summary>Mô đun đầu, mô đun đã qua, hoặc mô đun ngay trước đã qua (học tuần tự).</summary>
+    public bool Unlocked { get; set; }
 }
 
 public class PulseSlideDto

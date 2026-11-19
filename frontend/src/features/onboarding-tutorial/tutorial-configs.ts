@@ -240,9 +240,9 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
         description:
           'Học trực tuyến với tài liệu đào tạo, slide, bài học số và làm câu hỏi kiểm tra mô-đun. Trước mỗi khóa học, bạn có thể làm bài đánh giá đầu vào để được công nhận năng lực nhanh.',
         badge: '3. Đào tạo & Đánh giá',
-        targetSelector: '[data-tour="EM-03"]',
+        targetSelector: '[data-tour="EM-02"]',
         targetPosition: 'bottom',
-        actionRoute: '/enterprise/me/practice',
+        actionRoute: '/enterprise/me/path',
         actionText: 'Khám phá bài học & bài đánh giá',
         tips: 'Làm câu hỏi kiểm tra đạt chuẩn để hoàn thành khóa học mà không mất nhiều thời gian.',
       },
@@ -280,8 +280,8 @@ export const TUTORIAL_CONFIGS: Record<string, RoleTutorialConfig> = {
         id: 'task-emp-3',
         title: '3. Bắt đầu Khóa học & Bài Đánh giá đầu vào',
         subtitle: 'Học trực tuyến và tận dụng bài đánh giá công nhận năng lực thông minh',
-        route: '/enterprise/me/practice',
-        targetSelector: '[data-tour="EM-03"]',
+        route: '/enterprise/me/path',
+        targetSelector: '[data-tour="EM-02"]',
         badge: 'Đào tạo',
       },
       {

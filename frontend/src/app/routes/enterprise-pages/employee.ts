@@ -3,7 +3,6 @@ import { lazyPage } from '../lazy-page';
 
 const PulseTodayPage = lazyPage(() => import('../../../features/pulse-employee/pages/PulseTodayPage'), 'PulseTodayPage');
 const PulsePathPage = lazyPage(() => import('../../../features/pulse-employee/pages/PulsePathPage'), 'PulsePathPage');
-const PulsePracticePage = lazyPage(() => import('../../../features/pulse-employee/pages/PulsePracticePage'), 'PulsePracticePage');
 const PulseCoursePage = lazyPage(() => import('../../../features/pulse-employee/pages/PulseCoursePage'), 'PulseCoursePage');
 const PulseModulePage = lazyPage(() => import('../../../features/pulse-employee/pages/PulseModulePage'), 'PulseModulePage');
 const PulseFinalPage = lazyPage(() => import('../../../features/pulse-employee/pages/PulseFinalPage'), 'PulseFinalPage');
@@ -22,7 +21,6 @@ const TrialTestPage = lazyPage(() => import('../../../features/trial-program/pag
 export const EMPLOYEE_PAGES: PageRegistry = {
   'EM-01': PulseTodayPage,
   'EM-02': PulsePathPage,
-  'EM-03': PulsePracticePage,
   'EM-05': PulseCoursePage,
   'EM-06': PulseModulePage,
   'EM-07': PulseFinalPage,

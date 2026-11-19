@@ -430,14 +430,8 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   5. PRACTICE & EXAM PROCTORING SKELETONS
+   5. EXAM PROCTORING SKELETONS
    ══════════════════════════════════════════════════════════════════ */
-.pu-skel-tasks-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-}
-
 .pu-skel-hardware-checks {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

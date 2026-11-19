@@ -35,6 +35,7 @@ public class MarkPulsePageViewedUseCase : IUseCase<MarkPulsePageViewedUseCaseInp
         }
 
         PulseCourseWorkspace.EnsureCanWork(state);
+        PulseCourseWorkspace.EnsureModuleUnlocked(state, module);
         var enrollment = await _workspace.EnsureEnrollmentAsync(snapshot, state);
         var now = _workspace.Now;
         var progress = await _context.LessonProgresses

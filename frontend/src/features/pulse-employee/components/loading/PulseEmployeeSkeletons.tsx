@@ -210,45 +210,6 @@ export function PulseModulePlayerSkeleton() {
 }
 
 /**
- * 5. SKELETON THỰC HÀNH & NHIỆM VỤ (EM-03 - /enterprise/me/practice)
- * Lưới thẻ bài tập thực tế tại nơi làm việc kèm chỉ số Rubric.
- */
-export function PulsePracticeSkeleton() {
-  return (
-    <div className="pu-skel-today" role="status" aria-label="Đang tải Khảo thí & Thực hành">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <div>
-          <span className="pu-bone" style={{ width: 130, height: 12, marginBottom: 8 }} />
-          <span className="pu-bone" style={{ width: 280, height: 28, borderRadius: 8 }} />
-        </div>
-        <div className="pu-skel-tabs">
-          {[90, 110, 90].map((w, idx) => (
-            <span key={idx} className="pu-bone" style={{ width: w, height: 36, borderRadius: 999 }} />
-          ))}
-        </div>
-      </div>
-
-      <div className="pu-skel-tasks-grid">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="pu-skel-card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span className="pu-bone" style={{ width: 85, height: 22, borderRadius: 999 }} />
-              <span className="pu-bone" style={{ width: 65, height: 12 }} />
-            </div>
-            <span className="pu-bone" style={{ width: '85%', height: 20, borderRadius: 6 }} />
-            <span className="pu-bone" style={{ width: '100%', height: 36 }} />
-            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 12, marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span className="pu-bone" style={{ width: 80, height: 12 }} />
-              <span className="pu-bone" style={{ width: 90, height: 32, borderRadius: 10 }} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
  * 6. SKELETON CHỨNG NHẬN SỐ & THÀNH TÍCH (EM-08 - /enterprise/me/outcomes)
  * Thẻ chứng chỉ số có hoa văn chìm, QR code và chữ ký số chuẩn hóa.
  */

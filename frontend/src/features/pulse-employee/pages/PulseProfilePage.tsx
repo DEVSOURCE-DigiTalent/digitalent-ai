@@ -6,11 +6,9 @@ import {
   Award,
   Clock,
   ArrowRight,
-  Target,
   KeyRound,
   Lock,
   CheckCircle2,
-  AlertCircle,
   Settings,
   Check,
   AlertTriangle,
@@ -114,46 +112,8 @@ function getPasswordStrength(pass: string): { score: number; label: string; colo
 }
 
 /**
- * Trực quan hóa 3 cấp độ năng lực L1 - L3 (Segmented Track):
- * - L1: Cơ bản, L2: Trung cấp, L3: Nâng cao
- * - Đã đạt (done): Xanh ngọc lục bảo (emerald) kèm biểu tượng kiểm tra
- * - Mục tiêu lộ trình (target): Viền nét đứt màu xanh navy có chấm định vị
- * - Chưa đạt (empty): Màu xám nhạt trung tính
- */
-function LevelBar3({ verified, target }: { verified: number; target: number }) {
-  const cappedVerified = Math.min(3, Math.max(0, verified));
-  const cappedTarget = Math.min(3, Math.max(0, target));
-  const verifiedText = cappedVerified > 0 ? `L${cappedVerified} (${levelName(cappedVerified)})` : 'Chưa đánh giá';
-  const targetText = cappedTarget > 0 ? `L${cappedTarget} (${levelName(cappedTarget)})` : 'Ngoài lộ trình';
-
-  return (
-    <div
-      className="pu-benchmark-level-track"
-      title={`Hiện tại: ${verifiedText} / Mục tiêu lộ trình: ${targetText}`}
-    >
-      {[1, 2, 3].map((lvl) => {
-        const isDone = lvl <= cappedVerified;
-        const isTarget = cappedTarget > 0 && lvl === cappedTarget && cappedVerified < cappedTarget;
-        const cls = isDone ? 'done' : isTarget ? 'target' : 'empty';
-        return (
-          <div
-            key={lvl}
-            className={`pu-benchmark-seg ${cls}`}
-            title={`Cấp ${lvl} · ${levelName(lvl)}${isDone ? ' (Đã đạt)' : isTarget ? ' (Mục tiêu lộ trình)' : ''}`}
-          >
-            <span className="pu-seg-label">L{lvl}</span>
-            {isDone && <Check className="w-2.5 h-2.5" style={{ marginLeft: 1 }} />}
-            {isTarget && <span className="pu-target-dot" />}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/**
  * Hồ sơ Năng lực Nhân sự (§3):
- * - Tab 1: Hồ sơ Năng lực Số (Competency Passport & Benchmark Matrix)
+ * - Tab 1: Hồ sơ Năng lực Số (thông tin nhân sự, chỉ số, năng lực đã được công nhận, chứng chỉ)
  * - Tab 2: Bảo mật & Đổi Mật khẩu (Security & Credentials)
  * - Tab 3: Tùy chọn Cá nhân & Thông báo (Preferences)
  */
@@ -202,7 +162,7 @@ export function PulseProfilePage() {
   const organizationName = user?.organization?.name || person.organizationName || 'Doanh nghiệp';
   const contactEmail = person.workEmail || user?.email || 'Chưa cập nhật email';
 
-  // Đồng bộ số liệu giữa KPI và Ma trận theo status/pathTop từ máy chủ:
+  // Số liệu KPI theo status/pathTop từ máy chủ:
   // - Đạt chuẩn lộ trình: status === 'MET'
   // - Còn khoảng cách cần bồi dưỡng: status === 'GAP' hoặc 'PENDING' (nằm trong lộ trình và verified < pathTop)
   const metDomainCount = data.domains.filter((d) => d.status === 'MET').length;
@@ -210,6 +170,20 @@ export function PulseProfilePage() {
 
   const readinessPercent =
     stats.pathCourses > 0 ? Math.min(100, Math.round((stats.approvedPathCourses / stats.pathCourses) * 100)) : 0;
+
+  const bestOutcomeOf = (domain: (typeof data.domains)[number]) => {
+    const domainCourseIds = new Set(
+      data.courses.filter((c) => c.categoryId === domain.categoryId).map((c) => c.courseId),
+    );
+    const matching = (outcomes ?? []).filter((o) =>
+      o.courseId
+        ? domainCourseIds.has(o.courseId)
+        : Boolean(o.subtitle?.includes(domain.name) || o.title.includes(domain.name)),
+    );
+    return matching.length > 0
+      ? matching.reduce((best, cur) => ((cur.level ?? 0) > (best.level ?? 0) ? cur : best))
+      : undefined;
+  };
 
   const passwordStrength = getPasswordStrength(newPassword);
 
@@ -346,7 +320,7 @@ export function PulseProfilePage() {
       </nav>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          TAB 1: HỒ SƠ NĂNG LỰC SỐ (COMPETENCY PASSPORT & MATRIX)
+          TAB 1: HỒ SƠ NĂNG LỰC SỐ
          ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'competency' && (
         <div
@@ -418,7 +392,7 @@ export function PulseProfilePage() {
             </div>
           </section>
 
-          {/* ── 4 Thẻ KPI Đồng bộ hoàn toàn với Ma trận ─────────────────── */}
+          {/* ── 4 Thẻ KPI ─────────────────────────────────────────────── */}
           <section className="pu-talent-kpi-grid" aria-label="Chỉ số năng lực">
             <div className="pu-tkpi-card">
               <div className="pu-tkpi-header">
@@ -468,215 +442,78 @@ export function PulseProfilePage() {
             </div>
           </section>
 
-          {/* ── Bảng Ma trận Đối sánh Năng lực Số Doanh nghiệp ── */}
-          <section className="pu-benchmark-card">
+          {/* ── Năng lực số đã được công nhận theo từng lĩnh vực ──────────────
+              Hồ sơ chỉ ghi mức đã được công nhận; phần so với yêu cầu nằm ở trang Lộ trình. */}
+          <section className="pu-benchmark-card" aria-labelledby="pu-recognized-title">
             <div className="pu-benchmark-header">
               <div>
                 <div className="pu-benchmark-title-wrap">
                   <div className="pu-benchmark-icon">
-                    <Target className="w-4 h-4" />
+                    <ShieldCheck className="w-4 h-4" />
                   </div>
-                  <h2 className="pu-benchmark-h2">Ma trận đối sánh năng lực số doanh nghiệp</h2>
+                  <h2 id="pu-recognized-title" className="pu-benchmark-h2">Năng lực số đã được công nhận</h2>
                 </div>
                 <p className="pu-benchmark-desc">
-                  Đối sánh mức năng lực hiện tại của bạn theo từng lĩnh vực với chuẩn vị trí chức danh và trần đào tạo phòng ban.
+                  Mức cao nhất bạn đã được công nhận ở từng lĩnh vực, qua bài thi cuối khóa hoặc minh chứng thực tế.
                 </p>
               </div>
-
-              <PuLink to={PULSE_PATHS.path} kind="outline" small className="pu-no-print">
-                Xem lộ trình chi tiết →
-              </PuLink>
             </div>
 
-            <div className="pu-benchmark-table-wrap">
-              <table className="pu-benchmark-table">
-                <thead>
-                  <tr>
-                    <th>Lĩnh vực năng lực</th>
-                    <th>Hiện tại</th>
-                    <th>Chuẩn vị trí</th>
-                    <th>Trần PB</th>
-                    <th>Tiến độ (L1 đến L3)</th>
-                    <th>Chênh lệch</th>
-                    <th style={{ textAlign: 'right' }} className="pu-no-print">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.domains.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', color: '#64748b', padding: '24px 16px' }}>
-                        Chưa có dữ liệu lĩnh vực năng lực cho vị trí hiện tại. Xem{' '}
-                        <Link to={PULSE_PATHS.path} style={{ color: '#1e40af', fontWeight: 600 }}>
-                          lộ trình đào tạo
-                        </Link>{' '}
-                        hoặc liên hệ quản lý để được phân bổ.
-                      </td>
-                    </tr>
-                  ) : (
-                    data.domains.map((domain) => {
-                      const positionTarget = Math.min(3, Math.max(0, domain.target));
-                      const cappedCeiling = Math.min(3, Math.max(0, domain.ceiling));
-                      const rawPathTop =
-                        domain.pathTop ?? (domain.target > 0 ? Math.min(domain.target, domain.ceiling) : 0);
-                      const effectiveTarget = Math.min(3, Math.max(0, rawPathTop));
-                      const cappedVerified = Math.min(3, Math.max(0, domain.verified));
-                      const isOutsidePath =
-                        domain.status === 'OUTSIDE_PATH' || positionTarget <= 0 || effectiveTarget <= 0;
-                      const isMet =
-                        !isOutsidePath && (domain.status === 'MET' || cappedVerified >= effectiveTarget);
-                      const diff = isOutsidePath ? 0 : Math.max(0, effectiveTarget - cappedVerified);
+            {data.domains.length === 0 ? (
+              <p className="pu-recognized-empty">
+                Chưa có dữ liệu lĩnh vực năng lực cho vị trí hiện tại. Xem{' '}
+                <Link to={PULSE_PATHS.path} style={{ color: '#1e40af', fontWeight: 600 }}>
+                  lộ trình đào tạo
+                </Link>{' '}
+                hoặc liên hệ quản lý để được phân bổ.
+              </p>
+            ) : (
+              <ul className="pu-recognized-list" aria-label="Năng lực số theo lĩnh vực">
+                {data.domains.map((domain) => {
+                  const level = Math.min(3, Math.max(0, domain.verified));
+                  const outcome = bestOutcomeOf(domain);
+                  const domainIcon = DOMAIN_ICONS[domain.number] || <Layers className="w-4 h-4 text-slate-600" />;
+                  return (
+                    <li key={domain.categoryId} className="pu-recognized-row">
+                      <div className="pu-benchmark-domain-cell">
+                        <div className="pu-benchmark-domain-icon">{domainIcon}</div>
+                        <div>
+                          <div className="pu-benchmark-domain-name">{domain.name}</div>
+                          <div className="pu-benchmark-domain-meta">
+                            <span className="pu-benchmark-code-tag">{formatDomainCode(domain)}</span>
+                          </div>
+                        </div>
+                      </div>
 
-                      const domainCourseIds = new Set(
-                        data.courses.filter((c) => c.categoryId === domain.categoryId).map((c) => c.courseId)
-                      );
-                      const matchingOutcomes = (outcomes ?? []).filter((o) => {
-                        if (o.courseId && domainCourseIds.has(o.courseId)) return true;
-                        const belongsToOtherCourse = Boolean(
-                          o.courseId &&
-                            data.courses.some((c) => c.courseId === o.courseId && c.categoryId !== domain.categoryId)
-                        );
-                        if (belongsToOtherCourse) return false;
-                        return Boolean(o.subtitle?.includes(domain.name) || o.title.includes(domain.name));
-                      });
-                      const domainOutcome =
-                        matchingOutcomes.length > 0
-                          ? matchingOutcomes.reduce((best, cur) =>
-                              (cur.level ?? 0) > (best.level ?? 0) ? cur : best
-                            )
-                          : undefined;
-                      const domainIcon = DOMAIN_ICONS[domain.number] || <Layers className="w-4 h-4 text-slate-600" />;
+                      <div className="pu-recognized-level">
+                        {level > 0 ? (
+                          <>
+                            <span className="pu-benchmark-pill-verified">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              {levelName(level)}
+                            </span>
+                            <span className="pu-recognized-source">
+                              {domain.source === 'PRACTICAL_EVIDENCE' ? 'Qua minh chứng thực tế' : 'Qua khóa học'}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="pu-benchmark-pill-unassessed">Chưa được công nhận</span>
+                        )}
+                      </div>
 
-                      return (
-                        <tr key={domain.categoryId}>
-                          <td>
-                            <div className="pu-benchmark-domain-cell">
-                              <div className="pu-benchmark-domain-icon">
-                                {domainIcon}
-                              </div>
-                              <div>
-                                <div className="pu-benchmark-domain-name">{domain.name}</div>
-                                <div className="pu-benchmark-domain-meta">
-                                  <span className="pu-benchmark-code-tag">
-                                    {formatDomainCode(domain)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td>
-                            {cappedVerified > 0 ? (
-                              <span className="pu-benchmark-pill-verified">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                L{cappedVerified} · {levelName(cappedVerified)}
-                              </span>
-                            ) : (
-                              <span className="pu-benchmark-pill-unassessed">
-                                Chưa đánh giá
-                              </span>
-                            )}
-                          </td>
-
-                          <td>
-                            {positionTarget > 0 ? (
-                              <span className="pu-benchmark-pill-target">
-                                L{positionTarget} · {levelName(positionTarget)}
-                              </span>
-                            ) : (
-                              <span className="pu-benchmark-pill-unassessed">
-                                Không yêu cầu
-                              </span>
-                            )}
-                          </td>
-
-                          <td>
-                            {cappedCeiling > 0 ? (
-                              <span
-                                className="pu-benchmark-ceiling-tag"
-                                title={
-                                  positionTarget > 0 && cappedCeiling < positionTarget
-                                    ? `Lộ trình hiện dừng ở L${cappedCeiling} theo trần đào tạo phòng ban`
-                                    : undefined
-                                }
-                              >
-                                Trần L{cappedCeiling}
-                              </span>
-                            ) : (
-                              <span className="pu-benchmark-pill-unassessed">
-                                Chưa mở
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Thanh 3 Vạch Trực Quan (Level Bar L1 - L3) */}
-                          <td>
-                            <LevelBar3 verified={cappedVerified} target={effectiveTarget} />
-                          </td>
-
-                          {/* Cột Chênh lệch ngắn gọn, trực quan */}
-                          <td>
-                            {isOutsidePath ? (
-                              <span className="pu-benchmark-pill-unassessed">
-                                Ngoài lộ trình
-                              </span>
-                            ) : isMet ? (
-                              <span className="pu-benchmark-gap-met">
-                                <Check className="w-3.5 h-3.5" />
-                                Đạt chuẩn
-                              </span>
-                            ) : (
-                              <span className={diff > 1 ? 'pu-benchmark-gap-danger' : 'pu-benchmark-gap-warning'}>
-                                {diff > 1 ? <AlertCircle className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                                Thiếu {diff} cấp
-                              </span>
-                            )}
-                          </td>
-
-                          <td style={{ textAlign: 'right' }} className="pu-no-print">
-                            {(isMet || isOutsidePath) && domainOutcome ? (
-                              <Link to={PULSE_PATHS.outcome(domainOutcome.id)} className="pu-benchmark-action-cert">
-                                <Sparkles className="w-3.5 h-3.5" />
-                                Xem chứng chỉ
-                              </Link>
-                            ) : isMet ? (
-                              <Link to={PULSE_PATHS.path} className="pu-benchmark-action-cert">
-                                Xem lộ trình
-                              </Link>
-                            ) : isOutsidePath ? (
-                              <span className="pu-benchmark-pill-unassessed">
-                                Không bắt buộc
-                              </span>
-                            ) : (
-                              <Link to={PULSE_PATHS.path} className="pu-benchmark-action-study">
-                                Bồi dưỡng ngay
-                                <ArrowRight className="w-3.5 h-3.5" />
-                              </Link>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Thanh Chú giải Ký hiệu Cấp độ Trực quan */}
-            <div className="pu-benchmark-legend pu-no-print">
-              <span style={{ fontWeight: 700, color: '#0f172a' }}>Chú giải cấp độ:</span>
-              <div className="pu-legend-item">
-                <span className="pu-legend-dot" style={{ background: '#059669' }} />
-                <span>Đã đạt chuẩn</span>
-              </div>
-              <div className="pu-legend-item">
-                <span className="pu-legend-dot" style={{ background: '#eff6ff', border: '1.5px dashed #2563eb' }} />
-                <span>Mục tiêu chuẩn chức danh</span>
-              </div>
-              <div className="pu-legend-item">
-                <span className="pu-legend-dot" style={{ background: '#f1f5f9' }} />
-                <span>Chưa hoàn thành</span>
-              </div>
-            </div>
+                      <div className="pu-recognized-action pu-no-print">
+                        {outcome && (
+                          <Link to={PULSE_PATHS.outcome(outcome.id)} className="pu-benchmark-action-cert">
+                            <Award className="w-3.5 h-3.5" />
+                            Xem chứng nhận
+                          </Link>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </section>
 
           {/* ── Bộ sưu tập Chứng chỉ Số Đã Xác thực (Verified Credentials Showcase) ── */}

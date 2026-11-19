@@ -165,7 +165,7 @@ afterEach(() => {
 });
 
 describe('PulseProfilePage', () => {
-  it('syncs KPI counts and renders MET, ceiling-capped MET, GAP, OUTSIDE_PATH, and highest outcome link accurately', async () => {
+  it('syncs KPI counts and lists the recognized level of each domain with its highest outcome link', async () => {
     const overviewData = makeOverview({
       domains: [
         makeDomain({
@@ -255,37 +255,31 @@ describe('PulseProfilePage', () => {
     expect(within(kpiRegion).getByText('2 bài làm')).toBeInTheDocument();
     expect(within(kpiRegion).getByText('Quản lý đang đánh giá')).toBeInTheDocument();
 
-    const table = screen.getByRole('table');
-    const rows = within(table).getAllByRole('row');
+    // The comparison matrix is gone (it lives on the roadmap): the profile lists the recognized level per domain.
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ma trận đối sánh năng lực số doanh nghiệp')).not.toBeInTheDocument();
+    const list = screen.getByRole('list', { name: 'Năng lực số theo lĩnh vực' });
+    const rows = within(list).getAllByRole('listitem');
+    expect(rows).toHaveLength(4);
 
-    // Row 1: normal MET -> links to highest-level outcome (out-l2)
-    expect(within(rows[1]).getByText('Lĩnh vực 01')).toBeInTheDocument();
-    expect(within(rows[1]).getByText('Đạt chuẩn')).toBeInTheDocument();
-    const certLink = await within(rows[1]).findByRole('link', { name: /Xem chứng chỉ/i });
+    // Row 1: recognized Trung cấp, links to the highest-level outcome of the domain (out-l2)
+    expect(within(rows[0]).getByText('Lĩnh vực 01')).toBeInTheDocument();
+    expect(within(rows[0]).getByText('Trung cấp')).toBeInTheDocument();
+    expect(within(rows[0]).getByText('Qua khóa học')).toBeInTheDocument();
+    const certLink = await within(rows[0]).findByRole('link', { name: /Xem chứng nhận/i });
     expect(certLink).toHaveAttribute('href', PULSE_PATHS.outcome('out-l2'));
 
-    // Row 2: ceiling-capped MET (target 3, ceiling 2, verified 2) -> must show Đạt chuẩn without false gap
-    expect(within(rows[2]).getByText('Đạt chuẩn')).toBeInTheDocument();
+    // Row 3: recognized Cơ bản, no outcome of its own -> no certificate link, no gap wording
+    expect(within(rows[2]).getByText('Cơ bản')).toBeInTheDocument();
+    expect(within(rows[2]).queryByRole('link')).not.toBeInTheDocument();
     expect(within(rows[2]).queryByText(/Thiếu/i)).not.toBeInTheDocument();
-    expect(within(rows[2]).getByText('Trần L2')).toHaveAttribute(
-      'title',
-      'Lộ trình hiện dừng ở L2 theo trần đào tạo phòng ban',
-    );
-    expect(within(rows[2]).getByRole('link', { name: 'Xem lộ trình' })).toHaveAttribute('href', PULSE_PATHS.path);
 
-    // Row 3: GAP (verified 1, effective target 3 -> Thiếu 2 cấp)
-    expect(within(rows[3]).getByText('Thiếu 2 cấp')).toBeInTheDocument();
-    expect(within(rows[3]).getByRole('link', { name: /Bồi dưỡng ngay/i })).toHaveAttribute('href', PULSE_PATHS.path);
-
-    // Row 4: OUTSIDE_PATH (target 0, ceiling 0) -> must NOT invent L1 or "Thiếu 1 cấp"
-    expect(within(rows[4]).getByText('Không yêu cầu')).toBeInTheDocument();
-    expect(within(rows[4]).getByText('Chưa mở')).toBeInTheDocument();
-    expect(within(rows[4]).getByText('Ngoài lộ trình')).toBeInTheDocument();
-    expect(within(rows[4]).getByText('Không bắt buộc')).toBeInTheDocument();
-    expect(within(rows[4]).queryByText(/Thiếu/i)).not.toBeInTheDocument();
+    // Row 4: nothing recognized yet -> no invented level
+    expect(within(rows[3]).getByText('Chưa được công nhận')).toBeInTheDocument();
+    expect(within(rows[3]).queryByText(/Cơ bản|Trung cấp|Nâng cao/)).not.toBeInTheDocument();
   });
 
-  it('uses neutral person fallbacks and shows an empty domain matrix state cleanly', async () => {
+  it('uses neutral person fallbacks and shows an empty domain state cleanly', async () => {
     signIn({ fullName: 'Employee', email: '', organization: undefined });
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(
       ok(

@@ -197,24 +197,21 @@ afterEach(() => {
 
 describe('Pulse employee routes', () => {
   it('serves every employee screen under /enterprise/me for employees and managers, without the old baseline', () => {
-    expect(EMPLOYEE_SCREENS.map((s) => s.id)).toEqual(['EM-01', 'EM-02', 'EM-03', 'EM-05', 'EM-06', 'EM-07', 'EM-12', 'EM-15', 'EM-T1', 'EM-T2', 'EM-08', 'EM-09', 'EM-10', 'EM-11', 'EM-13', 'EM-14']);
+    expect(EMPLOYEE_SCREENS.map((s) => s.id)).toEqual(['EM-01', 'EM-02', 'EM-05', 'EM-06', 'EM-07', 'EM-12', 'EM-15', 'EM-T1', 'EM-T2', 'EM-08', 'EM-09', 'EM-10', 'EM-11', 'EM-13', 'EM-14']);
     for (const screenDef of EMPLOYEE_SCREENS) {
       expect(screenDef.path.startsWith(PULSE_PATHS.today)).toBe(true);
       expect(screenDef.roles).toEqual(expect.arrayContaining([ROLES.EMPLOYEE, ROLES.MANAGER]));
     }
   });
 
-  it('marks Đánh giá active on both exam pages and Lộ trình on the course itself', () => {
-    for (const path of [PULSE_PATHS.final('course-1'), PULSE_PATHS.preAssessment('course-1')]) {
+  it('marks Lộ trình active on the course and on its exam pages', () => {
+    for (const path of [PULSE_PATHS.course('course-1'), PULSE_PATHS.final('course-1'), PULSE_PATHS.preAssessment('course-1')]) {
       const view = renderAt(path, <PulseHeader />);
-      expect(screen.getByRole('link', { name: 'Đánh giá' }).className).toContain('active');
-      expect(screen.getByRole('link', { name: 'Lộ trình' }).className).not.toContain('active');
+      expect(screen.getByRole('link', { name: 'Lộ trình' }).className).toContain('active');
+      expect(screen.getByRole('link', { name: 'Tổng quan' }).className).not.toContain('active');
+      expect(screen.queryByRole('link', { name: 'Đánh giá' })).not.toBeInTheDocument();
       view.unmount();
     }
-
-    renderAt(PULSE_PATHS.course('course-1'), <PulseHeader />);
-    expect(screen.getByRole('link', { name: 'Lộ trình' }).className).toContain('active');
-    expect(screen.getByRole('link', { name: 'Đánh giá' }).className).not.toContain('active');
   });
 
   it('gives a manager the shared roadmap and a way back to the team workspace', async () => {
@@ -231,6 +228,7 @@ describe('Pulse employee routes', () => {
     expect(screen.getByRole('link', { name: 'Hoạt động' })).toHaveAttribute('href', '/enterprise/notifications');
     const nav = screen.getByRole('navigation', { name: 'Điều hướng học tập' });
     expect(within(nav).getByRole('link', { name: 'Lộ trình năng lực' })).toHaveAttribute('href', PULSE_PATHS.path);
+    expect(within(nav).queryByRole('link', { name: 'Hồ sơ cá nhân' })).not.toBeInTheDocument();
     expect(within(nav).queryByRole('link', { name: 'Góp ý' })).not.toBeInTheDocument();
     expect(within(nav).queryByRole('link', { name: 'Báo lỗi' })).not.toBeInTheDocument();
   });
@@ -289,13 +287,13 @@ describe('enterprise trial learning', () => {
     expect(screen.queryByRole('link', { name: /Mua khóa học/ })).not.toBeInTheDocument();
   });
 
-  it('gives trial employees the Học thử / Kết quả test / Thực hành header', () => {
+  it('gives trial employees the Học thử / Bài đánh giá header', () => {
     signIn({ enterpriseTrialStatus: 'trial_active' });
 
     renderAt(PULSE_PATHS.today, <PulseHeader />);
 
     const nav = screen.getByRole('navigation', { name: 'Học tập của tôi' });
-    expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual(['Học thử', 'Bài đánh giá', 'Thực hành']);
+    expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual(['Học thử', 'Bài đánh giá']);
   });
 
   it('locks the Basic courses with a warning until the mentor publishes the result', async () => {
@@ -437,23 +435,18 @@ describe('PulseTodayPage', () => {
     expect(screen.getByText(/Được công nhận qua bài đánh giá trước khi học/)).toBeTruthy();
   });
 
-  it('asks a new employee to take the pre-assessment of each course first', async () => {
-    const fresh = course({
-      slotStatus: 'PRE_ASSESSMENT', finalStatus: 'NOT_STARTED', preStatus: 'REQUIRED', canStartPreAssessment: true,
-      enrollmentId: null, enrollmentStatus: null, modulesPassed: 0, progressPercent: 0,
-    });
-    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({
-      courses: [fresh], nextSteps: [fresh], stats: { ...stats, preAssessmentsOpen: 1, learningCourses: 0 },
-    })));
+  it('shows the waiting exams by name, without stat cards, next steps or course codes', async () => {
+    const waiting = course({ courseId: 'course-2', code: 'A2-F', title: 'Giao tiếp số cơ bản', slotStatus: 'IN_REVIEW' });
+    vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({ courses: [course(), waiting] })));
 
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
-    expect(await screen.findByText('Bắt đầu bằng bài đánh giá đầu vào')).toBeTruthy();
-    expect(screen.getByText('Thực hiện bài đánh giá trước khi học để được miễn học lý thuyết nếu đã đạt năng lực.')).toBeTruthy();
-    const links = screen.getAllByRole('link', { name: 'Làm bài đánh giá đầu vào →' });
-    expect(links.length).toBeGreaterThan(0);
-    links.forEach((link) => expect(link.getAttribute('href')).toBe(PULSE_PATHS.preAssessment('course-1')));
-    expect(screen.queryByText(/% đã học/)).toBeNull();
+    const queue = await screen.findByRole('region', { name: 'Bài đang chờ chấm' });
+    expect(within(queue).getByRole('link', { name: /Giao tiếp số cơ bản/ })).toHaveAttribute('href', PULSE_PATHS.final('course-2'));
+    expect(screen.queryByRole('region', { name: 'Tiến độ của bạn' })).toBeNull();
+    expect(screen.queryByText('Việc nên làm tiếp')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Truy cập nhanh' })).toBeNull();
+    expect(screen.queryByText(/\bA[12]-F\b/)).toBeNull();
   });
 
   it('expands and collapses a domain to show its courses', async () => {

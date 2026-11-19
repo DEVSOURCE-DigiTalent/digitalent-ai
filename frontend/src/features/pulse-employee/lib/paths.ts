@@ -2,7 +2,6 @@
 export const PULSE_PATHS = {
   today: '/enterprise/me',
   path: '/enterprise/me/path',
-  practice: '/enterprise/me/practice',
   outcomes: '/enterprise/me/outcomes',
   activity: '/enterprise/me/activity',
   profile: '/enterprise/me/profile',

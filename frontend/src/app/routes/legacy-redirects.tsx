@@ -66,7 +66,7 @@ export const legacyRedirectRoutes: RouteObject[] = [
   { path: '/enterprise/me/learning', element: <RedirectWithQuery to="/enterprise/me/path" /> },
   { path: '/enterprise/my-competency', element: <RedirectWithQuery to="/enterprise/me/path" /> },
   { path: '/enterprise/my-skill-gap', element: <RedirectWithQuery to="/enterprise/me/path" /> },
-  { path: '/enterprise/my-tasks', element: <RedirectWithQuery to="/enterprise/me/practice" /> },
+  { path: '/enterprise/my-tasks', element: <RedirectWithQuery to="/enterprise/me/path" /> },
   { path: '/enterprise/my-achievements', element: <RedirectWithQuery to="/enterprise/me/outcomes" /> },
   { path: '/enterprise/me/certificates', element: <RedirectWithQuery to="/enterprise/me/outcomes" /> },
   { path: '/enterprise/me/competency', element: <RedirectWithQuery to="/enterprise/me/path" /> },
@@ -80,8 +80,10 @@ export const legacyRedirectRoutes: RouteObject[] = [
   { path: '/enterprise/me/baseline', element: <RedirectWithQuery to="/enterprise/me" /> },
   { path: '/enterprise/me/assessments', element: <RedirectWithQuery to="/enterprise/me" /> },
   { path: '/enterprise/me/assessments/*', element: <RedirectWithQuery to="/enterprise/me" /> },
-  { path: '/enterprise/me/tasks', element: <RedirectWithQuery to="/enterprise/me/practice" /> },
-  { path: '/enterprise/me/tasks/*', element: <RedirectWithQuery to="/enterprise/me/practice" /> },
+  { path: '/enterprise/me/tasks', element: <RedirectWithQuery to="/enterprise/me/path" /> },
+  { path: '/enterprise/me/tasks/*', element: <RedirectWithQuery to="/enterprise/me/path" /> },
+  // EM-03 Khảo thí & Đánh giá đã bỏ: trạng thái bài đầu vào / cuối khóa xem ngay trên lộ trình và trang khóa học.
+  { path: '/enterprise/me/practice', element: <RedirectWithQuery to="/enterprise/me/path" /> },
   { path: '/enterprise/team/training/*', element: <Navigate to="/enterprise/team/reports" replace /> },
   // Đợt đào tạo đã bỏ khỏi giao diện Chủ doanh nghiệp: khóa học được giao từ trang Khóa học.
   { path: '/enterprise/training-batches', element: <Navigate to="/enterprise/courses" replace /> },

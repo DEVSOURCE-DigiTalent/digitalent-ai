@@ -34,11 +34,7 @@ public class SubmitPulseModuleQuizUseCase : IUseCase<SubmitPulseModuleQuizUseCas
             ?? throw new BadRequestException("Mô đun này không có câu hỏi ôn tập.", "moduleId", "NO_QUIZ");
 
         PulseCourseWorkspace.EnsureCanWork(state);
-        var previous = module.Index == 0 ? null : state.Modules[module.Index - 1];
-        if (previous != null && !(state.Progress?.GetValueOrDefault(previous.ModuleId)?.Passed(previous) ?? false))
-        {
-            throw new ForbiddenException(PulseCourseWorkspace.BlockMessage(PulseBlockReason.PreviousModuleRequired));
-        }
+        PulseCourseWorkspace.EnsureModuleUnlocked(state, module);
 
         if (!(state.Progress?.GetValueOrDefault(module.ModuleId)?.Viewed ?? false))
         {
