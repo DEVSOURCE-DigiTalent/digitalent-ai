@@ -1,5 +1,6 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Application.UseCases.Learning.Lessons;
 using DigiTalent.Application.UseCases.Me;
 using DigiTalent.Application.UseCases.Pulse;
@@ -269,6 +270,52 @@ public class OwnerSurveyFlowTests
     }
 
     [Fact]
+    public async Task Department_level_set_by_the_owner_is_what_the_report_and_the_employee_result_compare_with()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var employee = await world.EmployeeAsync(PulseTestWorld.EmployeeEmail);
+        var asOwner = await TrialAsAsync(world, PulseTestWorld.OwnerEmail, Roles.Owner);
+        await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput());
+        await asOwner.Request.ExecuteAsync(new SubmitTrialRequestUseCaseInput { TestDeadline = world.Clock.Now.AddHours(1) });
+        var categories = (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Report!.Domains;
+        var assessment = new TrialAssessment
+        {
+            OrganizationId = employee.OrganizationId, EmployeeId = employee.Id,
+            ChoiceScore = (short)(categories.Count * 2), ChoiceTotal = (short)(categories.Count * 3),
+            SubmittedAt = world.Clock.Now, ReviewedAt = world.Clock.Now,
+        };
+        world.Context.TrialAssessments.Add(assessment);
+        world.Context.TrialAssessmentDomains.AddRange(categories.Select(category => new TrialAssessmentDomain
+        {
+            TrialAssessmentId = assessment.Id, CategoryId = category.CategoryId,
+            BasicCorrect = 1, BasicTotal = 1, IntermediateCorrect = 1, IntermediateTotal = 1, AdvancedCorrect = 0, AdvancedTotal = 1,
+        }));
+        await world.Context.SaveChangesAsync();
+
+        var before = (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Report!;
+        before.Employees.Single().DomainDetails.Should().OnlyContain(d => !d.IsExpectation);
+
+        // The owner sets Nâng cao everywhere for the employee's department (OW-05 "Năng lực từng phòng ban").
+        var domains = await asOwner.Ceilings.LoadDomainsAsync(employee.OrganizationId);
+        world.Context.CapabilityCeilings.RemoveRange(world.Context.CapabilityCeilings.Where(c => c.DepartmentId == employee.DepartmentId));
+        world.Context.CapabilityCeilings.AddRange(domains.Select(d => new CapabilityCeiling
+        {
+            OrganizationId = employee.OrganizationId, DepartmentId = employee.DepartmentId, CompetencyCategoryId = d.Id, CeilingLevel = 3,
+        }));
+        await world.Context.SaveChangesAsync();
+
+        var after = (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Report!;
+        var details = after.Employees.Single().DomainDetails;
+        details.Should().OnlyContain(d => d.TargetLevel == 3 && d.IsExpectation && d.SkillGap == 3 - d.Level);
+        details.Should().OnlyContain(d => d.StatusText.Contains("phòng ban", StringComparison.OrdinalIgnoreCase));
+        after.Summary.Should().OnlyContain(d => d.TargetLevel == 3);
+
+        var mine = await TrialAsAsync(world, PulseTestWorld.EmployeeEmail, Roles.Employee);
+        (await mine.Mine.ExecuteAsync(new GetMyTrialAssessmentUseCaseInput())).DomainDetails!
+            .Should().OnlyContain(d => d.TargetLevel == 3 && d.IsExpectation);
+    }
+
+    [Fact]
     public async Task Deadline_publishes_only_submitted_results_and_never_invents_zero_results_for_absentees()
     {
         using var world = await PulseTestWorld.CreateAsync();
@@ -349,7 +396,8 @@ public class OwnerSurveyFlowTests
         ReviewTrialEssaysWithAiUseCase AiReview,
         PublishTrialReportUseCase Publish,
         JoinTrialAsParticipantUseCase Join,
-        PulseReviewScope ReviewScope);
+        PulseReviewScope ReviewScope,
+        CapabilityCeilingReader Ceilings);
 
     private static async Task<TrialUseCases> TrialAsAsync(PulseTestWorld world, string email, string role)
     {
@@ -392,6 +440,7 @@ public class OwnerSurveyFlowTests
             new ReviewTrialEssaysWithAiUseCase(context, reader, ai),
             new PublishTrialReportUseCase(context, reader),
             new JoinTrialAsParticipantUseCase(context, reader),
-            new PulseReviewScope(context, new DigiTalent.Application.Common.Authorization.EmployeeScope(context, current.Object), current.Object));
+            new PulseReviewScope(context, new DigiTalent.Application.Common.Authorization.EmployeeScope(context, current.Object), current.Object),
+            new CapabilityCeilingReader(context, catalog));
     }
 }

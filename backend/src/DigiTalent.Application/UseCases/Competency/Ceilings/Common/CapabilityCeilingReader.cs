@@ -255,9 +255,9 @@ public class CapabilityCeilingReader
     }
 
     /// <summary>
-    /// Mức trần của lộ trình nhân viên theo lĩnh vực (Pulse): mức riêng chủ doanh nghiệp đã đặt cho phòng ban; phòng ban chưa
-    /// đặt riêng (hoặc nhân viên chưa có phòng ban) thì theo chuẩn vị trí của tổ chức (mức cao nhất các vị trí cần, ít nhất
-    /// Cơ bản). Toàn doanh nghiệp không có mức chọn tay: khóa chưa mua vẫn nằm trên lộ trình và bị khóa bởi quyền học
+    /// Mức trần của lộ trình nhân viên theo lĩnh vực (Pulse): mức chủ doanh nghiệp đặt cho phòng ban (cũng là đích lộ trình,
+    /// <see cref="CapabilityExpectation"/>); phòng ban chưa đặt (hoặc nhân viên chưa có phòng ban) thì theo chuẩn vị trí của
+    /// tổ chức (mức cao nhất các vị trí cần, ít nhất Cơ bản). Khóa chưa mua vẫn nằm trên lộ trình và bị khóa bởi quyền học
     /// (<see cref="CourseOwnership"/>).
     /// </summary>
     public async Task<Dictionary<Guid, int>> EffectiveForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds)

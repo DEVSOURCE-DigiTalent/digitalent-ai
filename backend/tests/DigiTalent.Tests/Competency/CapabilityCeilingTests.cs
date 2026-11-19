@@ -104,6 +104,19 @@ public class CapabilityCeilingTests : IDisposable
     }
 
     [Fact]
+    public async Task DepartmentLevel_IsTheExpectedLevelOfItsPeople_OtherDomainsFollowThePositions()
+    {
+        await SaveDepartment(2);
+
+        var expectation = await CapabilityExpectation.LoadAsync(_context, _orgId);
+
+        expectation.ExpectedFor(_deptId, _dataId).Should().Be(2);
+        expectation.ExpectedFor(_deptId, _aiId).Should().BeNull("not set for this department");
+        expectation.ExpectedFor(null, _dataId).Should().BeNull("people without a department follow their position");
+        (await _reader.EffectiveForDepartmentAsync(_orgId, _deptId, new[] { _dataId }))[_dataId].Should().Be(2);
+    }
+
+    [Fact]
     public async Task UpdateDepartment_NeedsNoCompanyLevelFirst()
     {
         var output = await SaveDepartment(2);

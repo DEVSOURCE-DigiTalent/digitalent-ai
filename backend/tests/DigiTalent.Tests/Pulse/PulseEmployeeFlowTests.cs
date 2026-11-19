@@ -76,14 +76,16 @@ public class PulseEmployeeFlowTests
 
         var capped = await uc.Overview.ExecuteAsync(new GetPulseOverviewUseCaseInput());
         capped.Domains.Select(d => d.Ceiling).Should().Equal(3, 2, 3, 1, 2, 1);
-        capped.Domains.Select(d => d.PathTop).Should().Equal(3, 2, 1, 1, 2, 1);
+        // The department level is also the target: the path goes up to it.
+        capped.Domains.Select(d => d.Target).Should().Equal(3, 2, 3, 1, 2, 1);
+        capped.Domains.Select(d => d.PathTop).Should().Equal(3, 2, 3, 1, 2, 1);
         capped.Courses.Where(c => c.Zone == PulseCourseZone.AboveCeiling).Select(c => c.Code).Should().BeEquivalentTo("M2-A", "M4-I", "M4-A", "M5-A", "M6-I", "M6-A");
         var alreadyStarted = capped.Courses.Single(c => c.Code == "M4-I");
         alreadyStarted.BlockReason.Should().BeNull();
         alreadyStarted.SlotStatus.Should().Be(PulseSlotStatus.InProgress);
         capped.Courses.Single(c => c.Code == "M2-A").SlotStatus.Should().Be(PulseSlotStatus.AboveCeiling);
-        capped.Courses.Where(c => c.Zone == PulseCourseZone.Optional).Select(c => c.Code).Should().Equal("M3-I", "M3-A");
-        capped.Stats.PathCourses.Should().Be(10);
+        capped.Courses.Where(c => c.Zone == PulseCourseZone.Optional).Should().BeEmpty();
+        capped.Stats.PathCourses.Should().Be(12);
         capped.Stats.AboveCeilingCourses.Should().Be(6);
     }
 

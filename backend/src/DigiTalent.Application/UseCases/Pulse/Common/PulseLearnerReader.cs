@@ -243,6 +243,16 @@ public class PulseLearnerReader
                 targets[id] = ceilings.TryGetValue(id, out var c) && c > 0 ? c : 1;
             }
         }
+
+        // Mức chủ doanh nghiệp đặt cho phòng ban là đích của lộ trình, thay chuẩn vị trí (lĩnh vực chưa đặt giữ chuẩn vị trí).
+        var expectation = await CapabilityExpectation.LoadAsync(_context, organizationId);
+        foreach (var id in categoryIds)
+        {
+            if (expectation.ExpectedFor(employee.DepartmentId, id) is int expected && expected > 0)
+            {
+                targets[id] = expected;
+            }
+        }
         var evidenceLevels = await LoadEvidenceLevelsAsync(employee.Id);
 
         // Lượt học của nhân viên theo mã khóa (mọi phiên bản), bỏ lượt đã hủy.
