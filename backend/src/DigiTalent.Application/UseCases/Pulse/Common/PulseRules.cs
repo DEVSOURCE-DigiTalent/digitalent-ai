@@ -16,8 +16,20 @@ public static class PulseRules
     public const int MaxEvidenceLength = 8000;
     public const int MinDecisionReasonLength = 10;
 
-    /// <summary>Số câu rút cho mỗi lần làm câu hỏi ôn tập mô đun; phải đúng tất cả (§9.2).</summary>
-    public const int ModuleQuizDrawSize = 3;
+    /// <summary>
+    /// Số câu của mỗi lần làm bài ôn tập mô đun, rút từ câu ôn của mô đun (không gồm câu cuối khóa của giáo trình, dành cho
+    /// bài cuối khóa); đạt khi đúng từ <see cref="ModuleQuizPassPercent"/>%.
+    /// </summary>
+    public const int ModuleQuizDrawSize = 10;
+
+    /// <summary>Tỉ lệ câu đúng tối thiểu (%) để đạt bài ôn tập mô đun: 10 câu → 8 câu.</summary>
+    public const int ModuleQuizPassPercent = 80;
+
+    /// <summary>Số câu đúng tối thiểu của bài ôn tập <paramref name="total"/> câu.</summary>
+    public static int ModuleQuizPassMark(int total) => (total * ModuleQuizPassPercent + 99) / 100;
+
+    /// <summary>Bài ôn tập mô đun đạt ngưỡng.</summary>
+    public static bool ModuleQuizPassed(int score, int total) => total > 0 && score >= ModuleQuizPassMark(total);
 
     /// <summary>
     /// Ngân hàng ôn tập của mô đun gắn câu hỏi với trang nội dung theo thứ tự: câu thứ 2k-1 và 2k (sort_order) ↔ trang k.

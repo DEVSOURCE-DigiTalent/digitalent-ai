@@ -102,7 +102,7 @@ public class SubmitPulseModuleQuizUseCase : IUseCase<SubmitPulseModuleQuizUseCas
             });
         }
 
-        var passed = score == questions.Count;
+        var passed = PulseRules.ModuleQuizPassed(score, questions.Count);
         attempt.Score = Math.Round(score * 100m / questions.Count, 2, MidpointRounding.AwayFromZero);
         attempt.Passed = passed;
 
