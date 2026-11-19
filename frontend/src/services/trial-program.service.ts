@@ -61,6 +61,8 @@ export interface TrialEmployeeDomainDetail {
   targetLevel?: number;
   skillGap?: number;
   usesSystemReference?: boolean;
+  /** True when the target is the level the owner set for the person's department (else the position standard). */
+  isExpectation?: boolean;
   levelLabel: string;
   statusText: string;
   gapText: string;
