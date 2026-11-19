@@ -42,10 +42,12 @@ public sealed class ReferencePositionMatrixTests : IDisposable
     public async Task NewPosition_UsesPlatformSample_ForDepartmentSuggestionWithoutPublishingRequirements()
     {
         var org = Guid.NewGuid();
-        var department = new Department { OrganizationId = org, Code = "SALES", Name = "Sales" };
-        var position = new JobPosition { OrganizationId = org, DepartmentId = department.Id, Code = "SALES", Name = "Sales" };
+        // any department name; the suggestion follows the positions its employees hold
+        var department = new Department { OrganizationId = org, Code = "PB-KD", Name = "Phòng Kinh doanh miền Bắc" };
+        var position = new JobPosition { OrganizationId = org, Code = "SALES", Name = "Sales" };
         _db.Departments.Add(department);
         _db.JobPositions.Add(position);
+        _db.Employees.Add(new Employee { OrganizationId = org, DepartmentId = department.Id, JobPositionId = position.Id, FullName = "An", EmployeeCode = "NV01", Status = "ACTIVE" });
         _db.CompetencyCategories.AddRange(
             new CompetencyCategory { OrganizationId = org, Code = "TT02_D1", Name = "Khai thác dữ liệu", SortOrder = 1 },
             new CompetencyCategory { OrganizationId = org, Code = "TT02_D6", Name = "AI", SortOrder = 6 });
@@ -54,11 +56,12 @@ public sealed class ReferencePositionMatrixTests : IDisposable
         var reader = new CapabilityCeilingReader(_db, new PulseCatalogReader(_db), Service);
         var matrix = await reader.ReadAsync<GetCapabilityCeilingsUseCaseOutput>(org);
 
-        // The SALES_CRM sample (data 2, AI 1) drives the suggestion. A department may aim above the courses the company
-        // owns (only Basic here): set first, buy later.
-        matrix.Departments.Single().HasSuggestion.Should().BeTrue();
+        // The SALES_CRM sample (data 2, AI 1) drives the suggestion of the position, held in this department.
+        var sales = matrix.Positions.Single(p => p.Code == "SALES_CRM");
+        sales.HasSuggestion.Should().BeTrue();
+        sales.Departments.Should().Equal("Phòng Kinh doanh miền Bắc");
         matrix.Domains.Select(d => d.SuggestedCeiling).Should().Equal(2, 1);
-        matrix.Departments.Single().Ceilings.Select(c => c.Suggested).Should().Equal(2, 1);
+        sales.Ceilings.Select(c => c.Suggested).Should().Equal(2, 1);
 
         var changed = await Service.GetAsync();
         changed.Levels["SALES_CRM"][0] = 3;

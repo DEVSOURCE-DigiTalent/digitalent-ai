@@ -15,6 +15,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
+using DigiTalent.Tests.TestSupport;
 
 namespace DigiTalent.Tests.Trial;
 
@@ -295,19 +296,16 @@ public class OwnerSurveyFlowTests
         var before = (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Report!;
         before.Employees.Single().DomainDetails.Should().OnlyContain(d => !d.IsExpectation);
 
-        // The owner sets Nâng cao everywhere for the employee's department (OW-05 "Năng lực từng phòng ban").
+        // The owner sets Nâng cao everywhere for the employee's position (OW-05 "Năng lực từng vị trí").
         var domains = await asOwner.Ceilings.LoadDomainsAsync(employee.OrganizationId);
-        world.Context.CapabilityCeilings.RemoveRange(world.Context.CapabilityCeilings.Where(c => c.DepartmentId == employee.DepartmentId));
-        world.Context.CapabilityCeilings.AddRange(domains.Select(d => new CapabilityCeiling
-        {
-            OrganizationId = employee.OrganizationId, DepartmentId = employee.DepartmentId, CompetencyCategoryId = d.Id, CeilingLevel = 3,
-        }));
-        await world.Context.SaveChangesAsync();
+        var position = await world.Context.JobPositions.AsNoTracking().SingleAsync(p => p.Id == employee.JobPositionId);
+        await PositionLevels.SetAsync(world.Context, employee.OrganizationId, position.Code, domains.Select(d => (d.Id, 3)).ToArray());
+        world.Context.ChangeTracker.Clear();
 
         var after = (await asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput())).Report!;
         var details = after.Employees.Single().DomainDetails;
         details.Should().OnlyContain(d => d.TargetLevel == 3 && d.IsExpectation && d.SkillGap == 3 - d.Level);
-        details.Should().OnlyContain(d => d.StatusText.Contains("phòng ban", StringComparison.OrdinalIgnoreCase));
+        details.Should().OnlyContain(d => d.StatusText.Contains("mức vị trí", StringComparison.OrdinalIgnoreCase));
         after.Summary.Should().OnlyContain(d => d.TargetLevel == 3);
 
         var mine = await TrialAsAsync(world, PulseTestWorld.EmployeeEmail, Roles.Employee);

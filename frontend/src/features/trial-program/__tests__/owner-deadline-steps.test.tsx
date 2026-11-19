@@ -16,7 +16,7 @@ vi.mock('@/hooks/use-trial-program', () => ({
 }));
 vi.mock('@/hooks/use-departments', () => ({ useDepartments: () => ({}) }));
 vi.mock('@/hooks/use-capability-ceilings', () => ({
-  useCapabilityCeilings: () => ({ data: { domains: [], departments: [], levels: [] } }),
+  useCapabilityCeilings: () => ({ data: { domains: [], positions: [], levels: [] } }),
 }));
 vi.mock('@/hooks/use-permission', async (original) => ({ ...(await original<typeof import('@/hooks/use-permission')>()), usePermission: () => ({ can: () => true }) }));
 vi.mock('@/hooks/use-job-positions', () => ({ useJobPositions: () => ({}) }));

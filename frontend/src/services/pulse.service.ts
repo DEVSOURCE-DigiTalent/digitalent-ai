@@ -115,7 +115,7 @@ export interface PulseDomain {
    */
   pathTop: number;
   /** true = mức tối thiểu do chủ doanh nghiệp đặt cho phòng ban; false = theo chuẩn vị trí. */
-  requiredByDepartment: boolean;
+  requiredByPosition: boolean;
   verified: number;
   source: PulseLevelSource;
   status: PulseDomainStatus;

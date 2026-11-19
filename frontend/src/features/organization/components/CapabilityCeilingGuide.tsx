@@ -46,10 +46,10 @@ export function CapabilityCeilingGuide({ open, onClose }: { open: boolean; onClo
           <p>{translateUi("Đây là mọi khóa doanh nghiệp đã có. Mỗi khóa mua một lần cho cả doanh nghiệp: mọi nhân viên đều học được, không giới hạn số người. Ở đây không cần cài đặt gì; khóa chưa mua có thể thêm vào giỏ.")}</p>
         </section>
         <section className="ceiling-guide__section">
-          <h3><span>02</span>{translateUi(" Năng lực từng phòng ban")}</h3>
-          <div className="ceiling-guide__hierarchy"><span><Users size={16} />{translateUi("Đặt mức cho phòng ban")}</span><b>→</b><span><Building2 size={16} />{translateUi("Mua khóa còn thiếu ở phần 1")}</span></div>
-          <p>{translateUi("Chọn một phòng ban ở cột bên trái, rồi bấm vào mức cao nhất nhân viên phòng đó cần đạt ở mỗi lĩnh vực. Họ học từ Cơ bản tới mức đó. Đặt được cả cấp chưa mua: nhân viên thấy khóa trên lộ trình và học được khi doanh nghiệp mua ở phần 1.")}</p>
-          <div className="ceiling-guide__note"><Info size={16} /><span>{translateUi("Mức có nhãn \"Đề xuất\" là gợi ý theo Thông tư 02 cho các vị trí trong phòng ban; bấm \"Dùng mức đề xuất\" để áp dụng nhanh.")}</span></div>
+          <h3><span>02</span>{translateUi(" Năng lực từng vị trí")}</h3>
+          <div className="ceiling-guide__hierarchy"><span><Users size={16} />{translateUi("Đặt mức cho vị trí")}</span><b>→</b><span><Building2 size={16} />{translateUi("Mua khóa còn thiếu ở phần 1")}</span></div>
+          <p>{translateUi("Chọn một trong 5 vị trí, rồi bấm vào mức cao nhất người làm vị trí đó cần đạt ở mỗi lĩnh vực, ở phòng ban nào cũng vậy. Họ học từ Cơ bản tới mức đó. Đặt được cả cấp chưa mua: nhân viên thấy khóa trên lộ trình và học được khi doanh nghiệp mua ở phần 1.")}</p>
+          <div className="ceiling-guide__note"><Info size={16} /><span>{translateUi("Mức có nhãn \"Đề xuất\" là gợi ý theo Thông tư 02 cho vị trí đó; bấm \"Dùng mức đề xuất\" để áp dụng nhanh.")}</span></div>
         </section>
         <section className="ceiling-guide__section">
           <h3><span>03</span>{translateUi(" Thao tác nhanh")}</h3>
@@ -57,7 +57,7 @@ export function CapabilityCeilingGuide({ open, onClose }: { open: boolean; onClo
             <div><MousePointer2 size={16} /><strong>{translateUi("Ô của một cấp")}</strong><span>{translateUi("Chọn mức ")}<ArrowRight size={12} />{translateUi(" Lưu thay đổi")}</span></div>
             <div><LockKeyhole size={16} /><strong>{translateUi("Ô chưa mua (phần 1)")}</strong><span>{translateUi("Thêm vào giỏ, mua nhiều khóa một lần")}</span></div>
             <div><Info size={16} /><strong>{translateUi("Nút thông tin")}</strong><span>{translateUi("Xem nội dung khóa học")}</span></div>
-            <div><Users size={16} /><strong>{translateUi("Cột phòng ban")}</strong><span>{translateUi("Tìm và chuyển giữa các phòng ban")}</span></div>
+            <div><Users size={16} /><strong>{translateUi("Chọn vị trí")}</strong><span>{translateUi("Chuyển giữa 5 vị trí, xem vị trí nào chưa đặt")}</span></div>
           </div>
         </section>
       </div>

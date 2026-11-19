@@ -10,10 +10,10 @@ const { ceilings, program } = vi.hoisted(() => ({
   program: { current: null as unknown },
 }));
 
-/** Departments, the first `set` with their own levels in "Khung năng lực số". */
+/** Positions, the first `set` with their own levels in "Khung năng lực số". */
 const matrix = (set: number, total = 3) => ({
   levels: [], domains: [],
-  departments: Array.from({ length: total }, (_, index) => ({ departmentId: `d${index}`, name: `Phòng ${index + 1}`, isCustomized: index < set, ceilings: [] })),
+  positions: Array.from({ length: total }, (_, index) => ({ positionId: `p${index}`, code: `P${index}`, name: `Vị trí ${index + 1}`, departments: [], isCustomized: index < set, ceilings: [] })),
 });
 const survey = (stage: string) => ({
   stage, organizationName: 'Sao Mai', testDeadline: stage === 'SETUP' ? null : new Date(Date.now() + 86400000).toISOString(),
@@ -86,17 +86,17 @@ it('has three steps and asks after the list what the results are compared with',
   expect(screen.getByText('Kết quả sẽ so với:').parentElement).toHaveTextContent('chuẩn vị trí của từng người (đề xuất của hệ thống)');
 });
 
-it('keeps the levels departments already have', () => {
+it('keeps the levels positions already have', () => {
   program.current = survey('SETUP');
   ceilings.current = matrix(2);
   renderAt();
   typeFirstPerson();
   fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục đặt hạn' }));
-  const keep = within(screen.getByRole('dialog')).getByRole('button', { name: /Dùng mức các phòng ban đã đặt/ });
-  expect(keep).toHaveTextContent('2 phòng ban đã đặt mức');
+  const keep = within(screen.getByRole('dialog')).getByRole('button', { name: /Dùng mức các vị trí đã đặt/ });
+  expect(keep).toHaveTextContent('2 vị trí đã đặt mức');
   fireEvent.click(keep);
   expect(currentStep()).toHaveTextContent('Đặt hạn, gửi lời mời');
-  expect(screen.getByText('Kết quả sẽ so với:').parentElement).toHaveTextContent('mức cần đạt của 2/3 phòng ban đã đặt');
+  expect(screen.getByText('Kết quả sẽ so với:').parentElement).toHaveTextContent('mức cần đạt của 2/3 vị trí đã đặt');
 });
 
 it('sends the owner to "Khung năng lực số" to set it, then comes back to the deadline with the list kept', () => {
@@ -112,7 +112,7 @@ it('sends the owner to "Khung năng lực số" to set it, then comes back to th
   ceilings.current = matrix(1);
   renderAt('/enterprise/trial?resume=1');
   expect(currentStep()).toHaveTextContent('Đặt hạn, gửi lời mời');
-  expect(screen.getByText('Kết quả sẽ so với:').parentElement).toHaveTextContent('mức cần đạt của 1/3 phòng ban đã đặt');
+  expect(screen.getByText('Kết quả sẽ so với:').parentElement).toHaveTextContent('mức cần đạt của 1/3 vị trí đã đặt');
   fireEvent.click(screen.getByRole('button', { name: 'Quay lại danh sách' }));
   expect(screen.getByRole('textbox', { name: 'Họ và tên dòng 1' })).toHaveValue('Nguyễn Văn An');
 });
@@ -133,6 +133,6 @@ it('after the invitations says what results are compared with and links to chang
   ceilings.current = matrix(0);
   renderAt();
   expect(currentStep()).toHaveTextContent('Làm bài & nhận kết quả');
-  expect(screen.getByText(/bạn chưa đặt mức cho phòng ban nào/)).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Đặt mức cho phòng ban' })).toHaveAttribute('href', SURVEY_EXPECTATION_PATH);
+  expect(screen.getByText(/bạn chưa đặt mức cho vị trí nào/)).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Đặt mức cho vị trí' })).toHaveAttribute('href', SURVEY_EXPECTATION_PATH);
 });

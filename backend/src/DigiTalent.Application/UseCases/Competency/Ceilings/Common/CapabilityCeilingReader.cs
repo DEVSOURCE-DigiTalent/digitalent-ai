@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Competency.Ceilings;
 
 /// <summary>
-/// Đọc ma trận phạm vi năng lực của một tổ chức: lĩnh vực có khóa chuẩn, phạm vi doanh nghiệp (đã lưu hoặc gợi ý),
-/// phạm vi hiệu lực của từng phòng ban và gợi ý từ yêu cầu vị trí.
+/// Đọc Khung năng lực số của một tổ chức: lĩnh vực có khóa chuẩn, khóa doanh nghiệp đã có, mức cần đạt của 5 vị trí chuẩn
+/// (mức chủ doanh nghiệp đặt, chưa đặt thì đề xuất của hệ thống).
 /// </summary>
 public class CapabilityCeilingReader
 {
@@ -19,13 +19,12 @@ public class CapabilityCeilingReader
 
     private readonly IApplicationDbContext _context;
     private readonly PulseCatalogReader _catalog;
-    private readonly ReferencePositionMatrixService? _references;
 
+    // The platform reference matrix is read straight from the settings (ReferencePositionMatrixService.ReadAsync).
     public CapabilityCeilingReader(IApplicationDbContext context, PulseCatalogReader catalog, ReferencePositionMatrixService? references = null)
     {
         _context = context;
         _catalog = catalog;
-        _references = references;
     }
 
     /// <summary>Lĩnh vực của ma trận: lĩnh vực có khóa chuẩn đã xuất bản, không có thì mọi lĩnh vực ACTIVE.</summary>
@@ -64,72 +63,48 @@ public class CapabilityCeilingReader
         var domains = await LoadDomainsAsync(organizationId, catalog.Select(c => c.CategoryId).ToHashSet());
         var domainIds = domains.Select(d => d.Id).ToList();
 
-        var rows = await _context.CapabilityCeilings
-            .AsNoTracking()
-            .Where(c => c.OrganizationId == organizationId && domainIds.Contains(c.CompetencyCategoryId))
-            .ToListAsync();
-        var orgRows = rows.Where(r => r.DepartmentId == null).ToDictionary(r => r.CompetencyCategoryId);
-        var deptRows = rows.Where(r => r.DepartmentId != null)
-            .GroupBy(r => r.DepartmentId!.Value)
-            .ToDictionary(g => g.Key, g => g.ToDictionary(r => r.CompetencyCategoryId, r => (int)r.CeilingLevel));
-
-        var departments = await _context.Departments
-            .AsNoTracking()
-            .Where(d => d.OrganizationId == organizationId && d.Status == Statuses.MasterData.Active)
-            .OrderBy(d => d.Name)
-            .Select(d => new { d.Id, d.Code, d.Name })
-            .ToListAsync();
+        var domainNumbers = domains.Select((domain, index) => new
+            { domain.Id, Number = domain.Code.StartsWith("TT02_D", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(domain.Code.AsSpan(6), out var number) && number is >= 1 and <= 6 ? number : index + 1 })
+            .ToDictionary(row => row.Id, row => row.Number);
         var employees = await _context.Employees
             .AsNoTracking()
             .Where(e => e.OrganizationId == organizationId && e.Status == Statuses.Employee.Active)
             .Select(e => new { e.DepartmentId, e.JobPositionId })
             .ToListAsync();
-        var templateCodes = JobPositionCatalog.Positions.Keys.ToArray();
-        var positionsInOrganization = await _context.JobPositions.AsNoTracking()
-            .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active
-                && (p.DepartmentId != null || !templateCodes.Contains(p.Code)))
-            .Select(p => new { p.Id, p.DepartmentId, p.Code, p.Name })
+        var departmentNames = await _context.Departments.AsNoTracking()
+            .Where(d => d.OrganizationId == organizationId)
+            .ToDictionaryAsync(d => d.Id, d => d.Name);
+
+        // Khung năng lực số theo vị trí: 5 vị trí chuẩn, dùng chung mọi phòng ban. Mức cần đạt = mức chủ doanh nghiệp đặt
+        // (ghi trong chuẩn vị trí, PositionLevelWriter), chưa đặt thì đề xuất của hệ thống (mẫu TT02 của vị trí).
+        var organizationPositions = await _context.JobPositions.AsNoTracking()
+            .Where(p => p.OrganizationId == organizationId && p.Status != Statuses.MasterData.Archived)
+            .Select(p => new { p.Id, p.Code, p.Name, p.Status })
             .ToListAsync();
-        var reference = _references == null ? null : await _references.GetAsync();
-        var domainNumbers = domains.Select((domain, index) => new
-            { domain.Id, Number = domain.Code.StartsWith("TT02_D", StringComparison.OrdinalIgnoreCase)
-                && int.TryParse(domain.Code.AsSpan(6), out var number) && number is >= 1 and <= 6 ? number : index + 1 })
-            .ToDictionary(row => row.Id, row => row.Number);
-        var referenceByPosition = positionsInOrganization
-            .Select(position => new { position.Id, Code = ReferencePositionMatrixService.MatchPosition(position.Code, position.Name) })
-            .Where(position => position.Code != null && reference?.Levels.ContainsKey(position.Code) == true)
-            .ToDictionary(position => position.Id, position => reference!.Levels[position.Code!]);
-
-        // Mức yêu cầu cao nhất theo (vị trí, lĩnh vực) trong các bộ yêu cầu ACTIVE.
-        var requirementRows = await (
-                from set in _context.PositionRequirementSets.AsNoTracking()
-                join position in _context.JobPositions.AsNoTracking() on set.JobPositionId equals position.Id
-                join item in _context.PositionRequirementItems.AsNoTracking() on set.Id equals item.RequirementSetId
-                join competency in _context.Competencies.AsNoTracking() on item.CompetencyId equals competency.Id
-                where position.OrganizationId == organizationId
-                      && position.Status == Statuses.MasterData.Active
-                      && set.Status == Statuses.PositionRequirementSet.Active
-                      && domainIds.Contains(competency.CategoryId)
-                select new { PositionId = position.Id, position.DepartmentId, competency.CategoryId, item.RequiredLevel })
-            .ToListAsync();
-        var requirementByPosition = requirementRows
-            .GroupBy(r => r.PositionId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.GroupBy(r => r.CategoryId).ToDictionary(c => c.Key, c => Clamp(c.Max(r => (int)r.RequiredLevel))));
-
-        var effectiveTargets = await new PositionTargetsReader(_context).LoadAsync(organizationId, positionsInOrganization.Select(p => p.Id).ToArray());
-        int Suggest(IEnumerable<Guid> positionIds, Guid categoryId) => positionIds
-            .Select(id => effectiveTargets.TryGetValue(id, out var target) && target.UsesSystemReference && target.Levels.ContainsKey(categoryId)
-                ? target.Levels[categoryId]
-                : requirementByPosition.TryGetValue(id, out var levels)
-                ? levels.GetValueOrDefault(categoryId)
-                : referenceByPosition.TryGetValue(id, out var sample) ? sample[domainNumbers[categoryId] - 1] : 0)
-            .DefaultIfEmpty(0)
-            .Max();
-
-        var allPositions = requirementByPosition.Keys.Concat(referenceByPosition.Keys).Concat(effectiveTargets.Keys).Distinct().ToList();
-
+        // the row with the catalog code, else an older row that names the same position (e.g. "SALES", "Kế toán viên")
+        var standard = JobPositionCatalog.Positions
+            .Select(entry => (Code: entry.Key, Label: entry.Value,
+                Row: organizationPositions.FirstOrDefault(p => p.Code.Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
+                    ?? organizationPositions.FirstOrDefault(p => !JobPositionCatalog.Positions.ContainsKey(p.Code)
+                        && ReferencePositionMatrixService.MatchPosition(p.Code, p.Name) == entry.Key)))
+            .Where(entry => entry.Row == null || entry.Row.Status == Statuses.MasterData.Active)
+            .ToList();
+        var targets = await new PositionTargetsReader(_context).LoadAsync(organizationId,
+            standard.Where(entry => entry.Row != null).Select(entry => entry.Row!.Id).ToArray());
+        var matrix = await ReferencePositionMatrixService.ReadAsync(_context);
+        int SuggestedFor(string code, Guid categoryId) =>
+            matrix.Levels.TryGetValue(code, out var sample) && domainNumbers.TryGetValue(categoryId, out var number) && number is >= 1 and <= 6
+                ? Clamp(sample[number - 1]) : 0;
+        PositionTargets? TargetsOf(Guid? positionId) => positionId is Guid id ? targets.GetValueOrDefault(id) : null;
+        int LevelFor(string code, Guid? positionId, Guid categoryId) =>
+            TargetsOf(positionId)?.Levels.TryGetValue(categoryId, out var level) == true && level > 0
+                ? Clamp(level) : SuggestedFor(code, categoryId);
+        bool OwnerSet(Guid? positionId, Guid categoryId) => TargetsOf(positionId)?.OwnerDomains.Contains(categoryId) == true;
+        // Whole company: the positions held in the organization, else all 5.
+        var held = employees.Where(e => e.JobPositionId != null).Select(e => e.JobPositionId!.Value).ToHashSet();
+        var companyPositions = standard.Where(entry => entry.Row != null && held.Contains(entry.Row.Id)).ToList();
+        if (companyPositions.Count == 0) companyPositions = standard;
         // Khóa có phí doanh nghiệp đã mua (hoặc được cấp) và giá bán hiện tại của từng khóa chuẩn
         var unlockedCodes = await CourseOwnership.PurchasedCodesAsync(_context, organizationId);
         var prices = (await _context.PlatformCourses.AsNoTracking()
@@ -142,7 +117,7 @@ public class CapabilityCeilingReader
         var output = new T
         {
             PlatformMaxLevel = CapabilityCeiling.MaxLevel,
-            IsConfigured = orgRows.Count > 0,
+            IsConfigured = targets.Values.Any(t => t.OwnerDomains.Count > 0),
             Levels = LevelNames.Select((name, i) => new CeilingLevelDto { Level = i + 1, Name = name }).ToList(),
             PlatformCourseCount = domains.Count * CapabilityCeiling.MaxLevel,
         };
@@ -150,7 +125,7 @@ public class CapabilityCeilingReader
         var organizationCeilings = new Dictionary<Guid, int>();
         foreach (var domain in domains)
         {
-            var suggested = Suggest(allPositions, domain.Id);
+            var suggested = companyPositions.Select(entry => LevelFor(entry.Code, entry.Row?.Id, domain.Id)).DefaultIfEmpty(0).Max();
 
             var domainCourses = Enumerable.Range(1, CapabilityCeiling.MaxLevel).Select(level =>
             {
@@ -190,7 +165,7 @@ public class CapabilityCeilingReader
 
             var maxAllowed = domainCourses.Where(c => c.IsUnlocked).Select(c => c.Level).DefaultIfEmpty(1).Max();
             // Toàn doanh nghiệp = mọi khóa doanh nghiệp đã có (Cơ bản miễn phí + khóa đã mua), dùng được ở mọi phòng ban.
-            // Chủ doanh nghiệp không chọn mức chung; chỉ phòng ban mới được đặt mức riêng (không vượt khóa đã mua).
+            // Chủ doanh nghiệp không chọn mức chung; mức cần đạt đặt theo vị trí (có thể cao hơn khóa đã mua).
             var ceiling = maxAllowed;
             organizationCeilings[domain.Id] = ceiling;
 
@@ -209,100 +184,102 @@ public class CapabilityCeilingReader
 
         output.OrganizationCourseCount = organizationCeilings.Values.Sum();
 
-        foreach (var department in departments)
+        foreach (var (code, label, row) in standard)
         {
-            var positions = positionsInOrganization.Where(p => p.DepartmentId == department.Id)
-                .Select(p => p.Id)
-                .ToList();
-            deptRows.TryGetValue(department.Id, out var custom);
-            var values = domains.Select(domain =>
+            var values = domains.Select(domain => new CeilingValueDto
             {
-                var orgCeiling = organizationCeilings[domain.Id];
-                var isCustom = custom != null && custom.ContainsKey(domain.Id);
-                // A department may aim above the owned courses (set first, buy later); the suggestion is not capped either.
-                return new CeilingValueDto
-                {
-                    CategoryId = domain.Id,
-                    Level = isCustom ? Clamp(custom![domain.Id]) : orgCeiling,
-                    Suggested = Suggest(positions, domain.Id),
-                    IsCustomized = isCustom,
-                };
+                CategoryId = domain.Id,
+                Level = LevelFor(code, row?.Id, domain.Id),
+                Suggested = SuggestedFor(code, domain.Id),
+                IsCustomized = OwnerSet(row?.Id, domain.Id),
             }).ToList();
-
-            output.Departments.Add(new CeilingDepartmentDto
+            var holders = employees.Where(e => row != null && e.JobPositionId == row.Id).ToList();
+            output.Positions.Add(new CeilingPositionDto
             {
-                DepartmentId = department.Id,
-                Code = department.Code,
-                Name = department.Name,
-                EmployeeCount = employees.Count(e => e.DepartmentId == department.Id),
-                HasSuggestion = domains.All(domain => Suggest(positions, domain.Id) > 0),
+                PositionId = row?.Id,
+                Code = code,
+                Name = row?.Name ?? label,
+                EmployeeCount = holders.Count,
+                Departments = holders.Select(e => departmentNames.GetValueOrDefault(e.DepartmentId)).OfType<string>()
+                    .Distinct().OrderBy(name => name).ToList(),
+                HasSuggestion = values.All(v => v.Suggested > 0),
                 IsCustomized = values.Any(v => v.IsCustomized),
                 CourseCount = values.Sum(v => v.Level),
                 Ceilings = values,
             });
         }
 
-        var latest = rows.OrderByDescending(r => r.UpdatedAt).FirstOrDefault();
+        // Lần lưu gần nhất = phiên bản chuẩn vị trí mới nhất có mức chủ doanh nghiệp đặt.
+        var ownerSetIds = standard.Where(entry => TargetsOf(entry.Row?.Id)?.OwnerDomains.Count > 0).Select(entry => entry.Row!.Id).ToList();
+        var latest = await _context.PositionRequirementSets.AsNoTracking()
+            .Where(s => ownerSetIds.Contains(s.JobPositionId) && s.Status == Statuses.PositionRequirementSet.Active)
+            .OrderByDescending(s => s.ActivatedAt)
+            .Select(s => new { s.ActivatedAt, s.ActivatedByUserId })
+            .FirstOrDefaultAsync();
         if (latest != null)
         {
-            output.UpdatedAt = latest.UpdatedAt;
-            output.UpdatedByName = latest.UpdatedByUserId.HasValue
-                ? await _context.Users.AsNoTracking().Where(u => u.Id == latest.UpdatedByUserId).Select(u => u.DisplayName).FirstOrDefaultAsync()
+            output.UpdatedAt = latest.ActivatedAt;
+            output.UpdatedByName = latest.ActivatedByUserId.HasValue
+                ? await _context.Users.AsNoTracking().Where(u => u.Id == latest.ActivatedByUserId).Select(u => u.DisplayName).FirstOrDefaultAsync()
                 : null;
         }
-
         return output;
     }
 
     /// <summary>
-    /// Mức trần của lộ trình nhân viên theo lĩnh vực (Pulse): mức chủ doanh nghiệp đặt cho phòng ban (cũng là đích lộ trình,
-    /// <see cref="CapabilityExpectation"/>); phòng ban chưa đặt (hoặc nhân viên chưa có phòng ban) thì theo chuẩn vị trí của
-    /// tổ chức (mức cao nhất các vị trí cần, ít nhất Cơ bản). Khóa chưa mua vẫn nằm trên lộ trình và bị khóa bởi quyền học
+    /// Mức cần đạt của một vị trí theo lĩnh vực (lộ trình Pulse): mức chủ doanh nghiệp đặt cho vị trí ở Khung năng lực số
+    /// (IsCustom), chưa đặt thì chuẩn vị trí (đề xuất của hệ thống); người chưa có vị trí theo các vị trí trong tổ chức (mức
+    /// cao nhất các vị trí cần). Ít nhất Cơ bản. Khóa chưa mua vẫn nằm trên lộ trình và bị khóa bởi quyền học
     /// (<see cref="CourseOwnership"/>).
     /// </summary>
-    public async Task<Dictionary<Guid, int>> EffectiveForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds) =>
-        (await ForDepartmentAsync(organizationId, departmentId, categoryIds)).ToDictionary(row => row.Key, row => row.Value.Level);
-
-    /// <summary>
-    /// Như <see cref="EffectiveForDepartmentAsync"/>, kèm cờ cho biết mức là mức riêng chủ doanh nghiệp đã đặt cho phòng ban
-    /// (mức tối thiểu doanh nghiệp yêu cầu nhân viên phòng ban đạt) hay chỉ là mức suy ra từ chuẩn vị trí.
-    /// </summary>
-    public async Task<Dictionary<Guid, DepartmentDomainLevel>> ForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds)
+    public async Task<Dictionary<Guid, RequiredDomainLevel>> ForPositionAsync(Guid organizationId, Guid? positionId, IReadOnlyCollection<Guid> categoryIds)
     {
         var ids = categoryIds.Distinct().ToList();
         if (ids.Count == 0)
         {
-            return new Dictionary<Guid, DepartmentDomainLevel>();
+            return new Dictionary<Guid, RequiredDomainLevel>();
         }
 
-        var departmentRows = departmentId == null
-            ? new Dictionary<Guid, int>()
-            : await _context.CapabilityCeilings
-                .AsNoTracking()
-                .Where(c => c.OrganizationId == organizationId && c.DepartmentId == departmentId && ids.Contains(c.CompetencyCategoryId))
-                .ToDictionaryAsync(c => c.CompetencyCategoryId, c => (int)c.CeilingLevel);
+        var own = positionId is Guid id
+            ? (await new PositionTargetsReader(_context).LoadAsync(organizationId, [id])).GetValueOrDefault(id)
+            : null;
+        var fallback = ids.Any(category => own?.Levels.GetValueOrDefault(category) is not > 0)
+            ? await HeldLevelsAsync(organizationId, null)
+            : new Dictionary<Guid, int>();
+        return ids.ToDictionary(category => category, category => own?.Levels.GetValueOrDefault(category) is > 0 and var level
+            ? new RequiredDomainLevel(Clamp(level), IsCustom: own.OwnerDomains.Contains(category))
+            : new RequiredDomainLevel(Math.Max(1, fallback.GetValueOrDefault(category)), IsCustom: false));
+    }
 
-        var unset = ids.Where(id => !departmentRows.ContainsKey(id)).ToList();
-        var suggested = new Dictionary<Guid, int>();
-        if (unset.Count > 0)
-        {
-            var templateCodes = JobPositionCatalog.Positions.Keys.ToArray();
-            var positionIds = await _context.JobPositions.AsNoTracking()
-                .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active
-                    && (p.DepartmentId != null || !templateCodes.Contains(p.Code)))
-                .Select(p => p.Id).ToListAsync();
-            var targets = await new PositionTargetsReader(_context).LoadAsync(organizationId, positionIds);
-            suggested = targets.Values.SelectMany(t => t.Levels).Where(t => unset.Contains(t.Key))
-                .GroupBy(t => t.Key).ToDictionary(g => g.Key, g => Clamp(g.Max(t => t.Value)));
-        }
+    /// <summary>
+    /// Mức cần đạt của một phòng ban theo lĩnh vực (trang trưởng phòng): mức cao nhất của các vị trí nhân viên phòng ban đang
+    /// giữ (mức chủ doanh nghiệp đặt cho vị trí, chưa đặt thì chuẩn vị trí), không có thì các vị trí trong tổ chức; ít nhất Cơ bản.
+    /// </summary>
+    public async Task<Dictionary<Guid, int>> EffectiveForDepartmentAsync(Guid organizationId, Guid? departmentId, IReadOnlyCollection<Guid> categoryIds)
+    {
+        var levels = await HeldLevelsAsync(organizationId, departmentId);
+        return categoryIds.Distinct().ToDictionary(category => category, category => Math.Max(1, levels.GetValueOrDefault(category)));
+    }
 
-        return ids.ToDictionary(id => id, id => departmentRows.TryGetValue(id, out var custom)
-            ? new DepartmentDomainLevel(Clamp(custom), IsCustom: true)
-            : new DepartmentDomainLevel(Math.Max(1, suggested.GetValueOrDefault(id)), IsCustom: false));
+    /// <summary>Highest level per domain of the positions held in the department, else in the organization.</summary>
+    private async Task<Dictionary<Guid, int>> HeldLevelsAsync(Guid organizationId, Guid? departmentId)
+    {
+        var held = await (
+                from employee in _context.Employees.AsNoTracking()
+                join position in _context.JobPositions.AsNoTracking() on employee.JobPositionId equals position.Id
+                where employee.OrganizationId == organizationId && employee.Status == Statuses.Employee.Active
+                    && position.Status == Statuses.MasterData.Active
+                select new { employee.DepartmentId, PositionId = position.Id })
+            .Distinct().ToListAsync();
+        var inDepartment = held.Where(h => departmentId != null && h.DepartmentId == departmentId).Select(h => h.PositionId).Distinct().ToList();
+        var positionIds = inDepartment.Count > 0 ? inDepartment : held.Select(h => h.PositionId).Distinct().ToList();
+        var targets = await new PositionTargetsReader(_context).LoadAsync(organizationId, positionIds);
+        return targets.Values.SelectMany(t => t.Levels)
+            .GroupBy(t => t.Key).ToDictionary(g => g.Key, g => Clamp(g.Max(t => t.Value)));
     }
 
     private static int Clamp(int level) => Math.Clamp(level, 0, CapabilityCeiling.MaxLevel);
 }
 
-/// <summary>Mức của một lĩnh vực cho một phòng ban; <paramref name="IsCustom"/> = chủ doanh nghiệp đã đặt riêng cho phòng ban.</summary>
-public sealed record DepartmentDomainLevel(int Level, bool IsCustom);
+/// <summary>Mức cần đạt của một lĩnh vực; <paramref name="IsCustom"/> = chủ doanh nghiệp đã đặt cho vị trí ở Khung năng lực số.</summary>
+public sealed record RequiredDomainLevel(int Level, bool IsCustom);

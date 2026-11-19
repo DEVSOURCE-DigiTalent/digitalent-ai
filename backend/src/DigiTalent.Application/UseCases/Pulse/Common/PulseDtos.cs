@@ -39,15 +39,15 @@ public class PulseDomainDto
     public string Name { get; set; } = string.Empty;
     /// <summary>Mục tiêu vị trí, 0 = vị trí không yêu cầu lĩnh vực.</summary>
     public int Target { get; set; }
-    /// <summary>Mức hiệu lực của phòng ban (0..3): mức riêng đã đặt, chưa đặt thì suy từ chuẩn vị trí của tổ chức.</summary>
+    /// <summary>Mức cần đạt hiệu lực của vị trí (0..3): mức chủ doanh nghiệp đặt, chưa đặt thì chuẩn vị trí.</summary>
     public int Ceiling { get; set; }
     /// <summary>
-    /// Mức tối thiểu doanh nghiệp yêu cầu = đỉnh phần bắt buộc của lộ trình: mức phòng ban đã đặt, chưa đặt thì mục tiêu vị
-    /// trí; 0 = không yêu cầu.
+    /// Mức tối thiểu doanh nghiệp yêu cầu = đỉnh phần bắt buộc của lộ trình: mức vị trí chủ doanh nghiệp đặt ở Khung năng
+    /// lực số, chưa đặt thì chuẩn vị trí; 0 = không yêu cầu.
     /// </summary>
     public int PathTop { get; set; }
-    /// <summary>true = mức tối thiểu do chủ doanh nghiệp đặt cho phòng ban; false = theo chuẩn vị trí.</summary>
-    public bool RequiredByDepartment { get; set; }
+    /// <summary>true = mức tối thiểu do chủ doanh nghiệp đặt cho vị trí; false = theo đề xuất của hệ thống.</summary>
+    public bool RequiredByPosition { get; set; }
     /// <summary>Mức đã xác nhận; 0 = chưa xác nhận.</summary>
     public int Verified { get; set; }
     /// <summary>NONE | COURSE | PRACTICAL_EVIDENCE.</summary>
@@ -248,7 +248,7 @@ public static class PulseMapping
         Target = d.Target,
         Ceiling = d.Ceiling,
         PathTop = d.PathTop,
-        RequiredByDepartment = d.RequiredByDepartment,
+        RequiredByPosition = d.RequiredByPosition,
         Verified = d.Verified,
         Source = d.Source,
         Status = d.Status,

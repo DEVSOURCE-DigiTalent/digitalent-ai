@@ -30,7 +30,7 @@ const makeDomain = (overrides: Partial<PulseDomain> = {}): PulseDomain => ({
   target: 2,
   ceiling: 2,
   pathTop: 2,
-  requiredByDepartment: false,
+  requiredByPosition: false,
   verified: 2,
   source: 'COURSE',
   status: 'MET',

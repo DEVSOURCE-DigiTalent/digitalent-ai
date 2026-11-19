@@ -5,7 +5,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Competency.Common;
 
-internal sealed record PositionTargets(bool UsesSystemReference, IReadOnlyDictionary<Guid, int> Levels);
+/// <summary>
+/// Required level per domain of a position. <see cref="UsesSystemReference"/> = the standard is kept per domain (every
+/// competency of a domain at the domain level): the platform TT02 sample, with the levels the owner set in Khung năng lực số
+/// (OW-05, items marked <see cref="OwnerItemNote"/>) on top. <see cref="OwnerDomains"/> = domains the owner set;
+/// <see cref="Suggested"/> = the system suggestion (TT02 sample) per domain, empty for a position outside the 5.
+/// </summary>
+internal sealed record PositionTargets(bool UsesSystemReference, IReadOnlyDictionary<Guid, int> Levels)
+{
+    /// <summary>Note of the items written from a level the owner set for a domain of the position (OW-05).</summary>
+    public const string OwnerItemNote = "OWNER_DOMAIN_LEVEL";
+
+    public IReadOnlySet<Guid> OwnerDomains { get; init; } = new HashSet<Guid>();
+    public IReadOnlyDictionary<Guid, int> Suggested { get; init; } = new Dictionary<Guid, int>();
+}
 
 internal sealed class PositionTargetsReader(IApplicationDbContext context)
 {
@@ -52,31 +65,45 @@ internal sealed class PositionTargetsReader(IApplicationDbContext context)
         foreach (var position in positions)
         {
             var set = sets.GetValueOrDefault(position.Id);
+            var setItems = set == null ? [] : items[set.Id].ToList();
             var code = ReferencePositionMatrixService.MatchPosition(position.Code, position.Name);
-            if (code != null && (set == null
-                || (items[set.Id].Any() && items[set.Id].All(i => i.Note == ReferencePositionMatrixService.SeedItemNote))
-                || (set.VersionNo == 1 && set.ActivatedAt is { } activated
-                    && set.EffectiveFrom == DateOnly.FromDateTime(activated.UtcDateTime)
-                    && items[set.Id].All(i => i.Note == null)
-                    && IsLegacySeed(code, items[set.Id].Select(i => (i.Code, (int)i.RequiredLevel))))))
+            var owner = setItems.Where(i => i.Note == PositionTargets.OwnerItemNote && i.RequiredLevel > 0)
+                .GroupBy(i => i.CategoryId).ToDictionary(g => g.Key, g => (int)g.Max(i => i.RequiredLevel));
+            Dictionary<Guid, int> suggested = new();
+            if (code != null)
             {
                 matrix ??= await ReferencePositionMatrixService.ReadAsync(context);
                 var levels = matrix.Levels[code];
-                result[position.Id] = new(true, categories
+                suggested = categories
                     .Select(c => (c.Id, Number: DomainIndex(c.Code)))
                     .Where(c => c.Number >= 0)
-                    .ToDictionary(c => c.Id, c => levels[c.Number]));
+                    .ToDictionary(c => c.Id, c => levels[c.Number]);
+            }
+            if (code != null && (set == null
+                || (setItems.Count > 0 && setItems.All(i => i.Note is ReferencePositionMatrixService.SeedItemNote or PositionTargets.OwnerItemNote))
+                || (set.VersionNo == 1 && set.ActivatedAt is { } activated
+                    && set.EffectiveFrom == DateOnly.FromDateTime(activated.UtcDateTime)
+                    && setItems.All(i => i.Note == null)
+                    && IsLegacySeed(code, setItems.Select(i => (i.Code, (int)i.RequiredLevel))))))
+            {
+                // the TT02 sample per domain, the levels the owner set on top
+                var levels = suggested.ToDictionary(row => row.Key, row => owner.GetValueOrDefault(row.Key, row.Value));
+                foreach (var (categoryId, level) in owner) levels[categoryId] = level;
+                result[position.Id] = new(true, levels) { OwnerDomains = owner.Keys.ToHashSet(), Suggested = suggested };
             }
             else if (set != null)
             {
-                result[position.Id] = new(false, items[set.Id].Where(i => i.RequiredLevel > 0)
-                    .GroupBy(i => i.CategoryId).ToDictionary(g => g.Key, g => (int)g.Max(i => i.RequiredLevel)));
+                result[position.Id] = new(false, setItems.Where(i => i.RequiredLevel > 0)
+                    .GroupBy(i => i.CategoryId).ToDictionary(g => g.Key, g => (int)g.Max(i => i.RequiredLevel)))
+                {
+                    OwnerDomains = owner.Keys.ToHashSet(), Suggested = suggested,
+                };
             }
         }
         return result;
     }
 
-    private static int DomainIndex(string code) =>
+    internal static int DomainIndex(string code) =>
         code.Length == 7 && code.StartsWith("TT02_D", StringComparison.Ordinal) && code[6] is >= '1' and <= '6'
             ? code[6] - '1' : -1;
 

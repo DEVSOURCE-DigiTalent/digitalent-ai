@@ -2,8 +2,8 @@ import type { TrialStage } from '@/services/trial-program.service';
 import { uiLocale } from '@/lib/i18n';
 
 /** Chuẩn vị trí được đặt trong ma trận trần năng lực của trang Khung năng lực số. */
-/** Where the owner sets the expected level outside the survey: OW-05 "Năng lực từng phòng ban". */
-export const POSITION_STANDARD_PATH = '/enterprise/setup?tab=departments';
+/** Where the owner sets the expected level outside the survey: OW-05 "Năng lực từng vị trí". */
+export const POSITION_STANDARD_PATH = '/enterprise/setup?tab=positions';
 
 export const LEVEL_LABELS = ['Chưa đạt Cơ bản', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;
 export const TIER_LABELS = ['', 'Cơ bản', 'Trung cấp', 'Nâng cao'] as const;

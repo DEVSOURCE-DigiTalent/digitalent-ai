@@ -16,8 +16,8 @@ using Xunit;
 namespace DigiTalent.Tests.Competency;
 
 /// <summary>
-/// Khung năng lực (OW-05): toàn doanh nghiệp = mọi khóa đã có (Cơ bản + khóa đã mua); phòng ban đặt mức riêng, không vượt
-/// khóa đã có, xét từng lĩnh vực.
+/// Khung năng lực số (OW-05): toàn doanh nghiệp = mọi khóa đã có (Cơ bản + khóa đã mua); mức cần đạt đặt theo 5 vị trí chuẩn
+/// (dùng chung mọi phòng ban), ghi vào chuẩn vị trí; chưa đặt thì theo đề xuất của hệ thống (mẫu TT02 của vị trí).
 /// </summary>
 public class CapabilityCeilingTests : IDisposable
 {
@@ -70,7 +70,7 @@ public class CapabilityCeilingTests : IDisposable
 
     private UpdateOrganizationCeilingsUseCase OrganizationUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader);
 
-    private UpdateDepartmentCeilingsUseCase DepartmentUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader);
+    private UpdatePositionCeilingsUseCase PositionUseCase() => new(_context, _currentUser.Object, _audit.Object, _reader);
 
     private Task<UpdateOrganizationCeilingsUseCaseOutput> SaveOrganization(int data, int ai) =>
         OrganizationUseCase().ExecuteAsync(new UpdateOrganizationCeilingsUseCaseInput
@@ -78,22 +78,32 @@ public class CapabilityCeilingTests : IDisposable
             Ceilings = { new CeilingInputItem { CategoryId = _dataId, Level = data }, new CeilingInputItem { CategoryId = _aiId, Level = ai } },
         });
 
-    private Task<UpdateDepartmentCeilingsUseCaseOutput> SaveDepartment(int data) =>
-        DepartmentUseCase().ExecuteAsync(new UpdateDepartmentCeilingsUseCaseInput
+    private Task<UpdatePositionCeilingsUseCaseOutput> SavePosition(int data, string code = "ACCOUNTANT") =>
+        PositionUseCase().ExecuteAsync(new UpdatePositionCeilingsUseCaseInput
         {
-            DepartmentId = _deptId,
+            Code = code,
             Ceilings = { new CeilingInputItem { CategoryId = _dataId, Level = data } },
         });
 
+    private static CeilingPositionDto Accountant(CapabilityCeilingsDto output) => output.Positions.Single(p => p.Code == "ACCOUNTANT");
+
+    private Task<List<PositionRequirementSet>> SetsOfAccountantAsync() =>
+        _context.PositionRequirementSets.Include(s => s.Items)
+            .Where(s => _context.JobPositions.Any(p => p.Id == s.JobPositionId && p.Code == "ACCOUNTANT"))
+            .OrderBy(s => s.VersionNo).ToListAsync();
+
     [Fact]
-    public async Task Get_WholeCompanyIsEveryOwnedCourse_AndDepartmentsUseItUntilTheyGetTheirOwnLevel()
+    public async Task Get_WholeCompanyIsEveryOwnedCourse_AndTheFivePositionsFollowTheSystemSuggestion()
     {
         var output = await new GetCapabilityCeilingsUseCase(_currentUser.Object, _reader).ExecuteAsync(new GetCapabilityCeilingsUseCaseInput());
 
         output.PlatformCourseCount.Should().Be(6);
         output.Domains.Select(d => d.OrganizationCeiling).Should().Equal(3, 3);
-        output.Departments.Single().IsCustomized.Should().BeFalse();
-        output.Departments.Single().Ceilings.Select(c => c.Level).Should().Equal(3, 3);
+        output.Positions.Select(p => p.Code).Should().Equal("CEO", "HR", "MARKETING", "SALES_CRM", "ACCOUNTANT");
+        output.IsConfigured.Should().BeFalse();
+        Accountant(output).IsCustomized.Should().BeFalse();
+        Accountant(output).PositionId.Should().BeNull("the organization has no Kế toán row yet");
+        Accountant(output).Ceilings.Select(c => (c.Level, c.Suggested)).Should().Equal((3, 3), (1, 1));
 
         // Nothing bought for AI: only its free Basic course is owned.
         var aiCourseIds = await _context.PlatformCourses.Where(c => c.Code.StartsWith("M6-")).Select(c => c.Id).ToListAsync();
@@ -104,81 +114,77 @@ public class CapabilityCeilingTests : IDisposable
     }
 
     [Fact]
-    public async Task DepartmentLevel_IsTheExpectedLevelOfItsPeople_OtherDomainsFollowThePositions()
+    public async Task PositionLevel_IsWrittenIntoThePositionStandard_AndRequiredInEveryDepartment()
     {
-        await SaveDepartment(2);
+        var output = await SavePosition(2);
 
-        var expectation = await CapabilityExpectation.LoadAsync(_context, _orgId);
+        output.IsConfigured.Should().BeTrue();
+        Accountant(output).Ceilings.Single(c => c.CategoryId == _dataId)
+            .Should().BeEquivalentTo(new { Level = 2, Suggested = 3, IsCustomized = true });
+        Accountant(output).Ceilings.Single(c => c.CategoryId == _aiId)
+            .Should().BeEquivalentTo(new { Level = 1, Suggested = 1, IsCustomized = false });
+        var set = (await SetsOfAccountantAsync()).Should().ContainSingle().Subject;
+        set.Status.Should().Be(Statuses.PositionRequirementSet.Active);
+        set.Items.Sum(i => i.WeightPercent).Should().Be(100m);
+        var dataItem = set.Items.Single(i => _context.Competencies.Any(c => c.Id == i.CompetencyId && c.CategoryId == _dataId));
+        dataItem.Should().BeEquivalentTo(new { RequiredLevel = 2, Note = "OWNER_DOMAIN_LEVEL" });
+        set.Items.Single(i => i.Id != dataItem.Id).Note.Should().Be("SYSTEM_REFERENCE_POSITION");
 
-        expectation.ExpectedFor(_deptId, _dataId).Should().Be(2);
-        expectation.ExpectedFor(_deptId, _aiId).Should().BeNull("not set for this department");
-        expectation.ExpectedFor(null, _dataId).Should().BeNull("people without a department follow their position");
+        // the level is the position's, whatever the department of the employee
+        var position = await _context.JobPositions.SingleAsync(p => p.Code == "ACCOUNTANT");
+        _context.Employees.Add(new Employee { OrganizationId = _orgId, DepartmentId = _deptId, JobPositionId = position.Id, FullName = "An", EmployeeCode = "NV1", Status = "ACTIVE" });
+        await _context.SaveChangesAsync();
+        var levels = await _reader.ForPositionAsync(_orgId, position.Id, new[] { _dataId, _aiId });
+        levels[_dataId].Should().Be(new RequiredDomainLevel(2, IsCustom: true));
+        levels[_aiId].Should().Be(new RequiredDomainLevel(1, IsCustom: false));
         (await _reader.EffectiveForDepartmentAsync(_orgId, _deptId, new[] { _dataId }))[_dataId].Should().Be(2);
+
+        // the same level again writes nothing; another one makes a new version and archives the old
+        await SavePosition(2);
+        (await SetsOfAccountantAsync()).Should().HaveCount(1);
+        await SavePosition(3);
+        (await SetsOfAccountantAsync()).Select(s => (s.VersionNo, s.Status)).Should().Equal(
+            (1, Statuses.PositionRequirementSet.Archived), (2, Statuses.PositionRequirementSet.Active));
     }
 
     [Fact]
-    public async Task UpdateDepartment_NeedsNoCompanyLevelFirst()
-    {
-        var output = await SaveDepartment(2);
-
-        output.Departments.Single().Ceilings.Single(c => c.CategoryId == _dataId)
-            .Should().BeEquivalentTo(new { Level = 2, IsCustomized = true });
-    }
-
-    [Fact]
-    public async Task UpdateDepartment_CanAimAboveTheOwnedCourses_SetFirstBuyLater()
+    public async Task UpdatePosition_CanAimAboveTheOwnedCourses_SetFirstBuyLater()
     {
         var advanced = await _context.PlatformCourses.SingleAsync(c => c.Code == "M1-A");
         _context.CourseOrders.RemoveRange(_context.CourseOrders.Where(o => o.CourseId == advanced.Id));
         await _context.SaveChangesAsync();
 
-        var output = await SaveDepartment(3);
+        var output = await SavePosition(3, "SALES_CRM");
 
         output.Domains.Single(d => d.CategoryId == _dataId).OrganizationCeiling.Should().Be(2, "M1-A is not bought yet");
-        output.Departments.Single().Ceilings.Single(c => c.CategoryId == _dataId)
-            .Should().BeEquivalentTo(new { Level = 3, IsCustomized = true });
+        output.Positions.Single(p => p.Code == "SALES_CRM").Ceilings.Single(c => c.CategoryId == _dataId)
+            .Should().BeEquivalentTo(new { Level = 3, Suggested = 2, IsCustomized = true });
     }
 
     [Fact]
-    public async Task UpdateDepartment_UnknownDomain_IsRejected()
+    public async Task UpdatePosition_UnknownDomainOrPosition_IsRejected()
     {
-        var action = () => DepartmentUseCase().ExecuteAsync(new UpdateDepartmentCeilingsUseCaseInput
+        var domain = () => PositionUseCase().ExecuteAsync(new UpdatePositionCeilingsUseCaseInput
         {
-            DepartmentId = _deptId,
+            Code = "ACCOUNTANT",
             Ceilings = { new CeilingInputItem { CategoryId = Guid.NewGuid(), Level = 1 } },
         });
+        (await domain.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("CATEGORY_NOT_IN_MATRIX");
 
-        (await action.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("CATEGORY_NOT_IN_MATRIX");
+        var position = () => SavePosition(2, "LEGAL");
+        (await position.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("INVALID_JOB_POSITION");
     }
 
     [Fact]
-    public async Task UpdateDepartment_KeepsItsLevelWhileTheCompanyOwnsOnlyBasic()
-    {
-        var dataCourseIds = await _context.PlatformCourses.Where(c => c.Code.StartsWith("M1-")).Select(c => c.Id).ToListAsync();
-        _context.CourseOrders.RemoveRange(_context.CourseOrders.Where(o => dataCourseIds.Contains(o.CourseId)));
-        await _context.SaveChangesAsync();
-
-        var matrix = await _reader.ReadAsync<CapabilityCeilingsDto>(_orgId);
-        matrix.Domains.Single(d => d.CategoryId == _dataId).OrganizationCeiling.Should().Be(1);
-        var saved = await SaveDepartment(2);
-        saved.Departments.Single().Ceilings.Single(c => c.CategoryId == _dataId).Level.Should().Be(2);
-    }
-
-    [Fact]
-    public async Task UpdateOrganization_Lower_AdjustsDepartmentCeilings()
+    public async Task UpdateOrganization_LegacyEndpoint_KeepsTheCompanyAtEveryOwnedCourse()
     {
         await SaveOrganization(data: 3, ai: 3);
-        var department = await SaveDepartment(3);
-        department.Departments.Single().CourseCount.Should().Be(6);
 
         var output = await SaveOrganization(data: 1, ai: 2);
 
-        // Legacy endpoint (no longer used by OW-05): it still lowers department levels, the company keeps every owned course.
-        output.AdjustedDepartmentCount.Should().Be(1);
+        // Legacy endpoint (no longer used by OW-05): the company keeps every owned course, positions are untouched.
         output.OrganizationCourseCount.Should().Be(6);
-        var ceilings = output.Departments.Single().Ceilings;
-        ceilings.Single(c => c.CategoryId == _dataId).Should().BeEquivalentTo(new { Level = 1, IsCustomized = true });
-        ceilings.Single(c => c.CategoryId == _aiId).Should().BeEquivalentTo(new { Level = 3, IsCustomized = false });
+        Accountant(output).IsCustomized.Should().BeFalse();
     }
 
     [Fact]
@@ -289,15 +295,15 @@ public class CapabilityCeilingTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateDepartment_Inherit_DropsOwnCeilings()
+    public async Task UpdatePosition_Inherit_GoesBackToTheSystemSuggestion()
     {
-        await SaveDepartment(1);
+        await SavePosition(1);
 
-        var output = await DepartmentUseCase().ExecuteAsync(new UpdateDepartmentCeilingsUseCaseInput { DepartmentId = _deptId, Inherit = true });
+        var output = await PositionUseCase().ExecuteAsync(new UpdatePositionCeilingsUseCaseInput { Code = "ACCOUNTANT", Inherit = true });
 
-        output.Departments.Single().IsCustomized.Should().BeFalse();
-        output.Departments.Single().CourseCount.Should().Be(6, "back to every course the company owns");
-        (await _context.CapabilityCeilings.CountAsync(c => c.DepartmentId == _deptId)).Should().Be(0);
+        Accountant(output).IsCustomized.Should().BeFalse();
+        Accountant(output).Ceilings.Select(c => c.Level).Should().Equal(3, 1);
+        (await SetsOfAccountantAsync()).Last().Items.Should().OnlyContain(i => i.Note == "SYSTEM_REFERENCE_POSITION");
     }
 
     [Fact]

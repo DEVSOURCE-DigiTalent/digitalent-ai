@@ -214,8 +214,10 @@ export interface InternalCourseRecord {
 /** Ceiling matrix (OW-05 "Phạm vi năng lực"): levels 0–3 per competency category id. */
 export interface CapabilityCeilingRecord {
   organization: Record<string, number>;
-  /** A department's own ceilings; a category missing here inherits the organization ceiling. */
-  departments: Record<string, Record<string, number>>;
+  /** Old per-department levels, no longer read (Khung năng lực số is set per position). */
+  departments?: Record<string, Record<string, number>>;
+  /** The levels the owner set per standard position code; a category missing here follows the system suggestion. */
+  positions?: Record<string, Record<string, number>>;
   updatedAt: string;
   updatedByName: string;
 }

@@ -36,10 +36,10 @@ async function failure(promise: Promise<unknown>) {
 }
 
 const levels = (matrix: CapabilityCeilings) => matrix.domains.map((d) => d.organizationCeiling);
-const department = (matrix: CapabilityCeilings, id: string) => matrix.departments.find((d) => d.departmentId === id)!;
+const position = (matrix: CapabilityCeilings, code: string) => matrix.positions.find((p) => p.code === code)!;
 
-describe('capability ceilings (Phạm vi năng lực)', () => {
-  it('returns the 6 × 3 matrix of the demo organization with its saved ceilings', async () => {
+describe('Khung năng lực số (courses owned + levels per position)', () => {
+  it('returns the 6 × 3 matrix of the demo organization with the 5 positions', async () => {
     asUser('mock-owner');
     const matrix = await call('get', '/capability-ceilings');
 
@@ -48,22 +48,33 @@ describe('capability ceilings (Phạm vi năng lực)', () => {
     expect(levels(matrix)).toEqual([3, 2, 3, 2, 1, 2]);
     expect(matrix.organizationCourseCount).toBe(13);
     expect(matrix.domains[0].courses.map((c) => c.code)).toEqual(['A1-F', 'A1-I', 'A1-A']);
+    expect(matrix.positions.map((p) => p.code)).toEqual(['CEO', 'HR', 'MARKETING', 'SALES_CRM', 'ACCOUNTANT']);
 
-    const accounting = department(matrix, 'dep-kt');
+    const accounting = position(matrix, 'ACCOUNTANT');
     expect(accounting.isCustomized).toBe(true);
     expect(accounting.courseCount).toBe(8);
-    // A department without its own ceiling inherits the organization ceiling.
-    expect(department(matrix, 'dep-kd').ceilings.map((c) => c.level)).toEqual([3, 2, 3, 2, 1, 2]);
+    expect(accounting.departments.length).toBeGreaterThan(0);
+    // A position not set follows the system suggestion (TT02 sample of the position).
+    const sales = position(matrix, 'SALES_CRM');
+    expect(sales.isCustomized).toBe(false);
+    expect(sales.ceilings.map((c) => c.level)).toEqual([2, 3, 2, 2, 2, 1]);
+    expect(sales.ceilings.map((c) => c.suggested)).toEqual([2, 3, 2, 2, 2, 1]);
   });
 
-  it('lets a department aim above the owned courses (set first, buy later)', async () => {
+  it('lets a position aim above the owned courses (set first, buy later)', async () => {
     asUser('mock-owner');
-    const matrix = await call('put', '/capability-ceilings/departments/dep-kd', { ceilings: [{ categoryId: 'cat-5', level: 2 }] });
+    const matrix = await call('put', '/capability-ceilings/positions/SALES_CRM', { ceilings: [{ categoryId: 'cat-5', level: 3 }] });
     expect(matrix.domains.find((domain) => domain.categoryId === 'cat-5')?.organizationCeiling).toBe(1);
-    expect(department(matrix, 'dep-kd').ceilings[4]).toMatchObject({ level: 2, isCustomized: true });
+    expect(position(matrix, 'SALES_CRM').ceilings[4]).toMatchObject({ level: 3, suggested: 2, isCustomized: true });
   });
 
-  it('keeps every owned course for the company when the legacy organization endpoint lowers departments', async () => {
+  it('refuses a position outside the 5', async () => {
+    asUser('mock-owner');
+    const result = await failure(call('put', '/capability-ceilings/positions/LEGAL', { ceilings: [{ categoryId: 'cat-1', level: 2 }] }));
+    expect(result).toEqual({ status: 400, codes: ['INVALID_JOB_POSITION'] });
+  });
+
+  it('keeps every owned course for the company and the position levels on the legacy organization endpoint', async () => {
     asUser('mock-owner');
     const ceilings = ['cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6'].map((categoryId) => ({
       categoryId,
@@ -72,8 +83,8 @@ describe('capability ceilings (Phạm vi năng lực)', () => {
     const matrix = await call('put', '/capability-ceilings/organization', { ceilings });
 
     expect(levels(matrix)).toEqual([3, 2, 3, 2, 1, 2]);
-    expect(matrix.adjustedDepartmentCount).toBe(1); // Marketing had Sáng tạo nội dung at 3
-    expect(department(matrix, 'dep-mkt').ceilings[2].level).toBe(1);
+    expect(matrix.adjustedDepartmentCount).toBe(0);
+    expect(position(matrix, 'MARKETING').ceilings[2].level).toBe(3);
   });
 
   it('refuses an organization ceiling level when its course has not been purchased', async () => {
@@ -99,11 +110,11 @@ describe('capability ceilings (Phạm vi năng lực)', () => {
     expect(matrix.domains.find((domain) => domain.categoryId === 'cat-5')?.organizationCeiling).toBe(2);
   });
 
-  it('lets a department go back to the organization ceiling', async () => {
+  it('lets a position go back to the system suggestion', async () => {
     asUser('mock-owner');
-    const matrix = await call('put', '/capability-ceilings/departments/dep-kt', { inherit: true, ceilings: [] });
-    expect(department(matrix, 'dep-kt').isCustomized).toBe(false);
-    expect(department(matrix, 'dep-kt').courseCount).toBe(13);
+    const matrix = await call('put', '/capability-ceilings/positions/ACCOUNTANT', { inherit: true, ceilings: [] });
+    expect(position(matrix, 'ACCOUNTANT').isCustomized).toBe(false);
+    expect(position(matrix, 'ACCOUNTANT').ceilings.map((c) => c.level)).toEqual([3, 2, 1, 3, 2, 1]);
   });
 
   it('refuses employees', async () => {

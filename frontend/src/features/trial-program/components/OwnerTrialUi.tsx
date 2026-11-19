@@ -256,14 +256,14 @@ function CurrentLevelCell({ row }: { row: DomainRow }) {
 
 /**
  * Mức cần đạt của lĩnh vực: một mức rõ ràng (trung bình mức cần đạt của những người đang xem, làm tròn như mức hiện tại);
- * khi mỗi người cần một mức khác nhau, khoảng đó nằm trong chú thích. Chưa có thì mời đặt mức cho phòng ban.
+ * khi mỗi người cần một mức khác nhau, khoảng đó nằm trong chú thích. Chưa có thì mời đặt mức cho vị trí.
  */
 function TargetCell({ row }: { row: DomainRow }) {
   useUiLanguage();
   if (!row.targetRange || row.targetLevel == null) {
     return (
       <Link to={POSITION_STANDARD_PATH} className="inline-flex items-center gap-1 text-[13px] font-semibold text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-teal-800">
-        {translateUi('Đặt mức cho phòng ban')}<ArrowRight size={13} aria-hidden="true" />
+        {translateUi('Đặt mức cho vị trí')}<ArrowRight size={13} aria-hidden="true" />
       </Link>
     );
   }
@@ -303,7 +303,7 @@ function DomainDetail({ row }: { row: DomainRow }) {
         {status === 'none' ? (
           <>
             <span className="trial-insight__label">{translateUi('Chưa có mức để so sánh')}</span>
-            <Link to={POSITION_STANDARD_PATH} className="trial-insight__link">{translateUi('Đặt mức cho phòng ban')}<ArrowRight size={14} aria-hidden="true" /></Link>
+            <Link to={POSITION_STANDARD_PATH} className="trial-insight__link">{translateUi('Đặt mức cho vị trí')}<ArrowRight size={14} aria-hidden="true" /></Link>
           </>
         ) : (
           <>

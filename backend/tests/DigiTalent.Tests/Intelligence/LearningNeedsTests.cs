@@ -13,6 +13,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
+using DigiTalent.Tests.TestSupport;
 
 namespace DigiTalent.Tests.Intelligence;
 
@@ -25,8 +26,8 @@ public class LearningNeedsTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         var org = Guid.NewGuid();
         var department = new Department { OrganizationId = org, Code = "HR", Name = "Nhân sự" };
-        var position = new JobPosition { OrganizationId = org, DepartmentId = department.Id, Code = "HR", Name = "HR" };
-        var employee = new Employee { OrganizationId = org, DepartmentId = department.Id, FullName = "Nhân viên", Status = "ACTIVE" };
+        var position = new JobPosition { OrganizationId = org, Code = "HR", Name = "HR" };
+        var employee = new Employee { OrganizationId = org, DepartmentId = department.Id, JobPositionId = position.Id, FullName = "Nhân viên", Status = "ACTIVE" };
         var domain = new CompetencyCategory { OrganizationId = org, Code = "TT02_D1", Name = "Dữ liệu", SortOrder = 1 };
         var competency = new DigiTalent.Domain.Entities.Competency { CategoryId = domain.Id, Code = "TT02-1.1", Name = "Tìm kiếm" };
         var assessment = new TrialAssessment { EmployeeId = employee.Id, OrganizationId = org, SubmittedAt = DateTimeOffset.UtcNow, ChoiceScore = 1, ChoiceTotal = 2 };
@@ -63,16 +64,12 @@ public class LearningNeedsTests
         (await Result()).RequiredLevel.Should().Be(1);
         (await Result()).State.Should().Be("MET");
 
-        // The level the owner set for the department in Khung năng lực số wins over the position standard, as in the
-        // survey report: the gap moves to "Khoảng trống năng lực" with the same comparison.
-        db.CapabilityCeilings.Add(new CapabilityCeiling
-        {
-            OrganizationId = org, DepartmentId = department.Id, CompetencyCategoryId = domain.Id, CeilingLevel = 3,
-        });
-        await db.SaveChangesAsync();
-        var byDepartment = await Result();
-        byDepartment.RequiredLevel.Should().Be(3);
-        byDepartment.State.Should().Be("NEEDS_LEARNING");
+        // The level the owner set for the position in Khung năng lực số becomes its standard, as in the survey report:
+        // the gap moves to "Khoảng trống năng lực" with the same comparison.
+        await PositionLevels.SetAsync(db, org, "HR", (domain.Id, 3));
+        var byPosition = await Result();
+        byPosition.RequiredLevel.Should().Be(3);
+        byPosition.State.Should().Be("NEEDS_LEARNING");
     }
 
     [Theory]
@@ -86,7 +83,7 @@ public class LearningNeedsTests
         user.Setup(u => u.GetRequiredOrganizationId()).Returns(org);
         user.SetupGet(u => u.IsAdmin).Returns(true);
         db.Departments.Add(new Department { Id = department, OrganizationId = org, Code = "HR", Name = "HR" });
-        db.JobPositions.Add(new JobPosition { Id = position, OrganizationId = org, DepartmentId = department, Code = "HR", Name = "HR" });
+        db.JobPositions.Add(new JobPosition { Id = position, OrganizationId = org, Code = "HR", Name = "HR" });
         db.Employees.Add(new Employee { Id = employee, OrganizationId = org, DepartmentId = department, JobPositionId = position, FullName = "Nhân viên", EmployeeCode = "NV01", Status = "ACTIVE" });
         db.CompetencyCategories.Add(new CompetencyCategory { Id = category, OrganizationId = org, Name = "Dữ liệu", Code = "D1", SortOrder = 1 });
         db.Competencies.Add(new DigiTalent.Domain.Entities.Competency { Id = competency, CategoryId = category, Name = "Tìm kiếm dữ liệu", Code = "1.1" });
@@ -160,11 +157,9 @@ public class LearningNeedsTests
         company.Overview.Domains.Single().Assessed.Should().Be(1);
         company.Overview.Domains.Single().Waiting.Should().Be(1);
 
-        // Old profiles may point at a different department's position and standard.
-        var executiveDepartment = new Department { OrganizationId = org, Code = "EXEC", Name = "Ban Giám đốc" };
-        var executive = new JobPosition { OrganizationId = org, DepartmentId = executiveDepartment.Id, Code = "CEO", Name = "CEO" };
+        // A position is shared by every department: an employee of this department may hold the CEO position and its standard.
+        var executive = new JobPosition { OrganizationId = org, Code = "CEO", Name = "CEO" };
         var executiveStandard = new PositionRequirementSet { JobPositionId = executive.Id, VersionNo = 1, Status = "ACTIVE" };
-        db.Departments.Add(executiveDepartment);
         db.JobPositions.Add(executive);
         db.PositionRequirementSets.Add(executiveStandard);
         db.PositionRequirementItems.Add(new PositionRequirementItem
@@ -173,35 +168,35 @@ public class LearningNeedsTests
         });
         var profileEmployee = await db.Employees.FindAsync(employee);
         profileEmployee!.JobPositionId = executive.Id;
-        second.JobPositionId = null;
         await db.SaveChangesAsync();
 
-        var local = await useCase.ExecuteAsync(new GetSkillGapRunsUseCaseInput
+        var ceo = await useCase.ExecuteAsync(new GetSkillGapRunsUseCaseInput
         {
-            DepartmentId = department, JobPositionId = position, PageSize = 10,
+            DepartmentId = department, JobPositionId = executive.Id, PageSize = 10,
         });
-        local.TotalItems.Should().Be(2);
-        local.Items.Should().OnlyContain(row => row.PositionId == position);
-        local.Items.Single(row => row.EmployeeId == employee).Domains.Single().RequiredLevel.Should().Be(3);
-        (await useCase.ExecuteAsync(new GetSkillGapRunsUseCaseInput { DepartmentId = department, JobPositionId = executive.Id }))
-            .TotalItems.Should().Be(0);
+        ceo.TotalItems.Should().Be(1);
+        ceo.Items.Single().EmployeeId.Should().Be(employee);
+        ceo.Items.Single().PositionId.Should().Be(executive.Id);
+        ceo.Items.Single().Domains.Single().RequiredLevel.Should().Be(2);
+        (await useCase.ExecuteAsync(new GetSkillGapRunsUseCaseInput { DepartmentId = department, JobPositionId = position }))
+            .Items.Should().ContainSingle().Which.EmployeeId.Should().Be(second.Id);
 
         var directory = new GetPagedEmployeesUseCase(db, new EmployeeScope(db, user.Object));
-        var localEmployees = await directory.ExecuteAsync(new GetPagedEmployeesUseCaseInput { DepartmentId = department, PositionId = position });
-        localEmployees.TotalItems.Should().Be(2);
-        localEmployees.Items.Should().OnlyContain(row => row.JobPositionId == position);
+        var ceoEmployees = await directory.ExecuteAsync(new GetPagedEmployeesUseCaseInput { DepartmentId = department, PositionId = executive.Id });
+        ceoEmployees.TotalItems.Should().Be(1);
+        ceoEmployees.Items.Should().OnlyContain(row => row.JobPositionId == executive.Id);
 
         var workforce = new WorkforceReader(db, new LatestSkillGapRuns(db));
         var team = await workforce.LoadRowsAsync(db.Employees.Where(e => e.DepartmentId == department));
-        team.Should().HaveCount(2).And.OnlyContain(row => row.JobPositionId == position && row.Blocker == null);
+        team.Select(row => row.JobPositionId).Should().BeEquivalentTo(new Guid?[] { executive.Id, position });
 
         var runService = new SkillGapRunService(db, new SkillGapSettingsProvider(db, NullLogger<SkillGapSettingsProvider>.Instance));
         var staged = await runService.StageRunsAsync(new[] { profileEmployee, second }, org, "USER_REQUEST");
-        staged.Should().OnlyContain(result => result.Run != null && result.Run.RequirementSetId == standard);
+        staged.Single(outcome => outcome.Employee.Id == employee).Run!.RequirementSetId.Should().Be(executiveStandard.Id);
+        staged.Single(outcome => outcome.Employee.Id == second.Id).Run!.RequirementSetId.Should().Be(standard);
 
-        // Without a local position, do not use a foreign standard.
-        var localPosition = await db.JobPositions.FindAsync(position);
-        localPosition!.Status = "INACTIVE";
+        // A position taken out of use gives no standard; the profile keeps it.
+        executive.Status = "INACTIVE";
         await db.SaveChangesAsync();
         var noStandard = (await useCase.ExecuteAsync(input)).Items.Single();
         noStandard.State.Should().Be("NO_STANDARD");

@@ -48,7 +48,7 @@ const domain = (overrides: Partial<PulseDomain> = {}): PulseDomain => ({
   target: 3,
   ceiling: 3,
   pathTop: 3,
-  requiredByDepartment: false,
+  requiredByPosition: false,
   verified: 0,
   source: 'NONE',
   status: 'GAP',
@@ -324,8 +324,8 @@ describe('PulsePathPage roadmap', () => {
     const learning = course({ courseId: 'i1', code: 'M1-I', title: 'Chiến lược tìm kiếm', tier: 2, slotStatus: 'IN_PROGRESS' });
     return overview({
       domains: [
-        domain({ pathTop: 2, requiredByDepartment: true, verified: 1, status: 'GAP', gap: 1 }),
-        domain({ categoryId: 'cat-2', number: 2, code: 'TT02_D2', name: 'Giao tiếp và hợp tác', target: 2, pathTop: 1, requiredByDepartment: true, verified: 1, status: 'MET', gap: 0, competencies: [] }),
+        domain({ pathTop: 2, requiredByPosition: true, verified: 1, status: 'GAP', gap: 1 }),
+        domain({ categoryId: 'cat-2', number: 2, code: 'TT02_D2', name: 'Giao tiếp và hợp tác', target: 2, pathTop: 1, requiredByPosition: true, verified: 1, status: 'MET', gap: 0, competencies: [] }),
       ],
       courses: [
         course({ courseId: 'f1', code: 'M1-F', slotStatus: 'COMPLETED', finalStatus: 'APPROVED', approved: true, approvedVia: 'FINAL', progressPercent: 100 }),

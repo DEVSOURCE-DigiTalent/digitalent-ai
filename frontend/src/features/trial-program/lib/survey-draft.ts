@@ -1,7 +1,7 @@
 import type { TrialParticipantRow } from '@/services/trial-program.service';
 
 /** OW-05 opened from the survey to set the expected level ("Tự đặt ở Khung năng lực số"). */
-export const SURVEY_EXPECTATION_PATH = '/enterprise/setup?tab=departments&from=survey';
+export const SURVEY_EXPECTATION_PATH = '/enterprise/setup?tab=positions&from=survey';
 
 /** Back to the survey after the expected level: the deadline step, with the people listed in step 1 restored. */
 export const SURVEY_RESUME_PATH = '/enterprise/trial?resume=1';

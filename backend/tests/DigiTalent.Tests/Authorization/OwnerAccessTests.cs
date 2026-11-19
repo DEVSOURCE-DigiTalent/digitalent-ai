@@ -17,7 +17,7 @@ public class OwnerAccessTests
     [InlineData("POST", "api/v1/departments")] // OW-06 tạo phòng ban
     [InlineData("POST", "api/v1/job-positions")] // OW-09 tạo vị trí
     [InlineData("PUT", "api/v1/capability-ceilings/organization")] // OW-05 trần năng lực doanh nghiệp
-    [InlineData("PUT", "api/v1/capability-ceilings/departments/{departmentId:guid}")] // OW-05 trần phòng ban
+    [InlineData("PUT", "api/v1/capability-ceilings/positions/{code}")] // OW-05 mức cần đạt theo vị trí
     [InlineData("POST", "api/v1/position-requirements/{id:guid}/activate")] // OW-16 kích hoạt chuẩn năng lực
     [InlineData("POST", "api/v1/competency-evidences/manual")] // OW-22 xác nhận mức năng lực
     [InlineData("POST", "api/v1/courses/{id:guid}/purchase")] // OW-23 mua khóa học

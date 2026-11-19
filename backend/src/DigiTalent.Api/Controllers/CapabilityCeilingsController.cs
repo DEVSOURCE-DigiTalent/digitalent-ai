@@ -8,8 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace DigiTalent.Api.Controllers;
 
 /// <summary>
-/// Ceiling matrix of the organization (OW-05 "Phạm vi năng lực"): Digital AI ceiling (6 domains × 3 levels),
-/// organization ceiling and optional department ceilings, with department ≤ organization ≤ Digital AI per domain.
+/// Khung năng lực số of the organization (OW-05): 6 domains × 3 levels of courses, the courses the organization owns, and
+/// the required level per domain of the 5 standard positions (shared by every department), written into the position standard.
 /// </summary>
 [ApiController]
 [Route("api/v1/capability-ceilings")]
@@ -43,16 +43,17 @@ public class CapabilityCeilingsController : ControllerBase
         return Ok(ApiResponse<UpdateOrganizationCeilingsUseCaseOutput>.Ok(result, "Organization ceiling saved."));
     }
 
-    // PUT api/v1/capability-ceilings/departments/{departmentId} — body { inherit?, ceilings: [{ categoryId, level }] }
-    [HttpPut("departments/{departmentId:guid}")]
+    // PUT api/v1/capability-ceilings/positions/{code} — code CEO | HR | MARKETING | SALES_CRM | ACCOUNTANT,
+    // body { inherit?, ceilings: [{ categoryId, level }] }
+    [HttpPut("positions/{code}")]
     [HasPermission(Permissions.PositionRequirement.Manage)]
-    public async Task<ActionResult<ApiResponse<UpdateDepartmentCeilingsUseCaseOutput>>> UpdateDepartment(
-        Guid departmentId,
-        [FromBody] UpdateDepartmentCeilingsUseCaseInput input,
-        [FromServices] IUseCase<UpdateDepartmentCeilingsUseCaseInput, UpdateDepartmentCeilingsUseCaseOutput> useCase)
+    public async Task<ActionResult<ApiResponse<UpdatePositionCeilingsUseCaseOutput>>> UpdatePosition(
+        string code,
+        [FromBody] UpdatePositionCeilingsUseCaseInput input,
+        [FromServices] IUseCase<UpdatePositionCeilingsUseCaseInput, UpdatePositionCeilingsUseCaseOutput> useCase)
     {
-        input.DepartmentId = departmentId;
+        input.Code = code;
         var result = await useCase.ExecuteAsync(input);
-        return Ok(ApiResponse<UpdateDepartmentCeilingsUseCaseOutput>.Ok(result, "Department ceiling saved."));
+        return Ok(ApiResponse<UpdatePositionCeilingsUseCaseOutput>.Ok(result, "Position levels saved."));
     }
 }

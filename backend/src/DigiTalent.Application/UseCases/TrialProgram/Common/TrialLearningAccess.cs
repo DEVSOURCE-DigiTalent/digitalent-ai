@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.Competency.Common;
 using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
@@ -37,12 +38,18 @@ internal sealed class TrialLearningAccess(IApplicationDbContext context)
             return TrialLearningMode.AwaitingResult;
         }
 
+        // Khung năng lực số saved: a course bought (organization row) or a level the owner set for the employee's position.
+        var positionId = await EffectiveJobPositions.Resolve(context, context.Employees.AsNoTracking().Where(e => e.Id == employee.Id))
+            .Select(row => row.PositionId).FirstOrDefaultAsync();
         var frameworkSaved = await context.CapabilityCeilings.AsNoTracking()
-            .AnyAsync(c => c.OrganizationId == employee.OrganizationId
-                && (c.DepartmentId == null || c.DepartmentId == employee.DepartmentId));
-        var roadmapReady = frameworkSaved && (isOwnerParticipant || await EffectiveJobPositions.Resolve(context,
-                context.Employees.AsNoTracking().Where(e => e.Id == employee.Id))
-            .AnyAsync(row => row.PositionId.HasValue));
+                .AnyAsync(c => c.OrganizationId == employee.OrganizationId && c.DepartmentId == null)
+            || (positionId != null && await (
+                    from set in context.PositionRequirementSets.AsNoTracking()
+                    join item in context.PositionRequirementItems.AsNoTracking() on set.Id equals item.RequirementSetId
+                    where set.JobPositionId == positionId && set.Status == Statuses.PositionRequirementSet.Active
+                        && item.Note == PositionTargets.OwnerItemNote
+                    select item.Id).AnyAsync());
+        var roadmapReady = frameworkSaved && (isOwnerParticipant || positionId.HasValue);
         return roadmapReady ? TrialLearningMode.Regular : TrialLearningMode.PublicBasics;
     }
 

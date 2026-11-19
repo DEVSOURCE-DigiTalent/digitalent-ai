@@ -2,9 +2,9 @@ import apiClient from './api-client';
 import type { ApiResponse } from '../types/api';
 
 /**
- * Ceiling matrix of the organization (OW-05 "Phạm vi năng lực"): the Digital AI ceiling (6 domains × 3 levels = 18
- * courses), the organization ceiling and optional department ceilings, department ≤ organization ≤ Digital AI per domain.
- * Backend: CapabilityCeilingsController (`/capability-ceilings`).
+ * Khung năng lực số of the organization (OW-05): 6 domains × 3 levels = 18 courses, the courses the organization owns,
+ * and the required level per domain of the 5 standard positions (shared by every department; a domain not set follows
+ * the system suggestion). Backend: CapabilityCeilingsController (`/capability-ceilings`).
  */
 
 export interface CeilingLevel {
@@ -40,19 +40,25 @@ export interface CeilingDomain {
 
 export interface CeilingValue {
   categoryId: string;
-  /** Effective ceiling: the department's own one, else the organization ceiling. */
+  /** Required level: the one the owner set for the position, else the position standard (system suggestion). */
   level: number;
+  /** System suggestion: the TT02 sample of the position. */
   suggested: number;
+  /** true = set by the owner. */
   isCustomized: boolean;
 }
 
-export interface CeilingDepartment {
-  departmentId: string;
+/** One of the 5 standard positions (CEO, HR, MARKETING, SALES_CRM, ACCOUNTANT), shared by every department. */
+export interface CeilingPosition {
+  /** null = the organization has no row for it yet (created when a level is saved). */
+  positionId: string | null;
   code: string;
   name: string;
   employeeCount: number;
+  /** Departments where someone holds the position. */
+  departments: string[];
   hasSuggestion: boolean;
-  /** false = inherits the organization ceiling. */
+  /** true = the owner set a level for at least one domain. */
   isCustomized: boolean;
   courseCount: number;
   ceilings: CeilingValue[];
@@ -66,7 +72,7 @@ export interface CapabilityCeilings {
   updatedByName: string | null;
   levels: CeilingLevel[];
   domains: CeilingDomain[];
-  departments: CeilingDepartment[];
+  positions: CeilingPosition[];
   organizationCourseCount: number;
   platformCourseCount: number;
   /** Only after saving the organization ceiling: departments lowered to stay under it. */
@@ -78,7 +84,7 @@ export interface CeilingInput {
   level: number;
 }
 
-export interface UpdateDepartmentCeilingsRequest {
+export interface UpdatePositionCeilingsRequest {
   inherit?: boolean;
   ceilings: CeilingInput[];
 }
@@ -87,6 +93,7 @@ export const capabilityCeilingService = {
   get: () => apiClient.get<ApiResponse<CapabilityCeilings>>('/capability-ceilings'),
   updateOrganization: (ceilings: CeilingInput[]) =>
     apiClient.put<ApiResponse<CapabilityCeilings>>('/capability-ceilings/organization', { ceilings }),
-  updateDepartment: (departmentId: string, data: UpdateDepartmentCeilingsRequest) =>
-    apiClient.put<ApiResponse<CapabilityCeilings>>(`/capability-ceilings/departments/${departmentId}`, data),
+  /** `code` = one of the 5 standard position codes; `inherit` clears every level the owner set for it. */
+  updatePosition: (code: string, data: UpdatePositionCeilingsRequest) =>
+    apiClient.put<ApiResponse<CapabilityCeilings>>(`/capability-ceilings/positions/${encodeURIComponent(code)}`, data),
 };

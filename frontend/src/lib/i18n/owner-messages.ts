@@ -1002,4 +1002,64 @@ Thanh toán & Ký online|Pay & sign online
 So với mức phòng ban (chưa đặt thì chuẩn vị trí), ở các lĩnh vực đã có kết quả|Against the department level (else the position standard), in domains with results
 Các năng lực đã đánh giá đều đạt mức cần đạt.|Every assessed competency meets the required level.
 Đã đạt mức cần đạt. Chưa cần bổ sung khóa học.|Required level met. No extra course needed yet.
+chưa có kết quả| without results
+Đang tải khoảng trống năng lực…|Loading capability gaps…
+Không tải được khoảng trống năng lực.|Could not load the capability gaps.
+Chưa có kết quả khảo sát để so sánh|No survey results to compare yet
+Lúc khảo sát|At the survey
+Đã đạt đủ|Fully met
+{total} người còn thiếu|{total} people below
+Chưa có kết quả khảo sát|No survey result
+Xem thêm {count} người|Show {count} more
+Bỏ lọc {domain}|Clear {domain}
+Khảo sát|Survey
+{total} có kết quả|{total} with results
+Mức đạt chuẩn|Required level met
+Tỷ lệ cặp nhân viên × lĩnh vực đã đạt mức cần đạt|Share of employee × domain pairs at the required level
+Đạt chuẩn: lúc khảo sát {count}%, hiện tại {total}%|Met: {count}% at the survey, {total}% now
+Lúc khảo sát {count}%|At the survey {count}%
+Đạt đủ|Met
+Thiếu 1–2 cấp|1–2 levels short
+Thiếu từ 3 cấp|3+ levels short
+Số cấp năng lực còn thiếu, cộng cho mọi người và mọi lĩnh vực|Missing levels, summed over everyone and every domain
+Cấp còn thiếu: lúc khảo sát {count}, hiện tại {total}|Missing levels: {count} at the survey, {total} now
+cấp đã đóng|levels closed
+Cần đạt|Required
+Biểu đồ mạng nhện: mức trung bình mỗi lĩnh vực lúc khảo sát, hiện tại và mức cần đạt|Radar chart: average level per domain at the survey, now and required
+{domain}: lúc khảo sát {count}, hiện tại {total}, cần đạt {level}|{domain}: at the survey {count}, now {total}, required {level}
+% đạt chuẩn|% met
+{domain}: chưa có kết quả|{domain}: no result yet
+{domain}: đạt chuẩn {count}% lúc khảo sát, {total}% hiện tại|{domain}: {count}% met at the survey, {total}% now
+Chưa có|None yet
+6 lĩnh vực · đậm = đạt nhiều|6 domains · darker = more met
+Tiến bộ nhiều nhất|Most progress
+Chưa có ai tăng cấp kể từ khảo sát.|Nobody has gained a level since the survey.
+Thiếu {count} cấp lúc khảo sát, còn {total}|{count} levels short at the survey, {total} now
+Cần hỗ trợ|Needs support
+Mọi người đã đạt mức cần đạt.|Everyone meets the required level.
+thiếu {count}|{count} short
+Tất cả nhân viên ({count})|All employees ({count})
+Năng lực từng vị trí|Levels per position
+Chọn vị trí|Choose a position
+Mọi vị trí|Every position
+Chưa vị trí nào|No position yet
+Doanh nghiệp đã ngừng dùng cả 5 vị trí chuẩn.|The company stopped using all 5 standard positions.
+Đến Vị trí công việc|Go to Job positions
+Đặt mức cần đạt cho từng vị trí|Set the required level per position
+Kết quả khảo sát sẽ so với mức này; vị trí chưa đặt theo đề xuất của hệ thống. Danh sách người làm bài vẫn được giữ.|Survey results are compared with this level; a position not set follows the system suggestion. The people listed are kept.
+Đặt mức cần đạt cho từng vị trí. Danh sách vừa nhập được giữ lại.|Set the required level per position. The list you entered is kept.
+Dùng mức các vị trí đã đặt|Use the levels set for positions
+Đổi mức vị trí|Change position levels
+Đặt mức cho vị trí|Set position levels
+ · bạn chưa đặt mức cho vị trí nào| · you have not set a level for any position
+Chọn một trong 5 vị trí, rồi bấm vào mức cao nhất người làm vị trí đó cần đạt ở mỗi lĩnh vực, ở phòng ban nào cũng vậy. Họ học từ Cơ bản tới mức đó. Đặt được cả cấp chưa mua: nhân viên thấy khóa trên lộ trình và học được khi doanh nghiệp mua ở phần 1.|Choose one of the 5 positions, then click the highest level people in it must reach in each domain, in any department. They learn from Basic up to it. A level not bought yet can be set: employees see the course on their path and learn it once the company buys it in part 1.
+Mức có nhãn "Đề xuất" là gợi ý theo Thông tư 02 cho vị trí đó; bấm "Dùng mức đề xuất" để áp dụng nhanh.|Levels tagged "Suggested" follow Circular 02 for that position; click "Use suggested levels" to apply them.
+Chuyển giữa 5 vị trí, xem vị trí nào chưa đặt|Switch between the 5 positions, see which is not set
+Vị trí dùng được ở mọi phòng ban.|The position is used in every department.
+Doanh nghiệp đã có đủ 5 vị trí chuẩn.|The company already has all 5 standard positions.
+Đang dùng ở|Used in
+Chưa có ai|Nobody yet
+mức cần đạt của {set}/{total} vị trí đã đặt (vị trí khác theo đề xuất của hệ thống)|the required level of the {set}/{total} positions set (other positions follow the system suggestion)
+{count} vị trí đã đặt mức; vị trí khác theo đề xuất của hệ thống. Tiếp tục đặt hạn ngay.|{count} positions have levels; the others follow the system suggestion. Continue to the deadline.
+Còn {count} vị trí chưa đặt|{count} positions not set
 `.trim().split('\n').map(line => { const index=line.indexOf('|'); return [line.slice(0,index),line.slice(index+1)]; }));

@@ -267,7 +267,6 @@ public class TrialProgramReader
             .ToDictionaryAsync(row => row.Employee.Id, row => row.PositionId);
         var positionIds = positionByEmployee.Values.Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
         var standards = await new PositionTargetsReader(_context).LoadAsync(trial.OrganizationId, positionIds);
-        var expectation = await CapabilityExpectation.LoadAsync(_context, trial.OrganizationId);
         var departments = await _context.Departments.AsNoTracking().Where(d => departmentIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id, d => d.Name);
         var positions = await _context.JobPositions.AsNoTracking().Where(p => positionIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name);
 
@@ -282,8 +281,8 @@ public class TrialProgramReader
                 {
                     byCategory.TryGetValue(domain.CategoryId, out var dResult);
                     var lvl = dResult == null ? 0 : TrialAssessmentResults.EffectiveLevelOf(dResult);
-                    var expected = expectation.ExpectedFor(r.DepartmentId, domain.CategoryId);
-                    var targetLevel = expected ?? standard?.Levels.GetValueOrDefault(domain.CategoryId) ?? 0;
+                    var expected = CapabilityExpectation.ExpectedFor(standard, domain.CategoryId);
+                    var targetLevel = standard?.Levels.GetValueOrDefault(domain.CategoryId) ?? 0;
                     var (levelLabel, statusText, gapText, recCourse) = DescribeDomainResult(domain.Number, domain.Name, lvl, targetLevel, expected.HasValue);
 
                     return new TrialReportEmployeeDomainDetailDto
@@ -344,8 +343,8 @@ public class TrialProgramReader
             var metCount = comparisons.Count(d => d.SkillGap == 0);
             var targetMetRate = comparisons.Count == 0 ? 0m : Math.Round((decimal)metCount / comparisons.Count * 100m, 1);
             var avgGap = comparisons.Count == 0 ? 0m : Math.Round((decimal)comparisons.Average(d => d.SkillGap), 1);
-            var byDepartment = comparisons.Count > 0 && comparisons.All(d => d.IsExpectation);
-            var (statusText, gapSummary) = DescribeEnterpriseDomainSummary(domain.Number, domain.Name, generalLevel, targetLevel, targetMetRate, byDepartment);
+            var byPosition = comparisons.Count > 0 && comparisons.All(d => d.IsExpectation);
+            var (statusText, gapSummary) = DescribeEnterpriseDomainSummary(domain.Number, domain.Name, generalLevel, targetLevel, targetMetRate, byPosition);
 
             return new TrialReportDomainDto
             {
@@ -373,12 +372,12 @@ public class TrialProgramReader
         };
     }
 
-    /// <param name="ownerExpectation">true = mức cần đạt là mức chủ doanh nghiệp đặt cho phòng ban, không phải chuẩn vị trí.</param>
+    /// <param name="ownerExpectation">true = mức cần đạt là mức chủ doanh nghiệp đặt cho vị trí, không phải đề xuất của hệ thống.</param>
     public static (string LevelLabel, string StatusText, string GapText, string RecommendedCourse) DescribeDomainResult(
         int domainNumber, string domainName, int level, int targetLevel, bool ownerExpectation = false)
     {
-        var standard = ownerExpectation ? "mức phòng ban" : "chuẩn vị trí";
-        var standardTitle = ownerExpectation ? "Mức phòng ban" : "Chuẩn vị trí";
+        var standard = ownerExpectation ? "mức vị trí" : "chuẩn vị trí";
+        var standardTitle = ownerExpectation ? "Mức vị trí" : "Chuẩn vị trí";
         targetLevel = Math.Clamp(targetLevel, 0, 3);
         var gap = Math.Max(0, targetLevel - level);
 
@@ -430,8 +429,8 @@ public class TrialProgramReader
     private static (string StatusText, string GapSummary) DescribeEnterpriseDomainSummary(
         int domainNumber, string domainName, int generalLevel, int targetLevel, decimal targetMetRate, bool ownerExpectation = false)
     {
-        var standard = ownerExpectation ? "mức phòng ban" : "chuẩn vị trí";
-        var standardTitle = ownerExpectation ? "Mức phòng ban" : "Chuẩn";
+        var standard = ownerExpectation ? "mức vị trí" : "chuẩn vị trí";
+        var standardTitle = ownerExpectation ? "Mức vị trí" : "Chuẩn";
         targetLevel = Math.Clamp(targetLevel, 0, 3);
         if (targetLevel == 0)
             return ("Chưa có chuẩn để đối chiếu", string.Empty);
@@ -643,7 +642,7 @@ public class TrialReportEmployeeDomainDetailDto
     public int Level { get; set; }
     public int TargetLevel { get; set; } = 3;
     public bool UsesSystemReference { get; set; }
-    /// <summary>true = mức cần đạt là mức chủ doanh nghiệp đặt cho phòng ban (không phải chuẩn vị trí).</summary>
+    /// <summary>true = mức cần đạt là mức chủ doanh nghiệp đặt cho vị trí ở Khung năng lực số (không phải đề xuất của hệ thống).</summary>
     public bool IsExpectation { get; set; }
     public int SkillGap { get; set; }
     public string LevelLabel { get; set; } = string.Empty;
