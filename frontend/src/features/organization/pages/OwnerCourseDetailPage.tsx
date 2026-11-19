@@ -1,8 +1,8 @@
 import { canonicalCourseCode } from '@/features/courses/course-code';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserCheck, Layers, ShieldCheck, BookOpen, Clock3 } from 'lucide-react';
+import { useParams, Link } from 'react-router-dom';
+import { ArrowLeft, Layers, ShieldCheck, BookOpen, Clock3 } from 'lucide-react';
 import { useCourse, useAssignments } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import {
@@ -31,7 +31,6 @@ const RUBRIC = [
 export function OwnerCourseDetailPage() {
   useUiLanguage();
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
 
   const { data: course, isLoading } = useCourse(id);
   const { data: apiCategories = [] } = useCompetencyCategories();
@@ -138,22 +137,9 @@ export function OwnerCourseDetailPage() {
             <span>{canonicalCourseCode(course.code)}</span><span><Layers size={15} /> {modules.length}{translateUi(" chương")}</span><span><BookOpen size={15} /> {lessonCount}{translateUi(" bài")}</span>{duration && <span><Clock3 size={15} /> {duration}</span>}
           </div>
 
+          {/* A bought course is open to every employee: only a course not bought has an action here. */}
+          {!hasLicense && (
           <div className="flex flex-wrap items-center gap-2.5 mt-6">
-            {hasLicense ? (
-              <button
-                type="button"
-                onClick={() =>
-                  navigate(`/enterprise/assignments?courseId=${course.id}`)
-                }
-                className="inline-flex items-center gap-2 rounded-[11px] px-4 py-3 text-[13px] font-bold transition-transform hover:-translate-y-0.5"
-                style={{
-                  background: 'var(--po-surface)',
-                  color: 'var(--po-accent)',
-                  boxShadow: '0 9px 18px rgba(19,123,132,.17)',
-                }}
-              >
-                <UserCheck className="size-4" />{translateUi("Giao khóa học")}</button>
-            ) : (
               <Link
                 to={checkoutPath}
                 className="inline-flex items-center gap-2 rounded-[11px] px-5 py-3 text-[13px] font-bold transition-all shadow-lg hover:brightness-110"
@@ -164,8 +150,8 @@ export function OwnerCourseDetailPage() {
               >
                 <span>🔒 Mua khóa học ({pricing.formatted})</span>
               </Link>
-            )}
           </div>
+          )}
         </div>
 
         <div className="course-detail-hero-art"><CourseArtwork domain={domainIdx} level={level} /></div>
@@ -278,9 +264,7 @@ export function OwnerCourseDetailPage() {
 
           {/* Enrollment panel */}
           <CourseEnrollment
-            course={course}
             isBasic={isBasic}
-            assignmentCount={assignmentsData?.totalItems ?? 0}
             completedCount={completedCount}
             hasLicense={hasLicense}
             checkoutPath={checkoutPath}
