@@ -2,7 +2,7 @@ import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCircle, Shield, Settings, LogOut, ChevronDown, Sun, Moon, GraduationCap, MessageSquare, Bug } from 'lucide-react';
+import { UserCircle, Shield, Settings, LogOut, ChevronDown, Sun, Moon, GraduationCap, HelpCircle, MessageSquare, Bug } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useLogout } from '@/hooks/use-auth';
 import { ROLE_LABELS, type Role } from '@/lib/roles';
@@ -10,6 +10,9 @@ import { useEnterpriseThemeStore } from '@/hooks/use-enterprise-theme';
 
 
 interface UserAvatarMenuProps {
+  showLanguageSwitcher?: boolean;
+  hideFeedbackLinks?: boolean;
+  onStartTour?: () => void;
   accountPath: string;
   settingsPath?: string;
   canManageSettings?: boolean;
@@ -18,6 +21,9 @@ interface UserAvatarMenuProps {
 }
 
 export function UserAvatarMenu({
+  showLanguageSwitcher = false,
+  hideFeedbackLinks = false,
+  onStartTour,
   accountPath,
   settingsPath,
   canManageSettings = false,
@@ -108,8 +114,17 @@ export function UserAvatarMenu({
             </span>
           </div>
 
-          <div className="sm:hidden px-4 py-3 flex items-center justify-between border-b border-ent-line"><span className="text-xs text-ent-fg-2">{translateUi('Ngôn ngữ')}</span><LanguageSwitcher /></div>
+          <div className={`${showLanguageSwitcher ? '' : 'sm:hidden '}px-4 py-3 flex items-center justify-between border-b border-ent-line`}><span className="text-xs text-ent-fg-2">{translateUi('Ngôn ngữ')}</span><LanguageSwitcher /></div>
           <div className="py-1">
+            {onStartTour && (
+              <button
+                type="button"
+                onClick={() => { setIsOpen(false); onStartTour(); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+              >
+                <HelpCircle className="w-4 h-4 text-ent-fg-3" />{translateUi('Hướng dẫn')}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => { navigate(accountPath); setIsOpen(false); }}
@@ -142,19 +157,22 @@ export function UserAvatarMenu({
                 <Settings className="w-4 h-4 text-ent-fg-3" />{translateUi("Cài đặt tổ chức")}</button>
             )}
 
-            <button
-              type="button"
-              onClick={() => { navigate('/enterprise/feedbacks'); setIsOpen(false); }}
-              className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
-            >
-              <MessageSquare className="w-4 h-4 text-ent-fg-3" />{translateUi("Góp ý")}</button>
+            {!hideFeedbackLinks && <>
+              <button
+                type="button"
+                onClick={() => { navigate('/enterprise/feedbacks'); setIsOpen(false); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+              >
+                <MessageSquare className="w-4 h-4 text-ent-fg-3" />{translateUi("Góp ý")}</button>
 
-            <button
-              type="button"
-              onClick={() => { navigate('/enterprise/bug-reports'); setIsOpen(false); }}
-              className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
-            >
-              <Bug className="w-4 h-4 text-ent-fg-3" />{translateUi("Báo lỗi")}</button>
+              <button
+                type="button"
+                onClick={() => { navigate('/enterprise/bug-reports'); setIsOpen(false); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-ent-fg-2 hover:bg-ent-raised hover:text-ent-fg transition-colors"
+              >
+                <Bug className="w-4 h-4 text-ent-fg-3" />{translateUi("Báo lỗi")}</button>
+
+            </>}
 
             {/* Khung chỉ có bản sáng (cổng nhân viên, platform) không hiện nút chuyển. */}
             {supportsDark && (

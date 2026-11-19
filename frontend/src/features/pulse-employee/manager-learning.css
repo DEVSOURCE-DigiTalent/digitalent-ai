@@ -1,0 +1,154 @@
+.pu-manager-learning .pu-workspace-content {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+  max-width: none;
+  padding: 14px clamp(16px, 4vw, 96px) 80px;
+}
+
+.pu-manager-learning .pu-main-content > * { max-width: none; }
+body:has(.pu-learning-dock__panel) .pu-manager-learning .pu-workspace-content {
+  width: calc(100% - 216px);
+  margin-left: 216px;
+  margin-right: auto;
+}
+.pu-manager-learning .pu-header .pu-nav { display: none; }
+.pu-learning-nav-anchor { min-width: 0; }
+
+.pu-learning-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 48px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid #dce3f0;
+}
+
+.pu-learning-nav[aria-hidden='true'] { visibility: hidden; }
+
+.pu-learning-nav__identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #687892;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pu-learning-nav nav {
+  display: flex;
+  gap: 4px;
+  padding-left: 20px;
+  border-left: 1px solid #dce3f0;
+}
+
+.pu-learning-nav__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  color: #60708b;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background .18s, color .18s;
+}
+
+.pu-learning-nav__link:hover { background: #e9eefb; color: #2549b8; }
+.pu-learning-nav__link.is-active { background: #e6ecfc; color: #2549b8; }
+.pu-learning-nav__link:focus-visible,
+.pu-learning-dock__trigger:focus-visible { outline: 2px solid #4263d8; outline-offset: 3px; }
+
+.pu-learning-dock {
+  position: fixed;
+  left: max(24px, env(safe-area-inset-left));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  font-family: Inter, sans-serif;
+}
+
+.pu-learning-dock__trigger {
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid #ffffff40;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #193474, #3659cf);
+  color: white;
+  box-shadow: 0 6px 20px #1c3a7933, inset 0 1px #ffffff25;
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s;
+}
+
+.pu-learning-dock__trigger:hover { transform: translateY(-2px); box-shadow: 0 8px 24px #1c3a7940; }
+.pu-learning-dock__trigger.is-open { background: #172d63; }
+
+.pu-learning-dock__panel {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  box-sizing: border-box;
+  width: 190px;
+  max-width: calc(100vw - 48px);
+  padding: 6px;
+  border: 1px solid #dce3f0;
+  border-radius: 16px;
+  background: #fffffff5;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 30px #1d335b1f;
+  animation: learning-dock-enter .18s ease-out;
+}
+
+.pu-learning-dock__panel .pu-learning-nav__link { justify-content: flex-start; }
+
+@keyframes learning-dock-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .pu-manager-learning .pu-workspace-content { gap: 14px; padding: 12px 14px 80px; }
+  .pu-learning-nav { flex-wrap: wrap; gap: 10px; padding-bottom: 12px; }
+  .pu-learning-nav__identity { width: 100%; font-size: 11px; }
+  .pu-learning-nav nav { padding-left: 0; border-left: 0; }
+  .pu-learning-nav__link { padding: 9px 11px; font-size: 12px; }
+  .pu-learning-dock { left: max(14px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom)); gap: 8px; }
+  .pu-learning-dock__panel { max-width: calc(100vw - 28px); }
+  body:has(.pu-learning-dock__panel) .pu-manager-learning .pu-workspace-content {
+    width: calc(100% - 168px);
+    margin-left: 168px;
+  }
+  .pu-learning-dock__panel { width: 144px; }
+  .pu-learning-dock__panel .pu-learning-nav__link {
+    padding-inline: 8px;
+    white-space: normal;
+  }
+  .pu-learning-dock__panel .pu-learning-nav__link svg { flex-shrink: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pu-learning-nav__link, .pu-learning-dock__trigger { transition: none; }
+  .pu-learning-dock__panel { animation: none; }
+}
+
+@media print {
+  .pu-learning-nav-anchor, .pu-learning-dock { display: none; }
+}

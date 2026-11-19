@@ -1,0 +1,87 @@
+.pu-manager-learning .pu-path-header-group.pu-path-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 36px;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 210px;
+  padding: clamp(24px, 3vw, 38px);
+  border: 1px solid #284f8b;
+  border-radius: 22px;
+  background: linear-gradient(115deg, #112449, #1d4385);
+  box-shadow: 0 10px 24px #142b5610;
+}
+
+.pu-manager-learning .pu-path-hero__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-position: center 45%;
+  opacity: .14;
+  mask-image: linear-gradient(90deg, transparent, #000 85%);
+}
+
+.pu-manager-learning .pu-path-hero .pu-path-title-block { gap: 12px; padding: 0; min-width: 0; }
+.pu-manager-learning .pu-path-hero .pu-path-badge-pill {
+  padding: 5px 10px;
+  border-color: #a6d6ff40;
+  background: #a6d6ff12;
+  color: #d3e6ff;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.pu-manager-learning .pu-path-hero .pu-path-badge-pill svg { flex-shrink: 0; }
+.pu-manager-learning .pu-path-hero .pu-path-main-title {
+  color: #fff;
+  font-size: clamp(24px, 2.5vw, 34px);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.pu-manager-learning .pu-path-hero .pu-path-sub-title { color: #becfe9; font-size: 13px; line-height: 1.7; font-weight: 400; }
+
+.pu-manager-learning .pu-path-hero__progress {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 24px;
+  border: 1px solid #c0d8ff26;
+  border-radius: 18px;
+  background: #c0d8ff0b;
+  backdrop-filter: blur(8px);
+  color: #fff;
+}
+.pu-manager-learning .pu-path-hero__ring { display: grid; place-items: center; flex: 0 0 82px; width: 82px; height: 82px; padding: 5px; box-sizing: border-box; border-radius: 50%; }
+.pu-manager-learning .pu-path-hero__ring > span { display: flex; align-items: baseline; justify-content: center; align-content: center; flex-wrap: wrap; width: 100%; height: 100%; border-radius: 50%; background: #203e72; font-size: 25px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pu-manager-learning .pu-path-hero__ring small { margin-left: 2px; font-size: 12px; font-weight: 500; color: #bad5f8; }
+.pu-manager-learning .pu-path-hero__summary p { margin: 0 0 7px; color: #c1d5f3; font-size: 12px; }
+.pu-manager-learning .pu-path-hero__summary > strong { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pu-manager-learning .pu-path-hero__summary > strong > span { font-size: 12px; font-weight: 400; color: #d3e1f5; }
+.pu-manager-learning .pu-path-hero__summary > div { display: flex; align-items: center; gap: 6px; margin-top: 10px; color: #c1d5f3; font-size: 11px; line-height: 1.5; }
+.pu-manager-learning .pu-path-hero__summary > div svg { flex-shrink: 0; }
+
+@media (max-width: 960px) {
+  .pu-manager-learning .pu-path-header-group.pu-path-hero { grid-template-columns: 1fr; gap: 24px; }
+  .pu-manager-learning .pu-path-hero__progress { justify-self: stretch; padding: 16px 20px; }
+  .pu-manager-learning .pu-path-hero__ring { flex-basis: 68px; width: 68px; height: 68px; }
+}
+
+@media (max-width: 480px) {
+  .pu-manager-learning .pu-path-header-group.pu-path-hero { padding: 22px 18px; border-radius: 18px; }
+  .pu-manager-learning .pu-path-hero__progress { gap: 14px; padding: 14px; }
+  .pu-manager-learning .pu-path-hero__ring { flex-basis: 60px; width: 60px; height: 60px; }
+  .pu-manager-learning .pu-path-hero__ring > span { font-size: 21px; }
+}
+
+.pu-manager-learning .pu-path-container { min-width: 0; }
+.pu-manager-learning .pu-path-container .pu-matrix-wrapper { max-width: 100%; overflow-x: auto; }
+
+@media (max-width: 768px) {
+  .pu-manager-learning .pu-path-container .pu-station-step-wrapper { flex: 1 1 auto; min-width: 0; }
+  .pu-manager-learning .pu-path-container .pu-station-card { min-width: 0; padding: 16px 12px; }
+  .pu-manager-learning .pu-path-container .pu-station-course-card { min-width: 0; overflow-wrap: anywhere; }
+  .pu-manager-learning .pu-path-container .pu-view-switcher { flex-wrap: wrap; max-width: 100%; }
+  .pu-manager-learning .pu-path-container .pu-view-tab { flex: 1 1 auto; justify-content: center; }
+}

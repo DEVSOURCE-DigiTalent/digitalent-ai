@@ -1,5 +1,4 @@
 :is(.manager-page-heading, .member-insight-profile),
-.pu.pu-manager-learning :is(.pu-enterprise-hero-wrap, .pu-path-header-group, .pu-workbench-header, .pu-c-header-block, .pu-detail-header),
 .manager-shell #main-content :is(.manager-work-hero, .owner-operations__header, .fb-scope > div:first-child, .aw-heading, .pa-page-header) {
   --manager-hero-ink: #fff;
   --manager-hero-muted: #d6edf4;
@@ -71,28 +70,9 @@
   .manager-shell #main-content :is(.owner-operations__header, .aw-heading) { flex-wrap: wrap; gap: 12px; }
 }
 
-:is(.pu .manager-page-heading, .member-insight-profile, .manager-shell #main-content :is(.fb-scope > div:first-child, .aw-heading, .pa-page-header)) h1,
-.pu.pu-manager-learning :is(.pu-hero-main-title, .pu-path-main-title, .pu-c-main-title, .pu-detail-h1) {
+:is(.pu .manager-page-heading, .member-insight-profile, .manager-shell #main-content :is(.fb-scope > div:first-child, .aw-heading, .pa-page-header)) h1 {
   color: var(--manager-hero-ink);
   font-size: clamp(28px, 3.4vw, 46px);
   line-height: 1.15;
   overflow-wrap: anywhere;
-}
-
-.pu.pu-manager-learning :is(.pu-hero-name-highlight, .pu-hero-greeting-prefix, .pu-path-main-title) {
-  background: none;
-  color: var(--manager-hero-ink);
-  -webkit-text-fill-color: currentColor;
-}
-
-.pu.pu-manager-learning :is(.pu-hero-main-subtitle, .pu-path-subtitle, .pu-c-main-desc, .pu-c-breadcrumb, .pu-c-back-link) {
-  color: var(--manager-hero-muted);
-}
-
-.pu.pu-manager-learning :is(.pu-enterprise-hero-bg, .pu-enterprise-hero-overlay) {
-  display: none;
-}
-
-.pu.pu-manager-learning .pu-enterprise-hero-inner {
-  padding: 0;
 }

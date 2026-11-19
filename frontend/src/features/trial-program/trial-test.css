@@ -18,6 +18,23 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.tt-learning-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 9px 13px;
+  border: 1px solid #dce3f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #2549b8;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.tt-learning-back:hover { background: #eef2ff; }
+.tt-learning-back:focus-visible { outline: 2px solid #4263d8; outline-offset: 3px; }
+
 /* ── HEADER CHÍNH ───────────────────────────────────────────────────────── */
 .tt-head {
   display: flex;

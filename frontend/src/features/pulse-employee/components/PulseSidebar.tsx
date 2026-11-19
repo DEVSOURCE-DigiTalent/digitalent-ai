@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-platform';
 import { PULSE_PATHS, isModulePath } from '../lib/paths';
+import '../manager-learning.css';
+import { ManagerLearningNavigation } from './ManagerLearningNavigation';
 
 /**
  * Pulse Employee Sidebar — Thiết kế khung nhỏ dạng Card nổi chuẩn phong cách Personal
@@ -77,7 +79,7 @@ const SIDEBAR_ITEMS: NavItem[] = [
   },
 ];
 
-const MANAGER_TOOLS = new Set<string>([PULSE_PATHS.activity, PULSE_PATHS.feedbacks, PULSE_PATHS.bugReports]);
+const MANAGER_LEARNING_PAGES = new Set<string>([PULSE_PATHS.today, PULSE_PATHS.path]);
 
 export function PulseSidebar({ trialLearning = false, manager = false }: { trialLearning?: boolean; manager?: boolean } = {}) {
   useUiLanguage();
@@ -85,7 +87,7 @@ export function PulseSidebar({ trialLearning = false, manager = false }: { trial
   const { data: unread } = useNotifications({ unreadOnly: true });
   const hasUnread = Boolean(unread && unread.length > 0);
   const items = SIDEBAR_ITEMS.filter((item) =>
-    (!trialLearning || item.to !== PULSE_PATHS.today) && (!manager || !MANAGER_TOOLS.has(item.to)),
+    (!trialLearning || item.to !== PULSE_PATHS.today) && (!manager || MANAGER_LEARNING_PAGES.has(item.to)),
   );
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -123,6 +125,10 @@ export function PulseSidebar({ trialLearning = false, manager = false }: { trial
     item.match.some((prefix) =>
       item.end ? pathname === prefix : pathname === prefix || pathname.startsWith(`${prefix}/`)
     );
+
+  if (manager) {
+    return <ManagerLearningNavigation items={items} trialLearning={trialLearning} />;
+  }
 
   return (
     <aside
