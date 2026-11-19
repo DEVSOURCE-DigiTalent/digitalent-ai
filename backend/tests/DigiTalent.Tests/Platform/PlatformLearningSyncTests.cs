@@ -75,8 +75,12 @@ public class PlatformLearningSyncTests
         learning[published.Id][0].Slides.Should().HaveCount(sourceBlocks.Count, "an illustration is not an extra completion step");
         (await db.LearningMaterials.SingleAsync(m => m.LessonId == learning[published.Id][0].Slides[0].LessonId)).ExternalUrl
             .Should().Be($"platform-asset:{illustration.Id:D}");
-        var pool = await new PulseQuizReader(db).LoadQuestionsAsync(learning[published.Id][0].QuizAssessmentId!.Value);
+        var quizReader = new PulseQuizReader(db);
+        var pool = await quizReader.LoadBankAsync(learning[published.Id][0].QuizAssessmentId!.Value);
         pool.Select(q => q.Content).Should().Contain(sourceQuestion.QuestionText);
+        pool.Single(q => q.Content == sourceQuestion.QuestionText).IsFinalQuiz.Should().BeTrue();
+        (await quizReader.LoadQuestionsAsync(learning[published.Id][0].QuizAssessmentId!.Value)).Select(q => q.Content)
+            .Should().NotContain(sourceQuestion.QuestionText, "bài ôn tập mô đun không ra câu cuối khóa");
         pool.Should().HaveCount(await db.PlatformModuleQuestions.CountAsync(q => q.ModuleId == module.Id));
         pool.Should().OnlyContain(q => q.Options.Count(o => o.IsCorrect) == 1);
         var poolIds = pool.Select(q => q.QuestionId).ToList();
