@@ -1,6 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
   BarChart3,
@@ -36,6 +36,7 @@ import type {
 import { apiErrorMessage } from '@/lib/utils';
 import { useCapabilityCeilings } from '@/hooks/use-capability-ceilings';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { SKILL_GAP_PATH, useSurveyOver } from '@/hooks/use-survey-over';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { Modal } from '@/components/shared/Modal';
 import { clearSurveyDraft, readSurveyDraft, saveSurveyDraft, SURVEY_EXPECTATION_PATH } from '../lib/survey-draft';
@@ -83,7 +84,15 @@ function resultPhase(program: TrialProgram): ResultPhase {
 }
 
 /** OW-T1 · Khảo sát năng lực số: mời nhân viên làm bài, theo dõi bài nộp và đọc kết quả theo 6 lĩnh vực. */
+/** OW-T1. Once the organization uses the platform for real (a course bought, or converted) the survey's gaps live on
+ * "Khoảng trống năng lực": the address leads there. */
 export function TrialProgramPage() {
+  const surveyOver = useSurveyOver();
+  if (surveyOver) return <Navigate to={SKILL_GAP_PATH} replace />;
+  return <TrialSurveyPage />;
+}
+
+function TrialSurveyPage() {
   useUiLanguage();
   const { data, isLoading, error } = useTrialProgram();
 
@@ -130,8 +139,8 @@ function TrialProgramView({ program }: { program: TrialProgram }) {
   const ceilings = useCapabilityCeilings();
   const { can } = usePermission();
   const canSetExpectation = can(PERMISSIONS.POSITION_REQUIREMENT_MANAGE);
-  // Departments with their own levels (OW-05 tab 2): what the results are compared with; the others use the suggestion.
-  const levelsSet = ceilings.data ? { set: ceilings.data.departments.filter((d) => d.isCustomized).length, total: ceilings.data.departments.length } : undefined;
+  // Positions with their own levels (OW-05 tab 2): what the results are compared with; the others use the suggestion.
+  const levelsSet = ceilings.data ? { set: ceilings.data.positions.filter((p) => p.isCustomized).length, total: ceilings.data.positions.length } : undefined;
 
   useEffect(() => {
     if (searchParams.get('resume') == null) return;
@@ -210,7 +219,7 @@ type LevelsSet = { set: number; total: number };
 
 /** What the results are compared with, in a few words. */
 const comparisonText = ({ set, total }: LevelsSet) => (set > 0
-  ? `mức cần đạt của ${set}/${total} phòng ban đã đặt (phòng ban khác theo đề xuất của hệ thống)`
+  ? `mức cần đạt của ${set}/${total} vị trí đã đặt (vị trí khác theo đề xuất của hệ thống)`
   : 'chuẩn vị trí của từng người (đề xuất của hệ thống)');
 
 /**
@@ -232,9 +241,9 @@ function ExpectationChoice({ open, setCount, onKeep, onSetOwn, onClose }: {
         <button type="button" className="trial-choice__option" data-recommended onClick={onKeep}>
           <span className="trial-choice__icon" aria-hidden="true"><Sparkles size={18} /></span>
           <span className="trial-choice__copy">
-            <strong>{translateUi(setCount > 0 ? 'Dùng mức các phòng ban đã đặt' : 'Dùng đề xuất của hệ thống')}<em>{translateUi('Nhanh nhất')}</em></strong>
+            <strong>{translateUi(setCount > 0 ? 'Dùng mức các vị trí đã đặt' : 'Dùng đề xuất của hệ thống')}<em>{translateUi('Nhanh nhất')}</em></strong>
             <span>{translateUi(setCount > 0
-              ? `${setCount} phòng ban đã đặt mức; phòng ban khác theo đề xuất của hệ thống. Tiếp tục đặt hạn ngay.`
+              ? `${setCount} vị trí đã đặt mức; vị trí khác theo đề xuất của hệ thống. Tiếp tục đặt hạn ngay.`
               : 'Mỗi người theo chuẩn vị trí của mình. Tiếp tục đặt hạn ngay.')}</span>
           </span>
           <ArrowRight size={16} className="trial-choice__arrow" aria-hidden="true" />
@@ -243,7 +252,7 @@ function ExpectationChoice({ open, setCount, onKeep, onSetOwn, onClose }: {
           <span className="trial-choice__icon" aria-hidden="true"><SlidersHorizontal size={18} /></span>
           <span className="trial-choice__copy">
             <strong>{translateUi('Tự đặt ở Khung năng lực số')}</strong>
-            <span>{translateUi('Đặt mức cần đạt cho từng phòng ban. Danh sách vừa nhập được giữ lại.')}</span>
+            <span>{translateUi('Đặt mức cần đạt cho từng vị trí. Danh sách vừa nhập được giữ lại.')}</span>
           </span>
           <ArrowRight size={16} className="trial-choice__arrow" aria-hidden="true" />
         </button>
@@ -252,19 +261,19 @@ function ExpectationChoice({ open, setCount, onKeep, onSetOwn, onClose }: {
   );
 }
 
-/** What the results are compared with, above the progress / results, with a link to the department levels. */
+/** What the results are compared with, above the progress / results, with a link to the position levels. */
 function ExpectationStrip({ levelsSet, canChange }: { levelsSet: LevelsSet; canChange: boolean }) {
   useUiLanguage();
   return (
-    <div className="trial-expect-strip" data-mode={levelsSet.set > 0 ? 'DEPARTMENT' : 'NONE'}>
+    <div className="trial-expect-strip" data-mode={levelsSet.set > 0 ? 'POSITION' : 'NONE'}>
       <Target size={16} aria-hidden="true" />
       <p>
         {translateUi('Kết quả được so với')} <strong>{translateUi(comparisonText(levelsSet))}</strong>
-        {levelsSet.set === 0 && <span>{translateUi(' · bạn chưa đặt mức cho phòng ban nào')}</span>}
+        {levelsSet.set === 0 && <span>{translateUi(' · bạn chưa đặt mức cho vị trí nào')}</span>}
       </p>
       {canChange && (
         <Link to={SURVEY_EXPECTATION_PATH} className="trial-secondary-button">
-          {translateUi(levelsSet.set > 0 ? 'Đổi mức phòng ban' : 'Đặt mức cho phòng ban')}
+          {translateUi(levelsSet.set > 0 ? 'Đổi mức vị trí' : 'Đặt mức cho vị trí')}
         </Link>
       )}
     </div>

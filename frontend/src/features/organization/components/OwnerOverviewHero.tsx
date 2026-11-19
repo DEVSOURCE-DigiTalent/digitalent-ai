@@ -4,6 +4,7 @@ import journeyArt from '@/assets/pulse/learning-journey-abstract.webp';
 import type { OrganizationOverview } from '@/services/organization.service';
 import type { DashboardDto } from '@/services/analytics.service';
 import { useTrialProgram } from '@/hooks/use-trial-program';
+import { SKILL_GAP_PATH, useSurveyOver } from '@/hooks/use-survey-over';
 
 interface OwnerOverviewHeroProps {
   org: OrganizationOverview;
@@ -14,6 +15,15 @@ interface HeroAction {
   label: string;
   to: string;
   variant: 'outline' | 'filled';
+}
+
+/** Once the survey is over its actions lead to the gaps instead (one action per page). */
+function withoutSurvey(actions: HeroAction[], surveyOver: boolean): HeroAction[] {
+  if (!surveyOver) return actions;
+  const swapped = actions.map((action) => action.to === '/enterprise/trial'
+    ? { ...action, label: 'Xem khoảng trống năng lực', to: SKILL_GAP_PATH }
+    : action);
+  return swapped.filter((action, index) => swapped.findIndex((other) => other.to === action.to) === index);
 }
 
 function resolveActions(
@@ -65,7 +75,7 @@ export function OwnerOverviewHero({ org, cap }: OwnerOverviewHeroProps) {
   useUiLanguage();
   const { data: trialProgram } = useTrialProgram();
   const hasTrialParticipants = (trialProgram?.participants?.length ?? 0) > 0;
-  const actions = resolveActions(org, cap, hasTrialParticipants);
+  const actions = withoutSurvey(resolveActions(org, cap, hasTrialParticipants), useSurveyOver());
 
   return (
     <section

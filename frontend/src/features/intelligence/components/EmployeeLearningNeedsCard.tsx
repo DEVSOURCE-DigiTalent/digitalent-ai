@@ -1,5 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
+import { useSurveyOver } from '@/hooks/use-survey-over';
 import { ArrowRight, BookOpen, CheckCircle2, Clock3 } from 'lucide-react';
 import type { EmployeeLearningNeeds } from '@/services/intelligence.service';
 import './employee-learning-needs.css';
@@ -8,6 +9,7 @@ const levelName = (level: number | null) => level == null ? 'Chưa có kết qu�
 
 export function EmployeeLearningNeedsCard({ employee, detail = false }: { employee: EmployeeLearningNeeds; detail?: boolean }) {
   useUiLanguage();
+  const surveyOver = useSurveyOver();
   const needs = employee.domains.filter((domain) => domain.state === 'NEEDS_LEARNING');
   const waiting = employee.domains.some((domain) => domain.state === 'WAITING_ASSESSMENT');
   const position = [employee.departmentName, employee.positionName].filter((name, index, all) => name && all.indexOf(name) === index).join(' · ');
@@ -23,7 +25,7 @@ export function EmployeeLearningNeedsCard({ employee, detail = false }: { employ
       </div>
       <div className="learning-need-course"><span className="learning-need-label"><BookOpen size={14} /> Khóa học đáp ứng yêu cầu</span>{domain.courseId ? <><h4>{domain.courseTitle}</h4><div><span className="learning-need-code">{domain.courseCode} · {levelName(domain.requiredLevel)}</span><Link to={`/enterprise/courses?focus=${encodeURIComponent(domain.courseId)}`}>{translateUi("Xem khóa học ")}<ArrowRight size={15} /></Link></div></> : <p>Chưa có khóa học tương ứng trong danh mục.</p>}</div>
     </section>)}</div>}
-    {waiting && <div className="learning-needs-message"><Clock3 size={18} /><p>Chờ kết quả đánh giá tổng thể{needs.length ? ' của các lĩnh vực còn lại' : ''}.</p><Link to="/enterprise/trial">{translateUi("Khảo sát năng lực số ")}<ArrowRight size={14} /></Link></div>}
+    {waiting && <div className="learning-needs-message"><Clock3 size={18} /><p>Chờ kết quả đánh giá tổng thể{needs.length ? ' của các lĩnh vực còn lại' : ''}.</p>{!surveyOver && <Link to="/enterprise/trial">{translateUi("Khảo sát năng lực số ")}<ArrowRight size={14} /></Link>}</div>}
     {employee.state === 'NO_STANDARD' && <div className="learning-needs-message"><p>Thiết lập chuẩn vị trí để xác định năng lực cần bổ sung.</p><Link to="/enterprise/setup">{translateUi("Thiết lập chuẩn ")}<ArrowRight size={14} /></Link></div>}
     {employee.state === 'MET' && <div className="learning-needs-message is-met"><CheckCircle2 size={19} /><p>Đã đáp ứng chuẩn năng lực của vị trí.</p></div>}
   </article>;

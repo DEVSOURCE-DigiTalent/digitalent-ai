@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Filter, Search, Sparkles } from 'lucide-react';
 import { useTrialProgram } from '@/hooks/use-trial-program';
+import { SKILL_GAP_PATH, useSurveyOver } from '@/hooks/use-survey-over';
 import { LoadingProgress } from '@/components/shared/LoadingState';
 import type { TrialParticipant, TrialParticipantStatus } from '@/services/trial-program.service';
 import './owner-assessment-heatmap.css';
@@ -41,6 +42,7 @@ interface DepartmentRow {
 
 export function OwnerAssessmentHeatmap() {
   useUiLanguage();
+  const surveyOver = useSurveyOver();
   const { data: program, isLoading, isError } = useTrialProgram();
   const closed = program?.stage === 'REPORTED';
   const [selectedDepartments, setSelectedDepartments] = useState<string[] | null>(null);
@@ -110,7 +112,7 @@ export function OwnerAssessmentHeatmap() {
   return <section className="owner-heatmap" aria-labelledby="owner-heatmap-title">
     <div className="owner-heatmap__header">
       <div className="owner-heatmap__heading"><span className="owner-heatmap__icon"><Sparkles size={19} /></span><div><h2 id="owner-heatmap-title">{translateUi(closed ? "Kết quả tham gia" : "Tiến độ làm bài")}</h2></div></div>
-      <div className="owner-heatmap__header-actions"><Link className="owner-heatmap__link" to="/enterprise/trial">{translateUi(closed ? "Xem kết quả khảo sát " : "Mở trang khảo sát ")}<ArrowRight size={16} /></Link></div>
+      <div className="owner-heatmap__header-actions"><Link className="owner-heatmap__link" to={surveyOver ? SKILL_GAP_PATH : '/enterprise/trial'}>{translateUi(surveyOver ? "Xem khoảng trống năng lực " : closed ? "Xem kết quả khảo sát " : "Mở trang khảo sát ")}<ArrowRight size={16} /></Link></div>
     </div>
 
     {isLoading ? (
