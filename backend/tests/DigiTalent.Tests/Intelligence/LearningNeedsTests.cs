@@ -62,6 +62,17 @@ public class LearningNeedsTests
         await matrixService.SaveAsync(matrix);
         (await Result()).RequiredLevel.Should().Be(1);
         (await Result()).State.Should().Be("MET");
+
+        // The level the owner set for the department in Khung năng lực số wins over the position standard, as in the
+        // survey report: the gap moves to "Khoảng trống năng lực" with the same comparison.
+        db.CapabilityCeilings.Add(new CapabilityCeiling
+        {
+            OrganizationId = org, DepartmentId = department.Id, CompetencyCategoryId = domain.Id, CeilingLevel = 3,
+        });
+        await db.SaveChangesAsync();
+        var byDepartment = await Result();
+        byDepartment.RequiredLevel.Should().Be(3);
+        byDepartment.State.Should().Be("NEEDS_LEARNING");
     }
 
     [Theory]

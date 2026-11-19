@@ -998,4 +998,8 @@ Còn {count} khóa · {total} ₫ để đủ lĩnh vực|{count} courses · {to
 Mua đủ lĩnh vực|Buy the whole domain
 Đã trong giỏ|In cart
 Thanh toán & Ký online|Pay & sign online
+{domain} mở khi doanh nghiệp mua khóa học đầu tiên.|{domain} opens once the company buys its first course.
+So với mức phòng ban (chưa đặt thì chuẩn vị trí), ở các lĩnh vực đã có kết quả|Against the department level (else the position standard), in domains with results
+Các năng lực đã đánh giá đều đạt mức cần đạt.|Every assessed competency meets the required level.
+Đã đạt mức cần đạt. Chưa cần bổ sung khóa học.|Required level met. No extra course needed yet.
 `.trim().split('\n').map(line => { const index=line.indexOf('|'); return [line.slice(0,index),line.slice(index+1)]; }));
