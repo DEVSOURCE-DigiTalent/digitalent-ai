@@ -56,13 +56,13 @@ public static class DependencyInjection
         if (string.Equals(fileStorageSettings.Provider, "Minio", StringComparison.OrdinalIgnoreCase))
         {
             services.AddSingleton<MinioFileStorageService>();
-            services.AddScoped<IFileStorageService>(sp => sp.GetRequiredService<MinioFileStorageService>());
-            services.AddScoped<IDirectFileStorageService>(sp => sp.GetRequiredService<MinioFileStorageService>());
-            services.AddScoped<IChunkedFileFinalizer>(sp => sp.GetRequiredService<MinioFileStorageService>());
+            services.AddSingleton<IFileStorageService>(sp => sp.GetRequiredService<MinioFileStorageService>());
+            services.AddSingleton<IDirectFileStorageService>(sp => sp.GetRequiredService<MinioFileStorageService>());
+            services.AddSingleton<IChunkedFileFinalizer>(sp => sp.GetRequiredService<MinioFileStorageService>());
         }
         else
         {
-            services.AddScoped<IFileStorageService, LocalFileStorageService>();
+            services.AddSingleton<IFileStorageService, LocalFileStorageService>();
         }
 
         // Platform course builder: rich text sanitizer and signed links to uploaded media
