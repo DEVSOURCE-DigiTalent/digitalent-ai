@@ -367,7 +367,8 @@ describe('PulsePathPage roadmap', () => {
     expect(screen.queryByText('Nhiệm vụ ưu tiên tiếp theo')).not.toBeInTheDocument();
     expect(screen.queryByRole('status', { name: 'Lĩnh vực chưa đạt mức tối thiểu' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Mục tiêu:/)).not.toBeInTheDocument();
-    expect(within(data).getByText('Lĩnh vực ưu tiên')).toBeInTheDocument();
+    // Không còn nhãn / chú giải "Lĩnh vực ưu tiên" và chú giải "Học vượt".
+    expect(screen.queryByText('Lĩnh vực ưu tiên')).not.toBeInTheDocument();
     expect(screen.queryByText(/Tiêu chuẩn năng lực chi tiết/)).not.toBeInTheDocument();
     expect(screen.queryByText(/yêu cầu tối thiểu/)).not.toBeInTheDocument();
     expect(screen.queryByText(/học vượt được/)).not.toBeInTheDocument();
