@@ -4,6 +4,7 @@ using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Application.UseCases.TrialProgram;
 using DigiTalent.Application.UseCases.Competency.Common;
+using DigiTalent.Application.UseCases.Competency.Ceilings;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using Microsoft.EntityFrameworkCore;
@@ -58,8 +59,9 @@ public class GetLearningNeedsOutput
     public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
 }
 
-/// <summary>Actionable training needs: available overall assessment versus the current position standard.
-/// Later confirmed evidence can resolve a gap. Buying or completing a course alone cannot resolve it.</summary>
+/// <summary>Actionable training needs: available overall assessment versus the level the company requires — the level
+/// the owner set for the employee's department, else the current position standard (the same comparison as the survey
+/// report). Later confirmed evidence can resolve a gap. Buying or completing a course alone cannot resolve it.</summary>
 public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, GetLearningNeedsOutput>
 {
     private readonly IApplicationDbContext _db;
@@ -130,6 +132,7 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
             .ToLookup(a => a.EmployeeId);
         var profiles = await _db.EmployeeCompetencyProfiles.AsNoTracking().Where(p => employeeIds.Contains(p.EmployeeId)).ToDictionaryAsync(p => new { p.EmployeeId, p.CompetencyId });
         var catalog = await new PulseCatalogReader(_db).LoadAsync(orgId);
+        var expectation = await CapabilityExpectation.LoadAsync(_db, orgId);
         foreach (var (employee, position) in employees)
         {
             var row = new EmployeeLearningNeeds { EmployeeId = employee.Id, EmployeeName = employee.FullName, PositionId = position?.Id,
@@ -148,7 +151,8 @@ public class GetLearningNeedsUseCase : IUseCase<GetSkillGapRunsUseCaseInput, Get
                 .GroupBy(r => r.CategoryId).OrderBy(g => g.First().SortOrder))
             {
                 var first = domain.First();
-                var target = targets.Levels[domain.Key];
+                // The department level set in Khung năng lực số wins over the position standard (as in the survey).
+                var target = expectation.ExpectedFor(employee.DepartmentId, domain.Key) ?? targets.Levels[domain.Key];
                 var need = new LearningNeedDomain { CategoryId = first.CategoryId, Name = first.CategoryName, Number = first.SortOrder, RequiredLevel = target };
                 row.Domains.Add(need);
                 need.Competencies = domain.Select(r => new LearningNeedCompetency { CompetencyId = r.CompetencyId, Name = r.Name, RequiredLevel = target }).ToList();

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { learningContentQueryOptions } from '@/lib/learning-content-query';
+import { useRefreshSession } from './use-refresh-session';
 import {
   assignmentService, type AssignmentListParams, type CreateAssignmentRequest,
 } from '../services/assignment.service';
@@ -112,9 +113,14 @@ export function useCancelAssignment() {
 /** Buys a paid course for the whole organization (OW-23). */
 export function usePurchaseCourse() {
   const refresh = useRefreshLearningData();
+  const refreshSession = useRefreshSession();
   return useMutation({
     mutationFn: async ({ courseId, note }: { courseId: string; note?: string }) =>
       (await assignmentService.purchase(courseId, note)).data.data!,
-    onSuccess: refresh,
+    onSuccess: async () => {
+      await refresh();
+      // A trial organization that buys a course becomes a customer: /auth/me opens the whole owner menu.
+      await refreshSession().catch(() => undefined);
+    },
   });
 }

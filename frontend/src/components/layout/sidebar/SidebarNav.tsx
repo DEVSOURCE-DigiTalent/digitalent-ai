@@ -30,8 +30,10 @@ export function SidebarNav({ config, isRail, onItemClick, workspace, variant = '
 
   const currentWorkspace = workspace ?? (pathname.startsWith('/platform') ? WORKSPACES.PLATFORM : pathname.startsWith('/mentor') ? WORKSPACES.MENTOR : WORKSPACES.ENTERPRISE);
 
-  // Enterprise trial: a sidebar with trial rules keeps every entry, locking those not open in the trial.
-  const inTrial = Boolean(user && isEnterpriseTrial(user));
+  // Enterprise trial: a sidebar with trial rules keeps every entry, locking those not open in the trial — until the
+  // organization buys a course: it is then a customer, every entry opens and the survey item goes away (its gaps live
+  // on "Khoảng trống năng lực").
+  const inTrial = Boolean(user && isEnterpriseTrial(user) && !user.enterpriseTrialPurchased);
   const hasTrialRules = config.some((entry) => entry.trial || entry.items?.some((item) => item.trial));
   const trialLocked = (rule?: SidebarTrialRule) => inTrial && hasTrialRules && !rule;
 

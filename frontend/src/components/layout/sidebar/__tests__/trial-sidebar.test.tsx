@@ -8,11 +8,11 @@ import { OWNER_SIDEBAR } from '@/lib/sidebars/owner';
 import type { SessionUser } from '@/types/session';
 import { SidebarNav } from '../SidebarNav';
 
-function signInOwner(enterpriseTrialStatus: SessionUser['enterpriseTrialStatus']) {
+function signInOwner(enterpriseTrialStatus: SessionUser['enterpriseTrialStatus'], enterpriseTrialPurchased = false) {
   useCurrentUser.setState({
     user: {
       id: 'owner-1', email: 'owner@example.test', fullName: 'Chủ doanh nghiệp', roles: [ROLES.OWNER],
-      permissions: Object.values(PERMISSIONS), workspace: 'enterprise', enterpriseTrialStatus,
+      permissions: Object.values(PERMISSIONS), workspace: 'enterprise', enterpriseTrialStatus, enterpriseTrialPurchased,
     },
     isAuthenticated: true,
   });
@@ -35,7 +35,7 @@ it('opens only the survey, the competency framework and the courses during the t
 
   fireEvent.mouseEnter(people);
   expect(screen.getByRole('tooltip')).toHaveTextContent('Chưa mở trong bản dùng thử');
-  expect(screen.getByRole('tooltip')).toHaveTextContent('Nhân sự mở khi doanh nghiệp dùng chính thức.');
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Nhân sự mở khi doanh nghiệp mua khóa học đầu tiên.');
   fireEvent.mouseLeave(people);
   expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
 });
@@ -47,5 +47,16 @@ it('hides the survey once the organization uses the platform for real and unlock
   expect(screen.queryByRole('link', { name: /Khảo sát năng lực số/ })).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Nhân sự' })).toHaveAttribute('href');
   expect(screen.getByRole('link', { name: 'Khung năng lực số' })).toHaveAttribute('href');
+  expect(document.querySelector('[data-locked="trial"]')).toBeNull();
+});
+
+it('a trial organization that bought a course is a customer: every entry opens and the survey item goes away', () => {
+  signInOwner('trial_active', true);
+  renderSidebar();
+
+  expect(screen.queryByRole('link', { name: /Khảo sát năng lực số/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Khoảng trống năng lực' })).toHaveAttribute('href');
+  expect(screen.getByRole('link', { name: 'Nhân sự' })).toHaveAttribute('href');
+  expect(screen.getByRole('link', { name: /^Tổng quan/ })).toHaveAttribute('href');
   expect(document.querySelector('[data-locked="trial"]')).toBeNull();
 });

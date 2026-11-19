@@ -193,6 +193,44 @@ public class GetCurrentUserWorkspaceTests
         result.Roles.Should().ContainSingle().Which.Should().Be(roleCode);
     }
 
+    /// <summary>
+    /// A trial organization that bought a course is a customer: /auth/me says so, and the owner's menu opens in full
+    /// (the organization still counts as a trial for the rest: status trial_active until a conversion).
+    /// </summary>
+    [Theory]
+    [InlineData(false, false, "trial_active", false)]
+    [InlineData(true, false, "trial_active", true)]
+    [InlineData(true, true, "converted", false)]
+    public async Task TrialOwnerSeesWhetherTheOrganizationBoughtACourse(bool bought, bool converted, string status, bool purchased)
+    {
+        await using var context = CreateContext();
+        var organization = new DigiTalent.Domain.Entities.Organization { Code = "TRIAL-ORG", Name = "Sao Mai" };
+        var user = new User { Email = "owner@trial.test", DisplayName = "Owner", OrganizationId = organization.Id };
+        user.UserRoles.Add(new UserRole { User = user, Role = new Role { Code = Roles.Owner, Name = "Owner", ScopeType = "ORGANIZATION" } });
+        context.Organizations.Add(organization);
+        context.Users.Add(user);
+        context.TrialWorkspaces.Add(new TrialWorkspace
+        {
+            OrganizationId = organization.Id, OwnerUserId = user.Id,
+            StartedAt = DateTimeOffset.UtcNow.AddDays(-2), EndsAt = DateTimeOffset.UtcNow.AddDays(12),
+            ConvertedAt = converted ? DateTimeOffset.UtcNow.AddHours(-1) : null,
+        });
+        if (bought) context.CourseOrders.Add(new CourseOrder { OrganizationId = organization.Id, CourseId = Guid.NewGuid(), Amount = 699000 });
+        await context.SaveChangesAsync();
+
+        var currentUser = new Mock<ICurrentUser>();
+        currentUser.SetupGet(x => x.UserId).Returns(user.Id);
+        var permissions = new Mock<IPermissionService>();
+        permissions.Setup(x => x.GetPermissionsAsync(It.IsAny<IReadOnlyCollection<string>>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        var result = await new GetCurrentUserUseCase(context, currentUser.Object, permissions.Object)
+            .ExecuteAsync(new GetCurrentUserUseCaseInput());
+
+        result.EnterpriseTrialStatus.Should().Be(status);
+        result.EnterpriseTrialPurchased.Should().Be(purchased);
+    }
+
     private static AppDbContext CreateContext() => new(
         new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())

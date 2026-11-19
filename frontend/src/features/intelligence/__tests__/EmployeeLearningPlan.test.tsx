@@ -25,7 +25,7 @@ describe('employee domain navigation', () => {
     ] }] };
     render(<MemoryRouter><EmployeeLearningPlan employee={profile} embedded view="competencies" canConfirm={false} onConfirm={vi.fn()} onRefresh={vi.fn()} refreshing={false} /></MemoryRouter>);
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
-    expect(screen.getByText('Chuẩn vị trí · Nâng cao')).toBeInTheDocument();
+    expect(screen.getByText('Mức cần đạt · Nâng cao')).toBeInTheDocument();
     expect(screen.getByText('Đánh giá tổng thể')).toBeInTheDocument();
     expect(screen.getByText('Xác nhận bổ sung')).toBeInTheDocument();
     expect(screen.getAllByText('Yêu cầu')).toHaveLength(2);
@@ -39,7 +39,7 @@ describe('employee domain navigation', () => {
     expect(screen.getByRole('link', { name: 'Xem khóa học' })).toHaveAttribute('href', '/enterprise/courses?focus=m6i');
     expect(screen.queryByText('Phân tích dữ liệu')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'An toàn' }));
-    expect(screen.getByText(/Đã đáp ứng chuẩn vị trí/)).toBeInTheDocument();
+    expect(screen.getByText(/Đã đạt mức cần đạt/)).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Xem khóa học' })).not.toBeInTheDocument();
   });
   it('supports arrow, Home and End navigation with focus following the selected tab', () => {

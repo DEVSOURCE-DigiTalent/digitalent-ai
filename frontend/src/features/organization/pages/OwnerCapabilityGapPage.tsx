@@ -40,7 +40,7 @@ export function CompanyLearningOverview({ overview }: { overview: LearningNeedsO
           <div><strong>{percent == null ? '—' : `${percent}%`}</strong><span>{translateUi("đạt chuẩn")}</span></div>
         </div>
         <h2>{translateUi(percent == null ? 'Chờ kết quả khảo sát' : lowCoverage ? `Mới có ${overview.assessedEmployees}/${overview.employees} người có kết quả` : percent === 100 ? 'Đội ngũ đã đạt chuẩn' : 'Còn khoảng trống cần bù')}</h2>
-        <p>{translateUi(percent == null ? 'Kết quả hiện ở đây khi nhân viên làm xong khảo sát.' : lowCoverage ? 'Chưa đủ để kết luận cho cả đội' : 'Theo chuẩn vị trí, ở các lĩnh vực đã có kết quả')}</p>
+        <p>{translateUi(percent == null ? 'Kết quả hiện ở đây khi nhân viên làm xong khảo sát.' : lowCoverage ? 'Chưa đủ để kết luận cho cả đội' : 'So với mức phòng ban (chưa đặt thì chuẩn vị trí), ở các lĩnh vực đã có kết quả')}</p>
         <div className="company-gap-coverage"><span><i />{overview.assessedEmployees}/{overview.employees}{translateUi(" nhân sự đã đối chiếu")}</span>{overview.waitingEmployees > 0 && <Link to="/enterprise/trial">{overview.waitingEmployees}{translateUi(" chờ khảo sát ")}<ArrowRight size={13} /></Link>}{overview.noStandardEmployees > 0 && <Link to="/enterprise/setup">{overview.noStandardEmployees}{translateUi(" chưa có chuẩn vị trí ")}<ArrowRight size={13} /></Link>}</div>
       </div>
       <div className="company-gap-domain-area">
@@ -61,7 +61,7 @@ export function CompanyLearningOverview({ overview }: { overview: LearningNeedsO
     {active && <section className="company-gap-focus" style={{ '--domain': style.color } as CSSProperties} aria-label={translateUi(`Cải thiện ${active.name}`)}>
       <header><span className="company-gap-focus-icon"><ActiveIcon size={23} /></span><div><span className="company-gap-eyebrow">{translateUi("LĨNH VỰC ĐANG XEM")}</span><h2>{translateUi(active.name)}</h2></div><span className="company-gap-focus-state">{active.needsLearning ? translateUi('Cần bổ sung') : active.assessed ? <><Check size={14} />{translateUi(" Đã đáp ứng")}</> : translateUi('Chờ đánh giá')}</span></header>
       <div className="company-gap-focus-body" key={active.categoryId}>
-        <div className="company-gap-missing"><h3>{translateUi("Năng lực còn thiếu")}</h3>{missing.length ? <ul>{missing.map((name) => <li key={name}><span /><span>{name}</span></li>)}</ul> : <p>{active.assessed ? 'Các năng lực đã đánh giá đều đáp ứng chuẩn vị trí.' : 'Có kết quả đánh giá để xác định năng lực cần bổ sung.'}</p>}</div>
+        <div className="company-gap-missing"><h3>{translateUi("Năng lực còn thiếu")}</h3>{missing.length ? <ul>{missing.map((name) => <li key={name}><span /><span>{name}</span></li>)}</ul> : <p>{active.assessed ? 'Các năng lực đã đánh giá đều đạt mức cần đạt.' : 'Có kết quả đánh giá để xác định năng lực cần bổ sung.'}</p>}</div>
         <div className="company-gap-course-area"><h3>{translateUi("Khóa học bù đắp")}</h3>{active.courses.length ? active.courses.map((course) => <article key={course.requiredLevel} className="company-gap-course">
           <span className="company-gap-course-level">{LEVELS[course.requiredLevel]}</span><BookOpen className="company-gap-course-art" size={32} aria-hidden="true" />
           <h4>{course.courseTitle ?? 'Chưa có khóa học tương ứng'}</h4>

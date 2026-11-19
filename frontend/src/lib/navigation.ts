@@ -73,7 +73,7 @@ export function getDashboardPath(user: SessionUser | null | undefined): string {
     return '/mentor/enterprises';
   }
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
-  if (normalized.includes(ROLES.OWNER)) return isEnterpriseTrial(user) ? '/enterprise/trial' : '/enterprise/dashboard';
+  if (normalized.includes(ROLES.OWNER)) return isEnterpriseTrial(user) && !user.enterpriseTrialPurchased ? '/enterprise/trial' : '/enterprise/dashboard';
   if (normalized.includes(ROLES.MANAGER)) return '/enterprise/team';
   if (normalized.includes(ROLES.EMPLOYEE)) return '/enterprise/me';
   return '/forbidden';
