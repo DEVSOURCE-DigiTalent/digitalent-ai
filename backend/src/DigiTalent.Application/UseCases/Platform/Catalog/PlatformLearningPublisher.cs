@@ -114,7 +114,7 @@ public sealed class PlatformLearningPublisher(IApplicationDbContext context)
                         foreach (var (entry, mediaIndex) in media.Select((entry, i) => (entry, i)))
                             context.LearningMaterials.Add(new LearningMaterial { LessonId = lesson.Id, Title = (entry.Caption ?? lesson.Title)[..Math.Min(250, (entry.Caption ?? lesson.Title).Length)], MaterialType = "LINK", ExternalUrl = $"platform-asset:{entry.AssetId:D}", SortOrder = mediaIndex + 1, CreatedAt = now, UpdatedAt = now });
                     }
-                    var assessment = new Assessment { CourseId = id, ModuleId = mapped.Id, Code = $"{course.Code}-CH{moduleIndex + 1}-QUIZ", VersionNo = 1, Title = module.QuizTitle, AssessmentType = Statuses.AssessmentType.Quiz, PassingScore = 100, Status = Statuses.Assessment.Published, CreatedByUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now, RowVersion = 1 };
+                    var assessment = new Assessment { CourseId = id, ModuleId = mapped.Id, Code = $"{course.Code}-CH{moduleIndex + 1}-QUIZ", VersionNo = 1, Title = module.QuizTitle, AssessmentType = Statuses.AssessmentType.Quiz, PassingScore = DigiTalent.Application.UseCases.Pulse.PulseRules.ModuleQuizPassPercent, Status = Statuses.Assessment.Published, CreatedByUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now, RowVersion = 1 };
                     context.Assessments.Add(assessment);
                     foreach (var (question, index) in questions.Where(q => q.ModuleId == module.Id).Select((q, i) => (q, i)))
                     {

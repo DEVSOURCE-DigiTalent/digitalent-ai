@@ -239,7 +239,7 @@ public class PulseSkipTestTests
     }
 
     [Fact]
-    public void Draw_TakesFinalQuizQuestionsFirst_SpreadsOverModules_AndIsStablePerAttempt()
+    public void Draw_TakesReviewQuestionsSpreadOverModules_KeepsTheFinalTestQuestions_AndIsStablePerAttempt()
     {
         var pool = new List<PulseSkipPoolQuestion>();
         for (var module = 0; module < 4; module++)
@@ -259,13 +259,16 @@ public class PulseSkipTestTests
         var courseId = Guid.NewGuid();
         var first = PulseSkipTest.Draw(pool, employeeId, courseId, 1);
         first.Should().HaveCount(PulseRules.SkipTestQuestionCount);
-        first.Should().OnlyContain(p => p.IsFinalQuiz, "20 câu cuối khóa của giáo trình đi trước");
-        first.GroupBy(p => p.ModuleIndex).Should().HaveCount(4).And.OnlyContain(g => g.Count() == 5);
+        first.Should().OnlyContain(p => !p.IsFinalQuiz, "câu cuối khóa của giáo trình để dành cho bài cuối khóa");
+        first.GroupBy(p => p.ModuleIndex).Should().HaveCount(4).And.OnlyContain(g => g.Count() == 5, "chia đều các mô đun");
         PulseSkipTest.Draw(pool, employeeId, courseId, 1).Select(p => p.Question.QuestionId)
             .Should().Equal(first.Select(p => p.Question.QuestionId), "cùng lần làm luôn ra cùng đề");
 
-        var second = PulseSkipTest.Draw(pool, employeeId, courseId, 2);
-        second.Select(p => p.Question.QuestionId).Should().NotIntersectWith(first.Select(p => p.Question.QuestionId), "lần sau lấy đoạn câu kế tiếp");
+        // Khóa có ít hơn 10 câu ôn: câu cuối khóa mới được bù vào để vẫn ra được đề.
+        var small = pool.Where(p => p.ModuleIndex == 0).Take(9).ToList();
+        var fallback = PulseSkipTest.Draw(small, employeeId, courseId, 1);
+        fallback.Should().HaveCount(9);
+        fallback.Count(p => !p.IsFinalQuiz).Should().Be(4);
         PulseRules.SkipTestPassMark(20).Should().Be(16);
         PulseRules.SkipTestPassMark(12).Should().Be(10);
     }

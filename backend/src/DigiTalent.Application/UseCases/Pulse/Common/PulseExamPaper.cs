@@ -11,11 +11,11 @@ namespace DigiTalent.Application.UseCases.Pulse;
 public sealed record PulseChoiceGrade(short Score, short Total, IReadOnlyList<ExamChoiceAnswer> Answers);
 
 /// <summary>
-/// Phần trắc nghiệm của bài làm có giám sát (đánh giá trước khi học, bài cuối khóa — v3.3 §20.6): tối đa
-/// <see cref="PulseRules.ExamChoiceCount"/> câu rút từ câu ôn tập các mô đun của khóa, rải đều các mô đun. Mỗi nhân viên × khóa
-/// có một thứ tự câu cố định; bài đánh giá trước khi học lấy nhóm câu đầu, lần nộp bài cuối thứ k lấy nhóm thứ k + 1, nên các
-/// lần làm không trùng câu khi ngân hàng đủ lớn. Phương án trộn theo lần làm. Cùng đầu vào luôn cho cùng đề, nên lúc bắt đầu
-/// phiên và lúc nộp thấy đúng một bộ câu. Chấm tự động lúc nộp; nhân viên chỉ thấy kết quả sau khi người chấm quyết định.
+/// Phần trắc nghiệm của bài làm có giám sát (bài cuối khóa — v3.3 §20.6): <see cref="PulseRules.ExamChoiceCount"/> câu từ
+/// ngân hàng câu cuối khóa của giáo trình (questions.is_final_quiz, rải đều các mô đun); khóa chưa đủ thì bù bằng câu ôn của
+/// các mô đun. Mọi lần làm dùng cùng bộ câu đó (ngân hàng cuối khóa có đúng 20 câu), thứ tự câu và phương án trộn theo lần làm.
+/// Cùng đầu vào luôn cho cùng đề, nên lúc bắt đầu phiên và lúc nộp thấy đúng một bộ câu. Chấm tự động lúc nộp; nhân viên chỉ
+/// thấy kết quả sau khi người chấm quyết định.
 /// </summary>
 public class PulseExamPaper
 {
@@ -38,40 +38,45 @@ public class PulseExamPaper
         kind == Statuses.ProctoringKind.PreAssessment ? 0 : finalAttemptNo;
 
     /// <summary>
-    /// Số câu của đề với các mô đun này (0 khi khóa chưa có câu ôn tập nào); ước lượng theo số câu của ngân hàng, đề thật có
+    /// Số câu của đề với các mô đun này (0 khi khóa chưa có câu hỏi nào); ước lượng theo số câu của ngân hàng, đề thật có
     /// thể ít hơn khi ngân hàng nhỏ có câu trùng nội dung.
     /// </summary>
     public static int SizeOf(IReadOnlyList<PulseModuleInfo> modules) =>
-        Math.Min(PulseRules.ExamChoiceCount, modules.Where(m => m.QuizAssessmentId.HasValue).Sum(m => m.QuizQuestionCount));
+        Math.Min(PulseRules.ExamChoiceCount, modules.Where(m => m.QuizAssessmentId.HasValue).Sum(m => m.QuizTotalQuestionCount));
 
     public async Task<IReadOnlyList<PulseQuizQuestion>> DrawAsync(IReadOnlyList<PulseModuleInfo> modules, Guid employeeId, Guid courseId, int slot)
     {
         var pools = new List<IReadOnlyList<PulseQuizQuestion>>();
         foreach (var module in modules.Where(m => m.QuizAssessmentId.HasValue))
         {
-            pools.Add(await _quiz.LoadQuestionsAsync(module.QuizAssessmentId!.Value));
+            pools.Add(await _quiz.LoadBankAsync(module.QuizAssessmentId!.Value));
         }
 
         return Draw(pools, employeeId, courseId, slot);
     }
 
     /// <summary>
-    /// Đề của nhóm <paramref name="slot"/>: câu của từng mô đun được xếp ngẫu nhiên (cố định cho nhân viên × khóa) rồi xen kẽ
-    /// các mô đun (câu 1 của mỗi mô đun, rồi câu 2…), bỏ câu trùng nội dung (ngân hàng ôn tập có câu mẫu lặp giữa các mô đun);
-    /// nhóm thứ n là đoạn kế tiếp của dãy đó (vòng lại khi hết câu).
+    /// Đề của nhóm <paramref name="slot"/> (lần làm): câu cuối khóa của giáo trình trước, rồi câu ôn tập để bù khi khóa chưa đủ
+    /// <see cref="PulseRules.ExamChoiceCount"/> câu cuối khóa; trong mỗi nhóm, câu của từng mô đun được xếp ngẫu nhiên (cố định
+    /// cho nhân viên × khóa) rồi xen kẽ các mô đun, bỏ câu trùng nội dung. Mọi lần làm lấy cùng bộ câu đầu dãy; thứ tự câu và
+    /// phương án trộn theo lần làm.
     /// </summary>
     public static IReadOnlyList<PulseQuizQuestion> Draw(IReadOnlyList<IReadOnlyList<PulseQuizQuestion>> modulePools, Guid employeeId, Guid courseId, int slot)
     {
         var random = new Random(PulseQuizReader.Seed(employeeId, courseId, SeedSalt));
-        var queues = modulePools
-            .Where(pool => pool.Count > 0)
-            .Select(pool => PulseQuizReader.Shuffle(pool.OrderBy(q => q.SortOrder).ThenBy(q => q.QuestionId).ToList(), random))
-            .ToList();
         var order = new List<PulseQuizQuestion>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        for (var round = 0; queues.Any(q => round < q.Count); round++)
+        foreach (var finalQuiz in new[] { true, false })
         {
-            order.AddRange(queues.Where(q => round < q.Count).Select(q => q[round]).Where(q => seen.Add(q.Content.Trim())));
+            var queues = modulePools
+                .Select(pool => pool.Where(q => q.IsFinalQuiz == finalQuiz).OrderBy(q => q.SortOrder).ThenBy(q => q.QuestionId).ToList())
+                .Where(pool => pool.Count > 0)
+                .Select(pool => PulseQuizReader.Shuffle(pool, random))
+                .ToList();
+            for (var round = 0; queues.Any(q => round < q.Count); round++)
+            {
+                order.AddRange(queues.Where(q => round < q.Count).Select(q => q[round]).Where(q => seen.Add(q.Content.Trim())));
+            }
         }
 
         if (order.Count == 0)
@@ -80,11 +85,9 @@ public class PulseExamPaper
         }
 
         var size = Math.Min(PulseRules.ExamChoiceCount, order.Count);
-        var start = Math.Max(slot, 0) * size;
-        var optionRandom = new Random(PulseQuizReader.Seed(employeeId, courseId, SeedSalt + 1 + Math.Max(slot, 0)));
-        return Enumerable.Range(0, size)
-            .Select(i => order[(start + i) % order.Count])
-            .Select(q => q with { Options = PulseQuizReader.Shuffle(q.Options.ToList(), optionRandom) })
+        var attemptRandom = new Random(PulseQuizReader.Seed(employeeId, courseId, SeedSalt + 1 + Math.Max(slot, 0)));
+        return PulseQuizReader.Shuffle(order.Take(size).ToList(), attemptRandom)
+            .Select(q => q with { Options = PulseQuizReader.Shuffle(q.Options.ToList(), attemptRandom) })
             .ToList();
     }
 
