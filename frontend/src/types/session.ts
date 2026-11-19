@@ -51,6 +51,8 @@ export interface SessionUser {
   onboardingStatus?: OnboardingStatus;
   /** null from the real backend when the organization has no enterprise trial. */
   enterpriseTrialStatus?: 'trial_active' | 'trial_read_only' | 'converted' | null;
+  /** A trial organization that bought at least one course: the owner's menu is no longer limited to the trial. */
+  enterpriseTrialPurchased?: boolean;
   emailVerified?: boolean;
   contractSigned?: boolean;
 }

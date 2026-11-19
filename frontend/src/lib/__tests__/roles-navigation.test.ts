@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { inferWorkspace, normalizeRoles, resolveWorkspace } from '../roles';
-import { getHomePath } from '../navigation';
+import { getDashboardPath, getHomePath } from '../navigation';
 import { getPostLoginPath } from '../../features/auth/auth-redirect';
 import type { SessionUser } from '../../types/session';
 
@@ -85,6 +85,16 @@ describe('getHomePath', () => {
 
     expect(getHomePath(manager)).toBe('/enterprise/team');
     expect(getPostLoginPath('/enterprise/me/path', manager)).toBe('/enterprise/team');
+  });
+
+  it('"Vào hệ thống" opens a trial Owner on the survey until the organization buys a course, then on the overview', () => {
+    const owner: SessionUser = {
+      id: 'owner-trial', email: 'owner@trial.test', fullName: 'Owner', roles: ['OWNER'], permissions: [],
+      workspace: 'enterprise', enterpriseTrialStatus: 'trial_active', emailVerified: true,
+    };
+
+    expect(getDashboardPath(owner)).toBe('/enterprise/trial');
+    expect(getDashboardPath({ ...owner, enterpriseTrialPurchased: true })).toBe('/enterprise/dashboard');
   });
 
   it('preserves mentor deep links and blocks cross-workspace redirects', () => {

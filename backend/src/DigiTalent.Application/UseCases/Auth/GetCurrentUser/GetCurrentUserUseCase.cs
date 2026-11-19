@@ -113,6 +113,10 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             onboardingStatus = subDto?.Status is "trialing" or "active" ? (hasLearner ? null : "setup") : "payment";
         }
 
+        // A trial organization that bought a course is a customer: the owner's menu is no longer limited to the trial.
+        var trialPurchased = trial is { ConvertedAt: null }
+            && await _context.CourseOrders.AnyAsync(o => o.OrganizationId == trial.OrganizationId);
+
         return new GetCurrentUserUseCaseOutput
         {
             Id = user.Id,
@@ -125,6 +129,7 @@ public class GetCurrentUserUseCase : IUseCase<GetCurrentUserUseCaseInput, GetCur
             OnboardingStatus = onboardingStatus,
             Subscription = subDto,
             EnterpriseTrialStatus = trial == null ? null : trial.ConvertedAt != null ? "converted" : DateTimeOffset.UtcNow < trial.EndsAt ? "trial_active" : "trial_read_only",
+            EnterpriseTrialPurchased = trialPurchased,
             Roles = roles,
             Permissions = permissions.ToList(),
         };

@@ -149,7 +149,7 @@ function TrialLockedItem({ icon, label, isRail, variant, dataTour }: {
           </strong>
           <span className="opacity-80">
             {translateUi('Bản dùng thử có Khảo sát năng lực số, Khung năng lực số và Khóa học.')}{' '}
-            {translateUi(`${label} mở khi doanh nghiệp dùng chính thức.`)}
+            {translateUi(`${label} mở khi doanh nghiệp mua khóa học đầu tiên.`)}
           </span>
         </div>,
         document.body,
