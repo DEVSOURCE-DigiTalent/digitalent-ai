@@ -1,3 +1,4 @@
+import { useTrialLock } from '@/hooks/use-trial-lock';
 import { canonicalCourseCode, courseCodeKey } from '@/features/courses/course-code';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -102,6 +103,7 @@ const shortPrice = (price: number) => (price >= 1_000_000 ? `${(price / 1_000_00
 
 export function OwnerCourseCatalogPage() {
   useUiLanguage();
+  const trialLock = useTrialLock();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const gapCode = searchParams.get('gap') ?? '';
@@ -198,14 +200,14 @@ export function OwnerCourseCatalogPage() {
           <div className="course-gap-context" data-course-domain={referredDomain} role="status">
             <span className="course-gap-context-icon"><Sparkles size={18} /></span>
             <div><strong>{gapCourse ? translateUi(`Khóa học bù đắp cho năng lực ${gapCode}`) : translateUi(`Chưa tìm thấy khóa học cho năng lực ${gapCode}`)}</strong><span>{gapCourse ? `${canonicalCourseCode(gapCourse.code)} · ${gapCourse.title} · ${levelName(gapTargetLevel)}` : translateUi('Bạn có thể xem các cấp độ khác trong lĩnh vực này.')}</span></div>
-            <Link to="/enterprise/skill-gap">{translateUi('← Về khoảng trống năng lực')}</Link>
+            {!trialLock.limited && <Link to="/enterprise/skill-gap">{translateUi('← Về khoảng trống năng lực')}</Link>}
           </div>
         )}
         {focusCode && !gapCode && !isLoading && !isError && (
           <div className="course-gap-context" data-course-domain={referredDomain} role="status">
             <span className="course-gap-context-icon"><BookOpen size={18} /></span>
             <div><strong>{focusCourse ? translateUi('Khóa học đề xuất cho nhân viên') : translateUi('Chưa tìm thấy khóa học')}</strong><span>{focusCourse ? `${canonicalCourseCode(focusCourse.code)} · ${focusCourse.title}` : translateUi(`Mã khóa học ${focusCode}`)}</span></div>
-            <Link to="/enterprise/skill-gap">{translateUi('← Về khoảng trống năng lực')}</Link>
+            {!trialLock.limited && <Link to="/enterprise/skill-gap">{translateUi('← Về khoảng trống năng lực')}</Link>}
           </div>
         )}
 

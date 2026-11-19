@@ -5,6 +5,8 @@ import { RequireActiveSubscription } from '../../components/guards/RequireActive
 import { RequireEntitlement } from '../../components/guards/RequireEntitlement';
 import { RequirePermission } from '../../components/guards/RequirePermission';
 import { RequireRole } from '../../components/guards/RequireRole';
+import { RequireTrialOpen } from '../../components/guards/RequireTrialOpen';
+import { TRIAL_LOCKED_SCREEN_IDS } from '../../lib/trial-lock';
 import { PlaceholderPage } from '../../features/system/pages/PlaceholderPage';
 import type { ScreenDef } from '../../lib/screens/types';
 import { PageLoading } from '../../components/shared/LoadingState';
@@ -27,8 +29,10 @@ export function RouteFallback() {
 /** Real pages by screen ID. Screens without an entry render a placeholder until they are built. */
 export type PageRegistry = Partial<Record<string, ComponentType>>;
 
-function guard(screen: ScreenDef, page: ReactNode): ReactNode {
+function guard(screen: ScreenDef, page: ReactNode, base: string): ReactNode {
   let element = page;
+  // Enterprise trial: an owner whose organization bought no course yet cannot open the screens locked in the menu.
+  if (base === '/enterprise' && TRIAL_LOCKED_SCREEN_IDS.has(screen.id)) element = <RequireTrialOpen>{element}</RequireTrialOpen>;
   if (!screen.allowUnpaid) element = <RequireActiveSubscription>{element}</RequireActiveSubscription>;
   if (screen.entitlement) element = <RequireEntitlement entitlement={screen.entitlement}>{element}</RequireEntitlement>;
   if (screen.permission) element = <RequirePermission permission={screen.permission}>{element}</RequirePermission>;
@@ -47,6 +51,6 @@ export function buildRoutes(screens: ScreenDef[], pages: PageRegistry, base: str
     ) : (
       <PlaceholderPage screenId={screen.id} title={translateUi(screen.title)} priority={screen.priority} />
     );
-    return { path: screen.path.slice(base.length + 1), element: guard(screen, page) };
+    return { path: screen.path.slice(base.length + 1), element: guard(screen, page, base) };
   });
 }
