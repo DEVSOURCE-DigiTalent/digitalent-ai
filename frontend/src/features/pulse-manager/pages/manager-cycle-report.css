@@ -232,6 +232,21 @@ html[data-theme='dark'] .manager-cycle tbody tr:hover {
   scrollbar-color: var(--po-accent) transparent;
 }
 .manager-cycle__events { margin: 12px 10px 16px 23px; }
+@media (min-width: 1200px) {
+  .manager-cycle__timeline {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    min-height: 0;
+    contain: size;
+  }
+  .manager-cycle__timeline > header { flex-shrink: 0; }
+  .manager-cycle__timeline .manager-cycle__event-scroll {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+  }
+}
 .manager-cycle__events li { margin-inline-start: 0; padding-inline: 17px 9px; border-radius: 0 10px 10px 0; }
 .manager-cycle__events li:hover, .manager-cycle__events li:focus-within { background: var(--po-raised); }
 .manager-cycle__events summary { display: inline-flex; gap: 3px; align-items: center; padding: 3px 5px; margin-inline-start: -5px; border-radius: 6px; }

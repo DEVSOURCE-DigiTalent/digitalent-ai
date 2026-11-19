@@ -59,8 +59,8 @@ export function PulseEmployeeLayout() {
   const trialLearning = trial && !owner && myTrial?.status === 'REVIEWED' &&
     (!overview?.hasPosition || !overview.hasTargets || Boolean(overview.awaitingFramework));
   const isWaiting = myTrial?.status === 'SUBMITTED' || gate === 'waiting';
-  const isGateActive = Boolean(gate && myTrial);
-  const shouldFocus = Boolean(exam || isGateActive || (pathname === PULSE_PATHS.trialTest && isWaiting));
+  const isGateActive = Boolean(gate && myTrial && !manager);
+  const shouldFocus = Boolean(exam || isGateActive || (!manager && pathname === PULSE_PATHS.trialTest && isWaiting));
 
   useEffect(() => {
     window.scrollTo({ top: 0 });

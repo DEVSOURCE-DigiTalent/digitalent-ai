@@ -24,11 +24,23 @@
 }
 
 /* -------- Sidebar -------- */
-.pulse-ui.pa-console .sidebar.pa-sidebar {
-  background: linear-gradient(180deg, #173b46, #1b3440 78%, #223745);
-  border-right: 1px solid #1b414c;
+.pulse-ui.pa-console .sidebar.pa-sidebar,
+.pulse-ui.pa-console .app-shell.role-admin .sidebar.pa-sidebar,
+.pulse-ui.pa-console #pa-admin-sidebar {
+  background: linear-gradient(180deg, #173b46, #1b3440 78%, #223745) !important;
+  border-right: 1px solid #1b414c !important;
   box-shadow: 12px 0 32px rgba(16, 43, 52, 0.07);
   color: #d4e4e5;
+  padding: 0 !important;
+}
+
+@media (max-width: 1024px) {
+  .pulse-ui.pa-console .sidebar.pa-sidebar,
+  .pulse-ui.pa-console .app-shell.role-admin .sidebar.pa-sidebar,
+  .pulse-ui.pa-console #pa-admin-sidebar {
+    background: linear-gradient(180deg, #173b46, #1b3440 78%, #223745) !important;
+    border-right: 1px solid #1b414c !important;
+  }
 }
 
 .pulse-ui.pa-console .pa-sidebar-head {

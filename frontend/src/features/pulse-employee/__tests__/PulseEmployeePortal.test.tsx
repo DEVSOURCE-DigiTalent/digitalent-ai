@@ -188,10 +188,15 @@ function signIn(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  vi.stubGlobal('IntersectionObserver', class {
+    observe = vi.fn();
+    disconnect = vi.fn();
+  });
   signIn();
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   window.history.replaceState(null, '', '/');
 });
 
@@ -212,6 +217,16 @@ describe('Pulse employee routes', () => {
       expect(screen.queryByRole('link', { name: 'Đánh giá' })).not.toBeInTheDocument();
       view.unmount();
     }
+  });
+
+  it('shows only overview and roadmap in the manager learning sidebar', () => {
+    signIn({ roles: [ROLES.MANAGER] });
+    renderAt(PULSE_PATHS.today, <PulseSidebar manager />);
+
+    const nav = screen.getByRole('navigation', { name: 'Điều hướng học tập' });
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent?.trim())).toEqual([
+      'Tổng quan', 'Lộ trình năng lực',
+    ]);
   });
 
   it('gives a manager the shared roadmap and a way back to the team workspace', async () => {

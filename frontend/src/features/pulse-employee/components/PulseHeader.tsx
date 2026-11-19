@@ -295,8 +295,8 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
                   <>
                     <Link role="menuitem" to={PULSE_PATHS.profile}><UserRound size={16} /> Hồ sơ cá nhân</Link>
                     <Link role="menuitem" to={PULSE_PATHS.outcomes}><Award size={16} /> Chứng chỉ năng lực</Link>
-                    {(myTrial?.status !== 'NOT_STARTED' || overview?.placementTest?.hasTaken) && (
-                      <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> Kết quả đánh giá đầu vào</Link>
+                    {(manager || myTrial?.status !== 'NOT_STARTED' || overview?.placementTest?.hasTaken) && (
+                      <Link role="menuitem" to={PULSE_PATHS.trialTest}><FileText size={16} /> {manager ? 'Kết quả khảo sát đầu vào' : 'Kết quả đánh giá đầu vào'}</Link>
                     )}
                     {!manager && <Link role="menuitem" to={activityPath}><Bell size={16} /> Nhật ký hoạt động</Link>}
                     {owner && (

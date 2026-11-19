@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Camera, Clock, GraduationCap, Hourglass, Mic, Monitor, RefreshCw, Sparkles, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, Clock, GraduationCap, Hourglass, Mic, Monitor, RefreshCw, Sparkles, Zap } from 'lucide-react';
 import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 import type { PulseOverview } from '@/services/pulse.service';
 import type { MyTrialAssessment } from '@/services/trial-program.service';
@@ -23,6 +23,7 @@ type EmployeeSurveyProps = {
   overview?: PulseOverview;
   refresh: () => void;
   refreshing: boolean;
+  backToLearning?: boolean;
 };
 
 function WaitingWorkbench({ data, refresh, refreshing }: EmployeeSurveyProps) {
@@ -215,9 +216,10 @@ function NotStartedIntro({ data }: { data: MyTrialAssessment }) {
   );
 }
 
-export function TrialEmployeeSurvey({ data, overview, refresh, refreshing }: EmployeeSurveyProps) {
+export function TrialEmployeeSurvey({ data, overview, refresh, refreshing, backToLearning = false }: EmployeeSurveyProps) {
   return (
     <div className="tt-container">
+      {backToLearning && <Link to={PULSE_PATHS.path} className="tt-learning-back"><ArrowLeft size={16} aria-hidden="true" />Về học tập của tôi</Link>}
       <header className="tt-head">
         <div className="pu-path-title-block">
           <div className="pu-path-badge-pill">

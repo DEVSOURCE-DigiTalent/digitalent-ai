@@ -194,22 +194,22 @@ export function Topbar({ portal, sidebarConfig, onOpenMobileNav, isMobileNavOpen
 
           {/* Right actions: Hiệu ứng tươi sáng, linh động */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            <div className="hidden sm:flex"><LanguageSwitcher /></div>
+            {!isManager && <div className="hidden sm:flex"><LanguageSwitcher /></div>}
             {/* Quick Search Pill (Ctrl+K) */}
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 hover:bg-white border border-slate-200/80 hover:border-slate-300 text-slate-500 hover:text-[#17243f] transition-all shadow-2xs hover:shadow-xs group cursor-pointer"
+              className={cn("flex items-center justify-center gap-2 rounded-xl bg-white/80 hover:bg-white border border-slate-200/80 hover:border-slate-300 text-slate-500 hover:text-[#17243f] transition-all shadow-2xs hover:shadow-xs group cursor-pointer", isManager ? 'size-8 shrink-0' : 'px-3 py-1.5')}
               aria-label={translateUi("Tìm kiếm")}
               title={translateUi("Tìm kiếm (Ctrl+K)")}
             >
               <Search className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#137b84] transition-colors" />
-              <span className="hidden md:inline text-xs font-medium text-slate-500 group-hover:text-slate-700">{translateUi("Tìm nhanh")}</span>
-              <kbd className="hidden lg:inline text-[10px] font-bold bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/80 text-slate-400 group-hover:text-slate-600 shadow-2xs">Ctrl K</kbd>
+              {!isManager && <span className="hidden md:inline text-xs font-medium text-slate-500 group-hover:text-slate-700">{translateUi("Tìm nhanh")}</span>}
+              {!isManager && <kbd className="hidden lg:inline text-[10px] font-bold bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/80 text-slate-400 group-hover:text-slate-600 shadow-2xs">Ctrl K</kbd>}
             </button>
 
             {/* Hướng dẫn Button: Pill gradient sang xịn */}
-            <button
+            {!isManager && <button
               type="button"
               onClick={() => {
                 const store = useOnboardingStore.getState();
@@ -220,7 +220,7 @@ export function Topbar({ portal, sidebarConfig, onOpenMobileNav, isMobileNavOpen
             >
               <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
               <span className="hidden sm:inline">{translateUi("Hướng dẫn")}</span>
-            </button>
+            </button>}
 
             {/* Quick create menu (+) */}
             {!isManager && <QuickCreateMenu />}
@@ -230,6 +230,9 @@ export function Topbar({ portal, sidebarConfig, onOpenMobileNav, isMobileNavOpen
 
             {/* User Avatar */}
             <UserAvatarMenu
+              showLanguageSwitcher={isManager}
+              hideFeedbackLinks={isManager}
+              onStartTour={isManager ? () => useOnboardingStore.getState().startTour('MANAGER') : undefined}
               accountPath={portal.accountPath}
               learningPath={isManager ? findEnterpriseScreen('EM-01')?.path : undefined}
               settingsPath={isManager ? undefined : portal.settingsPath}

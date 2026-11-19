@@ -228,6 +228,7 @@ function DomainAccordionItem({
 export function TrialTestPage() {
   useUiLanguage();
   const owner = useCurrentUser((state) => state.user?.roles.includes('OWNER'));
+  const manager = useCurrentUser((state) => Boolean(state.user?.roles.includes('MANAGER')));
   const { data, isLoading, error, refetch, isFetching } = useMyTrialAssessment();
   const { data: overview } = usePulseOverview(!owner && data?.status === 'REVIEWED');
   const [openCategory, setOpenCategory] = useState<string | null>(null);
@@ -236,7 +237,7 @@ export function TrialTestPage() {
   if (error || !data) return <p className="pu-notice warning">{apiErrorMessage(error, 'Không tải được bài đánh giá.')}</p>;
 
   if (!owner) {
-    return <TrialEmployeeSurvey data={data} overview={overview} refresh={() => void refetch()} refreshing={isFetching} />;
+    return <TrialEmployeeSurvey data={data} overview={overview} refresh={() => void refetch()} refreshing={isFetching} backToLearning={manager} />;
   }
 
   return (

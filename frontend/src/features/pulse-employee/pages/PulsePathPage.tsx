@@ -1,3 +1,5 @@
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { ROLES } from '@/lib/roles';
 import { useState } from 'react';
 import { translateUi } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
@@ -34,13 +36,14 @@ import {
 import { PULSE_PATHS } from '../lib/paths';
 import { QuickSyllabusDrawer } from '../components/QuickSyllabusDrawer';
 import { TrialLearning } from '../components/TrialLearning';
+import heroBgArt from '@/assets/pulse/enterprise-hero-bg.jpg';
+import '../path-hero.css';
 
 const domainAnchor = (categoryId: string) => `pu-domain-${categoryId}`;
 
 /**
  * Lộ trình Năng lực Chuẩn hóa (EM-02)
- * 1. Khối tiêu đề (chức danh & đơn vị công tác) — không còn thẻ nhiệm vụ ưu tiên / tóm tắt mức tối thiểu riêng:
- *    lĩnh vực ưu tiên và mức tối thiểu từng lĩnh vực đã hiện ngay trong Mindmap / Ma trận bên dưới
+ * 1. Banner chức danh, đơn vị công tác và tiến độ lộ trình.
  * 3. Bộ điều khiển góc nhìn: [Bản đồ Hành trình (Mindmap)] và [Bảng Ma trận (Matrix)]
  * 4. Mindmap: mỗi lĩnh vực hiện mọi khóa doanh nghiệp đã có — bắt buộc tới mức tối thiểu, cao hơn là học vượt
  * 5. Quick Syllabus Drawer: xem đề cương & điều kiện miễn học 1-click
@@ -137,20 +140,60 @@ export function PulsePathPage() {
 
 /* ── 1. Page Header: Title Block ───── */
 function PathHeaderSection({ overview }: { overview: PulseOverview }) {
+  const manager = useCurrentUser((state) => Boolean(state.user?.roles.includes(ROLES.MANAGER)));
   const { person } = overview;
   const position = person.positionName ?? 'Vị trí công việc';
   const orgSub = [departmentTitle(person.departmentName), person.organizationName].filter(Boolean).join(' · ');
+  if (!manager) {
+    return (
+      <header className="pu-path-header-group">
+        {/* Tiêu đề hiển thị trực tiếp trên nền (không bọc khung) */}
+        <div className="pu-path-title-block">
+          <div className="pu-path-badge-pill">
+            <Award size={13} className="text-blue-700" />
+            <span>Lộ trình Chuẩn hóa Năng lực Số Doanh nghiệp</span>
+          </div>
+          <h1 className="pu-path-main-title">{position}</h1>
+          <p className="pu-path-sub-title">{orgSub || 'Công ty Cổ phần Công nghệ DigiTalent Việt Nam'}</p>
+        </div>
+      </header>
+    );
+  }
+
+  const total = overview.stats.pathCourses;
+  const completed = overview.stats.approvedPathCourses;
+  const percent = total > 0 ? Math.min(100, Math.round(completed / total * 100)) : 0;
+  const requiredDomains = overview.domains.filter((domain) => domain.pathTop > 0);
+  const metDomains = requiredDomains.filter(meetsRequirement).length;
 
   return (
-    <header className="pu-path-header-group">
-      {/* Tiêu đề hiển thị trực tiếp trên nền (không bọc khung) */}
+    <header className="pu-path-header-group pu-path-hero">
+      <div className="pu-path-hero__backdrop" style={{ backgroundImage: `url(${heroBgArt})` }} aria-hidden="true" />
       <div className="pu-path-title-block">
         <div className="pu-path-badge-pill">
-          <Award size={13} className="text-blue-700" />
+          <Award size={13} />
           <span>Lộ trình Chuẩn hóa Năng lực Số Doanh nghiệp</span>
         </div>
         <h1 className="pu-path-main-title">{position}</h1>
         <p className="pu-path-sub-title">{orgSub || 'Công ty Cổ phần Công nghệ DigiTalent Việt Nam'}</p>
+      </div>
+      <div className="pu-path-hero__progress">
+        <div
+          className="pu-path-hero__ring"
+          role="progressbar"
+          aria-label="Tiến độ hoàn thành khóa học trong lộ trình"
+          aria-valuenow={percent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          style={{ background: `conic-gradient(#a6d6ff ${percent}%, #ffffff26 0)` }}
+        >
+          <span>{percent}<small>%</small></span>
+        </div>
+        <div className="pu-path-hero__summary">
+          <p>Tiến độ lộ trình</p>
+          <strong>{completed}<span> / {total} khóa hoàn thành</span></strong>
+          <div><Target size={14} aria-hidden="true" />{metDomains}/{requiredDomains.length} lĩnh vực đạt mức yêu cầu</div>
+        </div>
       </div>
     </header>
   );

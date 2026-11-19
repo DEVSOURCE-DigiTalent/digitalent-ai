@@ -330,7 +330,7 @@
   --pa-sidebar-w: 68px;
 }
 
-.pulse-ui .app-shell.role-admin .sidebar {
+.pulse-ui .app-shell.role-admin .sidebar:not(.pa-sidebar) {
   background: #ffffff;
   border-right: 1px solid #e2e8f0;
   display: flex;
