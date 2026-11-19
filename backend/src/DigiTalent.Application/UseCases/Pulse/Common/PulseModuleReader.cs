@@ -18,7 +18,12 @@ public sealed class PulseModuleInfo
     public int? EstimatedMinutes { get; init; }
     public IReadOnlyList<PulseSlideInfo> Slides { get; init; } = Array.Empty<PulseSlideInfo>();
     public Guid? QuizAssessmentId { get; init; }
+
+    /// <summary>Câu của bài ôn tập mô đun: câu ôn, không gồm câu cuối khóa (mô đun chỉ có câu cuối khóa thì là các câu đó).</summary>
     public int QuizQuestionCount { get; init; }
+
+    /// <summary>Cả ngân hàng của mô đun: câu ôn và câu cuối khóa của giáo trình (bài cuối khóa, bài kiểm tra đầu vào).</summary>
+    public int QuizTotalQuestionCount { get; init; }
 }
 
 /// <summary>Tiến độ của một lượt học ở một mô đun.</summary>
@@ -85,6 +90,10 @@ public class PulseModuleReader
                 ModuleId = a.ModuleId!.Value,
                 a.VersionNo,
                 QuestionCount = _context.AssessmentQuestions.Count(q => q.AssessmentId == a.Id),
+                FinalCount = (from link in _context.AssessmentQuestions
+                              join question in _context.Questions on link.QuestionId equals question.Id
+                              where link.AssessmentId == a.Id && question.IsFinalQuiz
+                              select link).Count(),
             })
             .ToListAsync();
         var quizByModule = quizzes
@@ -106,7 +115,8 @@ public class PulseModuleReader
                     EstimatedMinutes = m.EstimatedMinutes,
                     Slides = slidesByModule.GetValueOrDefault(m.Id) ?? new List<PulseSlideInfo>(),
                     QuizAssessmentId = quiz?.Id,
-                    QuizQuestionCount = quiz?.QuestionCount ?? 0,
+                    QuizQuestionCount = quiz == null ? 0 : quiz.QuestionCount > quiz.FinalCount ? quiz.QuestionCount - quiz.FinalCount : quiz.QuestionCount,
+                    QuizTotalQuestionCount = quiz?.QuestionCount ?? 0,
                 };
             }).ToList());
     }

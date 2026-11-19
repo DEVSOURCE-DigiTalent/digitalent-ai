@@ -69,15 +69,15 @@ public class PulseRulesTests
     [Fact]
     public void QuizDraw_GivesEachAttemptOtherQuestions_AndTheSameDrawForTheSameAttempt()
     {
-        var pool = Enumerable.Range(1, 6).Select(n => QuizQuestion(n)).ToList();
+        var pool = Enumerable.Range(1, 2 * PulseRules.ModuleQuizDrawSize).Select(n => QuizQuestion(n)).ToList();
         var employee = Guid.NewGuid();
         var assessment = Guid.NewGuid();
         var draws = Enumerable.Range(1, 4).Select(attempt => PulseQuizReader.Draw(pool, employee, assessment, attempt)).ToList();
 
         draws.Should().OnlyContain(d => d.Count == PulseRules.ModuleQuizDrawSize);
         draws.Take(2).SelectMany(d => d.Select(q => q.QuestionId)).Should().OnlyHaveUniqueItems()
-            .And.BeEquivalentTo(pool.Select(q => q.QuestionId), "hai lần đầu đi hết ngân hàng 6 câu, không lặp câu nào");
-        draws[2].Select(q => q.QuestionId).Should().Equal(draws[0].Select(q => q.QuestionId), "hết ngân hàng thì quay lại từ đầu");
+            .And.BeEquivalentTo(pool.Select(q => q.QuestionId), "hai lần đầu đi hết ngân hàng 20 câu, không lặp câu nào");
+        draws[2].Select(q => q.QuestionId).Should().BeEquivalentTo(draws[0].Select(q => q.QuestionId), "hết ngân hàng thì quay lại từ đầu");
 
         var again = PulseQuizReader.Draw(pool, employee, assessment, 2);
         again.Select(q => q.QuestionId).Should().Equal(draws[1].Select(q => q.QuestionId), "trang học và lúc chấm thấy cùng một bộ câu");
@@ -86,6 +86,59 @@ public class PulseRulesTests
         {
             question.Options.Select(o => o.OptionId).Should().BeEquivalentTo(pool.Single(q => q.QuestionId == question.QuestionId).Options.Select(o => o.OptionId));
         }
+    }
+
+    [Fact]
+    public void ModuleQuiz_TenReviewQuestionsEachAttempt_WithoutFinalTestQuestions_PassAtEightyPercent()
+    {
+        var review = Enumerable.Range(1, 10).Select(n => QuizQuestion(n)).ToList();
+        var final = Enumerable.Range(11, 4).Select(n => QuizQuestion(n) with { IsFinalQuiz = true }).ToList();
+        var pool = PulseQuizReader.ReviewPool(review.Concat(final).ToList());
+        pool.Should().BeEquivalentTo(review, "câu cuối khóa để dành cho bài cuối khóa");
+        PulseQuizReader.ReviewPool(final).Should().HaveCount(4, "mô đun chỉ có câu cuối khóa thì vẫn có bài ôn");
+
+        foreach (var attempt in new[] { 1, 2, 3 })
+        {
+            PulseQuizReader.Draw(pool, Guid.NewGuid(), Guid.NewGuid(), attempt).Select(q => q.QuestionId)
+                .Should().BeEquivalentTo(review.Select(q => q.QuestionId), "ngân hàng 10 câu: mỗi lần làm đủ 10 câu");
+        }
+
+        PulseRules.ModuleQuizPassMark(10).Should().Be(8);
+        PulseRules.ModuleQuizPassed(8, 10).Should().BeTrue();
+        PulseRules.ModuleQuizPassed(7, 10).Should().BeFalse();
+        PulseRules.ModuleQuizPassMark(6).Should().Be(5);
+        PulseRules.ModuleQuizPassMark(3).Should().Be(3);
+        PulseRules.ModuleQuizPassed(0, 0).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ExamDraw_TakesTheTwentyFinalTestQuestions_SpreadOverModules_SameQuestionsOnARetake()
+    {
+        var modules = Enumerable.Range(0, 4)
+            .Select(m => (IReadOnlyList<PulseQuizQuestion>)Enumerable.Range(1, 15)
+                .Select(n => QuizQuestion(m * 100 + n) with { IsFinalQuiz = n <= 5 })
+                .ToList())
+            .ToList();
+        var employee = Guid.NewGuid();
+        var course = Guid.NewGuid();
+
+        var first = PulseExamPaper.Draw(modules, employee, course, 1);
+        first.Should().HaveCount(PulseRules.ExamChoiceCount).And.OnlyContain(q => q.IsFinalQuiz, "đề cuối khóa là ngân hàng câu cuối khóa");
+        first.GroupBy(q => q.SortOrder / 100).Should().HaveCount(4).And.OnlyContain(g => g.Count() == 5, "rải đều các mô đun");
+        PulseExamPaper.Draw(modules, employee, course, 1).Select(q => q.QuestionId)
+            .Should().Equal(first.Select(q => q.QuestionId), "lúc bắt đầu phiên và lúc nộp thấy cùng một đề");
+        PulseExamPaper.Draw(modules, employee, course, 2).Select(q => q.QuestionId)
+            .Should().BeEquivalentTo(first.Select(q => q.QuestionId), "làm lại vẫn là 20 câu đó, chỉ đảo thứ tự");
+        PulseRules.ChoicePassMark(PulseRules.ExamChoiceCount).Should().Be(14);
+
+        var fewFinal = Enumerable.Range(0, 2)
+            .Select(m => (IReadOnlyList<PulseQuizQuestion>)Enumerable.Range(1, 13)
+                .Select(n => QuizQuestion(m * 100 + n) with { IsFinalQuiz = n <= 3 })
+                .ToList())
+            .ToList();
+        var topped = PulseExamPaper.Draw(fewFinal, employee, course, 1);
+        topped.Should().HaveCount(PulseRules.ExamChoiceCount);
+        topped.Count(q => q.IsFinalQuiz).Should().Be(6, "đủ 6 câu cuối khóa, phần còn lại bù bằng câu ôn");
     }
 
     [Fact]

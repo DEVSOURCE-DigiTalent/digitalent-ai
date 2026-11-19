@@ -377,7 +377,7 @@ public class PulseEmployeeFlowTests
     }
 
     [Fact]
-    public async Task ModuleQuiz_NeedsViewedSlides_PreviousModule_AndEveryAnswerRight()
+    public async Task ModuleQuiz_NeedsViewedSlides_PreviousModule_AndEnoughRightAnswers()
     {
         using var world = await PulseTestWorld.CreateAsync();
         var uc = await world.AsAsync(PulseTestWorld.EmployeeEmail);
@@ -392,7 +392,8 @@ public class PulseEmployeeFlowTests
 
         var module = await uc.GetModule.ExecuteAsync(new GetPulseModuleUseCaseInput { CourseId = course.CourseId, ModuleId = first.ModuleId });
         module.Slides.Should().NotBeEmpty().And.OnlyContain(s => !string.IsNullOrEmpty(s.ContentBody));
-        module.Quiz!.Questions.Should().HaveCount(PulseRules.ModuleQuizDrawSize);
+        first.QuizQuestionCount.Should().Be(Math.Min(PulseRules.ModuleQuizDrawSize, first.QuizBankQuestionCount));
+        module.Quiz!.Questions.Should().HaveCount(first.QuizQuestionCount);
         module.Quiz.AttemptNo.Should().Be(1);
         var wrongAnswers = new List<PulseAnswerInput>();
         foreach (var question in module.Quiz.Questions)
@@ -479,26 +480,28 @@ public class PulseEmployeeFlowTests
         await uc.MarkViewed.ExecuteAsync(new MarkPulseModuleViewedUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId });
         world.Context.ChangeTracker.Clear();
         var first = (await Module()).Quiz!;
-        var firstAnswers = await Answers(first, wrongCount: 1);
+        var wrongCount = first.Questions.Count - PulseRules.ModuleQuizPassMark(first.Questions.Count) + 1;
+        var firstAnswers = await Answers(first, wrongCount);
         world.Clock.Advance(TimeSpan.FromMinutes(1));
         var failed = await Submit(firstAnswers, first.AttemptNo);
         world.Context.ChangeTracker.Clear();
-        failed.Score.Should().Be(first.Questions.Count - 1);
-        var wrongPage = failed.Wrong.Single().LessonId!.Value;
-        failed.Review!.Pages.Should().ContainSingle(p => p.LessonId == wrongPage);
+        failed.Passed.Should().BeFalse("dưới 80% câu đúng");
+        failed.Score.Should().Be(first.Questions.Count - wrongCount);
+        var wrongPages = failed.Wrong.Select(w => w.LessonId!.Value).Distinct().ToList();
+        failed.Review!.Pages.Select(p => p.LessonId).Should().BeEquivalentTo(wrongPages);
 
         // Chưa mở lại trang: không có câu hỏi, nộp cũng bị chặn — kể cả khi trang đã đọc trước lần làm.
         var blocked = await Module();
         blocked.Quiz.Should().BeNull();
         blocked.QuizBlockReason.Should().Be(PulseBlockReason.ReviewRequired);
         blocked.Review!.Done.Should().BeFalse();
-        blocked.Review.Pages.Single().LessonId.Should().Be(wrongPage);
+        blocked.Review.Pages.Select(p => p.LessonId).Should().BeEquivalentTo(wrongPages);
         (await FluentActions.Awaiting(() => Submit(firstAnswers, first.AttemptNo)).Should().ThrowAsync<BadRequestException>())
             .Which.Errors.Single().Code.Should().Be(PulseBlockReason.ReviewRequired);
         world.Context.ChangeTracker.Clear();
 
         world.Clock.Advance(TimeSpan.FromMinutes(3));
-        var otherPage = blocked.Slides.Select(s => s.LessonId).FirstOrDefault(id => id != wrongPage);
+        var otherPage = blocked.Slides.Select(s => s.LessonId).FirstOrDefault(id => !wrongPages.Contains(id));
         if (otherPage != Guid.Empty)
         {
             var other = await uc.MarkPage.ExecuteAsync(new MarkPulsePageViewedUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId, LessonId = otherPage });
@@ -506,18 +509,21 @@ public class PulseEmployeeFlowTests
             world.Context.ChangeTracker.Clear();
         }
 
-        var reviewed = await uc.MarkPage.ExecuteAsync(new MarkPulsePageViewedUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId, LessonId = wrongPage });
-        world.Context.ChangeTracker.Clear();
-        reviewed.Review!.Done.Should().BeTrue();
+        MarkPulsePageViewedUseCaseOutput? reviewed = null;
+        foreach (var page in wrongPages)
+        {
+            reviewed = await uc.MarkPage.ExecuteAsync(new MarkPulsePageViewedUseCaseInput { CourseId = course.CourseId, ModuleId = moduleId, LessonId = page });
+            world.Context.ChangeTracker.Clear();
+        }
+
+        reviewed!.Review!.Done.Should().BeTrue();
 
         var second = (await Module()).Quiz!;
         second.AttemptNo.Should().Be(2);
-        second.Questions.Select(q => q.QuestionId).Should().NotIntersectWith(first.Questions.Select(q => q.QuestionId), "lần sau là câu khác");
-        (await FluentActions.Awaiting(() => Submit(firstAnswers, first.AttemptNo)).Should().ThrowAsync<BadRequestException>())
-            .Which.Errors.Single().Code.Should().Be(PulseBlockReason.QuizChanged);
-        world.Context.ChangeTracker.Clear();
+        second.Questions.Select(q => q.QuestionId).Should().BeEquivalentTo(first.Questions.Select(q => q.QuestionId),
+            "ngân hàng không lớn hơn bài ôn: mỗi lần làm đủ cả ngân hàng, đảo thứ tự");
 
-        var passed = await Submit(await Answers(second, wrongCount: 0), second.AttemptNo);
+        var passed = await Submit(await Answers(second, wrongCount: 1), second.AttemptNo);
         world.Context.ChangeTracker.Clear();
         passed.Passed.Should().BeTrue();
         passed.Review.Should().BeNull();
@@ -568,7 +574,7 @@ public class PulseEmployeeFlowTests
     }
 
     [Fact]
-    public async Task ExamChoice_TenCourseQuizQuestions_HiddenUntilReviewed_AndBelowTheMarkCannotPass()
+    public async Task ExamChoice_UpToTwentyQuestions_HiddenUntilReviewed_AndBelowTheMarkCannotPass()
     {
         using var world = await PulseTestWorld.CreateAsync();
         var employee = await world.AsAsync(PulseTestWorld.EmployeeEmail);
@@ -576,26 +582,27 @@ public class PulseEmployeeFlowTests
         var course = await world.OpenForLearningAsync(employee, "M1-F");
         await world.PassAllModulesAsync(employee, course.CourseId);
 
-        var info = await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId });
-        info.ChoiceCount.Should().Be(10);
-
-        // Đề phát lúc bắt đầu phiên: 10 câu rút từ câu ôn tập của các mô đun, rải đều mọi mô đun.
-        var sessionId = await world.ProctorAsync(employee, course.CourseId, Statuses.ProctoringKind.Final);
-        var paper = world.LastPaper;
-        paper.Select(q => q.Number).Should().Equal(Enumerable.Range(1, 10));
-        paper.Select(q => q.QuestionId).Should().OnlyHaveUniqueItems();
-        paper.Select(q => q.Content).Should().OnlyHaveUniqueItems("câu mẫu lặp giữa các mô đun chỉ vào đề một lần");
         var bank = await (
                 from assessment in world.Context.Assessments.AsNoTracking()
                 join link in world.Context.AssessmentQuestions.AsNoTracking() on assessment.Id equals link.AssessmentId
                 where assessment.CourseId == course.CourseId && assessment.ModuleId != null
                 select new { link.QuestionId, ModuleId = assessment.ModuleId!.Value })
             .ToListAsync();
+        var size = Math.Min(PulseRules.ExamChoiceCount, bank.Count);
+        var info = await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId });
+        info.ChoiceCount.Should().Be(size);
+
+        // Đề phát lúc bắt đầu phiên: tối đa 20 câu, câu cuối khóa trước, thiếu thì bù câu ôn, rải đều mọi mô đun.
+        var sessionId = await world.ProctorAsync(employee, course.CourseId, Statuses.ProctoringKind.Final);
+        var paper = world.LastPaper;
+        paper.Select(q => q.Number).Should().Equal(Enumerable.Range(1, size));
+        paper.Select(q => q.QuestionId).Should().OnlyHaveUniqueItems();
+        paper.Select(q => q.Content).Should().OnlyHaveUniqueItems("câu mẫu lặp giữa các mô đun chỉ vào đề một lần");
         var drawn = bank.Where(b => paper.Any(q => q.QuestionId == b.QuestionId)).ToList();
-        drawn.Should().HaveCount(10, "mọi câu của đề đều là câu ôn tập của khóa");
+        drawn.Should().HaveCount(size, "mọi câu của đề đều thuộc ngân hàng câu hỏi của khóa");
         drawn.Select(b => b.ModuleId).Distinct().Should().HaveCount(bank.Select(b => b.ModuleId).Distinct().Count());
 
-        var nine = (await world.AnswersAsync(paper)).Take(9).ToList();
+        var nine = (await world.AnswersAsync(paper)).Take(size - 1).ToList();
         var incomplete = () => employee.SubmitFinal.ExecuteAsync(new SubmitPulseFinalUseCaseInput
         {
             CourseId = course.CourseId, EvidenceText = Evidence, ProctoringSessionId = sessionId, Answers = nine,
@@ -613,18 +620,18 @@ public class PulseEmployeeFlowTests
 
         var item = (await manager.Reviews.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput())).Items.Single(i => i.Kind == Statuses.ProctoringKind.Final);
         var choice = item.Attempts.Single().Choice!;
-        (choice.Score, choice.Total, choice.PassMark, choice.Passed).Should().Be((6, 10, 7, false));
-        choice.Items!.Select(i => i.Number).Should().Equal(Enumerable.Range(1, 10));
-        choice.Items!.Select(i => i.IsCorrect).Should().Equal(true, true, true, true, true, true, false, false, false, false);
+        (choice.Score, choice.Total, choice.PassMark, choice.Passed).Should().Be((6, size, PulseRules.ChoicePassMark(size), false));
+        choice.Items!.Select(i => i.Number).Should().Equal(Enumerable.Range(1, size));
+        choice.Items!.Select(i => i.IsCorrect).Should().Equal(Enumerable.Range(0, size).Select(i => i < 6));
         choice.Items![0].Selected.Should().Be(choice.Items[0].Correct);
-        choice.Items![9].Selected.Should().NotBe(choice.Items[9].Correct);
+        choice.Items![size - 1].Selected.Should().NotBe(choice.Items[size - 1].Correct);
         choice.Items![0].Question.Should().NotBeNullOrWhiteSpace();
 
         var pass = () => manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
         {
             SubmissionId = submitted.SubmissionId, Decision = Statuses.FinalSubmissionDecision.Passed, Reason = "Đạt đủ ba tiêu chí, nguồn rõ ràng.",
         });
-        (await pass.Should().ThrowAsync<BadRequestException>("6/10 câu trắc nghiệm chưa đủ 7 câu"))
+        (await pass.Should().ThrowAsync<BadRequestException>("6 câu đúng chưa đủ 70% phần trắc nghiệm"))
             .Which.Errors.Single().Code.Should().Be(PulseExamPaper.BelowPass);
         world.Context.ChangeTracker.Clear();
         await manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
@@ -633,7 +640,7 @@ public class PulseEmployeeFlowTests
         });
         world.Context.ChangeTracker.Clear();
         var decided = (await employee.GetFinal.ExecuteAsync(new GetPulseFinalUseCaseInput { CourseId = course.CourseId })).Attempts.Single().Choice!;
-        (decided.Score, decided.Total, decided.Passed).Should().Be((6, 10, false));
+        (decided.Score, decided.Total, decided.Passed).Should().Be((6, size, false));
         decided.Items.Should().BeNull("nhân viên không thấy đáp án");
     }
 

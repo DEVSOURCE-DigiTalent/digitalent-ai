@@ -14,7 +14,6 @@ import {
   LayoutGrid,
   Lock,
   ShoppingCart,
-  Sparkles,
   Target,
   UserX,
   Zap,
@@ -94,8 +93,6 @@ export function PulsePathPage() {
         <div className="pu-view-legend" aria-hidden="true">
           <span><i className="pu-legend-dot done" />Đạt mức yêu cầu</span>
           <span><i className="pu-legend-dot attention" />Chưa đạt mức tối thiểu</span>
-          <span><i className="pu-legend-dot current" />Lĩnh vực ưu tiên</span>
-          <span><i className="pu-legend-dot beyond" />Học vượt</span>
         </div>
       </div>
 
@@ -272,10 +269,6 @@ function MindmapJourney({
                   {required && met ? (
                     <span className="pu-station-pill done">
                       <Check size={11} strokeWidth={3} /> Đạt mức yêu cầu
-                    </span>
-                  ) : isCurrentStation ? (
-                    <span className="pu-station-pill current">
-                      <Sparkles size={11} /> Lĩnh vực ưu tiên
                     </span>
                   ) : hasInProgress ? (
                     <span className="pu-station-pill learning">

@@ -168,7 +168,13 @@ export function capNote(domain: PulseDomain, positionName: string | null | undef
   return `Vị trí ${positionName ?? 'của bạn'} yêu cầu mức ${levelName(domain.target)}, nhưng khóa đang được mở cho ${dept} đến mức ${levelName(domain.ceiling)}, nên lộ trình hiện dừng ở mức ${levelName(domain.pathTop)}.`;
 }
 
-/** "Đề gồm 10 câu trắc nghiệm (đúng từ 7 câu) và một bài tự luận…" — mô tả đề trên trang trạng thái. */
+/** Bài ôn tập mô-đun đạt khi đúng từ 80% số câu (mirror of backend PulseRules.ModuleQuizPassPercent). */
+export const MODULE_QUIZ_PASS_PERCENT = 80;
+
+/** Số câu đúng tối thiểu của bài ôn tập mô-đun có `total` câu: 10 câu → 8 câu. */
+export const moduleQuizPassMark = (total: number) => Math.ceil((total * MODULE_QUIZ_PASS_PERCENT) / 100);
+
+/** "Đề gồm 20 câu trắc nghiệm (đúng từ 14 câu) và một bài tự luận…" — mô tả đề trên trang trạng thái. */
 export function examStructure(choiceCount: number, passMark: number, criteriaCount = 3): string {
   const countLabel = criteriaCount === 3 ? 'ba' : String(criteriaCount);
   return choiceCount > 0

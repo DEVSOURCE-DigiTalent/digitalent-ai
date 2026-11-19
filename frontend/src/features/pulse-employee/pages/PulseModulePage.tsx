@@ -31,7 +31,7 @@ import type { PulseModuleDetail, PulseModuleQuiz, PulseQuizResult } from '@/serv
 import { LessonSlide } from '../components/LessonSlide';
 import { AskReviewerModal } from '../components/AskReviewerModal';
 import { LoadError, PageSkeleton, PuLink } from '../components/ui';
-import { BLOCK_MESSAGES, levelName, pad2, pulseErrorMessage } from '../lib/labels';
+import { BLOCK_MESSAGES, levelName, moduleQuizPassMark, pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import '../pulse-lesson.css';
 
@@ -888,8 +888,8 @@ function QuizForm({
         </div>
 
         <p className="pu-quiz-lead-text">
-          Lượt kiểm tra này gồm {questions.length} câu được chọn ngẫu nhiên từ ngân hàng câu hỏi của mô-đun.
-          Trả lời đúng tất cả {questions.length} câu để hoàn thành mô-đun. Nếu chưa đạt, bạn có thể xem lại bài học và làm lại với bộ câu hỏi mới.
+          Bài ôn tập gồm {questions.length} câu hỏi ôn của mô-đun. Trả lời đúng từ {moduleQuizPassMark(questions.length)}{' '}
+          câu (80%) để hoàn thành mô-đun. Nếu chưa đạt, hãy xem lại các trang có câu sai rồi làm lại.
         </p>
       </div>
 
@@ -947,7 +947,8 @@ function QuizForm({
               <div>
                 <strong>Chưa đạt yêu cầu: Đúng {result.score}/{result.total} câu</strong>
                 <p>
-                  Bạn cần trả lời đúng tất cả các câu để hoàn thành mô-đun. Hãy xem lại bài học hoặc thử lại với bộ câu hỏi mới.
+                  Bạn cần trả lời đúng từ {moduleQuizPassMark(result.total)} câu (80%) để hoàn thành mô-đun. Hãy xem lại các
+                  trang có câu sai rồi làm lại.
                 </p>
                 <div className="pu-feedback-actions" style={{ display: 'flex', gap: 10, marginTop: 12 }}>
                   {onBackToLesson && (

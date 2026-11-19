@@ -3355,7 +3355,6 @@
 }
 
 .pu-legend-dot.done { background: #059669; }
-.pu-legend-dot.current { background: #1e40af; }
 .pu-legend-dot.learning { background: #2563eb; }
 .pu-legend-dot.pending { background: #94a3b8; }
 
@@ -3519,12 +3518,6 @@
   background: #ecfdf5;
   color: #047857;
   border: 1px solid #a7f3d0;
-}
-
-.pu-station-pill.current {
-  background: #eff6ff;
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
 }
 
 .pu-station-pill.learning {
@@ -4361,7 +4354,6 @@
 }
 
 .pu-legend-dot.attention { background: #f59e0b; }
-.pu-legend-dot.beyond { background: #7c3aed; }
 
 /* Khóa bắt buộc chưa đạt & khóa học vượt */
 .pu-scard-zone {

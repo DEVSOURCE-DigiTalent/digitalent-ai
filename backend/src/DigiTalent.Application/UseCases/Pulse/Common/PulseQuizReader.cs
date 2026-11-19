@@ -5,12 +5,15 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 public sealed record PulseQuizOption(Guid OptionId, string Content, bool IsCorrect);
 
-public sealed record PulseQuizQuestion(Guid QuestionId, string Content, string? Explanation, int SortOrder, IReadOnlyList<PulseQuizOption> Options);
+/// <param name="IsFinalQuiz">Câu cuối khóa của giáo trình (dành cho bài cuối khóa, không ra trong bài ôn tập mô đun).</param>
+public sealed record PulseQuizQuestion(Guid QuestionId, string Content, string? Explanation, int SortOrder, IReadOnlyList<PulseQuizOption> Options,
+    bool IsFinalQuiz = false);
 
 /// <summary>
 /// Nội dung trang và câu hỏi ôn tập của một mô đun (đọc riêng để không tải nội dung cả danh mục).
-/// Mỗi lần làm rút <see cref="PulseRules.ModuleQuizDrawSize"/> câu từ ngân hàng của mô đun, lần sau rút câu khác,
-/// thứ tự phương án trộn theo lần làm. Lần chưa đạt phải mở lại trang của câu chưa đúng rồi mới làm tiếp (§9.2).
+/// Mỗi lần làm rút <see cref="PulseRules.ModuleQuizDrawSize"/> câu ôn của mô đun (câu cuối khóa của giáo trình để dành cho
+/// bài cuối khóa), thứ tự câu và phương án trộn theo lần làm. Lần chưa đạt phải mở lại trang của câu chưa đúng rồi mới làm
+/// tiếp (§9.2).
 /// </summary>
 public class PulseQuizReader
 {
@@ -27,15 +30,28 @@ public class PulseQuizReader
             .Where(l => lessonIds.Contains(l.Id))
             .ToDictionaryAsync(l => l.Id, l => l.ContentBody);
 
-    /// <summary>Cả ngân hàng câu hỏi của bài ôn tập, theo sort_order (câu 2k-1, 2k ↔ trang k).</summary>
-    public async Task<List<PulseQuizQuestion>> LoadQuestionsAsync(Guid assessmentId)
+    /// <summary>
+    /// Câu của bài ôn tập mô đun, theo sort_order (câu 2k-1, 2k ↔ trang k): câu ôn, không gồm câu cuối khóa của giáo trình
+    /// (mô đun chỉ có câu cuối khóa thì dùng các câu đó).
+    /// </summary>
+    public async Task<List<PulseQuizQuestion>> LoadQuestionsAsync(Guid assessmentId) => ReviewPool(await LoadBankAsync(assessmentId));
+
+    /// <summary>Câu ôn của ngân hàng (bỏ câu cuối khóa); ngân hàng chỉ có câu cuối khóa thì giữ nguyên.</summary>
+    public static List<PulseQuizQuestion> ReviewPool(IReadOnlyList<PulseQuizQuestion> bank)
+    {
+        var review = bank.Where(q => !q.IsFinalQuiz).ToList();
+        return review.Count > 0 ? review : bank.ToList();
+    }
+
+    /// <summary>Cả ngân hàng câu hỏi của mô đun (câu ôn và câu cuối khóa), theo sort_order.</summary>
+    public async Task<List<PulseQuizQuestion>> LoadBankAsync(Guid assessmentId)
     {
         var questions = await (
                 from link in _context.AssessmentQuestions.AsNoTracking()
                 join question in _context.Questions.AsNoTracking() on link.QuestionId equals question.Id
                 where link.AssessmentId == assessmentId
                 orderby link.SortOrder
-                select new { question.Id, question.Content, question.Explanation, link.SortOrder })
+                select new { question.Id, question.Content, question.Explanation, question.IsFinalQuiz, link.SortOrder })
             .ToListAsync();
         var ids = questions.Select(q => q.Id).ToList();
         var options = await _context.QuestionOptions
@@ -51,14 +67,16 @@ public class PulseQuizReader
                 q.Content,
                 q.Explanation,
                 q.SortOrder,
-                options.Where(o => o.QuestionId == q.Id).Select(o => new PulseQuizOption(o.Id, o.Content, o.IsCorrect)).ToList()))
+                options.Where(o => o.QuestionId == q.Id).Select(o => new PulseQuizOption(o.Id, o.Content, o.IsCorrect)).ToList(),
+                q.IsFinalQuiz))
             .ToList();
     }
 
     /// <summary>
     /// Bộ câu của lần làm thứ <paramref name="attemptNo"/>: ngân hàng được xếp ngẫu nhiên một lần cho mỗi nhân viên và
-    /// bài ôn tập, rồi mỗi lần làm lấy nhóm câu kế tiếp (ngân hàng 6 câu: lần 1, 2, 3 không trùng câu nào). Phương án được
-    /// trộn theo lần làm. Cùng đầu vào luôn cho cùng kết quả, nên trang học và lúc chấm thấy đúng một bộ câu.
+    /// bài ôn tập, rồi mỗi lần làm lấy nhóm câu kế tiếp (ngân hàng lớn hơn bộ câu thì các lần làm khác câu; ngân hàng 10 câu thì
+    /// mỗi lần đủ 10 câu). Thứ tự câu và phương án trộn theo lần làm. Cùng đầu vào luôn cho cùng kết quả, nên trang học và lúc
+    /// chấm thấy đúng một bộ câu.
     /// </summary>
     public static IReadOnlyList<PulseQuizQuestion> Draw(IReadOnlyList<PulseQuizQuestion> pool, Guid employeeId, Guid assessmentId, int attemptNo)
     {
@@ -71,8 +89,8 @@ public class PulseQuizReader
         var size = Math.Min(PulseRules.ModuleQuizDrawSize, order.Count);
         var start = (Math.Max(attemptNo, 1) - 1) * size;
         var optionRandom = new Random(Seed(employeeId, assessmentId, attemptNo));
-        return Enumerable.Range(0, size)
-            .Select(i => order[(start + i) % order.Count])
+        var picked = Enumerable.Range(0, size).Select(i => order[(start + i) % order.Count]).ToList();
+        return Shuffle(picked, optionRandom)
             .Select(q => q with { Options = Shuffle(q.Options.ToList(), optionRandom) })
             .ToList();
     }
