@@ -25,7 +25,8 @@ export function getPostLoginPath(returnTo: string | null, user: SessionUser): st
   const workspace = resolveWorkspace(user);
 
   // If returnTo is a generic dashboard or portal root, always direct to the user's canonical home path
-  // so Manager lands on /enterprise/team, Owner on /enterprise/dashboard, Employee on /enterprise/me, Admin on /platform/dashboard, Mentor on /mentor/enterprises
+  // so Manager lands on /enterprise/team, Owner on /enterprise/dashboard (the survey /enterprise/trial while the trial has bought no course),
+  // Employee on /enterprise/me, Admin on /platform/dashboard, Mentor on /mentor/enterprises
   const genericDashboardPaths = new Set([
     '/',
     '/enterprise',

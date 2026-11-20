@@ -1062,4 +1062,93 @@ Chưa có ai|Nobody yet
 mức cần đạt của {set}/{total} vị trí đã đặt (vị trí khác theo đề xuất của hệ thống)|the required level of the {set}/{total} positions set (other positions follow the system suggestion)
 {count} vị trí đã đặt mức; vị trí khác theo đề xuất của hệ thống. Tiếp tục đặt hạn ngay.|{count} positions have levels; the others follow the system suggestion. Continue to the deadline.
 Còn {count} vị trí chưa đặt|{count} positions not set
+Vị trí|Position
+Chưa có vị trí|No position yet
+Bản dùng thử|Trial
+Biết năng lực số của đội ngũ trong 4 bước|Know your team's digital skills in 4 steps
+Mời tối đa 30 nhân viên làm khảo sát, xem kết quả theo 6 lĩnh vực rồi chọn đúng khóa học cần mua.|Invite up to 30 employees to the survey, see the results across 6 domains, then pick the right courses to buy.
+Mời nhân viên làm khảo sát|Invite employees to the survey
+Nhập tên, email, phòng ban và vị trí của từng người, hoặc tải file Excel. Xong danh sách thì đặt hạn và gửi lời mời.|Enter each person's name, email, department and position, or upload an Excel file. When the list is done, set a deadline and send the invitations.
+Mở trang Khảo sát|Open the survey
+Kết quả khảo sát sẽ so với mức này. Bỏ qua thì hệ thống dùng mức đề xuất theo chuẩn của vị trí.|Survey results are compared with this level. Skip it and the system uses the suggested level of each position's standard.
+Mở Khung năng lực số|Open the competency framework
+Nhận kết quả|Get the results
+Nhân viên làm bài có giám sát qua camera và màn hình. Chuyên gia chấm phần tự luận rồi gửi kết quả về trang Khảo sát; từ lúc đó nhân viên học được các khóa Cơ bản.|Employees take a proctored test (camera and screen). An expert grades the essays and sends the results to the survey page; from then on employees can take the Basic courses.
+Xem tiến độ khảo sát|See survey progress
+Mua khóa học còn thiếu|Buy the missing courses
+Mỗi khóa mua một lần cho cả công ty, nhân viên nào cũng học được. Mua khóa đầu tiên là mở các mục đang khóa: Tổng quan, Nhân sự, Khoảng trống năng lực.|Each course is bought once for the whole company and every employee can take it. Your first purchase opens the locked sections: Overview, People, Capability gaps.
+Xem lại khi cần|Come back any time
+Bấm Hướng dẫn để mở lại các bước này. Có thắc mắc hay gặp lỗi thì gửi ở mục Góp ý hoặc Báo lỗi.|Click Guide to open these steps again. Questions or problems? Send them under Feedback or Report a bug.
+Tối đa 30 người|Up to 30 people
+Đặt mức cần đạt cho vị trí|Set position levels
+Bỏ qua thì dùng mức đề xuất|Skip to use the suggested levels
+Sau khi gửi lời mời|After the invitations go out
+Mua khóa học đầu tiên|Buy your first course
+Mở các mục đang khóa|Opens the locked sections
+Năm việc chính của bạn|Your five main tasks
+Mỗi việc nằm ở một mục trên menu. Đi lần lượt để biết đội ngũ đang ở đâu và cần học gì.|Each task has its own menu entry. Go through them in order to see where your team stands and what it needs to learn.
+Xem bức tranh chung|See the big picture
+Số người, phòng ban, ai đã có kết quả năng lực và tiến độ học của cả công ty trên một trang.|Headcount, departments, who has competency results and the whole company's learning progress on one page.
+Mở Tổng quan|Open Overview
+Mời và xếp nhân viên|Invite and place employees
+Mời thêm người, chọn phòng ban và một trong 5 vị trí chuẩn. Vị trí quyết định mức mỗi người cần đạt.|Invite more people, choose a department and one of the 5 standard positions. The position sets the level each person must reach.
+Mở Nhân sự|Open People
+Lộ trình học của nhân viên và trang Khoảng trống năng lực đều so với mức này.|Employees' learning paths and the Capability gaps page are both compared with this level.
+Xem ai còn thiếu|See who still falls short
+So kết quả khảo sát và mức hiện tại với mức cần đạt, theo từng vị trí và lĩnh vực.|Compare survey results and current levels with the required level, by position and domain.
+Mở Khoảng trống năng lực|Open Capability gaps
+Mỗi khóa mua một lần cho cả công ty; khóa đã mua mở cho mọi nhân viên.|Each course is bought once for the whole company; a bought course is open to every employee.
+Bấm Hướng dẫn để mở lại các bước này.|Click Guide to open these steps again.
+Mẹo|Tip
+Bước {count}|Step {count}
+Đóng hướng dẫn (Esc)|Close the guide (Esc)
+Các bước hướng dẫn|Guide steps
+Bỏ qua|Skip
+Xong|Done
+Tiếp|Next
+Xem từng bước|Step by step
+Xong {count} bước|{count} steps done
+Ẩn danh sách này|Hide this list
+Đã xong|Done
+Việc tiếp theo|Next up
+Chưa làm|To do
+Xem lại hướng dẫn|See the guide again
+{count} người đã được mời|{count} invited
+{count} vị trí đã đặt|{count} positions set
+{count} đã nộp|{count} submitted
+Nhiệm vụ tân thủ|Getting started
+Mở danh sách nhiệm vụ tân thủ|Open the getting-started tasks
+Cần làm|To do
+{count} lời mời chưa kích hoạt|{count} invitations not activated
+{count} người chưa có vị trí|{count} people without a position
+{count} khóa cần mua cho người còn thiếu|{count} courses to buy for people below their level
+Đội ngũ|Team
+người đạt đủ mức cần đạt|people at their required level
+▲ {count} người so với lúc khảo sát|▲ {count} people since the survey
+Đạt đủ mức|At the required level
+Thiếu 1–2 mức|1–2 levels short
+Thiếu từ 3 mức|3+ levels short
+đã lên mức từ khảo sát|went up since the survey
+Chọn một trạng thái để làm nổi bật|Pick a state to highlight
+lên {count} cấp từ khảo sát|up {count} levels since the survey
+Khóa học của công ty|Company courses
+{count} khóa học đã có|{count} courses owned
+Còn {count} khóa chưa mua|{count} courses not bought
+Đã có đủ khóa học|Every course is owned
+Nhịp học|Learning rhythm
+Học xong|Finished
+người đang học|people learning
+khóa đã học xong|courses finished
++{count} trong 30 ngày|+{count} in 30 days
+Nay|Now
+Tuần {count}|Week {count}
+{count} bắt đầu|{count} started
+{count} học xong|{count} finished
+Chưa có lượt học nào trong {count} tuần qua|No learning in the last {count} weeks
+Số khóa bắt đầu và học xong theo tuần, {count} tuần gần nhất|Courses started and finished per week, last {count} weeks
+Tuần|Week
+Vừa học xong|Just finished
+Chưa có ai học xong khóa nào.|Nobody has finished a course yet.
+Đang tải|Loading
+Chưa tải được dữ liệu.|Could not load the data.
 `.trim().split('\n').map(line => { const index=line.indexOf('|'); return [line.slice(0,index),line.slice(index+1)]; }));

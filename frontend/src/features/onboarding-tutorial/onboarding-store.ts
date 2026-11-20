@@ -5,6 +5,8 @@ import { TUTORIAL_CONFIGS } from './tutorial-configs';
 interface OnboardingStoreState {
   currentRole: UserRoleType | null;
   isTourActive: boolean;
+  /** The welcome card listing the journey, shown before the first step of a guide that has one. */
+  isIntro: boolean;
   currentStepIndex: number;
   completedTaskIds: string[];
   isChecklistOpen: boolean;
@@ -15,6 +17,8 @@ interface OnboardingStoreState {
   // Actions
   initializeForUser: (userId: string, role: UserRoleType) => void;
   startTour: (role?: UserRoleType) => void;
+  /** From the welcome card to the first step. */
+  beginSteps: () => void;
   nextStep: () => void;
   prevStep: () => void;
   goToStep: (index: number) => void;
@@ -56,11 +60,14 @@ function savePersisted(userId: string, role: string, data: PersistedState) {
   }
 }
 
+const hasIntro = (role: UserRoleType | null) => Boolean(role && TUTORIAL_CONFIGS[role]?.intro);
+
 let activeUserId = 'anonymous';
 
 export const useOnboardingStore = create<OnboardingStoreState>((set, get) => ({
   currentRole: null,
   isTourActive: false,
+  isIntro: false,
   currentStepIndex: 0,
   completedTaskIds: [],
   isChecklistOpen: true,
@@ -69,7 +76,10 @@ export const useOnboardingStore = create<OnboardingStoreState>((set, get) => ({
   hasSeenTour: false,
 
   initializeForUser: (userId: string, role: UserRoleType) => {
-    activeUserId = userId || 'anonymous';
+    const nextUserId = userId || 'anonymous';
+    // Same person, same guide (e.g. /auth/me read again): keep a tour that is open where it is.
+    if (nextUserId === activeUserId && get().currentRole === role) return;
+    activeUserId = nextUserId;
     const persisted = loadPersisted(activeUserId, role);
     const config = TUTORIAL_CONFIGS[role];
 
@@ -81,6 +91,7 @@ export const useOnboardingStore = create<OnboardingStoreState>((set, get) => ({
       hasSeenTour: persisted.hasSeenTour,
       isDismissed: persisted.isDismissed,
       isTourActive: shouldAutoStart,
+      isIntro: shouldAutoStart && hasIntro(role),
       currentStepIndex: 0,
       isChecklistOpen: !persisted.isDismissed,
       isMinimized: false,
@@ -94,14 +105,21 @@ export const useOnboardingStore = create<OnboardingStoreState>((set, get) => ({
     set({
       currentRole: role,
       isTourActive: true,
+      isIntro: hasIntro(role),
       currentStepIndex: 0,
       isMinimized: true,
     });
   },
 
+  beginSteps: () => set({ isIntro: false, currentStepIndex: 0 }),
+
   nextStep: () => {
-    const { currentRole, currentStepIndex } = get();
+    const { currentRole, currentStepIndex, isIntro } = get();
     if (!currentRole) return;
+    if (isIntro) {
+      set({ isIntro: false, currentStepIndex: 0 });
+      return;
+    }
     const steps = TUTORIAL_CONFIGS[currentRole]?.steps ?? [];
     if (currentStepIndex < steps.length - 1) {
       set({ currentStepIndex: currentStepIndex + 1 });
@@ -111,14 +129,17 @@ export const useOnboardingStore = create<OnboardingStoreState>((set, get) => ({
   },
 
   prevStep: () => {
-    const { currentStepIndex } = get();
+    const { currentRole, currentStepIndex, isIntro } = get();
+    if (isIntro) return;
     if (currentStepIndex > 0) {
       set({ currentStepIndex: currentStepIndex - 1 });
+    } else if (hasIntro(currentRole)) {
+      set({ isIntro: true });
     }
   },
 
   goToStep: (index: number) => {
-    set({ currentStepIndex: index });
+    set({ currentStepIndex: index, isIntro: false });
   },
 
   skipTour: () => {
@@ -130,7 +151,7 @@ export const useOnboardingStore = create<OnboardingStoreState>((set, get) => ({
         isDismissed,
       });
     }
-    set({ isTourActive: false, hasSeenTour: true, isMinimized: false });
+    set({ isTourActive: false, isIntro: false, hasSeenTour: true, isMinimized: false });
   },
 
   completeTour: () => {
@@ -142,7 +163,7 @@ export const useOnboardingStore = create<OnboardingStoreState>((set, get) => ({
         isDismissed,
       });
     }
-    set({ isTourActive: false, hasSeenTour: true, isMinimized: false });
+    set({ isTourActive: false, isIntro: false, hasSeenTour: true, isMinimized: false });
   },
 
   toggleChecklist: () => {
@@ -210,6 +231,7 @@ export const useOnboardingStore = create<OnboardingStoreState>((set, get) => ({
       completedTaskIds: [],
       isDismissed: false,
       isTourActive: true,
+      isIntro: hasIntro(currentRole),
       currentStepIndex: 0,
       isChecklistOpen: true,
       isMinimized: false,

@@ -29,8 +29,15 @@ export function useIsEnterpriseTrial() {
   return status === 'trial_active' || status === 'trial_read_only';
 }
 
-export function useTrialProgram() {
-  return useQuery({ queryKey: TRIAL_PROGRAM_KEYS.owner, queryFn: () => trialProgramService.get().then((r) => r.data.data!), refetchInterval: 15_000, refetchIntervalInBackground: false });
+/** The survey page polls every 15 s; `poll: false` (the guide's checklist on every page) reads the same cache without polling. */
+export function useTrialProgram(options: { poll?: boolean } = {}) {
+  return useQuery({
+    queryKey: TRIAL_PROGRAM_KEYS.owner,
+    queryFn: () => trialProgramService.get().then((r) => r.data.data!),
+    refetchInterval: options.poll === false ? false : 15_000,
+    refetchIntervalInBackground: false,
+    staleTime: options.poll === false ? 60_000 : 0,
+  });
 }
 
 export function useInviteTrialParticipants() {

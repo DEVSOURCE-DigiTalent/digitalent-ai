@@ -2,6 +2,7 @@ using DigiTalent.Api.Authorization;
 using DigiTalent.Api.Common;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Reports;
+using DigiTalent.Application.UseCases.Reports.GetLearningActivity;
 using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,5 +29,15 @@ public class ReportsController : ControllerBase
     {
         var result = await useCase.ExecuteAsync(input);
         return Ok(ApiResponse<ReportsOverviewDto>.Ok(result));
+    }
+
+    // GET api/v1/intelligence/reports/learning-activity[?weeks] — who learns now, courses finished, week by week (OW-01).
+    [HttpGet("reports/learning-activity")]
+    [HasPermission(Permissions.Dashboard.HrCompanyRead, Permissions.Dashboard.DepartmentRead)]
+    public async Task<ActionResult<ApiResponse<GetLearningActivityOutput>>> GetLearningActivity(
+        [FromQuery] GetLearningActivityInput input,
+        [FromServices] IUseCase<GetLearningActivityInput, GetLearningActivityOutput> useCase)
+    {
+        return Ok(ApiResponse<GetLearningActivityOutput>.Ok(await useCase.ExecuteAsync(input)));
     }
 }

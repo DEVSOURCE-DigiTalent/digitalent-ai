@@ -11,9 +11,10 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Intelligence.SkillGap.GetCapabilityProgress;
 
 /// <summary>
-/// "Khoảng trống năng lực" once the organization uses the platform for real: the gaps of every employee and department
+/// "Khoảng trống năng lực" once the organization uses the platform for real: the gaps of every employee and position
 /// now, and how far they closed since the survey. Per employee and domain:
-///   - required = the level the owner set for the employee's department, else the position standard (as the survey);
+///   - required = the level the owner set for the employee's position in Khung năng lực số, else the position standard
+///     (as the survey);
 ///   - at survey = the survey result (<see cref="EmployeeDomainLevels.Baseline"/>);
 ///   - now = the highest of that result, the courses completed and the confirmed practical evidence.
 /// A gap counts missing levels (required 3, level 1 → 2). Only domains with a survey result are compared, so "before"
@@ -31,9 +32,9 @@ public sealed class GetCapabilityProgressUseCase(
     {
         var organizationId = user.GetRequiredOrganizationId();
         var query = scope.VisibleEmployees().AsNoTracking().Where(e => e.Status == Statuses.Employee.Active);
-        if (input.DepartmentId is Guid departmentId) query = query.Where(e => e.DepartmentId == departmentId);
-        var placements = await EffectiveJobPositions.Resolve(context, query)
-            .OrderBy(row => row.Employee.FullName).ThenBy(row => row.Employee.Id).ToListAsync();
+        var placements = (await EffectiveJobPositions.Resolve(context, query)
+                .OrderBy(row => row.Employee.FullName).ThenBy(row => row.Employee.Id).ToListAsync())
+            .Where(row => input.PositionId == null || row.PositionId == input.PositionId).ToList();
 
         var positions = await context.JobPositions.AsNoTracking()
             .Where(p => p.OrganizationId == organizationId && p.Status == Statuses.MasterData.Active)
@@ -68,7 +69,7 @@ public sealed class GetCapabilityProgressUseCase(
             var compared = domains.Where(d => d.AtSurvey != null).ToList();
             return new CapabilityProgressEmployee(
                 employee.Id, employee.FullName, departments.GetValueOrDefault(employee.DepartmentId), position?.Name,
-                employee.DepartmentId, compared.Count > 0,
+                employee.DepartmentId, position?.Id, compared.Count > 0,
                 compared.Sum(d => Math.Max(0, d.Required - d.AtSurvey!.Value)),
                 compared.Sum(d => Math.Max(0, d.Required - d.Now!.Value)),
                 compared.Sum(d => d.Now!.Value - d.AtSurvey!.Value),
@@ -84,19 +85,22 @@ public sealed class GetCapabilityProgressUseCase(
                 rows.Count, rows.Count(d => d.AtSurvey < d.Required), rows.Count(d => d.Now < d.Required));
         }).ToList();
 
-        var departmentProgress = people.GroupBy(p => p.DepartmentId)
+        // Per position (shared by every department); people without a position form their own group.
+        var positionProgress = people.GroupBy(p => p.PositionId)
             .Select(group =>
             {
                 var surveyed = group.Where(p => p.Assessed).ToList();
-                return new CapabilityProgressDepartment(group.Key, departments.GetValueOrDefault(group.Key) ?? "—", group.Count(), surveyed.Count,
+                var name = group.Key is Guid positionId && positions.TryGetValue(positionId, out var held) ? held.Name : "Chưa có vị trí";
+                return new CapabilityProgressPosition(group.Key, name, group.Count(), surveyed.Count,
                     surveyed.Sum(p => p.GapsAtSurvey), surveyed.Sum(p => p.GapsNow), surveyed.Count(p => p.GapsNow > 0),
                     categories.Select(category =>
                     {
                         var rows = surveyed.SelectMany(p => p.Domains).Where(d => d.CategoryId == category.Id && d.AtSurvey != null).ToList();
-                        return new CapabilityProgressDepartmentDomain(category.Number, rows.Count, rows.Count(d => d.Now < d.Required));
+                        return new CapabilityProgressPositionDomain(category.Number, rows.Count, rows.Count(d => d.Now < d.Required));
                     }).ToList());
             })
-            .OrderByDescending(d => d.GapsNow).ThenByDescending(d => d.Employees).ThenBy(d => d.Name).ToList();
+            .OrderByDescending(p => p.GapsNow).ThenByDescending(p => p.Employees).ThenBy(p => p.Name).ToList();
+
 
         var totals = new CapabilityProgressTotals(
             assessed.Sum(p => p.GapsAtSurvey), assessed.Sum(p => p.GapsNow),
@@ -104,7 +108,7 @@ public sealed class GetCapabilityProgressUseCase(
 
         return new GetCapabilityProgressOutput(
             levels.SurveyedAt.Count == 0 ? null : levels.SurveyedAt.Values.Max(),
-            people.Count, assessed.Count, totals, domainProgress, departmentProgress,
+            people.Count, assessed.Count, totals, domainProgress, positionProgress,
             people.OrderBy(p => p.Assessed ? 0 : 1).ThenByDescending(p => p.GapsNow).ThenBy(p => p.Name).ToList());
     }
 

@@ -1,0 +1,164 @@
+/*
+ * OW-01 · Tổng quan (OwnerOverviewPage), classes ov-*. One picture per question:
+ *   Đội ngũ   — a tile per employee, grouped by position, coloured by distance to the required level;
+ *   Khóa học  — a small course wheel (6 domains × 3 levels, as on Khóa học): filled = owned, dashed = to buy;
+ *   Nhịp học  — courses started / finished per week;
+ *   Vừa học xong — the latest completions.
+ * Colours checked with the dataviz validator (all pairs, light): people met #0f9488 / 1–2 levels short #d99a06 /
+ * 3+ short #c2410c (amber carries counts in the legend); rhythm started #7c6cf0 / finished #0f8f84.
+ */
+.ov-page {
+  --ov-ink: #17243f; --ov-text: #3c5a69; --ov-muted: #5b7380; --ov-line: #e1eaee; --ov-accent: #137b84;
+  --st-met: #0f9488; --st-small: #d99a06; --st-large: #c2410c;
+  --s-started: #7c6cf0; --s-completed: #0f8f84;
+  display: grid; gap: 16px; width: 100%; max-width: 1320px; margin: 0 auto; padding: 4px 0 40px; color: var(--ov-ink);
+}
+
+/* ── Header ── */
+.ov-header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; }
+.ov-header h1 { margin: 0; font-size: clamp(26px, 2.2vw, 34px); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+.ov-header p { margin: 6px 0 0; color: var(--ov-muted); font-size: 14px; font-weight: 600; }
+.ov-header__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ov-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 15px; border-radius: 11px; font-size: 13px; font-weight: 800; text-decoration: none; cursor: pointer; transition: background-color .15s, border-color .15s; }
+.ov-btn--primary { border: 0; background: var(--ov-accent); color: #fff; }
+.ov-btn--primary:hover { background: #0e5968; }
+.ov-btn--ghost { border: 1px solid var(--ov-line); background: #fff; color: var(--ov-ink); }
+.ov-btn--ghost:hover { border-color: #9fd0ca; }
+.ov-btn:focus-visible, .ov-link:focus-visible { outline: 2px solid var(--ov-accent); outline-offset: 2px; }
+
+/* ── What to act on ── */
+.ov-todo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 14px; border: 1px solid #f1dcb3; border-radius: 14px; background: linear-gradient(90deg, #fff7e8, #fff 70%); }
+.ov-todo h2 { margin: 0; color: #92560a; font-size: 12px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.ov-todo ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ov-todo a { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border: 1px solid #f0d6a4; border-radius: 999px; background: #fff; color: #6f4206; font-size: 13px; font-weight: 750; text-decoration: none; }
+.ov-todo a svg:first-child { color: #c27803; }
+.ov-todo a:hover { border-color: #dfae55; background: #fffaf0; }
+.ov-todo a:focus-visible { outline: 2px solid #c27803; outline-offset: 2px; }
+
+/* ── Grid & cards ── */
+.ov-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); align-items: stretch; gap: 16px; }
+.ov-card { display: flex; flex-direction: column; min-width: 0; padding: 18px 20px; border: 1px solid var(--ov-line); border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgba(20, 83, 95, .05); }
+.ov-card__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.ov-card h2 { margin: 0; font-size: 15px; font-weight: 800; }
+.ov-link { display: inline-flex; align-items: center; gap: 4px; color: var(--ov-accent); font-size: 13px; font-weight: 800; text-decoration: none; }
+.ov-link:hover { color: #0e5968; text-decoration: underline; text-underline-offset: 3px; }
+.ov-muted { margin: 12px 0 0; color: var(--ov-muted); font-size: 13px; }
+.ov-error { padding: 36px 18px; color: #b42318; font-size: 14px; font-weight: 700; text-align: center; }
+.ov-empty { display: grid; justify-items: center; gap: 8px; padding: 36px 12px; color: var(--ov-muted); text-align: center; }
+.ov-empty strong { color: var(--ov-ink); font-size: 16px; }
+.ov-skeleton { height: 180px; margin-top: 14px; border-radius: 14px; background: linear-gradient(90deg, #f1f5f7 25%, #f8fafb 50%, #f1f5f7 75%) 0 0 / 200% 100%; animation: ov-shimmer 1.4s linear infinite; }
+.ov-big { margin: 0; color: var(--ov-muted); font-size: 22px; font-weight: 800; line-height: 1; }
+.ov-big strong, b.ov-big { color: var(--ov-ink); font-size: 44px; font-weight: 850; letter-spacing: -.03em; }
+.ov-pill { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.ov-pill[data-tone="up"] { background: #e3f6ef; color: #0b7a55; }
+
+/* ── Đội ngũ: a tile per person ── */
+.ov-team__headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin: 10px 0 14px; }
+.ov-team__caption { margin: 0; color: var(--ov-text); font-size: 14px; font-weight: 700; }
+
+.ov-states { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ov-states button { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px; border: 1px solid var(--ov-line); border-radius: 999px; background: #fff; color: var(--ov-text); font-size: 12.5px; font-weight: 750; cursor: pointer; transition: border-color .15s, background-color .15s; }
+.ov-states button i { width: 12px; height: 12px; border-radius: 4px; }
+.ov-states button b { color: var(--ov-ink); font-weight: 850; }
+.ov-states button:hover { border-color: #b9cdd5; }
+.ov-states button:focus-visible { outline: 2px solid var(--ov-accent); outline-offset: 2px; }
+.ov-states button[data-state="met"] i { background: var(--st-met); }
+.ov-states button[data-state="small"] i { background: var(--st-small); }
+.ov-states button[data-state="large"] i { background: var(--st-large); }
+.ov-states button[data-state="none"] i { border: 1.5px dashed #9fb0bb; background: #fff; }
+.ov-states button[aria-pressed="true"] { border-color: var(--ov-ink); background: #f3f6f8; }
+.ov-states__note { display: inline-flex; align-items: center; gap: 5px; margin-left: 4px; color: var(--ov-muted); font-size: 12px; font-weight: 700; }
+.ov-states__note span { display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: #0b7a55; color: #fff; font-size: 6.5px; }
+
+/* one block per position, side by side */
+.ov-team__groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-top: 16px; }
+.ov-team__row { display: grid; align-content: start; gap: 10px; padding: 12px; border: 1px solid #edf2f5; border-radius: 14px; background: #fbfcfd; }
+.ov-team__name { display: flex; align-items: center; justify-content: space-between; gap: 7px; min-width: 0; margin: 0; }
+.ov-team__name span { overflow: hidden; font-size: 13px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.ov-team__name small { flex: none; padding: 1px 7px; border-radius: 999px; background: #f1f5f7; color: var(--ov-muted); font-size: 11.5px; font-weight: 800; }
+
+.ov-tiles { display: flex; flex-wrap: wrap; gap: 7px; margin: 0; padding: 0; list-style: none; }
+/* "backwards": the entrance only holds before it plays, so the focus dimming and the hover zoom still apply after */
+.ov-tile { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: var(--st-met); color: #fff; font-size: 10.5px; font-weight: 800; letter-spacing: .02em; text-decoration: none; transition: transform .15s ease, opacity .2s ease; animation: ov-pop .4s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(var(--i, 0) * 22ms); }
+.ov-tile[data-state="small"] { background: var(--st-small); }
+.ov-tile[data-state="large"] { background: var(--st-large); }
+.ov-tile[data-state="none"] { border: 1.5px dashed #b4c3cc; background: #fff; color: #7a8f9b; }
+.ov-tile[data-up]::before { content: '▲'; position: absolute; top: -5px; right: -5px; display: grid; place-items: center; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: #0b7a55; color: #fff; font-size: 6.5px; line-height: 1; }
+.ov-tile:hover, .ov-tile:focus-visible { z-index: 2; transform: scale(1.14); }
+.ov-tile:focus-visible { outline: 2px solid var(--ov-ink); outline-offset: 2px; }
+.ov-tile::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; z-index: 5; padding: 5px 9px; border-radius: 8px; background: var(--ov-ink); color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; opacity: 0; transform: translateX(-50%) translateY(4px); transition: opacity .15s, transform .15s; pointer-events: none; }
+.ov-tile:hover::after, .ov-tile:focus-visible::after { opacity: 1; transform: translateX(-50%); }
+.ov-team__groups[data-focus="met"] .ov-tile:not([data-state="met"]),
+.ov-team__groups[data-focus="small"] .ov-tile:not([data-state="small"]),
+.ov-team__groups[data-focus="large"] .ov-tile:not([data-state="large"]),
+.ov-team__groups[data-focus="none"] .ov-tile:not([data-state="none"]) { opacity: .16; }
+
+/* ── Khóa học: a small course wheel ── */
+.ov-wheel { position: relative; width: min(100%, 260px); margin: auto; padding: 12px 0; aspect-ratio: 1; box-sizing: content-box; }
+.ov-wheel svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ov-wheel__seg { fill: #f3f6f8; stroke: #a9b9c3; stroke-width: 1.2; stroke-dasharray: 3 2.5; cursor: pointer; transform-origin: 108px 108px; transition: transform .18s ease, filter .18s ease; }
+.ov-wheel__seg[data-owned] { stroke: #fff; stroke-width: 1.5; stroke-dasharray: none; }
+.ov-wheel__seg:hover, .ov-wheel__seg:focus-visible { outline: none; transform: scale(1.045); filter: drop-shadow(0 4px 8px rgba(23, 36, 63, .2)); }
+.ov-wheel__hub { position: absolute; inset: 0; display: grid; place-content: center; gap: 1px; text-align: center; pointer-events: none; }
+.ov-wheel__hub b { font-size: 14px; font-weight: 850; }
+.ov-wheel__hub small { color: var(--ov-muted); font-size: 11.5px; font-weight: 700; }
+.ov-wheel__hub small[data-owned] { color: #0b7a55; }
+.ov-wheel__count { font-size: 28px !important; letter-spacing: -.03em; line-height: 1; }
+.ov-wheel__count span { color: var(--ov-muted); font-size: 15px; }
+.ov-courses__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px dashed var(--ov-line); }
+.ov-courses__foot span { color: var(--ov-text); font-size: 13px; font-weight: 750; }
+
+/* ── Nhịp học: courses started / finished per week ── */
+.ov-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; color: var(--ov-muted); font-size: 12px; font-weight: 700; }
+.ov-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.ov-legend i, .ov-chart__tip i { display: inline-block; width: 12px; height: 10px; border-radius: 3px; }
+.ov-page [data-series="started"] { background: var(--s-started); fill: var(--s-started); }
+.ov-page [data-series="completed"] { background: var(--s-completed); fill: var(--s-completed); }
+
+.ov-rhythm__stats { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; margin: 10px 0 4px; }
+.ov-rhythm__stats p { display: flex; align-items: baseline; gap: 7px; margin: 0; }
+.ov-rhythm__stats b { font-size: 22px; font-weight: 850; }
+.ov-rhythm__stats span { color: var(--ov-text); font-size: 13.5px; font-weight: 700; }
+
+.ov-chart { position: relative; margin-top: 8px; }
+.ov-chart svg { display: block; max-width: 100%; overflow: visible; }
+.ov-chart__grid { stroke: #edf1f4; stroke-width: 1; }
+.ov-chart__base { stroke: #cfd9df; stroke-width: 1; }
+.ov-chart__tick { fill: var(--ov-muted); font-size: 11px; font-weight: 600; }
+.ov-chart__x { fill: var(--ov-muted); font-size: 11.5px; font-weight: 700; }
+.ov-chart__x[data-current] { fill: var(--ov-ink); font-weight: 850; }
+.ov-chart__hover { fill: #f2f7f9; }
+.ov-chart__bar { transform-box: fill-box; transform-origin: bottom; animation: ov-rise .6s cubic-bezier(.2, .8, .2, 1) backwards; }
+.ov-chart__quiet { position: absolute; inset: 0 0 30px 30px; display: grid; place-items: center; margin: 0; color: var(--ov-muted); font-size: 13px; font-weight: 700; pointer-events: none; }
+.ov-chart__tip { position: absolute; top: 0; z-index: 3; display: grid; gap: 3px; margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--ov-ink); color: #fff; font-size: 12px; white-space: nowrap; transform: translate(-50%, -100%); pointer-events: none; }
+.ov-chart__tip span { display: inline-flex; align-items: center; gap: 6px; font-weight: 650; }
+
+/* ── Vừa học xong ── */
+.ov-recent__list { display: grid; gap: 2px; margin: 10px 0 0; padding: 0; list-style: none; }
+.ov-recent__row { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 9px 8px; border-radius: 12px; color: var(--ov-ink); text-decoration: none; }
+.ov-recent__row:hover { background: #f4f8f9; }
+.ov-recent__row:focus-visible { outline: 2px solid var(--ov-accent); outline-offset: -2px; }
+.ov-recent__icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, var(--from), var(--to)); color: #fff; }
+.ov-recent__text { display: grid; gap: 2px; min-width: 0; }
+.ov-recent__text strong { font-size: 13.5px; font-weight: 800; }
+.ov-recent__text small { overflow: hidden; color: var(--ov-muted); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+.ov-recent__meta { display: grid; justify-items: end; gap: 3px; }
+.ov-recent__meta em { padding: 1px 7px; border-radius: 999px; background: #eef3f6; color: var(--ov-text); font-size: 11px; font-style: normal; font-weight: 800; white-space: nowrap; }
+.ov-recent__meta time { color: var(--ov-muted); font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+
+@keyframes ov-pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes ov-rise { from { transform: scaleY(0); } to { transform: none; } }
+@keyframes ov-shimmer { to { background-position: -200% 0; } }
+
+@media (max-width: 1100px) {
+  .ov-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .ov-team__groups { grid-template-columns: minmax(0, 1fr); }
+  .ov-big strong, b.ov-big { font-size: 36px; }
+  .ov-card { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ov-tile, .ov-chart__bar, .ov-skeleton { animation: none; }
+  .ov-tile, .ov-tile::after, .ov-wheel__seg { transition: none; }
+}

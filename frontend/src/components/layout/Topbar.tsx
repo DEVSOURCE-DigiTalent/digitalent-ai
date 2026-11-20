@@ -208,17 +208,18 @@ export function Topbar({ portal, sidebarConfig, onOpenMobileNav, isMobileNavOpen
               {!isManager && <kbd className="hidden lg:inline text-[10px] font-bold bg-slate-100/80 px-1.5 py-0.5 rounded border border-slate-200/80 text-slate-400 group-hover:text-slate-600 shadow-2xs">Ctrl K</kbd>}
             </button>
 
-            {/* Hướng dẫn Button: Pill gradient sang xịn */}
+            {/* Opens the guide again (its last step points here: data-tour="help"). */}
             {!isManager && <button
               type="button"
+              data-tour="help"
               onClick={() => {
                 const store = useOnboardingStore.getState();
                 store.startTour(isManager ? 'MANAGER' : store.currentRole || 'OWNER');
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-50/90 to-purple-50/90 hover:from-indigo-100 hover:to-purple-100 border border-indigo-200/70 hover:border-indigo-300 text-indigo-700 hover:text-indigo-800 text-xs font-bold transition-all shadow-2xs hover:shadow-xs hover:-translate-y-0.2 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-200 hover:border-teal-300 text-teal-800 text-xs font-bold transition-colors cursor-pointer"
               title={translateUi("Xem lại hướng dẫn sử dụng")}
             >
-              <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+              <HelpCircle className="w-3.5 h-3.5 text-teal-600" />
               <span className="hidden sm:inline">{translateUi("Hướng dẫn")}</span>
             </button>}
 

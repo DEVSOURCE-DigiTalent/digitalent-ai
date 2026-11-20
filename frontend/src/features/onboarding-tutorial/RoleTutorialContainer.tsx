@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ROLES, normalizeRoles } from '@/lib/roles';
+import { isTrialLimitedOwner } from '@/lib/trial-lock';
 import type { UserRoleType } from './types';
 import { useOnboardingStore } from './onboarding-store';
 import { SpotlightOverlay } from './SpotlightOverlay';
@@ -24,7 +25,8 @@ export function RoleTutorialContainer({ forcedRole }: RoleTutorialContainerProps
     } else {
       const normalized = normalizeRoles(user.roles ?? []);
       if (normalized.includes(ROLES.OWNER)) {
-        targetRole = 'OWNER';
+        // Enterprise trial before the first course: the guide follows the trial journey (most of the menu is locked).
+        targetRole = isTrialLimitedOwner(user) ? 'OWNER_TRIAL' : 'OWNER';
       } else if (normalized.includes(ROLES.MANAGER)) {
         targetRole = 'MANAGER';
       } else {

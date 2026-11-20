@@ -25,7 +25,7 @@ public class SkillGapsController : ControllerBase
         return Ok(ApiResponse<GetLearningNeedsOutput>.Ok(await useCase.ExecuteAsync(input)));
     }
 
-    // GET api/v1/intelligence/skill-gaps/progress — gaps now and since the survey, per domain, department and employee.
+    // GET api/v1/intelligence/skill-gaps/progress[?positionId] — gaps now and since the survey, per domain, position and employee.
     [HttpGet("progress")]
     [HasPermission(Permissions.Intelligence.SkillGapRead)]
     public async Task<ActionResult<ApiResponse<GetCapabilityProgressOutput>>> GetProgress(

@@ -17,6 +17,16 @@ export interface DomainLinePoint {
 const AXIS_LABELS = ['Chưa đạt', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
 
 /**
+ * Colour sets: `teal` (survey results) and `ocean` (Khoảng trống năng lực: blue now, coral required). Each pair was
+ * checked with the dataviz palette validator (light surface, colour-blind separation).
+ */
+const TONES = {
+  teal: { current: ['#0e8f86', '#1689a8'], target: ['#7c5cf0', '#a24ee6'], gap: ['#f59e0b', '#fb923c'] },
+  ocean: { current: ['#1f55c8', '#2f80e6'], target: ['#d9437a', '#ef6a5a'], gap: ['#ef6a5a', '#e04f7d'] },
+} as const;
+export type DomainLineTone = keyof typeof TONES;
+
+/**
  * Smooth curve through the points (monotone cubic, Fritsch–Carlson): it never overshoots a value between two domains, so
  * the line stays inside the level scale and a flat stretch stays flat.
  */
@@ -66,10 +76,11 @@ const between = (value: number) => Number.isInteger(value)
  * light gradient (ends checked for colour-blind separation). Hover or focus a domain for its numbers (crosshair + tooltip).
  * The table below stays the table view.
  */
-export function DomainLineChart({ points, targetLabel = 'Mức cần đạt' }: {
+export function DomainLineChart({ points, targetLabel = 'Mức cần đạt', tone = 'teal' }: {
   points: DomainLinePoint[];
   /** "Mức cần đạt" (position standards) or "Mức mong muốn" (set by the owner). */
   targetLabel?: string;
+  tone?: DomainLineTone;
 }) {
   useUiLanguage();
   const box = useRef<HTMLDivElement>(null);
@@ -79,6 +90,7 @@ export function DomainLineChart({ points, targetLabel = 'Mức cần đạt' }: 
   const clipId = `trial-line-clip-${uid}`;
   const paint = { current: `trial-line-current-${uid}`, area: `trial-line-area-${uid}`, target: `trial-line-target-${uid}`, gap: `trial-line-gap-${uid}` };
   const targetShort = targetLabel === 'Mức mong muốn' ? 'Mong muốn' : 'Cần đạt';
+  const colours = TONES[tone];
 
   useEffect(() => {
     const element = box.current;
@@ -141,7 +153,7 @@ export function DomainLineChart({ points, targetLabel = 'Mức cần đạt' }: 
   };
 
   return (
-    <figure className="trial-line" aria-label={translateUi('Biểu đồ mức hiện tại so với mức cần đạt theo lĩnh vực')}>
+    <figure className="trial-line" data-tone={tone} aria-label={translateUi('Biểu đồ mức hiện tại so với mức cần đạt theo lĩnh vực')}>
       <ul className="trial-line__legend">
         <li><i data-series="current" aria-hidden="true" />{translateUi('Mức hiện tại (trung bình)')}</li>
         {hasTarget && <li><i data-series="target" aria-hidden="true" />{translateUi(targetLabel)}</li>}
@@ -165,16 +177,16 @@ export function DomainLineChart({ points, targetLabel = 'Mức cần đạt' }: 
           <defs>
             <clipPath id={clipId}><path d={above} /></clipPath>
             <linearGradient id={paint.current} gradientUnits="userSpaceOnUse" x1={margin.left} x2={width - margin.right} y1={0} y2={0}>
-              <stop offset="0" stopColor="#0e8f86" /><stop offset="1" stopColor="#1689a8" />
+              <stop offset="0" stopColor={colours.current[0]} /><stop offset="1" stopColor={colours.current[1]} />
             </linearGradient>
             <linearGradient id={paint.target} gradientUnits="userSpaceOnUse" x1={margin.left} x2={width - margin.right} y1={0} y2={0}>
-              <stop offset="0" stopColor="#7c5cf0" /><stop offset="1" stopColor="#a24ee6" />
+              <stop offset="0" stopColor={colours.target[0]} /><stop offset="1" stopColor={colours.target[1]} />
             </linearGradient>
             <linearGradient id={paint.area} gradientUnits="userSpaceOnUse" x1={0} x2={0} y1={margin.top} y2={y(0)}>
-              <stop offset="0" stopColor="#1689a8" stopOpacity="0.2" /><stop offset="1" stopColor="#0e8f86" stopOpacity="0" />
+              <stop offset="0" stopColor={colours.current[1]} stopOpacity="0.2" /><stop offset="1" stopColor={colours.current[0]} stopOpacity="0" />
             </linearGradient>
             <linearGradient id={paint.gap} gradientUnits="userSpaceOnUse" x1={0} x2={0} y1={margin.top} y2={y(0)}>
-              <stop offset="0" stopColor="#f59e0b" stopOpacity="0.34" /><stop offset="1" stopColor="#fb923c" stopOpacity="0.12" />
+              <stop offset="0" stopColor={colours.gap[0]} stopOpacity="0.32" /><stop offset="1" stopColor={colours.gap[1]} stopOpacity="0.1" />
             </linearGradient>
           </defs>
           {area && <path d={area} className="trial-line__area" fill={`url(#${paint.area})`} aria-hidden="true" />}

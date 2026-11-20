@@ -6,13 +6,15 @@ import { useCapabilityProgress } from '@/hooks/use-skill-gaps';
 import { LoadingProgress } from '@/components/shared/LoadingState';
 import type { CapabilityProgress, CapabilityProgressEmployee } from '@/services/intelligence.service';
 import { OwnerFilterSelect } from '../components/OwnerFilterSelect';
-import { scopeView, type PeopleBuckets, type ScopeDomain, type ScopeView } from '../lib/capability-progress';
+import { positionKey, scopeView, type ScopeDomain, type ScopeView } from '../lib/capability-progress';
+import { DomainLineChart } from '@/features/trial-program/components/DomainLineChart';
 import './owner-capability-progress.css';
 
 /**
  * OW-21 · Khoảng trống năng lực, once the organization uses the platform for real. Charts first, few words: how much of
- * the required level the company (or one department) meets now versus at the survey, the shape per domain, the
- * departments side by side, and who moved most / needs help. The data is loaded once; a department is a client-side scope.
+ * the required level the company (or one position) meets now versus at the survey, the shape per domain, the
+ * positions side by side, and who moved most / needs help. The data is loaded once; a position is a client-side scope
+ * (positions are shared by every department; each person is compared with the level of the position they hold).
  */
 const DOMAIN_ICONS = [Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit];
 const DOMAIN_SHORT = ['Dữ liệu', 'Giao tiếp', 'Sáng tạo', 'An toàn', 'Giải quyết vấn đề', 'Trí tuệ nhân tạo'];
@@ -23,14 +25,18 @@ const shortName = (number: number, name = '') => DOMAIN_SHORT[number - 1] ?? nam
 const levelName = (level: number) => LEVELS[Math.max(0, Math.min(3, Math.round(level)))];
 const formatLevel = (level: number) => level.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
 const initials = (name: string) => name.split(' ').filter(Boolean).slice(-2).map((part) => part[0]).join('').toUpperCase();
+/** Domains compared with the survey where the person is below / above what they had at the survey. */
+const comparedDomains = (person: CapabilityProgressEmployee) => person.domains.filter((d) => d.atSurvey != null && d.now != null);
+const domainsBelow = (person: CapabilityProgressEmployee) => comparedDomains(person).filter((d) => d.now! < d.required);
+const domainsImproved = (person: CapabilityProgressEmployee) => comparedDomains(person).filter((d) => d.now! > d.atSurvey!);
 
 export function OwnerCapabilityGapPage() {
   useUiLanguage();
-  const [departmentId, setDepartmentId] = useState('');
+  const [scope, setScope] = useState('');
   const progress = useCapabilityProgress();
   const data = progress.data;
-  const view = useMemo(() => (data ? scopeView(data, departmentId || undefined) : null), [data, departmentId]);
-  const department = data?.departments.find((d) => d.departmentId === departmentId);
+  const view = useMemo(() => (data ? scopeView(data, scope || undefined) : null), [data, scope]);
+  const position = data?.positions.find((p) => positionKey(p.positionId) === scope);
 
   return (
     <div className="cp-page">
@@ -39,8 +45,8 @@ export function OwnerCapabilityGapPage() {
           <h1>{translateUi('Khoảng trống năng lực')}</h1>
           {data && view && (
             <div className="cp-meta">
-              {department
-                ? <button type="button" className="cp-scope" onClick={() => setDepartmentId('')} aria-label={translateUi(`Bỏ lọc ${department.name}`)}>{department.name}<X size={13} aria-hidden="true" /></button>
+              {position
+                ? <button type="button" className="cp-scope" onClick={() => setScope('')} aria-label={translateUi(`Bỏ lọc ${position.name}`)}>{position.name}<X size={13} aria-hidden="true" /></button>
                 : <span className="cp-scope cp-scope--all">{translateUi('Toàn công ty')}</span>}
               {data.surveyedAt && <span>{translateUi('Khảo sát')} {new Date(data.surveyedAt).toLocaleDateString('vi-VN')}</span>}
               <span>{translateUi(`${view.assessed}/${view.employees} có kết quả`)}</span>
@@ -48,8 +54,8 @@ export function OwnerCapabilityGapPage() {
           )}
         </div>
         {data && (
-          <OwnerFilterSelect icon="filter" label={translateUi('Phòng ban')} value={departmentId} onChange={setDepartmentId}
-            options={[{ value: '', label: 'Toàn công ty' }, ...data.departments.map((d) => ({ value: d.departmentId, label: d.name }))]} />
+          <OwnerFilterSelect icon="filter" label={translateUi('Vị trí')} value={scope} onChange={setScope}
+            options={[{ value: '', label: 'Toàn công ty' }, ...data.positions.map((p) => ({ value: positionKey(p.positionId), label: p.name }))]} />
         )}
       </header>
 
@@ -63,21 +69,26 @@ export function OwnerCapabilityGapPage() {
       ) : view.assessed === 0 ? (
         <div className="cp-card cp-empty">
           <TrendingDown size={26} aria-hidden="true" />
-          <strong>{translateUi('Chưa có kết quả khảo sát để so sánh')}</strong>
+          <strong>{translateUi(position && view.employees === 0 ? 'Chưa có nhân viên ở vị trí này' : 'Chưa có kết quả khảo sát để so sánh')}</strong>
+          {position && <button type="button" className="cp-link" onClick={() => setScope('')}>{translateUi('Xem toàn công ty')}</button>}
         </div>
       ) : (
         <>
-          <div className="cp-kpis">
-            <MetCard view={view} />
-            <PeopleShift view={view} />
-            <GapCard view={view} />
+          <div className="cp-top">
+            <div className="cp-top__side">
+              <MetCard view={view} />
+              <PriorityCard view={view} />
+            </div>
+            <DomainResults domains={view.domains} />
           </div>
           <div className="cp-main">
             <DomainRadar domains={view.domains} />
-            <DepartmentDumbbells data={data} selected={departmentId} onPick={setDepartmentId} />
+            <div className="cp-main__side">
+              <PositionDumbbells data={data} selected={scope} onPick={setScope} />
+              <NeedsCard view={view} />
+            </div>
           </div>
-          <Highlights view={view} />
-          <AllPeople people={departmentId ? data.people.filter((p) => p.departmentId === departmentId) : data.people} />
+          <AllPeople people={scope ? data.people.filter((p) => positionKey(p.positionId) === scope) : data.people} />
         </>
       )}
     </div>
@@ -103,73 +114,65 @@ function MetCard({ view }: { view: ScopeView }) {
         <span className="cp-meter__ghost" style={{ left: `${before}%` }} />
       </div>
       <div className="cp-meter__scale"><span>{translateUi(`Lúc khảo sát ${before}%`)}</span><span>100%</span></div>
+      <p className="cp-met__hint">{translateUi('Phần trăm lĩnh vực đã đạt mức cần đạt, tính trên mọi nhân viên có kết quả.')}</p>
     </section>
   );
 }
 
-const BUCKETS: { key: keyof PeopleBuckets; label: string }[] = [
-  { key: 'met', label: 'Đạt đủ' },
-  { key: 'small', label: 'Thiếu 1–2 cấp' },
-  { key: 'large', label: 'Thiếu từ 3 cấp' },
-  { key: 'none', label: 'Chưa có kết quả' },
-];
-
-/** The same people split by what they lack, at the survey and now: the green part should grow. */
-function PeopleShift({ view }: { view: ScopeView }) {
+/** Where training pays first: the domains where the largest share of people is still below the required level. */
+function PriorityCard({ view }: { view: ScopeView }) {
   useUiLanguage();
-  const total = view.employees || 1;
-  const bar = (label: string, counts: PeopleBuckets) => (
-    <div className="cp-shift__row">
-      <span className="cp-shift__label">{translateUi(label)}</span>
-      <span className="cp-shift__bar" role="img"
-        aria-label={translateUi(`${label}: ${BUCKETS.map((b) => `${b.label} ${counts[b.key]}`).join(', ')}`)}>
-        {BUCKETS.map((bucket) => counts[bucket.key] > 0 && (
-          <i key={bucket.key} data-bucket={bucket.key} style={{ width: `${(counts[bucket.key] / total) * 100}%` }}
-            title={`${translateUi(bucket.label)}: ${counts[bucket.key]}`}>
-            {counts[bucket.key] / total >= 0.1 ? counts[bucket.key] : ''}
-          </i>
-        ))}
-      </span>
-    </div>
-  );
+  const rows = view.domains.filter((d) => d.belowNow > 0)
+    .sort((a, b) => b.belowNow / b.compared - a.belowNow / a.compared || b.belowNow - a.belowNow || a.number - b.number)
+    .slice(0, 3);
   return (
-    <section className="cp-card cp-kpi cp-shift" aria-label={translateUi('Nhân viên')}>
-      <h2>{translateUi('Nhân viên')}</h2>
-      {bar('Lúc khảo sát', view.people.atSurvey)}
-      {bar('Hiện tại', view.people.now)}
-      <ul className="cp-shift__legend">
-        {BUCKETS.map((bucket) => <li key={bucket.key}><i data-bucket={bucket.key} aria-hidden="true" />{translateUi(bucket.label)}</li>)}
-      </ul>
+    <section className="cp-card cp-kpi cp-priority" aria-label={translateUi('Lĩnh vực cần ưu tiên')}>
+      <h2>{translateUi('Lĩnh vực cần ưu tiên')}</h2>
+      {rows.length === 0 ? <p className="cp-muted">{translateUi('Mọi lĩnh vực đã đạt mức cần đạt.')}</p> : (
+        <ol className="cp-priority__list">
+          {rows.map((d, index) => {
+            const Icon = DOMAIN_ICONS[d.number - 1] ?? Database;
+            return (
+              <li key={d.number} data-domain={d.number}>
+                <span className="cp-priority__rank" aria-hidden="true">{index + 1}</span>
+                <span className="cp-priority__body">
+                  <span className="cp-priority__name"><Icon size={14} aria-hidden="true" />{translateUi(shortName(d.number, d.name))}</span>
+                  <span className="cp-priority__bar" aria-hidden="true"><i style={{ width: `${(d.belowNow / d.compared) * 100}%` }} /></span>
+                </span>
+                <span className="cp-priority__count">{translateUi(`${d.belowNow}/${d.compared} người chưa đạt`)}</span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <Link to="/enterprise/courses" className="cp-priority__link">{translateUi('Xem khóa học')}<ArrowRight size={14} aria-hidden="true" /></Link>
     </section>
   );
 }
 
-/** Missing levels summed over everyone: how much closed since the survey. */
-function GapCard({ view }: { view: ScopeView }) {
+/** Axis labels of the line chart, as on the survey results page. */
+const AXIS_SHORT = ['1. Dữ liệu', '2. Giao tiếp', '3. Sáng tạo', '4. An toàn', '5. Giải quyết VĐ', '6. Trí tuệ AI'];
+
+/** The chart of the survey results page ("Kết quả theo lĩnh vực"): the level now (average) against the required level. */
+function DomainResults({ domains }: { domains: ScopeDomain[] }) {
   useUiLanguage();
-  const closed = Math.max(0, view.gapsAtSurvey - view.gapsNow);
-  const height = (value: number) => `${view.gapsAtSurvey ? Math.max(4, (value / view.gapsAtSurvey) * 100) : 0}%`;
   return (
-    <section className="cp-card cp-kpi cp-gap" aria-label={translateUi('Khoảng trống')}
-      title={translateUi('Số cấp năng lực còn thiếu, cộng cho mọi người và mọi lĩnh vực')}>
-      <h2>{translateUi('Khoảng trống')}</h2>
-      <div className="cp-gap__body">
-        <div className="cp-gap__columns" role="img" aria-label={translateUi(`Cấp còn thiếu: lúc khảo sát ${view.gapsAtSurvey}, hiện tại ${view.gapsNow}`)}>
-          <span data-tone="before"><i style={{ height: height(view.gapsAtSurvey) }} /><b>{view.gapsAtSurvey}</b></span>
-          <span data-tone="now"><i style={{ height: height(view.gapsNow) }} /><b>{view.gapsNow}</b></span>
-        </div>
-        <div className="cp-gap__closed">
-          <strong>{closed}</strong>
-          <span>{translateUi('cấp đã đóng')}</span>
-        </div>
-      </div>
+    <section className="cp-card cp-results" aria-label={translateUi('Kết quả theo lĩnh vực')}>
+      <h2>{translateUi('Kết quả theo lĩnh vực')}</h2>
+      <DomainLineChart points={domains.map((d) => ({
+        number: d.number,
+        name: d.name,
+        short: AXIS_SHORT[d.number - 1] ?? `${d.number}. ${shortName(d.number, d.name)}`,
+        current: d.now,
+        target: d.required,
+      }))} tone="ocean" />
     </section>
   );
 }
 
 const RADAR_SIZE = 340;
 const RADAR_CENTER = RADAR_SIZE / 2;
-const RADAR_RADIUS = 116;
+const RADAR_RADIUS = 124;
 
 function radarPoint(level: number, index: number, count: number, radius = RADAR_RADIUS): [number, number] {
   const angle = -Math.PI / 2 + (2 * Math.PI * index) / count;
@@ -178,7 +181,7 @@ function radarPoint(level: number, index: number, count: number, radius = RADAR_
 }
 const radarPolygon = (values: number[]) => values.map((v, i) => radarPoint(v, i, values.length).map((n) => n.toFixed(1)).join(',')).join(' ');
 
-/** The company's (or department's) shape over the domains: required (dashed violet), at the survey (light), now (dark). */
+/** The company's (or position's) shape over the domains: required (dashed violet), at the survey (light), now (dark). */
 function DomainRadar({ domains }: { domains: ScopeDomain[] }) {
   useUiLanguage();
   const [active, setActive] = useState<number | null>(null);
@@ -204,16 +207,19 @@ function DomainRadar({ domains }: { domains: ScopeDomain[] }) {
         <div className="cp-radar__stage">
           <svg viewBox={`0 0 ${RADAR_SIZE} ${RADAR_SIZE}`} role="img"
             aria-label={translateUi('Biểu đồ mạng nhện: mức trung bình mỗi lĩnh vực lúc khảo sát, hiện tại và mức cần đạt')}>
-            {[1, 2, 3].map((level) => (
-              <polygon key={level} className="cp-radar__ring" points={radarPolygon(domains.map(() => level))} />
+            <defs>
+              <radialGradient id="cp-radar-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#eef4ff" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            {/* Level rings, outer first: Nâng cao / Trung cấp / Cơ bản (thin light lines, a very light glow inside). */}
+            {[3, 2, 1].map((level) => (
+              <polygon key={level} className="cp-radar__ring" data-level={level} points={radarPolygon(domains.map(() => level))} />
             ))}
             {domains.map((_, i) => {
               const [x, y] = radarPoint(3, i, count);
               return <line key={i} className="cp-radar__axis" x1={RADAR_CENTER} y1={RADAR_CENTER} x2={x} y2={y} />;
-            })}
-            {[1, 2, 3].map((level) => {
-              const [x, y] = radarPoint(level, 0, count);
-              return <text key={level} className="cp-radar__tick" x={x + 4} y={y + 3}>{translateUi(LEVELS[level])}</text>;
             })}
             <polygon className="cp-radar__shape cp-radar__shape--req" points={radarPolygon(domains.map((d) => d.required))} />
             <polygon className="cp-radar__shape cp-radar__shape--before" points={radarPolygon(domains.map((d) => d.atSurvey))} />
@@ -253,20 +259,43 @@ function DomainRadar({ domains }: { domains: ScopeDomain[] }) {
           </table></div>
         </div>
       )}
+      {count >= 3 && (
+        // Which ring is which level, under the plot so no label sits on the shapes.
+        <ul className="cp-radar__rings" aria-label={translateUi('Các vòng của biểu đồ')}>
+          {[1, 2, 3].map((level) => (
+            <li key={level} data-level={level}><RingKey level={level} />{translateUi(`Vòng ${level === 3 ? 'ngoài' : level === 2 ? 'giữa' : 'trong'}: ${LEVELS[level]}`)}</li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
 
-/** Departments, weakest first: share of the required level met at the survey (ring) → now (dot). Click = scope. */
-function DepartmentDumbbells({ data, selected, onPick }: { data: CapabilityProgress; selected: string; onPick: (id: string) => void }) {
+/** Mini radar: three nested hexagons, the ring of `level` drawn in its colour. */
+function RingKey({ level }: { level: number }) {
+  const hex = (r: number) => Array.from({ length: 6 }, (_, i) => {
+    const angle = -Math.PI / 2 + (Math.PI / 3) * i;
+    return `${(12 + r * Math.cos(angle)).toFixed(1)},${(12 + r * Math.sin(angle)).toFixed(1)}`;
+  }).join(' ');
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      {[3, 2, 1].map((ring) => (
+        <polygon key={ring} points={hex(ring * 3.6)} data-on={ring === level || undefined} />
+      ))}
+    </svg>
+  );
+}
+
+/** Positions, weakest first: share of the required level met at the survey (ring) → now (dot). Click = scope. */
+function PositionDumbbells({ data, selected, onPick }: { data: CapabilityProgress; selected: string; onPick: (key: string) => void }) {
   useUiLanguage();
-  const rows = useMemo(() => data.departments
-    .map((d) => ({ ...d, view: scopeView(data, d.departmentId, 0) }))
+  const rows = useMemo(() => data.positions
+    .map((p) => ({ ...p, key: positionKey(p.positionId), view: scopeView(data, positionKey(p.positionId), 0) }))
     .sort((a, b) => (a.view.metNow ?? 101) - (b.view.metNow ?? 101) || a.name.localeCompare(b.name, 'vi')), [data]);
   return (
-    <section className="cp-card cp-depts" aria-label={translateUi('Phòng ban')}>
+    <section className="cp-card cp-depts" aria-label={translateUi('Vị trí')}>
       <header className="cp-card__head">
-        <h2>{translateUi('Phòng ban')}</h2>
+        <h2>{translateUi('Vị trí')}</h2>
         <span className="cp-axis-note">{translateUi('% đạt chuẩn')}</span>
       </header>
       <ul className="cp-depts__list">
@@ -275,10 +304,10 @@ function DepartmentDumbbells({ data, selected, onPick }: { data: CapabilityProgr
           const now = row.view.metNow;
           const delta = now != null && before != null ? now - before : 0;
           return (
-            <li key={row.departmentId}>
-              <button type="button" className="cp-dept" aria-pressed={selected === row.departmentId}
-                onClick={() => onPick(selected === row.departmentId ? '' : row.departmentId)}
-                aria-label={translateUi(now == null ? `${row.name}: chưa có kết quả` : `${row.name}: đạt chuẩn ${before}% lúc khảo sát, ${now}% hiện tại`)}>
+            <li key={row.key}>
+              <button type="button" className="cp-dept" aria-pressed={selected === row.key}
+                onClick={() => onPick(selected === row.key ? '' : row.key)}
+                aria-label={translateUi(row.employees === 0 ? `${row.name}: chưa có người` : now == null ? `${row.name}: chưa có kết quả` : `${row.name}: đạt chuẩn ${before}% lúc khảo sát, ${now}% hiện tại`)}>
                 <span className="cp-dept__name">{row.name}</span>
                 <span className="cp-dept__cells" aria-hidden="true">
                   {data.domains.map((domain) => {
@@ -300,7 +329,7 @@ function DepartmentDumbbells({ data, selected, onPick }: { data: CapabilityProgr
                   )}
                 </span>
                 <span className="cp-dept__value">
-                  {now == null ? <small>{translateUi('Chưa có')}</small> : <>{now}%{delta > 0 && <em>▲{delta}</em>}</>}
+                  {now == null ? <small>{translateUi(row.employees === 0 ? 'Chưa có người' : 'Chưa có')}</small> : <>{now}%{delta > 0 && <em>▲{delta}</em>}</>}
                 </span>
               </button>
             </li>
@@ -316,51 +345,33 @@ function DepartmentDumbbells({ data, selected, onPick }: { data: CapabilityProgr
   );
 }
 
-/** Two short lists instead of everyone: who moved most since the survey, who still lacks most. */
-function Highlights({ view }: { view: ScopeView }) {
+const topGap = (person: CapabilityProgressEmployee) => domainsBelow(person)
+  .sort((a, b) => (b.required - b.now!) - (a.required - a.now!))[0];
+
+/** Who still lacks most, beside the positions: name, position, the most urgent domain and how many domains are below. */
+function NeedsCard({ view }: { view: ScopeView }) {
   useUiLanguage();
-  if (view.gainers.length === 0 && view.needs.length === 0) return null;
-  const topGap = (person: CapabilityProgressEmployee) => person.domains
-    .filter((d) => d.now != null && d.now < d.required)
-    .sort((a, b) => (b.required - b.now!) - (a.required - a.now!))[0];
   return (
-    <div className="cp-highlights">
-      <section className="cp-card cp-hl" data-tone="up" aria-label={translateUi('Tiến bộ nhiều nhất')}>
-        <h2>{translateUi('Tiến bộ nhiều nhất')}</h2>
-        {view.gainers.length === 0 ? <p className="cp-muted">{translateUi('Chưa có ai tăng cấp kể từ khảo sát.')}</p> : (
-          <ul>{view.gainers.map((person) => (
+    <section className="cp-card cp-hl cp-needs" data-tone="need" aria-label={translateUi('Cần hỗ trợ')}>
+      <h2>{translateUi('Cần hỗ trợ')}</h2>
+      {view.needs.length === 0 ? <p className="cp-muted">{translateUi('Mọi người đã đạt mức cần đạt.')}</p> : (
+        <ul>{view.needs.map((person) => {
+          const gap = topGap(person);
+          return (
             <li key={person.employeeId}>
               <Link to={`/enterprise/skill-gap/${person.employeeId}`} className="cp-hl__row">
-                <span className="cp-avatar" aria-hidden="true">{initials(person.name)}</span>
-                <span className="cp-hl__who"><strong>{person.name}</strong><small>{person.departmentName}</small></span>
-                <span className="cp-hl__mini" aria-label={translateUi(`Thiếu ${person.gapsAtSurvey} cấp lúc khảo sát, còn ${person.gapsNow}`)}>
-                  <b>{person.gapsAtSurvey}</b><ArrowRight size={12} aria-hidden="true" /><b>{person.gapsNow}</b>
+                <span className="cp-avatar" data-tone="need" aria-hidden="true">{initials(person.name)}</span>
+                <span className="cp-hl__who">
+                  <strong>{person.name}<small>{person.positionName ?? person.departmentName}</small></strong>
+                  {gap && <span className="cp-hl__note" data-domain={gap.number}>{translateUi(shortName(gap.number, gap.name))}: {translateUi(LEVELS[gap.now!])} → {translateUi(`cần ${LEVELS[gap.required]}`)}</span>}
                 </span>
-                <span className="cp-pill" data-tone="up">▲ {person.levelsGained}</span>
+                <span className="cp-pill" data-tone="need">{translateUi(`Chưa đạt ${domainsBelow(person).length}/${comparedDomains(person).length} lĩnh vực`)}</span>
               </Link>
             </li>
-          ))}</ul>
-        )}
-      </section>
-      <section className="cp-card cp-hl" data-tone="need" aria-label={translateUi('Cần hỗ trợ')}>
-        <h2>{translateUi('Cần hỗ trợ')}</h2>
-        {view.needs.length === 0 ? <p className="cp-muted">{translateUi('Mọi người đã đạt mức cần đạt.')}</p> : (
-          <ul>{view.needs.map((person) => {
-            const gap = topGap(person);
-            return (
-              <li key={person.employeeId}>
-                <Link to={`/enterprise/skill-gap/${person.employeeId}`} className="cp-hl__row">
-                  <span className="cp-avatar" data-tone="need" aria-hidden="true">{initials(person.name)}</span>
-                  <span className="cp-hl__who"><strong>{person.name}</strong><small>{person.departmentName}</small></span>
-                  {gap && <span className="cp-chip" data-domain={gap.number}>{translateUi(shortName(gap.number, gap.name))} → {translateUi(LEVELS[gap.required])}</span>}
-                  <span className="cp-pill" data-tone="need">{translateUi(`thiếu ${person.gapsNow}`)}</span>
-                </Link>
-              </li>
-            );
-          })}</ul>
-        )}
-      </section>
-    </div>
+          );
+        })}</ul>
+      )}
+    </section>
   );
 }
 
@@ -388,25 +399,26 @@ function AllPeople({ people }: { people: CapabilityProgressEmployee[] }) {
           </label>
           <ul>
             {visible.slice(0, shown).map((person) => {
-              const gaps = person.domains.filter((d) => d.now != null && d.now < d.required);
+              const gaps = domainsBelow(person);
+              const improved = domainsImproved(person).length;
               return (
                 <li key={person.employeeId}>
                   <Link to={`/enterprise/skill-gap/${person.employeeId}`} className="cp-person">
                     <span className="cp-avatar" aria-hidden="true">{initials(person.name)}</span>
                     <span className="cp-person__who">
                       <strong>{person.name}</strong>
-                      <small>{[person.departmentName, person.positionName].filter(Boolean).join(' · ')}</small>
+                      <small>{[person.positionName, person.departmentName].filter(Boolean).join(' · ')}</small>
                     </span>
                     <span className="cp-person__gaps">
                       {!person.assessed ? <span className="cp-chip" data-state="none">{translateUi('Chưa có kết quả khảo sát')}</span>
                         : gaps.length === 0 ? <span className="cp-chip" data-state="met">{translateUi('Đã đạt đủ')}</span>
                         : gaps.map((d) => (
                           <span key={d.categoryId} className="cp-chip" data-domain={d.number}>
-                            {translateUi(shortName(d.number, d.name))}: {translateUi(LEVELS[d.now!])} → {translateUi(LEVELS[d.required])}
+                            {translateUi(shortName(d.number, d.name))}: {translateUi(LEVELS[d.now!])} → {translateUi(`cần ${LEVELS[d.required]}`)}
                           </span>
                         ))}
                     </span>
-                    {person.levelsGained > 0 && <span className="cp-pill" data-tone="up">▲ {person.levelsGained}</span>}
+                    {improved > 0 && <span className="cp-pill" data-tone="up">{translateUi(`Lên mức ở ${improved} lĩnh vực`)}</span>}
                     <ArrowRight className="cp-person__go" size={16} aria-hidden="true" />
                   </Link>
                 </li>

@@ -146,6 +146,20 @@ export interface ReportsOverviewDto {
   };
 }
 
+/** GET /intelligence/reports/learning-activity: how the employees in scope use the courses (OW-01). */
+export interface LearningActivity {
+  employees: number;
+  /** Employees with at least one course open (in progress or waiting for its final). */
+  learners: number;
+  inProgress: number;
+  completed: number;
+  completedLast30Days: number;
+  /** Oldest first; `weekStart` = Monday, yyyy-MM-dd. */
+  weeks: { weekStart: string; started: number; completed: number }[];
+  /** Newest first. `domainNumber` 1–6 and `level` 1–3 for one of the 18 standard courses. */
+  recent: { employeeId: string; employeeName: string; courseTitle: string; domainNumber: number | null; level: number | null; completedAt: string }[];
+}
+
 /** Skill gap analytics, recommendation review and the capability dashboard (spec LCA-01, LCA-10, LCA-11). */
 export const analyticsService = {
   getOverview: (params: AnalyticsFilter & { groupBy: 'department' | 'position' | 'grade' }) =>
@@ -163,4 +177,6 @@ export const analyticsService = {
   getDashboard: () => apiClient.get<ApiResponse<DashboardDto>>('/intelligence/dashboard'),
   getReportsOverview: (params?: AnalyticsFilter) =>
     apiClient.get<ApiResponse<ReportsOverviewDto>>('/intelligence/reports/overview', { params }),
+  getLearningActivity: (weeks = 8) =>
+    apiClient.get<ApiResponse<LearningActivity>>('/intelligence/reports/learning-activity', { params: { weeks } }),
 };

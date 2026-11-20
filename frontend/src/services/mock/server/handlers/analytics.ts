@@ -245,6 +245,56 @@ route('GET', '/intelligence/dashboard', (context) => context.update((data) => {
   };
 }), { permission: P.DASHBOARD_HR_COMPANY_READ });
 
+// ── Learning activity of the owner's overview (OW-01): who learns now, courses finished, week by week ──
+
+const weekStart = (iso: string) => {
+  const day = new Date(iso.slice(0, 10) + 'T00:00:00Z');
+  day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
+  return day.toISOString().slice(0, 10);
+};
+
+route('GET', '/intelligence/reports/learning-activity', (context) => context.update((data) => {
+  const weeks = Math.min(26, Math.max(1, Number(context.query.weeks) || 8));
+  const names = new Map(employeesInScope({ org: () => data, session: context.session })
+    .filter((employee) => employee.status === 'ACTIVE').map((employee) => [employee.id, employee.fullName]));
+  const rows = data.assignments.filter((row) => names.has(row.employeeId) && row.status !== 'CANCELLED');
+  const open = rows.filter((row) => row.status === 'IN_PROGRESS' || row.status === 'READY_FOR_ASSESSMENT');
+  const done = rows.filter((row) => row.status === 'COMPLETED' && row.completedAt)
+    .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!));
+  const now = new Date();
+  const thisWeek = weekStart(now.toISOString());
+  const monthAgo = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+  return {
+    employees: names.size,
+    learners: new Set(open.map((row) => row.employeeId)).size,
+    inProgress: open.length,
+    completed: done.length,
+    completedLast30Days: done.filter((row) => row.completedAt! >= monthAgo).length,
+    weeks: Array.from({ length: weeks }, (_, index) => {
+      const start = new Date(thisWeek + 'T00:00:00Z');
+      start.setUTCDate(start.getUTCDate() - 7 * (weeks - 1 - index));
+      const key = start.toISOString().slice(0, 10);
+      return {
+        weekStart: key,
+        started: rows.filter((row) => (row.startedAt ?? row.assignedAt) && weekStart(row.startedAt ?? row.assignedAt) === key).length,
+        completed: done.filter((row) => weekStart(row.completedAt!) === key).length,
+      };
+    }),
+    recent: done.slice(0, 5).map((row) => {
+      const course = COURSE_BY_ID.get(row.courseId);
+      const category = course ? CATEGORY_BY_ID.get(course.categoryId) : undefined;
+      return {
+        employeeId: row.employeeId,
+        employeeName: names.get(row.employeeId)!,
+        courseTitle: course?.title ?? row.courseId,
+        domainNumber: category ? category.sortOrder : null,
+        level: course?.level ?? null,
+        completedAt: row.completedAt!,
+      };
+    }),
+  };
+}), { permission: P.DASHBOARD_HR_COMPANY_READ });
+
 // ── Overall Reports & Analytics (spec OW-40) ──
 
 route('GET', '/intelligence/reports/overview', (context) => context.update((data) => {

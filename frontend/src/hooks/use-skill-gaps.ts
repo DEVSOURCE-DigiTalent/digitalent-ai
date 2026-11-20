@@ -12,11 +12,11 @@ import { WORKFORCE_KEY } from './use-workforce';
 
 export const SKILL_GAPS_KEY = ['skill-gaps'];
 
-/** Gaps now and since the survey for the whole organization or one department. */
-export function useCapabilityProgress(departmentId?: string) {
+/** Gaps now and since the survey for the whole organization or the people holding one position. */
+export function useCapabilityProgress(positionId?: string) {
   return useQuery({
-    queryKey: [...SKILL_GAPS_KEY, 'progress', departmentId ?? 'all'],
-    queryFn: () => skillGapService.getProgress(departmentId ? { departmentId } : undefined).then((r) => r.data.data!),
+    queryKey: [...SKILL_GAPS_KEY, 'progress', positionId ?? 'all'],
+    queryFn: () => skillGapService.getProgress(positionId ? { positionId } : undefined).then((r) => r.data.data!),
   });
 }
 
