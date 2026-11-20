@@ -37,6 +37,17 @@
 .trial-line__tooltip p { margin: 8px 0 0; padding-top: 7px; border-top: 1px solid #edf2f4; font-weight: 700; }
 .trial-line__tooltip p[data-tone=gap] { color: #8a5a00; }
 .trial-line__tooltip p[data-tone=met] { color: #0f6b5c; }
+/* tone="ocean" (Khoảng trống năng lực): blue = level now, coral dashed = required, soft coral = shortfall. */
+.trial-line[data-tone=ocean] i[data-series=current] { background: linear-gradient(90deg, #1f55c8, #2f80e6); }
+.trial-line[data-tone=ocean] i[data-series=current]::after { background: #2563d6; }
+.trial-line[data-tone=ocean] i[data-series=target] { background: linear-gradient(90deg, #d9437a, #ef6a5a); }
+.trial-line[data-tone=ocean] i[data-series=gap] { background: linear-gradient(180deg, rgba(239,106,90,.42), rgba(224,79,125,.16)); }
+.trial-line[data-tone=ocean] .trial-line__dot { fill: #2563d6; filter: drop-shadow(0 1px 2px rgba(37,99,214,.35)); }
+.trial-line[data-tone=ocean] .trial-line__diamond { stroke: #e04f7d; }
+.trial-line[data-tone=ocean] .trial-line__diamond.is-active { fill: #e04f7d; }
+.trial-line[data-tone=ocean] .trial-line__hit:focus-visible { fill: rgba(37,99,214,.06); stroke: #2563d6; }
+.trial-line[data-tone=ocean] .trial-line__tooltip p[data-tone=gap] { color: #b4325f; }
+
 @keyframes trial-line-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes trial-line-fade { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {

@@ -2,6 +2,6 @@ namespace DigiTalent.Application.UseCases.Intelligence.SkillGap.GetCapabilityPro
 
 public sealed class GetCapabilityProgressInput
 {
-    /// <summary>Only this department (still within the caller's scope); null = every visible employee.</summary>
-    public Guid? DepartmentId { get; set; }
+    /// <summary>Only the people holding this position (still within the caller's scope); null = every visible employee.</summary>
+    public Guid? PositionId { get; set; }
 }

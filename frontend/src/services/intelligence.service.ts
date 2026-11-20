@@ -143,24 +143,25 @@ export interface CapabilityProgressDomain {
   required: number | null; atSurvey: number | null; now: number | null;
   assessed: number; belowAtSurvey: number; belowNow: number;
 }
-export interface CapabilityProgressDepartment {
-  departmentId: string; name: string; employees: number; assessed: number;
+/** The people holding one position, whatever their department; positionId null = people without a position. */
+export interface CapabilityProgressPosition {
+  positionId: string | null; name: string; employees: number; assessed: number;
   gapsAtSurvey: number; gapsNow: number; peopleBelowNow: number;
   domains: { number: number; assessed: number; belowNow: number }[];
 }
 export interface CapabilityProgressEmployeeDomain { categoryId: string; number: number; name: string; required: number; atSurvey: number | null; now: number | null }
 export interface CapabilityProgressEmployee {
-  employeeId: string; name: string; departmentName: string | null; positionName: string | null; departmentId: string;
+  employeeId: string; name: string; departmentName: string | null; positionName: string | null; departmentId: string; positionId: string | null;
   assessed: boolean; gapsAtSurvey: number; gapsNow: number; levelsGained: number;
   domains: CapabilityProgressEmployeeDomain[];
 }
 export interface CapabilityProgress {
   surveyedAt: string | null; employees: number; assessed: number; totals: CapabilityProgressTotals;
-  domains: CapabilityProgressDomain[]; departments: CapabilityProgressDepartment[]; people: CapabilityProgressEmployee[];
+  domains: CapabilityProgressDomain[]; positions: CapabilityProgressPosition[]; people: CapabilityProgressEmployee[];
 }
 
 export const skillGapService = {
-  getProgress: (params?: { departmentId?: string }) =>
+  getProgress: (params?: { positionId?: string }) =>
     apiClient.get<ApiResponse<CapabilityProgress>>('/intelligence/skill-gaps/progress', { params }),
   getLearningNeeds: (params?: SkillGapRunListParams) =>
     apiClient.get<ApiResponse<PagedList<EmployeeLearningNeeds> & { overview: LearningNeedsOverview }>>('/intelligence/skill-gaps/learning-needs', { params }),

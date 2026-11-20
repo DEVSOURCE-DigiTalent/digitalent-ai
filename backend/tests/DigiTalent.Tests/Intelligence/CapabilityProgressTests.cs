@@ -13,11 +13,11 @@ using DigiTalent.Tests.TestSupport;
 
 namespace DigiTalent.Tests.Intelligence;
 
-/// <summary>"Khoảng trống năng lực" in real use: gaps now versus at the survey, per domain, department and employee.</summary>
+/// <summary>"Khoảng trống năng lực" in real use: gaps now versus at the survey, per domain, position and employee.</summary>
 public class CapabilityProgressTests
 {
     [Fact]
-    public async Task ComparesTheSurveyWithTheLevelNow_ByDomainDepartmentAndEmployee()
+    public async Task ComparesTheSurveyWithTheLevelNow_ByDomainPositionAndEmployee()
     {
         using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         var org = Guid.NewGuid();
@@ -32,7 +32,8 @@ public class CapabilityProgressTests
         var an = new Employee { OrganizationId = org, DepartmentId = accounting.Id, JobPositionId = accountant.Id, FullName = "An", EmployeeCode = "NV1", Status = "ACTIVE" };
         var binh = new Employee { OrganizationId = org, DepartmentId = accounting.Id, JobPositionId = accountant.Id, FullName = "Bình", EmployeeCode = "NV2", Status = "ACTIVE" };
         var chi = new Employee { OrganizationId = org, DepartmentId = marketing.Id, JobPositionId = marketer.Id, FullName = "Chi", EmployeeCode = "NV3", Status = "ACTIVE" };
-        db.AddRange(accounting, marketing, accountant, marketer, data, talk, search, share, an, binh, chi);
+        var hr = new JobPosition { OrganizationId = org, Code = "HR", Name = "Nhân sự (HR)" }; // nobody holds it yet
+        db.AddRange(accounting, marketing, accountant, marketer, hr, data, talk, search, share, an, binh, chi);
         var surveyed = DateTimeOffset.UtcNow.AddDays(-10);
         Survey(db, org, an, surveyed, (data, 1), (talk, 2));   // gaps: 2 + 0
         Survey(db, org, binh, surveyed, (data, 3), (talk, 1)); // gaps: 0 + 1
@@ -66,9 +67,14 @@ public class CapabilityProgressTests
         dataDomain.BelowAtSurvey.Should().Be(1);
         dataDomain.BelowNow.Should().Be(1);
 
-        var kt = result.Departments.Single(d => d.DepartmentId == accounting.Id);
-        kt.Should().Match<CapabilityProgressDepartment>(d => d.Employees == 2 && d.Assessed == 2 && d.GapsAtSurvey == 3 && d.GapsNow == 2 && d.PeopleBelowNow == 2);
-        result.Departments.Single(d => d.DepartmentId == marketing.Id).Assessed.Should().Be(0);
+        // grouped by position, whatever the department
+        var kt = result.Positions.Single(p => p.PositionId == accountant.Id);
+        kt.Should().Match<CapabilityProgressPosition>(p => p.Name == "Kế toán viên" && p.Employees == 2 && p.Assessed == 2
+            && p.GapsAtSurvey == 3 && p.GapsNow == 2 && p.PeopleBelowNow == 2);
+        result.Positions.Single(p => p.PositionId == marketer.Id).Assessed.Should().Be(0);
+        result.Positions.Should().NotContain(p => p.PositionId == hr.Id, "a position nobody holds is not listed");
+        result.People.Single(p => p.Name == "An").PositionId.Should().Be(accountant.Id);
+
 
         result.People.Select(p => p.Name).Should().Equal("An", "Bình", "Chi");
         var first = result.People[0];
@@ -79,8 +85,8 @@ public class CapabilityProgressTests
         result.People[2].Assessed.Should().BeFalse();
         result.People[2].Domains.Should().OnlyContain(d => d.AtSurvey == null && d.Now == null);
 
-        // One department only.
-        var onlyMarketing = await useCase.ExecuteAsync(new GetCapabilityProgressInput { DepartmentId = marketing.Id });
+        // One position only.
+        var onlyMarketing = await useCase.ExecuteAsync(new GetCapabilityProgressInput { PositionId = marketer.Id });
         onlyMarketing.Employees.Should().Be(1);
         onlyMarketing.Totals.GapsNow.Should().Be(0);
     }

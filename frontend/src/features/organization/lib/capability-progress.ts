@@ -5,7 +5,7 @@ export interface PeopleBuckets { met: number; small: number; large: number; none
 
 export interface ScopeDomain { number: number; name: string; required: number; atSurvey: number; now: number; compared: number; belowNow: number }
 
-/** One scope (the company or one department) of "Khoảng trống năng lực", computed from the progress payload. */
+/** One scope (the company or one position) of "Khoảng trống năng lực", computed from the progress payload. */
 export interface ScopeView {
   employees: number;
   assessed: number;
@@ -17,7 +17,6 @@ export interface ScopeView {
   people: { atSurvey: PeopleBuckets; now: PeopleBuckets };
   domains: ScopeDomain[];
   /** Most levels gained since the survey (only people who gained). */
-  gainers: CapabilityProgressEmployee[];
   /** Largest gap now (only people still below). */
   needs: CapabilityProgressEmployee[];
 }
@@ -34,8 +33,11 @@ function buckets(gaps: number[], none: number): PeopleBuckets {
   };
 }
 
-export function scopeView(data: CapabilityProgress, departmentId?: string, highlights = 4): ScopeView {
-  const people = departmentId ? data.people.filter((p) => p.departmentId === departmentId) : data.people;
+/** Key of a position scope: its id, or `none` for the people without a position. */
+export const positionKey = (positionId: string | null | undefined) => positionId ?? 'none';
+
+export function scopeView(data: CapabilityProgress, position?: string, highlights = 4): ScopeView {
+  const people = position ? data.people.filter((p) => positionKey(p.positionId) === position) : data.people;
   const assessed = people.filter((p) => p.assessed);
   const pairs = assessed.flatMap((p) => p.domains.filter((d) => d.atSurvey != null && d.now != null));
   const none = people.length - assessed.length;
@@ -68,9 +70,6 @@ export function scopeView(data: CapabilityProgress, departmentId?: string, highl
       now: buckets(assessed.map((p) => p.gapsNow), none),
     },
     domains,
-    gainers: assessed.filter((p) => p.levelsGained > 0)
-      .sort((a, b) => b.levelsGained - a.levelsGained || a.gapsNow - b.gapsNow || a.name.localeCompare(b.name, 'vi'))
-      .slice(0, highlights),
     needs: assessed.filter((p) => p.gapsNow > 0)
       .sort((a, b) => b.gapsNow - a.gapsNow || a.name.localeCompare(b.name, 'vi'))
       .slice(0, highlights),
