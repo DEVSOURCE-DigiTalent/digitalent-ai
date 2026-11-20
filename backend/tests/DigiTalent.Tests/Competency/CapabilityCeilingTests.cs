@@ -272,6 +272,48 @@ public class CapabilityCeilingTests : IDisposable
     }
 
     [Fact]
+    public async Task PurchaseCourse_Advanced_IsBoughtWithTheIntermediateCourseOfItsDomain()
+    {
+        _context.CourseOrders.RemoveRange(_context.CourseOrders);
+        await _context.SaveChangesAsync();
+        var advanced = await _context.Courses.SingleAsync(c => c.Code == "M1-A");
+
+        var result = await new PurchaseCourseUseCase(_context, _currentUser.Object)
+            .ExecuteAsync(new PurchaseCourseInput { CourseId = advanced.Id, Note = "Hợp đồng HD-1" });
+
+        result.CourseCode.Should().Be("M1-A");
+        result.PurchasedCodes.Should().Equal("M1-I", "M1-A");
+        result.Amount.Should().Be(PlatformCatalog.DefaultPrice(2) + PlatformCatalog.DefaultPrice(3));
+        var bought = await (
+            from order in _context.CourseOrders
+            join course in _context.PlatformCourses on order.CourseId equals course.Id
+            select new { course.Code, order.Amount, order.Reason }).ToListAsync();
+        bought.Should().BeEquivalentTo(new[]
+        {
+            new { Code = "M1-I", Amount = PlatformCatalog.DefaultPrice(2), Reason = "Hợp đồng HD-1 (mua kèm khóa Nâng cao M1-A)" },
+            new { Code = "M1-A", Amount = PlatformCatalog.DefaultPrice(3), Reason = "Hợp đồng HD-1" },
+        });
+        (await _context.CapabilityCeilings.SingleAsync(c => c.CompetencyCategoryId == _dataId && c.DepartmentId == null))
+            .CeilingLevel.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task PurchaseCourse_Advanced_WithTheIntermediateCourseOwned_BuysOnlyTheAdvancedOne()
+    {
+        var advanced = await _context.PlatformCourses.SingleAsync(c => c.Code == "M1-A");
+        _context.CourseOrders.RemoveRange(_context.CourseOrders.Where(o => o.CourseId == advanced.Id));
+        await _context.SaveChangesAsync();
+        var ordersBefore = await _context.CourseOrders.CountAsync();
+        var course = await _context.Courses.SingleAsync(c => c.Code == "M1-A");
+
+        var result = await new PurchaseCourseUseCase(_context, _currentUser.Object).ExecuteAsync(new PurchaseCourseInput { CourseId = course.Id });
+
+        result.PurchasedCodes.Should().Equal("M1-A");
+        result.Amount.Should().Be(PlatformCatalog.DefaultPrice(3));
+        (await _context.CourseOrders.CountAsync()).Should().Be(ordersBefore + 1);
+    }
+
+    [Fact]
     public async Task PurchaseCourse_BasicCourseIsFree()
     {
         var basic = new Course { OrganizationId = _orgId, Code = "M1-F", VersionNo = 1, Title = "M1-F", Status = Statuses.Course.Published, CreatedByUserId = Guid.NewGuid() };

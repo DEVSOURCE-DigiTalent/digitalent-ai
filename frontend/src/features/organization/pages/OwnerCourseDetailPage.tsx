@@ -1,9 +1,10 @@
-import { canonicalCourseCode } from '@/features/courses/course-code';
+import { canonicalCourseCode, courseCodeKey } from '@/features/courses/course-code';
+import { boughtWithCode } from '@/features/courses/course-bundle';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Layers, ShieldCheck, BookOpen, Clock3 } from 'lucide-react';
-import { useCourse, useAssignments } from '@/hooks/use-assignments';
+import { useCourse, useAssignments, useCourseCatalog } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
 import {
   courseCategories,
@@ -42,6 +43,7 @@ export function OwnerCourseDetailPage() {
     { courseId: course?.id, pageSize: 100 },
     Boolean(course?.id),
   );
+  const { data: catalog } = useCourseCatalog({});
 
   if (isLoading) {
     return <div className="po-owner -m-4 md:-m-6 min-h-screen" style={PULSE_TOKENS}><PageLoading label={translateUi("Đang tải chi tiết khóa học")} variant="detail" /></div>;
@@ -92,7 +94,15 @@ export function OwnerCourseDetailPage() {
   // A paid course is bought once for the whole organization; once bought, every employee may learn it.
   const hasLicense = isBasic || Boolean(course.hasLicense) || Boolean(course.isPurchased);
   const pricing = levelPricing(level, course.price);
-  const checkoutPath = `/enterprise/courses/checkout?courses=${encodeURIComponent(canonicalCourseCode(course.code))}`;
+  // An Advanced course is bought with the Intermediate course of its domain when the company does not have it.
+  const lowerCode = boughtWithCode(course.code);
+  const lowerCourse = lowerCode ? catalog?.items.find((item) => courseCodeKey(item.code) === lowerCode) : undefined;
+  const boughtWith = !hasLicense && lowerCourse && !(lowerCourse.isPurchased || lowerCourse.hasLicense) ? lowerCourse : undefined;
+  const buyPrice = boughtWith
+    ? `${(pricing.price + levelPricing(2, boughtWith.price).price).toLocaleString('vi-VN')} ₫ / cả doanh nghiệp`
+    : pricing.formatted;
+  const checkoutCodes = [boughtWith?.code, course.code].filter(Boolean).map((code) => canonicalCourseCode(code)).join(',');
+  const checkoutPath = `/enterprise/courses/checkout?courses=${encodeURIComponent(checkoutCodes)}`;
 
   const assignedEmployees = assignmentsData?.items ?? [];
   const completedCount = assignedEmployees.filter(
@@ -148,7 +158,7 @@ export function OwnerCourseDetailPage() {
                   color: '#fff',
                 }}
               >
-                <span>🔒 Mua khóa học ({pricing.formatted})</span>
+                <span>{boughtWith ? translateUi(`🔒 Mua kèm Trung cấp (${buyPrice})`) : `🔒 Mua khóa học (${pricing.formatted})`}</span>
               </Link>
           </div>
           )}
@@ -189,12 +199,13 @@ export function OwnerCourseDetailPage() {
             }}
           >
             <div>
-              <b>{translateUi("Chưa mua khóa học.")}</b>{translateUi(" Mua một lần cho cả doanh nghiệp, sau đó mọi nhân viên đều học được.")}</div>
+              <b>{translateUi("Chưa mua khóa học.")}</b>{translateUi(" Mua một lần cho cả doanh nghiệp, sau đó mọi nhân viên đều học được.")}
+              {boughtWith && <>{' '}{translateUi(`Khóa Nâng cao được mua cùng khóa Trung cấp “${translateUi(boughtWith.title)}”.`)}</>}</div>
             <Link
               to={checkoutPath}
               className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-all inline-flex items-center gap-1.5"
             >
-              <span>Mua khóa học & Ký online ({pricing.formatted}) →</span>
+              <span>Mua khóa học & Ký online ({buyPrice}) →</span>
             </Link>
           </div>
         )}

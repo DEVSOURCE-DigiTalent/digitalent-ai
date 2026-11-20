@@ -22,7 +22,10 @@ public class PurchaseCourseOutput
     public Guid OrderId { get; set; }
     public string CourseCode { get; set; } = string.Empty;
     public string CourseTitle { get; set; } = string.Empty;
+    /// <summary>Total of this purchase, the Intermediate course bought with an Advanced one included.</summary>
     public long Amount { get; set; }
+    /// <summary>Canonical codes bought by this call, lower level first (M1-I, M1-A when an Advanced course brings its Intermediate one).</summary>
+    public List<string> PurchasedCodes { get; set; } = new();
     public string? CheckoutUrl { get; set; }
     public string? QrCode { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
@@ -30,7 +33,9 @@ public class PurchaseCourseOutput
 
 /// <summary>
 /// The organization buys a paid course once: every employee may then learn it. Basic courses are free;
-/// buying a course the organization already unlocked is refused (COURSE_ALREADY_PURCHASED).
+/// buying a course the organization already unlocked is refused (COURSE_ALREADY_PURCHASED). An Advanced course is
+/// bought with the Intermediate course of its domain: when the organization does not have that one yet, both orders
+/// are created together and the amount covers both.
 /// </summary>
 public class PurchaseCourseUseCase : IUseCase<PurchaseCourseInput, PurchaseCourseOutput>
 {
@@ -72,28 +77,32 @@ public class PurchaseCourseUseCase : IUseCase<PurchaseCourseInput, PurchaseCours
             throw new ConflictException("Doanh nghiệp đã mua khóa học này, mọi nhân viên đều học được.");
         }
 
-        var codes = CourseCodes.Aliases(course.Code);
         var normalizedCode = CourseCodes.Canonical(course.Code);
-        var platformCourse = await _context.PlatformCourses.AsNoTracking()
-            .Where(pc => codes.Contains(pc.Code))
-            .OrderByDescending(pc => pc.Code == normalizedCode)
-            .ThenBy(pc => pc.Id)
-            .FirstOrDefaultAsync()
-            ?? throw new NotFoundException($"Khóa học chuẩn '{course.Code}' chưa được niêm yết trên nền tảng.");
+        var platformCourse = await ListedCourseAsync(normalizedCode);
 
         // Same price as the course list shows: the published catalog price of the code (or its A-alias).
-        var amount = await CourseOwnership.PriceAsync(_context, course.Code);
+        var lines = new List<(PlatformCourse Course, string Code, long Amount)>();
+        // An Advanced course comes with the Intermediate course of its domain when the organization does not have it yet.
+        var lowerCode = CourseOwnership.BoughtWith(normalizedCode);
+        if (lowerCode != null && !await CourseOwnership.IsPurchasedAsync(_context, organizationId, lowerCode))
+        {
+            lines.Add((await ListedCourseAsync(lowerCode), lowerCode, await CourseOwnership.PriceAsync(_context, lowerCode)));
+        }
+        lines.Add((platformCourse, normalizedCode, await CourseOwnership.PriceAsync(_context, course.Code)));
+        var amount = lines.Sum(line => line.Amount);
 
-        var order = new CourseOrder
+        var reason = string.IsNullOrWhiteSpace(input.Note) ? "Doanh nghiệp mua khóa học" : input.Note.Trim();
+        var orders = lines.Select(line => new CourseOrder
         {
             OrganizationId = organizationId,
-            CourseId = platformCourse.Id,
-            Amount = amount,
-            Reason = string.IsNullOrWhiteSpace(input.Note) ? "Doanh nghiệp mua khóa học" : input.Note.Trim(),
+            CourseId = line.Course.Id,
+            Amount = line.Amount,
+            Reason = line.Code == normalizedCode ? reason : $"{reason} (mua kèm khóa Nâng cao {normalizedCode})",
             CreatedByUserId = userId,
-        };
+        }).ToList();
+        var order = orders[^1];
 
-        _context.CourseOrders.Add(order);
+        _context.CourseOrders.AddRange(orders);
         await _context.SaveChangesAsync();
 
         // 1. Tự động nâng phạm vi năng lực của doanh nghiệp ứng với khóa học vừa mua (nếu cấp độ cao hơn)
@@ -161,7 +170,7 @@ public class PurchaseCourseUseCase : IUseCase<PurchaseCourseInput, PurchaseCours
                 var payResult = await _payOSService.CreatePaymentLinkAsync(
                     orderCode: orderCode,
                     amount: amount,
-                    description: $"DT {normalizedCode}",
+                    description: $"DT {string.Join(' ', lines.Select(line => line.Code))}",
                     returnUrl: _appUrl + "/enterprise/courses",
                     cancelUrl: _appUrl + "/enterprise/courses"
                 );
@@ -180,9 +189,23 @@ public class PurchaseCourseUseCase : IUseCase<PurchaseCourseInput, PurchaseCours
             CourseCode = normalizedCode,
             CourseTitle = course.Title,
             Amount = amount,
+            PurchasedCodes = lines.Select(line => line.Code).ToList(),
             CheckoutUrl = checkoutUrl,
             QrCode = qrCode,
             CreatedAt = order.CreatedAt,
         };
+    }
+
+    /// <summary>The platform course listed under a standard code (the M-code row over a historical A-code row).</summary>
+    private async Task<PlatformCourse> ListedCourseAsync(string code)
+    {
+        var canonical = CourseCodes.Canonical(code);
+        var codes = CourseCodes.Aliases(canonical);
+        return await _context.PlatformCourses.AsNoTracking()
+            .Where(pc => codes.Contains(pc.Code))
+            .OrderByDescending(pc => pc.Code == canonical)
+            .ThenBy(pc => pc.Id)
+            .FirstOrDefaultAsync()
+            ?? throw new NotFoundException($"Khóa học chuẩn '{canonical}' chưa được niêm yết trên nền tảng.");
     }
 }

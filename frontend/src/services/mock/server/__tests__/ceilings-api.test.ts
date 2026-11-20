@@ -110,6 +110,22 @@ describe('Khung năng lực số (courses owned + levels per position)', () => {
     expect(matrix.domains.find((domain) => domain.categoryId === 'cat-5')?.organizationCeiling).toBe(2);
   });
 
+  it('buys an Advanced course with the Intermediate course of its domain when it is not owned', async () => {
+    asUser('mock-owner');
+    const result = await call<{ amount: number; purchasedCodes: string[] }>('post', '/courses/crs-A5-A/purchase', {});
+    expect(result.purchasedCodes).toEqual(['M5-I', 'M5-A']);
+    expect(result.amount).toBe(399000 + 699000);
+
+    const courses = await call<{ items: { code: string; isPurchased?: boolean }[] }>('get', '/courses');
+    expect(courses.items.filter((c) => c.code.startsWith('A5-')).map((c) => [c.code, Boolean(c.isPurchased)]))
+      .toEqual([['A5-F', false], ['A5-I', true], ['A5-A', true]]);
+
+    // the Intermediate course already owned: only the Advanced one is bought
+    const next = await call<{ amount: number; purchasedCodes: string[] }>('post', '/courses/crs-A2-A/purchase', {});
+    expect(next.purchasedCodes).toEqual(['M2-A']);
+    expect(next.amount).toBe(699000);
+  });
+
   it('lets a position go back to the system suggestion', async () => {
     asUser('mock-owner');
     const matrix = await call('put', '/capability-ceilings/positions/ACCOUNTANT', { inherit: true, ceilings: [] });

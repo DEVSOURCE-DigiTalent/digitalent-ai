@@ -12,6 +12,8 @@ import type {
 import { recordAudit } from './audit';
 import { employeesInScope } from './structure';
 import { getCourseModules, getCourseAssessment } from '../../../../features/learning/data/course-content';
+import { boughtWithCode } from '../../../../features/courses/course-bundle';
+import { courseCodeKey } from '../../../../features/courses/course-code';
 
 /** Standard course catalog and course assignments (spec LCA-12, LCA-13). */
 
@@ -70,12 +72,17 @@ route('POST', '/courses/:id/purchase', ({ params, session, update }) => update((
   if (!course) throw notFound('Không tìm thấy khóa học.');
   if (course.level === 1) throw badRequest('Khóa học Cơ bản được mở miễn phí, không cần mua.');
   if (data.courseOrders?.includes(course.id)) throw conflict('Doanh nghiệp đã mua khóa học này, mọi nhân viên đều học được.');
-  data.courseOrders = [...(data.courseOrders ?? []), course.id];
-  const amount = course.level === 3 ? 699000 : 399000;
-  recordAudit(data, session, 'COURSE_PURCHASED', 'Khóa học', course.code, 'Mua cho cả doanh nghiệp');
+  // An Advanced course is bought with the Intermediate course of its domain when the organization does not have it.
+  const lowerCode = boughtWithCode(course.code);
+  const lower = lowerCode ? COURSES.find((item) => courseCodeKey(item.code) === lowerCode) : undefined;
+  const bought = [...(lower && !data.courseOrders?.includes(lower.id) ? [lower] : []), course];
+  data.courseOrders = [...(data.courseOrders ?? []), ...bought.map((item) => item.id)];
+  const amount = bought.reduce((sum, item) => sum + (item.level === 3 ? 699000 : 399000), 0);
+  bought.forEach((item) => recordAudit(data, session, 'COURSE_PURCHASED', 'Khóa học', item.code,
+    item === course ? 'Mua cho cả doanh nghiệp' : `Mua kèm khóa Nâng cao ${course.code}`));
   return {
     orderId: newId('course-order'), courseCode: course.code, courseTitle: course.title,
-    amount, createdAt: new Date().toISOString(),
+    amount, purchasedCodes: bought.map((item) => courseCodeKey(item.code)), createdAt: new Date().toISOString(),
   };
 }), { permission: P.COURSE_CREATE, message: 'Đã mua khóa học cho doanh nghiệp.' });
 

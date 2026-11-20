@@ -1,8 +1,10 @@
 import { useTrialLock } from '@/hooks/use-trial-lock';
 import { canonicalCourseCode, courseCodeKey } from '@/features/courses/course-code';
+import { leavingWith, withBoughtWith } from '@/features/courses/course-bundle';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { ArrowRight, BookOpen, Check, ChevronRight, Lock, Plus, ShoppingCart, Sparkles, X } from 'lucide-react';
 import { useCourseCatalog } from '@/hooks/use-assignments';
 import { useCompetencyCategories } from '@/hooks/use-competencies';
@@ -142,7 +144,8 @@ export function OwnerCourseCatalogPage() {
     appliedSelected.current = selectedParam;
     const codes = new Set(selectedParam.split(',').map(courseCodeKey).filter(Boolean));
     const picked = allCourses.filter((course) => codes.has(courseCodeKey(course.code)) && !isOwnedCourse(course));
-    setCart(new Map(picked.map((course) => [canonicalCourseCode(course.code), toCartItem(course)])));
+    const { courses } = withBoughtWith(picked, allCourses, isOwnedCourse);
+    setCart(new Map(courses.map((course) => [canonicalCourseCode(course.code), toCartItem(course)])));
   }, [selectedParam, allCourses]);
 
   useEffect(() => {
@@ -160,14 +163,26 @@ export function OwnerCourseCatalogPage() {
   const ownedCount = allCourses.filter(isOwnedCourse).length;
   const toBuy = allCourses.filter((course) => !isOwnedCourse(course));
 
-  const toggleCart = (course: CourseListItem) => setCart((current) => {
-    const next = new Map(current);
+  // An Advanced course goes in (and out) with the Intermediate course of its domain when the company does not have it.
+  const toggleCart = (course: CourseListItem) => {
     const code = canonicalCourseCode(course.code);
-    if (next.has(code)) next.delete(code);
-    else next.set(code, toCartItem(course));
-    return next;
-  });
-  const addToCart = (list: CourseListItem[]) => setCart((current) => new Map([...current, ...list.map((course) => [canonicalCourseCode(course.code), toCartItem(course)] as const)]));
+    const next = new Map(cart);
+    if (next.has(code)) {
+      const leaving = leavingWith(code, next.keys());
+      leaving.forEach((item) => next.delete(item));
+      const advanced = leaving.filter((item) => item !== code).map((item) => translateUi(cart.get(item)?.title ?? item));
+      if (advanced.length > 0) toast.info(translateUi(`Đã bỏ cả ${advanced.join(', ')}: khóa Nâng cao cần khóa Trung cấp cùng lĩnh vực.`));
+    } else {
+      const { courses, added } = withBoughtWith([course], allCourses, (item) => isOwnedCourse(item) || next.has(canonicalCourseCode(item.code)));
+      courses.forEach((item) => next.set(canonicalCourseCode(item.code), toCartItem(item)));
+      if (added.length > 0) toast.info(translateUi(`Đã thêm kèm ${added.map((item) => translateUi(item.title)).join(', ')}: khóa Nâng cao được mua cùng khóa Trung cấp của lĩnh vực.`));
+    }
+    setCart(next);
+  };
+  const addToCart = (list: CourseListItem[]) => {
+    const { courses } = withBoughtWith(list, allCourses, (item) => isOwnedCourse(item) || cart.has(canonicalCourseCode(item.code)));
+    setCart(new Map([...cart, ...courses.map((course) => [canonicalCourseCode(course.code), toCartItem(course)] as const)]));
+  };
   const addAllToBuy = () => addToCart(toBuy);
   const allInCart = toBuy.length > 0 && toBuy.every((course) => cart.has(canonicalCourseCode(course.code)));
   const cartTotal = [...cart.values()].reduce((sum, item) => sum + item.price, 0);

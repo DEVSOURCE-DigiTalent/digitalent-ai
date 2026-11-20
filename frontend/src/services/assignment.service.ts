@@ -140,7 +140,10 @@ export interface PurchaseCourseResult {
   orderId: string;
   courseCode?: string;
   courseTitle?: string;
+  /** Total of this purchase: an Advanced course is bought with the Intermediate course of its domain when not owned. */
   amount: number;
+  /** Codes bought by this call, lower level first (M1-I, M1-A). */
+  purchasedCodes?: string[];
   checkoutUrl?: string;
   qrCode?: string;
   createdAt?: string;

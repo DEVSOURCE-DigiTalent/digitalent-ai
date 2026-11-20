@@ -129,6 +129,11 @@ export function todoItems(input: { pendingInvites: number; people: CapabilityPro
       }
     }
   }
+  // An Advanced course is bought with the Intermediate course of its domain when the company does not have it.
+  for (const course of [...needed.values()]) {
+    const lower = course.level === 3 ? notOwned.get(`${course.domain}-2`) : undefined;
+    if (lower) needed.set(lower.code, lower);
+  }
   if (needed.size > 0) {
     const codes = [...needed.values()].sort((a, b) => a.domain - b.domain || a.level - b.level).map((course) => course.code);
     items.push({ key: 'courses', count: needed.size, label: `${needed.size} khóa cần mua cho người còn thiếu`, to: `/enterprise/courses?selected=${codes.join(',')}` });
