@@ -9,7 +9,7 @@ import { ROLES, WORKSPACES, inferWorkspace, normalizeRoles } from './roles';
  * 3. onboardingStatus === 'setup' & enterprise -> '/setup'
  * 4. onboardingStatus === 'setup' & personal -> '/personal/onboarding'
  * 5. unverified Owner -> '/business/verify-email'
- * 6. default role homepage
+ * 6. default role homepage (an enterprise-trial Owner before the first course purchase: the survey, the overview is locked)
  */
 export function resolveNextStep(user: SessionUser | null | undefined): string {
   if (!user) return '/login';
@@ -41,10 +41,18 @@ export function resolveNextStep(user: SessionUser | null | undefined): string {
     return '/mentor/enterprises';
   }
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
-  if (normalized.includes(ROLES.OWNER)) return '/enterprise/dashboard';
+  if (normalized.includes(ROLES.OWNER)) return ownerHomePath(user);
   if (normalized.includes(ROLES.MANAGER)) return '/enterprise/team';
   if (normalized.includes(ROLES.EMPLOYEE)) return '/enterprise/me';
   return '/forbidden';
+}
+
+/**
+ * An owner's home: during the enterprise trial, until the organization buys its first course, every screen but the
+ * survey, "Khung năng lực số", the courses and feedback is locked — the overview too — so the owner starts on the survey.
+ */
+function ownerHomePath(user: Pick<SessionUser, 'enterpriseTrialStatus' | 'enterpriseTrialPurchased'>): string {
+  return isEnterpriseTrial(user) && !user.enterpriseTrialPurchased ? '/enterprise/trial' : '/enterprise/dashboard';
 }
 
 /** Doanh nghiệp đang dùng thử (chưa chuyển gói): chủ doanh nghiệp vào trang Dùng thử. */
@@ -73,7 +81,7 @@ export function getDashboardPath(user: SessionUser | null | undefined): string {
     return '/mentor/enterprises';
   }
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
-  if (normalized.includes(ROLES.OWNER)) return isEnterpriseTrial(user) && !user.enterpriseTrialPurchased ? '/enterprise/trial' : '/enterprise/dashboard';
+  if (normalized.includes(ROLES.OWNER)) return ownerHomePath(user);
   if (normalized.includes(ROLES.MANAGER)) return '/enterprise/team';
   if (normalized.includes(ROLES.EMPLOYEE)) return '/enterprise/me';
   return '/forbidden';

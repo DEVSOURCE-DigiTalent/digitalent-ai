@@ -97,6 +97,20 @@ describe('getHomePath', () => {
     expect(getDashboardPath({ ...owner, enterpriseTrialPurchased: true })).toBe('/enterprise/dashboard');
   });
 
+  it('signs a new trial Owner in on the survey, not on the locked overview', () => {
+    const owner: SessionUser = {
+      id: 'owner-new', email: 'owner@trial.test', fullName: 'Owner', roles: ['OWNER'], permissions: [],
+      workspace: 'enterprise', enterpriseTrialStatus: 'trial_active', emailVerified: true,
+    };
+
+    expect(getHomePath(owner)).toBe('/enterprise/trial');
+    expect(getPostLoginPath('/enterprise/dashboard', owner)).toBe('/enterprise/trial');
+    expect(getPostLoginPath(null, { ...owner, enterpriseTrialStatus: 'trial_read_only' })).toBe('/enterprise/trial');
+    // once a course is bought (or the organization converted) the overview opens and is home again
+    expect(getHomePath({ ...owner, enterpriseTrialPurchased: true })).toBe('/enterprise/dashboard');
+    expect(getHomePath({ ...owner, enterpriseTrialStatus: 'converted' })).toBe('/enterprise/dashboard');
+  });
+
   it('preserves mentor deep links and blocks cross-workspace redirects', () => {
     const mentor: SessionUser = {
       id: 'mentor-1',
