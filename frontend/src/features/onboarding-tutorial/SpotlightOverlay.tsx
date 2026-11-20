@@ -1,351 +1,247 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  ExternalLink,
-  Lightbulb,
-  Sparkles,
-  X,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Lightbulb, MapPin, X } from 'lucide-react';
 import { useOnboardingStore } from './onboarding-store';
 import { TUTORIAL_CONFIGS } from './tutorial-configs';
+import { findTarget, placeCard } from './placement';
+import type { RoleTutorialConfig, RoleTutorialStep } from './types';
+
+/** Room around the lit-up element. */
+const SPOT_PAD = 8;
+/** First guess of the card size, replaced by the measured one after the first paint. */
+const CARD_GUESS = { width: 368, height: 260 };
+
+const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const pathOf = (route: string) => route.split(/[?#]/)[0];
+
+function useViewport() {
+  const [view, setView] = useState(() => ({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800,
+  }));
+  useEffect(() => {
+    const onResize = () => setView({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return view;
+}
+
+/** The lit-up element's box, followed through scrolling, resizing and late rendering (lazy pages, the menu). */
+function useTargetRect(step: RoleTutorialStep | undefined) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  useLayoutEffect(() => {
+    if (!step) {
+      setRect(null);
+      return;
+    }
+    const view = () => ({ width: window.innerWidth, height: window.innerHeight });
+    const measure = () => {
+      const element = findTarget(step.targetSelector, view());
+      setRect(element ? element.getBoundingClientRect() : null);
+    };
+    findTarget(step.targetSelector, view())?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' });
+    measure();
+    const timers = [120, 360, 700, 1200].map((ms) => window.setTimeout(measure, ms));
+    window.addEventListener('scroll', measure, true);
+    window.addEventListener('resize', measure);
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id));
+      window.removeEventListener('scroll', measure, true);
+      window.removeEventListener('resize', measure);
+    };
+  }, [step]);
+  return rect;
+}
 
 export function SpotlightOverlay() {
   useUiLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    isTourActive,
-    currentRole,
-    currentStepIndex,
-    nextStep,
-    prevStep,
-    goToStep,
-    skipTour,
-  } = useOnboardingStore();
-
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800,
-  });
-
-  const cardRef = useRef<HTMLDivElement>(null);
-
+  const { isTourActive, isIntro, currentRole, currentStepIndex, beginSteps, nextStep, prevStep, goToStep, skipTour } = useOnboardingStore();
   const config = currentRole ? TUTORIAL_CONFIGS[currentRole] : null;
-  const currentStep = config?.steps[currentStepIndex];
-  const totalSteps = config?.steps.length ?? 0;
+  const showIntro = Boolean(isTourActive && isIntro && config?.intro);
+  const step = isTourActive && !showIntro ? config?.steps[currentStepIndex] : undefined;
+  const view = useViewport();
+  const rect = useTargetRect(step);
+  const cardRef = useRef<HTMLElement>(null);
+  const [cardSize, setCardSize] = useState(CARD_GUESS);
+  const titleId = useId();
+  const textId = useId();
 
-  // Lắng nghe resize màn hình
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Lắng nghe bàn phím (Escape để tắt, Mũi tên để di chuyển)
+  // Esc closes, arrows move between steps.
   useEffect(() => {
     if (!isTourActive) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') skipTour();
-      if (e.key === 'ArrowRight') nextStep();
-      if (e.key === 'ArrowLeft') prevStep();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') skipTour();
+      if (event.key === 'ArrowRight') nextStep();
+      if (event.key === 'ArrowLeft') prevStep();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [isTourActive, nextStep, prevStep, skipTour]);
 
-  // Cập nhật vị trí của element mục tiêu với scroll listener
+  // Each step takes the focus, so a screen reader reads it and Tab stays in the card.
+  useEffect(() => {
+    if (isTourActive) cardRef.current?.focus({ preventScroll: true });
+  }, [isTourActive, showIntro, currentStepIndex]);
+
   useLayoutEffect(() => {
-    if (!isTourActive || !currentStep) {
-      setRect(null);
-      return;
-    }
+    const card = cardRef.current;
+    if (!card || !step) return;
+    const next = { width: card.offsetWidth, height: card.offsetHeight };
+    setCardSize((size) => (size.width === next.width && size.height === next.height ? size : next));
+  }, [step, view, rect]);
 
-    const updateRect = () => {
-      const el = document.querySelector(currentStep.targetSelector);
-      if (el) {
-        const r = el.getBoundingClientRect();
-        if (r.width > 0 && r.height > 0) {
-          setRect(r);
-          return;
-        }
-      }
-      setRect(null);
-    };
+  if (!isTourActive || !config) return null;
+  if (showIntro) return <IntroCard config={config} cardRef={cardRef} titleId={titleId} onBegin={beginSteps} onSkip={skipTour} />;
+  if (!step) return null;
 
-    // Cuộn phần tử vào tâm nhìn êm ái
-    const targetEl = document.querySelector(currentStep.targetSelector);
-    if (targetEl) {
-      const preferred = currentStep.targetPosition || 'bottom';
-      const scrollBlock = preferred === 'bottom' ? 'start' : preferred === 'top' ? 'end' : 'center';
-      targetEl.scrollIntoView({ behavior: 'smooth', block: scrollBlock, inline: 'nearest' });
-    }
+  const steps = config.steps;
+  const total = steps.length;
+  const journey = steps.filter((s) => s.kind !== 'tip');
+  const number = journey.indexOf(step) + 1;
+  const last = currentStepIndex === total - 1;
+  const Icon = step.icon ?? MapPin;
 
-    updateRect();
-    const t1 = setTimeout(updateRect, 100);
-    const t2 = setTimeout(updateRect, 350);
-    const t3 = setTimeout(updateRect, 650);
-
-    window.addEventListener('scroll', updateRect, true);
-    window.addEventListener('resize', updateRect);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      window.removeEventListener('scroll', updateRect, true);
-      window.removeEventListener('resize', updateRect);
-    };
-  }, [isTourActive, currentStep, currentStepIndex]);
-
-  if (!isTourActive || !config || !currentStep) return null;
-
-  // Tính toán vị trí Tooltip Card chuẩn xác, luôn vừa màn hình
-  const getTooltipStyle = (): React.CSSProperties => {
-    const cardWidth = 430;
-    const cardHeight = 280;
-    const padding = 20;
-
-    if (!rect) {
-      // Nếu không tìm thấy target, đặt ở trung tâm
-      return {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      };
-    }
-
-    const preferred = currentStep.targetPosition || 'bottom';
-
-    // 1. Bên phải (Right) - thường dùng cho Sidebar
-    if (preferred === 'right' && rect.right + cardWidth + padding < windowSize.width) {
-      const top = Math.max(
-        padding,
-        Math.min(windowSize.height - cardHeight - padding, rect.top + rect.height / 2 - cardHeight / 2)
-      );
-      return {
-        top: `${top}px`,
-        left: `${rect.right + padding}px`,
-      };
-    }
-
-    // 2. Bên dưới (Bottom)
-    if (preferred === 'bottom' && rect.bottom + cardHeight + padding < windowSize.height) {
-      const left = Math.max(
-        padding,
-        Math.min(windowSize.width - cardWidth - padding, rect.left + rect.width / 2 - cardWidth / 2)
-      );
-      return {
-        top: `${rect.bottom + padding}px`,
-        left: `${left}px`,
-      };
-    }
-
-    // 3. Bên trên (Top)
-    if (rect.top - cardHeight - padding > 0) {
-      const left = Math.max(
-        padding,
-        Math.min(windowSize.width - cardWidth - padding, rect.left + rect.width / 2 - cardWidth / 2)
-      );
-      return {
-        top: `${rect.top - cardHeight - padding}px`,
-        left: `${left}px`,
-      };
-    }
-
-    // 4. Nếu bên dưới vẫn còn chỗ tương đối
-    if (rect.bottom + cardHeight + padding < windowSize.height) {
-      return {
-        top: `${rect.bottom + padding}px`,
-        left: `${Math.max(padding, Math.min(windowSize.width - cardWidth - padding, rect.left))}px`,
-      };
-    }
-
-    // Vị trí mặc định thông minh: đặt ở góc đối diện target
-    return {
-      top: rect.top > windowSize.height / 2 ? `${padding * 2}px` : `${windowSize.height - cardHeight - padding}px`,
-      left: rect.left > windowSize.width / 2 ? `${padding * 2}px` : `${windowSize.width - cardWidth - padding}px`,
-    };
+  const spot = rect && {
+    top: Math.max(0, rect.top - SPOT_PAD),
+    left: Math.max(0, rect.left - SPOT_PAD),
+    width: rect.width + SPOT_PAD * 2,
+    height: rect.height + SPOT_PAD * 2,
   };
-
-  const pad = 10;
-  const spotX = rect ? Math.max(0, rect.left - pad) : 0;
-  const spotY = rect ? Math.max(0, rect.top - pad) : 0;
-  const spotW = rect ? rect.width + pad * 2 : 0;
-  const spotH = rect ? rect.height + pad * 2 : 0;
-
-  const handleAction = () => {
-    if (currentStep.actionRoute) {
-      navigate(currentStep.actionRoute);
-    }
-    nextStep();
-  };
-
-  // Chỉ hiện nút hành động nếu route khác với URL hiện tại
-  const isDifferentRoute = currentStep.actionRoute && currentStep.actionRoute !== location.pathname;
+  const place = placeCard(spot, cardSize, view, step.targetPosition ?? 'bottom');
+  const showLink = Boolean(step.actionRoute && pathOf(step.actionRoute) !== location.pathname);
 
   return (
     <>
-      {/* ── Lớp phủ SVG Backdrop với lỗ khoét spotlight ── */}
-      <div className="ob-spotlight-backdrop">
-        <svg
-          className="ob-spotlight-svg"
-          width={windowSize.width}
-          height={windowSize.height}
-          xmlns="http://www.w3.org/2000/svg"
-        >
+      <div className="ob-spotlight-backdrop" aria-hidden="true">
+        <svg className="ob-spotlight-svg" width={view.width} height={view.height} xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <mask id="spotlight-mask">
-              <rect x="0" y="0" width={windowSize.width} height={windowSize.height} fill="white" />
-              {rect && (
-                <rect
-                  x={spotX}
-                  y={spotY}
-                  width={spotW}
-                  height={spotH}
-                  rx="16"
-                  ry="16"
-                  fill="black"
-                />
-              )}
+            <mask id="ob-spotlight-mask">
+              <rect x="0" y="0" width={view.width} height={view.height} fill="white" />
+              {spot && <rect x={spot.left} y={spot.top} width={spot.width} height={spot.height} rx="14" ry="14" fill="black" />}
             </mask>
           </defs>
-          <rect
-            x="0"
-            y="0"
-            width={windowSize.width}
-            height={windowSize.height}
-            fill="rgba(15, 23, 42, 0.22)"
-            mask="url(#spotlight-mask)"
-          />
+          <rect x="0" y="0" width={view.width} height={view.height} className="ob-spotlight-dim" mask="url(#ob-spotlight-mask)" />
         </svg>
-
-        {/* ── Viền phát sáng quanh target element ── */}
-        {rect && (
-          <div
-            className="ob-spotlight-ring"
-            style={{
-              top: `${spotY}px`,
-              left: `${spotX}px`,
-              width: `${spotW}px`,
-              height: `${spotH}px`,
-            }}
-          />
-        )}
+        {spot && <div className="ob-spotlight-ring" style={{ top: spot.top, left: spot.left, width: spot.width, height: spot.height }} />}
       </div>
 
-      {/* ── Tooltip Card hướng dẫn ── */}
       <aside
         ref={cardRef}
         role="dialog"
-        aria-label="Hướng dẫn tân thủ"
-        className="ob-tooltip-card"
-        style={getTooltipStyle()}
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={textId}
+        tabIndex={-1}
+        className="ob-card"
+        data-side={place.side}
+        style={{ top: place.top, left: place.left, '--ob-caret': `${place.caret}px` } as CSSProperties}
       >
-        <div className="ob-tooltip-header">
-          <div className="ob-tooltip-badge">
-            <Sparkles className="size-3.5 text-indigo-600 shrink-0" />
-            <span>{currentStep.badge}</span>
-            <span className="ob-tooltip-badge-sep">·</span>
-            <span className="ob-tooltip-badge-step">{translateUi("Bước ")}{currentStepIndex + 1}/{totalSteps}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={skipTour}
-            aria-label="Đóng hướng dẫn tân thủ (Esc)"
-            title="Đóng hướng dẫn (Esc)"
-            className="ob-tooltip-close"
-          >
-            <X className="size-4" />
+        {place.side !== 'center' && <span className="ob-card__caret" aria-hidden="true" />}
+        <header className="ob-card__head">
+          <span className="ob-card__icon" aria-hidden="true"><Icon size={18} /></span>
+          <span className="ob-card__where">
+            <small>
+              {step.kind === 'tip' ? translateUi('Mẹo') : translateUi(`Bước ${number}/${journey.length}`)}
+              {step.optional && <em>{translateUi('Không bắt buộc')}</em>}
+            </small>
+            <span>{translateUi(step.badge)}</span>
+          </span>
+          <button type="button" onClick={skipTour} className="ob-close" aria-label={translateUi('Đóng hướng dẫn (Esc)')} title={translateUi('Đóng hướng dẫn (Esc)')}>
+            <X size={16} aria-hidden="true" />
           </button>
-        </div>
+        </header>
 
-        <h3 className="ob-tooltip-title">{translateUi(currentStep.title)}</h3>
-        <p className="ob-tooltip-desc">{translateUi(currentStep.description)}</p>
-
-        {currentStep.tips && (
-          <div className="ob-tooltip-tips">
-            <div className="ob-tooltip-tips-icon">
-              <Lightbulb className="size-4 text-amber-600 shrink-0" />
-            </div>
-            <div className="ob-tooltip-tips-text">{currentStep.tips}</div>
-          </div>
+        <h3 id={titleId} className="ob-card__title">{translateUi(step.title)}</h3>
+        <p id={textId} className="ob-card__text">{translateUi(step.description)}</p>
+        {step.tips && (
+          <p className="ob-card__tip"><Lightbulb size={14} aria-hidden="true" />{translateUi(step.tips)}</p>
+        )}
+        {showLink && (
+          <button type="button" className="ob-card__link" onClick={() => navigate(step.actionRoute!)}>
+            {translateUi(step.actionText ?? 'Mở trang')}<ArrowRight size={14} aria-hidden="true" />
+          </button>
         )}
 
-        <div className="ob-tooltip-footer">
-          {/* Progress dots với khả năng chuyển bước nhanh */}
-          <div className="ob-tooltip-progress-group">
-            <div className="ob-tooltip-dots">
-              {config.steps.map((_, i) => (
+        <footer className="ob-card__foot">
+          <ol className="ob-progress" aria-label={translateUi('Các bước hướng dẫn')}>
+            {steps.map((s, index) => (
+              <li key={s.id}>
                 <button
-                  key={i}
                   type="button"
-                  onClick={() => goToStep(i)}
-                  className={`ob-dot ${i === currentStepIndex ? 'active' : i < currentStepIndex ? 'passed' : ''}`}
-                  aria-label={translateUi(`Chuyển đến bước ${i + 1}`)}
-                  title={translateUi(`Bước ${i + 1}`)}
+                  onClick={() => goToStep(index)}
+                  data-state={index === currentStepIndex ? 'current' : index < currentStepIndex ? 'done' : 'todo'}
+                  aria-current={index === currentStepIndex ? 'step' : undefined}
+                  aria-label={translateUi(s.title)}
                 />
-              ))}
-            </div>
-            <span className="ob-step-counter-text">
-              {currentStepIndex + 1} / {totalSteps}
-            </span>
-          </div>
-
-          {/* Action buttons */}
-          <div className="ob-tooltip-actions">
-            {currentStepIndex === 0 ? (
-              <button
-                type="button"
-                onClick={skipTour}
-                className="ob-btn ob-btn-ghost text-xs"
-              >
-                Bỏ qua
-              </button>
+              </li>
+            ))}
+          </ol>
+          <div className="ob-card__actions">
+            {currentStepIndex === 0 && !config.intro ? (
+              <button type="button" onClick={skipTour} className="ob-btn ob-btn--ghost">{translateUi('Bỏ qua')}</button>
             ) : (
-              <button
-                type="button"
-                onClick={prevStep}
-                className="ob-btn ob-btn-ghost text-xs"
-              >
-                <ArrowLeft className="size-3.5" />{translateUi("Quay lại")}</button>
-            )}
-
-            {isDifferentRoute && (
-              <button
-                type="button"
-                onClick={handleAction}
-                className="ob-btn ob-btn-outline text-xs"
-              >
-                <span>{currentStep.actionText ?? translateUi('Khám phá')}</span>
-                <ExternalLink className="size-3 text-slate-400" />
+              <button type="button" onClick={prevStep} className="ob-btn ob-btn--ghost">
+                <ArrowLeft size={14} aria-hidden="true" />{translateUi('Quay lại')}
               </button>
             )}
-
-            <button
-              type="button"
-              onClick={nextStep}
-              className="ob-btn ob-btn-primary text-xs"
-            >
-              {currentStepIndex < totalSteps - 1 ? (
-                <>{translateUi("Tiếp theo ")}<ArrowRight className="size-3.5" />
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="size-3.5" /> Bắt đầu ngay
-                </>
-              )}
+            <button type="button" onClick={nextStep} className="ob-btn ob-btn--primary">
+              {last ? <><Check size={14} aria-hidden="true" />{translateUi('Xong')}</> : <>{translateUi('Tiếp')}<ArrowRight size={14} aria-hidden="true" /></>}
             </button>
           </div>
-        </div>
+        </footer>
       </aside>
+    </>
+  );
+}
+
+/** The whole journey at a glance before the first step: what to do, in order, and where. */
+function IntroCard({ config, cardRef, titleId, onBegin, onSkip }: {
+  config: RoleTutorialConfig;
+  cardRef: React.RefObject<HTMLElement | null>;
+  titleId: string;
+  onBegin: () => void;
+  onSkip: () => void;
+}) {
+  useUiLanguage();
+  const journey = config.steps.filter((s) => s.kind !== 'tip');
+  return (
+    <>
+      <div className="ob-intro-backdrop" aria-hidden="true" />
+      <section ref={cardRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="ob-intro">
+        <button type="button" onClick={onSkip} className="ob-close ob-intro__close" aria-label={translateUi('Đóng hướng dẫn (Esc)')}>
+          <X size={16} aria-hidden="true" />
+        </button>
+        <p className="ob-intro__eyebrow">{translateUi(config.intro!.eyebrow)}</p>
+        <h2 id={titleId} className="ob-intro__title">{translateUi(config.welcomeTitle)}</h2>
+        <p className="ob-intro__lead">{translateUi(config.welcomeDescription)}</p>
+        <ol className="ob-intro__path">
+          {journey.map((step, index) => {
+            const Icon = step.icon ?? MapPin;
+            return (
+              <li key={step.id} data-optional={step.optional || undefined}>
+                <span className="ob-intro__num" aria-hidden="true">{index + 1}</span>
+                <span className="ob-intro__step">
+                  <strong>{translateUi(step.title)}</strong>
+                  <small>
+                    <Icon size={13} aria-hidden="true" />{translateUi(step.badge)}
+                    {step.optional && <em>{translateUi('Không bắt buộc')}</em>}
+                  </small>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+        <footer className="ob-intro__foot">
+          <button type="button" onClick={onSkip} className="ob-btn ob-btn--ghost">{translateUi('Để sau')}</button>
+          <button type="button" onClick={onBegin} className="ob-btn ob-btn--primary">
+            {translateUi('Xem từng bước')}<ArrowRight size={14} aria-hidden="true" />
+          </button>
+        </footer>
+      </section>
     </>
   );
 }
