@@ -23,6 +23,14 @@ export function useCapabilityDashboard() {
   return useQuery({ queryKey: [...ANALYTICS_KEY, 'dashboard'], queryFn: async () => (await analyticsService.getDashboard()).data.data! });
 }
 
+/** Who learns now, courses finished and the last weeks' rhythm (OW-01 Tổng quan). */
+export function useLearningActivity(weeks = 8) {
+  return useQuery({
+    queryKey: [...ANALYTICS_KEY, 'learning-activity', weeks],
+    queryFn: async () => (await analyticsService.getLearningActivity(weeks)).data.data!,
+  });
+}
+
 export function useReportsOverview(params?: AnalyticsFilter) {
   return useQuery({
     queryKey: [...ANALYTICS_KEY, 'reports-overview', params],
