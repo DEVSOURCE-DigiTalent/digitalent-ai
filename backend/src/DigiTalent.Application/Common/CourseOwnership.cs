@@ -19,6 +19,18 @@ public static class CourseOwnership
                || canonical.EndsWith("-A", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// The lower paid course a course is bought with: an Advanced course (Mx-A) comes with the Intermediate course of
+    /// the same domain (Mx-I); anything else needs none.
+    /// </summary>
+    public static string? BoughtWith(string code)
+    {
+        var canonical = CourseCodes.Canonical(code);
+        return canonical.Length == 4 && canonical[0] == 'M' && canonical.EndsWith("-A", StringComparison.OrdinalIgnoreCase)
+            ? $"{canonical[..3]}I"
+            : null;
+    }
+
     /// <summary>Whether the organization bought the course (under any of its code aliases).</summary>
     public static Task<bool> IsPurchasedAsync(IApplicationDbContext context, Guid organizationId, string code)
     {

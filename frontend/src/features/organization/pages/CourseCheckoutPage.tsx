@@ -1,4 +1,5 @@
 import { canonicalCourseCode, courseCodeKey, distinctCourseCodes } from '@/features/courses/course-code';
+import { boughtWithCode, byPurchaseOrder, leavingWith, withBoughtWith } from '@/features/courses/course-bundle';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -36,6 +37,8 @@ interface CartItem {
 }
 
 const coursePrice = (course: CourseListItem, level: number) => course.price || (level === 3 ? 699000 : 399000);
+const levelOf = (code: string) => { const key = courseCodeKey(code); return key.endsWith('-A') ? 3 : key.endsWith('-I') ? 2 : 1; };
+const isOwned = (course: CourseListItem) => levelOf(course.code) === 1 || Boolean(course.isPurchased || course.hasLicense);
 
 export function CourseCheckoutPage() {
   useUiLanguage();
@@ -61,36 +64,41 @@ export function CourseCheckoutPage() {
   useEffect(() => {
     if (!coursesData?.items || cartInitialized) return;
 
-    const items: CartItem[] = [];
+    const picked: CourseListItem[] = [];
     const owned: string[] = [];
     const allCourses = coursesData.items;
-    const levelOf = (code: string) => (code.endsWith('-A') ? 3 : code.endsWith('-I') ? 2 : 1);
 
     requestedCodes.forEach((reqCode) => {
       const match = allCourses.find((c) => courseCodeKey(c.code) === reqCode);
       if (!match) return;
-      const level = levelOf(match.code);
       // Khóa Cơ bản miễn phí; khóa đã mua thì cả doanh nghiệp đã học được, không mua lại.
-      if (level === 1) return;
-      if (match.isPurchased) {
+      if (levelOf(match.code) === 1) return;
+      if (isOwned(match)) {
         owned.push(canonicalCourseCode(match.code));
         return;
       }
-      items.push({ course: match, canonicalCode: canonicalCourseCode(match.code), level, price: coursePrice(match, level) });
+      picked.push(match);
     });
 
     // Không truyền mã nào: gợi ý khóa Trung cấp đầu tiên doanh nghiệp chưa mua.
-    if (items.length === 0 && owned.length === 0 && requestedCodes.length === 0) {
-      const defaultCourse = allCourses.find((c) => c.code.endsWith('-I') && !c.isPurchased);
-      if (defaultCourse) {
-        items.push({ course: defaultCourse, canonicalCode: canonicalCourseCode(defaultCourse.code), level: 2, price: coursePrice(defaultCourse, 2) });
-      }
+    if (picked.length === 0 && owned.length === 0 && requestedCodes.length === 0) {
+      const defaultCourse = allCourses.find((c) => levelOf(c.code) === 2 && !isOwned(c));
+      if (defaultCourse) picked.push(defaultCourse);
     }
+
+    // Khóa Nâng cao được mua cùng khóa Trung cấp của lĩnh vực khi doanh nghiệp chưa có khóa đó.
+    const { courses, added } = withBoughtWith(picked, allCourses, isOwned);
 
     if (owned.length > 0) {
       toast.info(`Doanh nghiệp đã mua ${owned.join(', ')} — mọi nhân viên đều học được, không cần mua lại.`);
     }
-    setCartItems(items);
+    if (added.length > 0) {
+      toast.info(translateUi(`Đã thêm kèm ${added.map((c) => canonicalCourseCode(c.code)).join(', ')}: khóa Nâng cao được mua cùng khóa Trung cấp của lĩnh vực.`));
+    }
+    setCartItems(courses.map((course) => {
+      const level = levelOf(course.code);
+      return { course, canonicalCode: canonicalCourseCode(course.code), level, price: coursePrice(course, level) };
+    }));
     setCartInitialized(true);
   }, [coursesData?.items, requestedCodes, cartInitialized]);
 
@@ -222,13 +230,21 @@ export function CourseCheckoutPage() {
 
   // Tính toán chi phí: mỗi khóa trả một lần cho cả doanh nghiệp
   const totalAmount = useMemo(() => cartItems.reduce((sum, item) => sum + item.price, 0), [cartItems]);
+  /** The Advanced course in the order an Intermediate course is bought with. */
+  const boughtFor = (code: string) => cartItems.find((other) => boughtWithCode(other.canonicalCode) === courseCodeKey(code))?.canonicalCode;
 
+  // Bỏ khóa Trung cấp thì bỏ cả khóa Nâng cao cùng lĩnh vực đang mua kèm nó.
   const removeCartItem = (canonicalCode: string) => {
-    if (cartItems.length <= 1) {
+    const leaving = leavingWith(canonicalCode, cartItems.map((item) => item.canonicalCode));
+    if (cartItems.length - leaving.length < 1) {
       toast.error('Cần ít nhất 1 khóa học trong đơn đăng ký.');
       return;
     }
-    setCartItems((prev) => prev.filter((item) => item.canonicalCode !== canonicalCode));
+    setCartItems((prev) => prev.filter((item) => !leaving.includes(item.canonicalCode)));
+    const advanced = leaving.filter((code) => code !== canonicalCode);
+    if (advanced.length > 0) {
+      toast.info(translateUi(`Đã bỏ cả ${advanced.join(', ')}: khóa Nâng cao cần khóa Trung cấp cùng lĩnh vực.`));
+    }
   };
 
   // Tiến hành xác nhận đơn hàng & chuyển sang bước thanh toán VietQR
@@ -260,9 +276,13 @@ export function CourseCheckoutPage() {
       let lastOrderId = '';
       const signerNote = `[Hợp đồng điện tử: ${docHash}] Đại diện: ${customerInfo.representativeName} (${customerInfo.phone})`;
 
-      for (const item of cartItems) {
+      // Cấp thấp trước: khóa Trung cấp được mua trước khóa Nâng cao cùng lĩnh vực; một khóa đã được mua kèm thì bỏ qua.
+      const bought = new Set<string>();
+      for (const item of [...cartItems].sort((a, b) => byPurchaseOrder(a.canonicalCode, b.canonicalCode))) {
+        if (bought.has(courseCodeKey(item.canonicalCode))) continue;
         const res = await purchaseMutation.mutateAsync({ courseId: item.course.id, note: signerNote });
         lastOrderId = res.orderId;
+        (res.purchasedCodes ?? [item.canonicalCode]).forEach((code) => bought.add(courseCodeKey(code)));
       }
 
       const generatedCode = 'DT' + Math.floor(100000 + Math.random() * 900000);
@@ -868,6 +888,9 @@ export function CourseCheckoutPage() {
                           <h4 className="mt-1 text-xs font-bold text-slate-900 line-clamp-1">
                             {translateUi(item.course.title)}
                           </h4>
+                          {boughtFor(item.canonicalCode) && (
+                            <p className="mt-0.5 text-[10px] font-semibold text-amber-700">{translateUi(`Mua kèm ${boughtFor(item.canonicalCode)}`)}</p>
+                          )}
                         </div>
                         {cartItems.length > 1 && (
                           <button

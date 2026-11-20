@@ -16,9 +16,9 @@ const courses = [
   { ...course('three-i', 'A3-I', 'Nội dung chuyên nghiệp'), level: 2, assignedCount: 5 },
 ];
 
-function renderCatalog(path = '/enterprise/courses') {
+function renderCatalog(path = '/enterprise/courses', items = courses) {
   vi.spyOn(competencyHooks, 'useCompetencyCategories').mockReturnValue({ data: [] } as never);
-  vi.spyOn(assignmentHooks, 'useCourseCatalog').mockReturnValue({ data: { items: courses }, isLoading: false, isError: false } as never);
+  vi.spyOn(assignmentHooks, 'useCourseCatalog').mockReturnValue({ data: { items }, isLoading: false, isError: false } as never);
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
@@ -110,5 +110,18 @@ describe('OwnerCourseCatalogPage', () => {
     fireEvent.click(within(hub()).getByRole('button', { name: /Thêm cả 1 khóa vào giỏ/ }));
     expect(screen.getByRole('region', { name: 'Giỏ khóa học' })).toHaveTextContent('Nội dung chuyên nghiệp');
     expect(within(hub()).getByRole('button', { name: /Đã thêm cả vào giỏ/ })).toBeDisabled();
+  });
+
+  it('cart: an Advanced course comes with the Intermediate course of its domain, and leaves with it', async () => {
+    renderCatalog('/enterprise/courses', [...courses, { ...course('three-a', 'A3-A', 'Nội dung nâng cao'), level: 3 }]);
+    fireEvent.click(screen.getByRole('button', { name: /^Lĩnh vực 03/ }));
+    fireEvent.click(within(spotlight()).getByRole('button', { name: 'Thêm M3-A vào giỏ' }));
+    const cart = screen.getByRole('region', { name: 'Giỏ khóa học' });
+    expect(within(cart).getByRole('link', { name: 'Thanh toán & Ký online' }))
+      .toHaveAttribute('href', '/enterprise/courses/checkout?courses=M3-I%2CM3-A');
+    expect(within(spotlight()).getByRole('button', { name: 'Bỏ M3-I khỏi giỏ' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(within(spotlight()).getByRole('button', { name: 'Bỏ M3-I khỏi giỏ' }));
+    expect(screen.queryByRole('region', { name: 'Giỏ khóa học' })).toBeNull();
   });
 });

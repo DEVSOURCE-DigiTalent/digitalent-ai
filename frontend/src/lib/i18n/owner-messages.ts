@@ -1151,4 +1151,9 @@ Vừa học xong|Just finished
 Chưa có ai học xong khóa nào.|Nobody has finished a course yet.
 Đang tải|Loading
 Chưa tải được dữ liệu.|Could not load the data.
+Đã thêm kèm {courses}: khóa Nâng cao được mua cùng khóa Trung cấp của lĩnh vực.|Also added {courses}: an Advanced course is bought with the Intermediate course of its domain.
+Đã bỏ cả {courses}: khóa Nâng cao cần khóa Trung cấp cùng lĩnh vực.|Also removed {courses}: an Advanced course needs the Intermediate course of its domain.
+Mua kèm {code}|Bought with {code}
+🔒 Mua kèm Trung cấp ({price})|🔒 Buy with Intermediate ({price})
+Khóa Nâng cao được mua cùng khóa Trung cấp “{title}”.|The Advanced course is bought together with the Intermediate course “{title}”.
 `.trim().split('\n').map(line => { const index=line.indexOf('|'); return [line.slice(0,index),line.slice(index+1)]; }));

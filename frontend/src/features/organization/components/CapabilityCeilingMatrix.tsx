@@ -1,4 +1,6 @@
 import { useTrialLock } from '@/hooks/use-trial-lock';
+import { boughtWithCode, leavingWith } from '@/features/courses/course-bundle';
+import { courseCodeKey } from '@/features/courses/course-code';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -136,22 +138,40 @@ export function CapabilityCeilingMatrix() {
     const code = courseCode(course, domain);
     return { code, title: course.title || `Khóa học ${code}`, level: course.level, domainName: domain.name, price: course.price || (course.level === 3 ? 699000 : 399000) };
   };
+  // Removing an Intermediate course also removes the Advanced course of its domain bought with it.
+  // Toasts stay outside the state updater: StrictMode runs an updater twice, so a toast inside it would show twice.
+  const removeFromCart = (code: string) => {
+    const leaving = leavingWith(code, cart.keys());
+    setCart((previous) => {
+      const next = new Map(previous);
+      leaving.forEach((item) => next.delete(item));
+      return next;
+    });
+    const advanced = leaving.filter((item) => item !== code);
+    return advanced.length > 0 ? translateUi(`Đã bỏ cả ${advanced.join(', ')}: khóa Nâng cao cần khóa Trung cấp cùng lĩnh vực.`) : undefined;
+  };
   const toggleCart = (course: CeilingCourse, domain: CeilingDomain) => {
     if (!course.courseId) {
       toast.error('Khóa học này chưa có trong danh mục để mua.');
       return;
     }
     const item = cartItem(course, domain);
-    const remove = cart.has(item.code);
-    // The updater stays pure: StrictMode runs it twice, so a toast inside it would show twice.
-    setCart((previous) => {
-      const next = new Map(previous);
-      if (remove) next.delete(item.code);
-      else next.set(item.code, item);
-      return next;
+    if (cart.has(item.code)) {
+      const description = removeFromCart(item.code);
+      if (description) toast.info(`Đã bỏ chọn khóa ${item.code}`, { description });
+      else toast.info(`Đã bỏ chọn khóa ${item.code}`);
+      return;
+    }
+    // An Advanced course is bought with the Intermediate course of its domain when the company does not have it.
+    const lowerCode = boughtWithCode(item.code);
+    const lower = lowerCode ? domain.courses.find((c) => courseCodeKey(courseCode(c, domain)) === lowerCode) : undefined;
+    const lowerItem = lower?.courseId && !isOwned(lower) && !cart.has(courseCode(lower, domain)) ? cartItem(lower, domain) : undefined;
+    setCart((previous) => new Map([...previous, ...(lowerItem ? [[lowerItem.code, lowerItem] as const] : []), [item.code, item] as const]));
+    toast.success(`Đã chọn khóa ${item.code} để mua bản quyền`, {
+      description: lowerItem
+        ? translateUi(`Đã thêm kèm ${lowerItem.code}: khóa Nâng cao được mua cùng khóa Trung cấp của lĩnh vực.`)
+        : 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.',
     });
-    if (remove) toast.info(`Đã bỏ chọn khóa ${item.code}`);
-    else toast.success(`Đã chọn khóa ${item.code} để mua bản quyền`, { description: 'Bạn có thể chọn thêm nhiều khóa khác trước khi bấm Tiếp tục.' });
   };
 
   const header = (badge?: string) => (
@@ -481,7 +501,7 @@ export function CapabilityCeilingMatrix() {
                   {[...cart.values()].map((item) => (
                     <span key={item.code} className="cx-cart-item">
                       <span>{translateUi(LEVEL_NAMES[item.level])} · {translateUi(item.domainName)}</span>
-                      <button type="button" onClick={() => setCart((previous) => { const next = new Map(previous); next.delete(item.code); return next; })}
+                      <button type="button" onClick={() => { const description = removeFromCart(item.code); if (description) toast.info(description); }}
                         title={translateUi('Bỏ chọn khóa này')} aria-label={translateUi(`Bỏ ${item.code} khỏi giỏ`)}><X className="size-3" /></button>
                     </span>
                   ))}
