@@ -304,54 +304,54 @@ export function LessonSlide({
       </header>
 
       {/* ── 2. Khu vực Media Hero hiển thị 1 chuẩn duy nhất (Không chia tab) ── */}
-      {!hideMedia && (
-        activeVideoUrl ? (
-          <section className="pu-single-media-hero" aria-label="Video bài giảng">
-            <div className="pu-video-player-container">
-              <video
-                controls
-                preload="metadata"
-                src={activeVideoUrl}
-                className="pu-active-video-element"
-              />
-            </div>
-          </section>
-        ) : pictures.length > 0 ? (
-          <section className="pu-single-media-hero" aria-label="Slide minh họa">
-            <div className="pu-slide-picture-container">
-              <img
-                src={pictures[0]?.src}
-                alt={pictures[0]?.alt || slide.title}
-                className="pu-slide-picture-img"
-                onClick={() => setExpanded(pictures[0] ?? null)}
-              />
-              <button
-                type="button"
-                className="pu-slide-expand-btn"
-                onClick={() => setExpanded(pictures[0] ?? null)}
-                aria-label="Phóng to hình ảnh"
-              >
-                <Maximize2 size={13} />
-                <span>Xem toàn màn hình</span>
-              </button>
-            </div>
-          </section>
-        ) : documents.length > 0 || hideMediaNotice ? null : (
-          <div className="pu-media-notice-banner" role="status">
-            <div className="pu-mnb-left">
-              <div className="pu-mnb-icon-wrap">
-                <Video size={18} className="text-blue-700" />
-              </div>
-              <div>
-                <p className="pu-mnb-title">Khu vực Video bài giảng & Slide số hóa (Đang hoàn thiện biên tập)</p>
-                <p className="pu-mnb-sub">
-                  Video bài giảng thực tế và slide tóm tắt 16:9 đang được sản xuất và sẽ cập nhật sau. Hiện tại, nhân viên nghiên cứu đầy đủ giáo trình chuẩn hóa và cẩm nang tác nghiệp chi tiết bên dưới.
-                </p>
-              </div>
-            </div>
-            <span className="pu-mnb-pill">Giáo trình chuẩn số</span>
+      {activeVideoUrl ? (
+        <section className="pu-single-media-hero" aria-label="Video bài giảng">
+          <div className="pu-video-player-container">
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              src={activeVideoUrl}
+              aria-label={videos[0]?.alt || slide.title}
+              className="pu-active-video-element"
+            />
           </div>
-        )
+        </section>
+      ) : pictures.length > 0 ? (
+        <section className="pu-single-media-hero" aria-label="Slide minh họa">
+          <div className="pu-slide-picture-container">
+            <img
+              src={pictures[0]?.src}
+              alt={pictures[0]?.alt || slide.title}
+              className="pu-slide-picture-img"
+              onClick={() => setExpanded(pictures[0] ?? null)}
+            />
+            <button
+              type="button"
+              className="pu-slide-expand-btn"
+              onClick={() => setExpanded(pictures[0] ?? null)}
+              aria-label="Phóng to hình ảnh"
+            >
+              <Maximize2 size={13} />
+              <span>Xem toàn màn hình</span>
+            </button>
+          </div>
+        </section>
+      ) : documents.length > 0 || hideMedia || hideMediaNotice ? null : (
+        <div className="pu-media-notice-banner" role="status">
+          <div className="pu-mnb-left">
+            <div className="pu-mnb-icon-wrap">
+              <Video size={18} className="text-blue-700" />
+            </div>
+            <div>
+              <p className="pu-mnb-title">Khu vực Video bài giảng & Slide số hóa (Đang hoàn thiện biên tập)</p>
+              <p className="pu-mnb-sub">
+                Video bài giảng thực tế và slide tóm tắt 16:9 đang được sản xuất và sẽ cập nhật sau. Hiện tại, nhân viên nghiên cứu đầy đủ giáo trình chuẩn hóa và cẩm nang tác nghiệp chi tiết bên dưới.
+              </p>
+            </div>
+          </div>
+          <span className="pu-mnb-pill">Giáo trình chuẩn số</span>
+        </div>
       )}
 
       {/* ── 3. Khu vực Nội dung Lý thuyết (Phân tầng Semantic Cards) ──── */}
