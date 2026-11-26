@@ -11,4 +11,5 @@ public class GetPulseFinalReviewsUseCaseInput
     public bool RefreshAi { get; set; }
     /// <summary>Chỉ định 1 bài cụ thể khi RefreshAi = true (để trống = làm mới toàn bộ bài PENDING).</summary>
     public Guid? RefreshSubmissionId { get; set; }
+    public string? EvidenceMetric { get; set; }
 }

@@ -180,9 +180,12 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
 
     expect(within(railItems[1]).getByText('Nhân viên trước khóa')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    const orgSelect = screen.getByLabelText('Lọc theo doanh nghiệp') as HTMLSelectElement;
-    expect(orgSelect).toBeInTheDocument();
-    expect(orgSelect.textContent).toContain('DigiTalent Demo Company (4 bài)');
+    expect(screen.queryByRole('combobox', { name: 'Lọc theo doanh nghiệp' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mở bộ lọc nhân viên' }));
+    const orgSelect = screen.getByRole('combobox', { name: 'Lọc theo doanh nghiệp' });
+    fireEvent.click(orgSelect);
+    expect(screen.getByRole('option', { name: 'DigiTalent Demo Company (4 bài)' })).toBeInTheDocument();
+    fireEvent.keyDown(orgSelect, { key: 'Escape' });
     expect(screen.queryByRole('group', { name: 'Tóm tắt ba phần cần kiểm tra' })).not.toBeInTheDocument();
 
     // Auto-selects top queue item on right grading stage with essay tab and prompt active by default
@@ -218,7 +221,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     renderWorkbenchRoutes('/mentor/course-reviews');
 
     const aiSection = await screen.findByRole('region', { name: 'Gợi ý chấm tự luận' });
-    expect(within(aiSection).getByText(/Nhận xét nháp đề xuất/i)).toBeInTheDocument();
+    fireEvent.click(within(aiSection).getByText('Nhận xét nháp đề xuất'));
 
     // Apply AI guidance draft into review form
     fireEvent.click(within(aiSection).getByRole('button', { name: /Chèn gợi ý vào nhận xét/i }));
@@ -346,6 +349,10 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     // First student active
     const banner = await screen.findByRole('region', { name: 'Thông tin nhân viên và điều hướng hàng chờ' });
     expect(within(banner).getByRole('heading', { name: 'Nhân viên Một' })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Lọc theo lĩnh vực' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mở bộ lọc nhân viên' }));
+    expect(screen.getByRole('combobox', { name: 'Lọc theo lĩnh vực' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bộ lọc' }));
 
     // Grade first student -> CTA says "Lưu & sang bài tiếp theo"
     fireEvent.click(screen.getByRole('button', { name: 'Công nhận đạt' }));
@@ -442,11 +449,14 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     expect(nav.textContent).toContain('Hiển thị 11 đến 12 trong tổng 12 bài nộp');
 
     // Page size 20 -> all 12
-    fireEvent.change(screen.getByLabelText('Số dòng mỗi trang'), { target: { value: '20' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Số dòng mỗi trang' }));
+    fireEvent.click(screen.getByRole('option', { name: '20' }));
     expect(within(screen.getByRole('list', { name: 'Danh sách bài nộp' })).getAllByRole('listitem')).toHaveLength(12);
 
     // Department filter
-    fireEvent.change(screen.getByLabelText('Lọc theo phòng ban'), { target: { value: 'Vận hành' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mở bộ lọc nhân viên' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Lọc theo phòng ban' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Vận hành' }));
     expect(screen.getByText('Tổng 1 bài cuối cấp')).toBeInTheDocument();
 
     // Reset filters
@@ -601,13 +611,10 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
 
     renderWorkbenchRoutes('/mentor/course-reviews');
 
-    const orgSelect = (await screen.findByLabelText('Lọc theo doanh nghiệp')) as HTMLSelectElement;
-    await waitFor(() => {
-      expect(orgSelect.textContent).toContain('Tập đoàn Công nghệ Alpha (0 bài)');
-      expect(orgSelect.textContent).toContain('DigiTalent Demo Company (1 bài)');
-    });
-
-    fireEvent.change(orgSelect, { target: { value: 'org-alpha' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Mở bộ lọc nhân viên' }));
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Lọc theo doanh nghiệp' }));
+    expect(await screen.findByRole('option', { name: 'DigiTalent Demo Company (1 bài)' })).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('option', { name: 'Tập đoàn Công nghệ Alpha (0 bài)' }));
     expect(await screen.findByRole('heading', { name: 'Doanh nghiệp này chưa có bài nộp' })).toBeInTheDocument();
     expect(screen.getByText('Tổng 0 bài cuối cấp')).toBeInTheDocument();
 
@@ -635,7 +642,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
 
     renderWorkbenchRoutes('/mentor/course-reviews');
 
-    expect(await screen.findByText('Đề bài thực hành yêu cầu')).toBeInTheDocument();
+    fireEvent.click(await screen.findByText('Đề bài thực hành yêu cầu'));
     expect(screen.getByText('Đề chuẩn theo khung khóa học')).toBeInTheDocument();
     expect(screen.getByText(/Mô tả một nhiệm vụ thực tế của vị trí Sales \/ CRM/i)).toBeInTheDocument();
   });
@@ -666,8 +673,10 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
               'Chưa đưa công thức kiểm tra trùng.',
               'Chưa nêu người chịu trách nhiệm tiếp theo.',
             ],
+            criterionEvidence: ['báo cáo doanh thu Q3 xuất từ hệ thống CRM công ty', null],
             summary: 'Bài nêu đúng nguồn CRM nhưng thiếu công thức kiểm tra và bước tiếp theo.',
             detail: {
+              evidence: { ai: null },
               plagiarismScore: 10,
               plagiarismNote: 'Tự viết theo tình huống công việc.',
               aiGeneratedScore: 15,
@@ -707,12 +716,73 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
 
     const aiSection = await screen.findByRole('region', { name: 'Gợi ý chấm tự luận' });
     expect(within(aiSection).getByText('Trợ lý phân tích')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /Trắc nghiệm/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Nguồn có thể truy vết' }));
+    expect(screen.getByRole('tab', { name: /Trắc nghiệm/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText(/Đã nêu báo cáo Q3 từ CRM\./)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm trong bài làm: Nguồn có thể truy vết' }));
+    expect(screen.getByRole('tab', { name: /Tự luận/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('báo cáo doanh thu Q3 xuất từ hệ thống CRM công ty', { selector: 'mark' })).toBeInTheDocument();
+    expect(screen.getByText(/Đã nêu báo cáo Q3 từ CRM\./)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Hành động có thể kiểm tra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm trong bài làm: Hành động có thể kiểm tra' }));
+    expect(screen.getByText('Chưa tìm thấy đoạn phù hợp trong bài làm')).toBeInTheDocument();
+    expect(screen.queryByText('báo cáo doanh thu Q3 xuất từ hệ thống CRM công ty', { selector: 'mark' })).not.toBeInTheDocument();
+
+    fireEvent.click(within(aiSection).getByText(/Chi tiết 5 chỉ số phân tích bài nộp/));
+    fireEvent.click(screen.getByRole('tab', { name: /Trắc nghiệm/i }));
+    const fallbackQueue = structuredClone(queue);
+    fallbackQueue.items[0].aiHint = { source: 'KEYWORD_FALLBACK', checks: [], summary: '' };
+    getQueueSpy.mockResolvedValueOnce({
+      data: { success: true, message: 'OK', data: fallbackQueue },
+    } as never);
+    const depth = within(aiSection).getByRole('button', { name: 'Xem dẫn chứng: Chiều sâu và minh chứng' });
+    fireEvent.click(depth);
+    expect(await screen.findByText('Chưa nhận được dẫn chứng từ AI. Bấm lại để thử lại.')).toBeInTheDocument();
+    expect(depth.closest('details')).toHaveAttribute('open');
+    expect(within(aiSection).getByText('Trợ lý phân tích')).toBeInTheDocument();
+
+    const refreshedQueue = structuredClone(queue);
+    refreshedQueue.items[0].aiHint!.detail!.evidence!.depth = 'phát hiện 3 dòng trùng lặp cần làm sạch';
+    let completeLookup!: () => void;
+    const lookup = new Promise<void>((resolve) => { completeLookup = resolve; });
+    getQueueSpy.mockImplementationOnce(async () => {
+      await lookup;
+      return { data: { success: true, message: 'OK', data: refreshedQueue } } as never;
+    });
+    fireEvent.click(depth);
+    expect(depth).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('tab', { name: /Tự luận/i })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByText('AI đang tìm đoạn liên quan trong bài làm…')).toBeInTheDocument();
+    fireEvent.click(depth);
+    expect(getQueueSpy.mock.calls.filter((call) => call[2])).toEqual([
+      [true, undefined, true, 'sub-gemini', undefined, 'depth'],
+      [true, undefined, true, 'sub-gemini', undefined, 'depth'],
+    ]);
+    completeLookup();
+    expect(await screen.findByText('phát hiện 3 dòng trùng lặp cần làm sạch', { selector: 'mark' })).toBeInTheDocument();
+
+    fireEvent.click(within(aiSection).getByRole('button', { name: 'Xem dẫn chứng: Dấu hiệu văn bản tự động' }));
+    expect(depth).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('status')).toHaveTextContent('Chưa tìm thấy đoạn phù hợp trong bài làm');
+    expect(screen.queryByText('phát hiện 3 dòng trùng lặp cần làm sạch', { selector: 'mark' })).not.toBeInTheDocument();
+    fireEvent.click(depth);
+    expect(screen.getByText('phát hiện 3 dòng trùng lặp cần làm sạch', { selector: 'mark' })).toBeInTheDocument();
+    expect(getQueueSpy.mock.calls.filter((call) => call[2])).toHaveLength(2);
+
+    const criterionQueue = structuredClone(refreshedQueue);
+    criterionQueue.items[0].aiHint!.criterionEvidence![2] = 'tôi kiểm tra lại công thức tổng theo khu vực';
+    getQueueSpy.mockResolvedValueOnce({
+      data: { success: true, message: 'OK', data: criterionQueue },
+    } as never);
+    fireEvent.click(screen.getByRole('button', { name: 'Kết luận có căn cứ' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm trong bài làm: Kết luận có căn cứ' }));
+    expect(await screen.findByText('tôi kiểm tra lại công thức tổng theo khu vực', { selector: 'mark' })).toBeInTheDocument();
 
     // Refresh analysis button triggers cache-bypass query
     fireEvent.click(within(aiSection).getByRole('button', { name: /Phân tích lại/i }));
     await waitFor(() => {
-      expect(getQueueSpy).toHaveBeenCalledWith(true, undefined, true, 'sub-gemini');
+      expect(getQueueSpy.mock.calls.filter((call) => call[2])).toHaveLength(4);
     });
 
     // Rate each rubric criterion individually
@@ -796,7 +866,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
 
     const aiSection = await screen.findByRole('region', { name: 'Gợi ý chấm tự luận' });
     expect(within(aiSection).getByText('Dò từ khóa')).toBeInTheDocument();
-    expect(within(aiSection).queryByRole('button', { name: /Phân tích lại/i })).not.toBeInTheDocument();
+    expect(within(aiSection).getByRole('button', { name: /Phân tích lại/i })).toBeEnabled();
   });
 
   it('collapses and expands the employee queue rail while preserving collapsed state across quick candidate switches', async () => {
@@ -836,7 +906,9 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     expect(rail).not.toHaveClass('is-collapsed-desktop');
 
     // Filter controls collapse / expand toggle
-    const filterToggle = screen.getByRole('button', { name: 'Thu gọn bộ lọc' });
+    const filterToggle = screen.getByRole('button', { name: 'Mở bộ lọc nhân viên' });
+    expect(screen.queryByRole('tablist', { name: 'Lọc theo trạng thái bài nộp' })).not.toBeInTheDocument();
+    fireEvent.click(filterToggle);
     expect(screen.getByRole('tablist', { name: 'Lọc theo trạng thái bài nộp' })).toBeInTheDocument();
     fireEvent.click(filterToggle);
     expect(screen.queryByRole('tablist', { name: 'Lọc theo trạng thái bài nộp' })).not.toBeInTheDocument();

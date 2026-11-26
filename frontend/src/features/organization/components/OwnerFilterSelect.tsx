@@ -1,7 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowDownUp, Check, ChevronDown, Filter, Search } from 'lucide-react';
+import { ArrowDownUp, Check, ChevronDown, Filter, Rows3, Search } from 'lucide-react';
 import './owner-filter-controls.css';
 
 export interface OwnerFilterOption {
@@ -20,8 +20,8 @@ interface OwnerFilterSelectProps {
   disabled?: boolean;
   onSearchChange?: (query: string) => void;
   loading?: boolean;
-  variant?: 'owner' | 'manager';
-  icon?: 'filter' | 'sort';
+  variant?: 'owner' | 'manager' | 'mentor';
+  icon?: 'filter' | 'sort' | 'rows';
   /** Text on the button instead of the selected option's label (e.g. just a name, the list showing more). */
   valueLabel?: string;
   /** The list is at least this wide (px), for a short button whose options say more. */
@@ -40,7 +40,7 @@ export function OwnerFilterSelect({ label, value, options, onChange, className =
   const menuId = useId();
   const visibleOptions = options.filter((option) => `${option.label} ${translateUi(option.label)}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   const selected = options.find((option) => option.value === value);
-  const LeadingIcon = icon === 'sort' ? ArrowDownUp : Filter;
+  const LeadingIcon = icon === 'sort' ? ArrowDownUp : icon === 'rows' ? Rows3 : Filter;
   const searchable = Boolean(onSearchChange) || options.length > 8;
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
@@ -13,6 +13,7 @@ import {
   FileText,
   Filter,
   GraduationCap,
+  History,
   Info,
   ListFilter,
   MessageSquarePlus,
@@ -39,6 +40,7 @@ import {
 import type {
   PulseCriterion,
   PulseCriterionEvaluationInput,
+  PulseAiDetailEvidenceKey,
   PulseDecision,
   PulseFinalReviewItem,
   PulseReviewStatus,
@@ -51,12 +53,14 @@ import { ReviewCard } from '@/features/pulse-manager/pages/PulseFinalReviewsPage
 import { RecordingPlayer } from '@/features/pulse-manager/components/RecordingPlayer';
 import { RiskTag } from '@/features/pulse-manager/components/ProctoringRiskPanel';
 import { PaginationBar } from '@/features/trial-program/components/PaginationBar';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { ResizeHandle, useStoredWidth } from '@/features/trial-program/components/ResizeHandle';
 import {
   buildEssayGuidance,
   compileRubricFeedback,
   computeRubricStats,
   ESSAY_PASS_SCORE_PERCENT,
+  findCriterionEvidence,
   resolveEffectiveCriteria,
   RUBRIC_QUICK_NOTES,
   type RubricCriterionEvaluation,
@@ -175,7 +179,7 @@ const SUPPORT_OPTIONS: { action: PulseSupportAction; label: string; hint: string
 ];
 
 const AI_DETAIL_METRICS: {
-  key: string;
+  key: Exclude<PulseAiDetailEvidenceKey, 'verdict'>;
   label: string;
   scoreKey: 'plagiarismScore' | 'aiGeneratedScore' | 'relevanceScore' | 'depthScore' | 'clarityScore';
   noteKey: 'plagiarismNote' | 'aiGeneratedNote' | 'relevanceNote' | 'depthNote' | 'clarityNote';
@@ -410,7 +414,7 @@ export function MentorReviewWorkbench({
     [itemsMatchingContext],
   );
 
-  const [railFiltersCollapsed, setRailFiltersCollapsed] = useState(false);
+  const [railFiltersCollapsed, setRailFiltersCollapsed] = useState(true);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -780,49 +784,47 @@ export function MentorReviewWorkbench({
                   </div>
                 </div>
 
-                <div className="mw-rail-search">
-                  <Search size={14} aria-hidden="true" className="mw-rail-search-icon" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                      setPage(1);
-                    }}
-                    placeholder="Tìm nhân viên, vị trí, mã..."
-                    aria-label="Tìm bài nộp"
-                  />
-                  <div className="mw-rail-search-actions">
-                    {search.trim() && (
-                      <button
-                        type="button"
-                        className="mw-rail-clear"
-                        onClick={() => {
-                          setSearch('');
-                          setPage(1);
-                        }}
-                        aria-label="Xóa từ khóa tìm kiếm"
-                        title="Xóa từ khóa tìm kiếm"
-                      >
-                        <X size={11} />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className={`mw-rail-search-filter-btn${!railFiltersCollapsed ? ' is-open' : ''}${activeFiltersCount > 0 ? ' has-filters' : ''}`}
-                      onClick={() => setRailFiltersCollapsed((prev) => !prev)}
-                      aria-label={railFiltersCollapsed ? 'Mở bộ lọc nhân viên' : 'Thu gọn bộ lọc'}
-                      title={railFiltersCollapsed ? 'Mở bộ lọc nhân viên' : 'Thu gọn bộ lọc'}
-                      aria-expanded={!railFiltersCollapsed}
-                    >
-                      <Filter size={13} aria-hidden="true" />
-                      {activeFiltersCount > 0 && (
-                        <span className="mw-rail-filter-count-badge" aria-label={`${activeFiltersCount} bộ lọc đang chọn`}>
-                          {activeFiltersCount}
-                        </span>
+                <div className="mw-rail-toolbar">
+                  <div className="mw-rail-search">
+                    <Search size={14} aria-hidden="true" className="mw-rail-search-icon" />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setPage(1);
+                      }}
+                      placeholder="Tìm nhân viên, vị trí, mã..."
+                      aria-label="Tìm bài nộp"
+                    />
+                    <div className="mw-rail-search-actions">
+                      {search.trim() && (
+                        <button
+                          type="button"
+                          className="mw-rail-clear"
+                          onClick={() => {
+                            setSearch('');
+                            setPage(1);
+                          }}
+                          aria-label="Xóa từ khóa tìm kiếm"
+                          title="Xóa từ khóa tìm kiếm"
+                        >
+                          <X size={11} />
+                        </button>
                       )}
-                    </button>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    className={`mw-rail-search-filter-btn${!railFiltersCollapsed ? ' is-open' : ''}${activeFiltersCount > 0 ? ' has-filters' : ''}`}
+                    onClick={() => setRailFiltersCollapsed((prev) => !prev)}
+                    aria-label={railFiltersCollapsed ? 'Mở bộ lọc nhân viên' : 'Thu gọn bộ lọc'}
+                      aria-description={activeFiltersCount > 0 ? `${activeFiltersCount} bộ lọc đang chọn` : undefined}
+                    title={railFiltersCollapsed ? 'Mở bộ lọc nhân viên' : 'Thu gọn bộ lọc'}
+                    aria-expanded={!railFiltersCollapsed}
+                  >
+                    <Filter size={13} aria-hidden="true" />
+                  </button>
                 </div>
 
               {!railFiltersCollapsed ? (
@@ -865,11 +867,17 @@ export function MentorReviewWorkbench({
 
                   <div className="mw-rail-selects">
                     {!organizationId && enterpriseOptions.length > 0 && (
-                      <select
+                      <OwnerFilterSelect
                         className="span-all"
+                        variant="mentor"
+                        icon="filter"
+                        label="Lọc theo doanh nghiệp"
                         value={selectedOrg}
-                        onChange={(e) => {
-                          const nextOrg = e.target.value;
+                        options={[
+                          { value: 'ALL', label: `Mọi doanh nghiệp (${enterpriseOptions.length})` },
+                          ...enterpriseOptions.map((org) => ({ value: org.key, label: `${org.name} (${org.count} bài)` })),
+                        ]}
+                        onChange={(nextOrg) => {
                           setSelectedOrg(nextOrg);
                           setSelectedDept('ALL');
                           setSelectedDomain('ALL');
@@ -887,83 +895,83 @@ export function MentorReviewWorkbench({
                             });
                           }
                         }}
-                        aria-label="Lọc theo doanh nghiệp"
-                      >
-                        <option value="ALL">Mọi doanh nghiệp ({enterpriseOptions.length})</option>
-                        {enterpriseOptions.map((org) => (
-                          <option key={org.key} value={org.key}>
-                            {org.name} ({org.count} bài)
-                          </option>
-                        ))}
-                      </select>
+                      />
                     )}
 
-                    <select
+                    <OwnerFilterSelect
+                      variant="mentor"
+                      icon="filter"
+                      label="Lọc theo lĩnh vực"
                       value={selectedDomain}
-                      onChange={(e) => {
-                        setSelectedDomain(e.target.value);
+                      options={[
+                        { value: 'ALL', label: `Mọi lĩnh vực (${domains.length})` },
+                        ...domains.map((domain) => ({ value: domain, label: domain })),
+                      ]}
+                      menuMinWidth={220}
+                      onChange={(value) => {
+                        setSelectedDomain(value);
                         setPage(1);
                       }}
-                      aria-label="Lọc theo lĩnh vực"
-                    >
-                      <option value="ALL">Mọi lĩnh vực ({domains.length})</option>
-                      {domains.map((domain) => (
-                        <option key={domain} value={domain}>
-                          {domain}
-                        </option>
-                      ))}
-                    </select>
+                    />
 
-                    <select
+                    <OwnerFilterSelect
+                      variant="mentor"
+                      icon="filter"
+                      label="Lọc theo cấp độ"
                       value={selectedTier}
-                      onChange={(e) => {
-                        setSelectedTier(e.target.value as FilterTier);
+                      options={[
+                        { value: 'ALL', label: 'Mọi cấp độ' },
+                        { value: '1', label: 'Cơ bản (Mức 1)' },
+                        { value: '2', label: 'Trung cấp (Mức 2)' },
+                        { value: '3', label: 'Nâng cao (Mức 3)' },
+                      ]}
+                      menuMinWidth={200}
+                      onChange={(value) => {
+                        setSelectedTier(value as FilterTier);
                         setPage(1);
                       }}
-                      aria-label="Lọc theo cấp độ"
-                    >
-                      <option value="ALL">Mọi cấp độ</option>
-                      <option value="1">Cơ bản (Mức 1)</option>
-                      <option value="2">Trung cấp (Mức 2)</option>
-                      <option value="3">Nâng cao (Mức 3)</option>
-                    </select>
+                    />
 
                     {departments.length > 0 && (
-                      <select
+                      <OwnerFilterSelect
+                        variant="mentor"
+                        icon="filter"
+                        label="Lọc theo phòng ban"
                         value={selectedDept}
-                        onChange={(e) => {
-                          setSelectedDept(e.target.value);
+                        options={[
+                          { value: 'ALL', label: `Mọi phòng ban (${departments.length})` },
+                          ...departments.map((dept) => ({ value: dept, label: dept })),
+                        ]}
+                        menuMinWidth={220}
+                        onChange={(value) => {
+                          setSelectedDept(value);
                           setPage(1);
                         }}
-                        aria-label="Lọc theo phòng ban"
-                      >
-                        <option value="ALL">Mọi phòng ban ({departments.length})</option>
-                        {departments.map((dept) => (
-                          <option key={dept} value={dept}>
-                            {dept}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     )}
 
-                    <select
+                    <OwnerFilterSelect
                       className={departments.length === 0 ? 'span-all' : ''}
+                      variant="mentor"
+                      icon="sort"
+                      label="Sắp xếp danh sách bài nộp"
                       value={sortBy}
-                      onChange={(e) => {
-                        setSortBy(e.target.value as SortKey);
+                      options={[
+                        { value: 'PRIORITY', label: 'Ưu tiên cần chấm' },
+                        { value: 'LATEST_DESC', label: 'Mới nộp gần đây' },
+                        { value: 'OLDEST_ASC', label: 'Nộp lâu nhất' },
+                        { value: 'NAME_ASC', label: 'Tên nhân viên A đến Z' },
+                      ]}
+                      menuMinWidth={220}
+                      onChange={(value) => {
+                        setSortBy(value as SortKey);
                         setPage(1);
                       }}
-                      aria-label="Sắp xếp danh sách bài nộp"
-                    >
-                      <option value="PRIORITY">Ưu tiên cần chấm</option>
-                      <option value="LATEST_DESC">Mới nộp gần đây</option>
-                      <option value="OLDEST_ASC">Nộp lâu nhất</option>
-                      <option value="NAME_ASC">Tên nhân viên A đến Z</option>
-                    </select>
+                    />
                   </div>
                 </>
               ) : (
-                hasActiveFilters && (
+                activeFiltersCount > 0 && (
                   <div className="mw-rail-collapsed-filter-bar">
                     <div className="mw-rail-collapsed-tags">
                       {statusFilter !== 'ALL' && (
@@ -1006,7 +1014,7 @@ export function MentorReviewWorkbench({
 
               <div className="mw-rail-meta">
                 <span>Tổng {sortedFilteredItems.length} bài cuối cấp</span>
-                {hasActiveFilters && (
+                {hasActiveFilters && (!railFiltersCollapsed || activeFiltersCount === 0) && (
                   <button type="button" className="mw-reset-link-btn" onClick={resetFilters}>
                     <RotateCcw size={11} aria-hidden="true" />
                     <span>Đặt lại bộ lọc</span>
@@ -1107,6 +1115,7 @@ export function MentorReviewWorkbench({
                 </ul>
 
                 <PaginationBar
+                  modernControls
                   page={currentPage}
                   pageSize={pageSize}
                   totalItems={sortedFilteredItems.length}
@@ -1126,7 +1135,7 @@ export function MentorReviewWorkbench({
           <ResizeHandle
             target="prev"
             min={260}
-            max={(container) => container - 18 - 640}
+            max={(container) => Math.min(container - 18 - 640, 390)}
             onResize={setRailWidth}
             onReset={() => setRailWidth(null)}
             label="Đổi độ rộng danh sách nhân viên"
@@ -1331,6 +1340,15 @@ function MentorReviewDetailPane({
     })),
   );
   const [expandedNoteKeys, setExpandedNoteKeys] = useState<Record<string, boolean>>({});
+  const [expandedCriterion, setExpandedCriterion] = useState<number | null>(null);
+  const [selectedEvidence, setSelectedEvidence] = useState<
+    { criterion: number } | { metric: PulseAiDetailEvidenceKey; label: string; note: string } | null
+  >(null);
+  const [aiEvidenceLookupFinished, setAiEvidenceLookupFinished] = useState(false);
+  const aiRefreshInFlight = useRef(false);
+  const passageRef = useRef<HTMLElement>(null);
+  const evidenceNoticeRef = useRef<HTMLDivElement>(null);
+  const evidenceBodyRef = useRef<HTMLDivElement>(null);
 
   const essayReport = useMemo(
     () => buildEssayGuidance(activeItem, criteriaList),
@@ -1339,6 +1357,42 @@ function MentorReviewDetailPane({
 
   const earlierAttempts = activeItem.attempts.slice(0, -1);
   const essayContent = latestAttempt?.evidenceText || 'Nhân viên chưa nhập nội dung bài làm.';
+  const selectedCriterion = selectedEvidence && 'criterion' in selectedEvidence ? selectedEvidence.criterion : null;
+  const selectedMetric = selectedEvidence && 'metric' in selectedEvidence ? selectedEvidence : null;
+  const criterion = selectedCriterion === null ? null : essayReport.criteriaStatus[selectedCriterion];
+  const evidenceLabel = selectedMetric?.label ?? criterion?.title;
+  const aiEvidence = activeItem.aiHint?.detail?.evidence;
+  const metricExcerpt = selectedMetric ? aiEvidence?.[selectedMetric.metric] : undefined;
+  const criterionEvidence = activeItem.aiHint?.criterionEvidence;
+  const criterionExcerpt = selectedCriterion === null ? undefined : criterionEvidence?.[selectedCriterion];
+  const selectedExcerpt = selectedMetric ? metricExcerpt : criterionExcerpt;
+  const isLookingUpEvidence = Boolean(selectedEvidence && selectedExcerpt === undefined && refreshAiMutation.isPending);
+  const passage = useMemo(() => {
+    const essay = latestAttempt?.evidenceText ?? '';
+    if (selectedMetric) {
+      return findCriterionEvidence(essay, metricExcerpt, selectedMetric.note);
+    }
+    if (!criterion || selectedCriterion === null || essayReport.isPromptCopy) return null;
+    return findCriterionEvidence(
+      essay,
+      criterionExcerpt,
+      [criterion.title, criterion.description, criterion.aiNote].filter(Boolean).join('. '),
+    );
+  }, [criterionExcerpt, criterion, essayReport.isPromptCopy, latestAttempt?.evidenceText, metricExcerpt, selectedCriterion, selectedMetric]);
+
+  useEffect(() => {
+    if (activeEvidenceTab !== 'ESSAY' || !selectedEvidence) return;
+    const target = passageRef.current ?? evidenceNoticeRef.current;
+    const body = evidenceBodyRef.current;
+    if (!target) return;
+    if (body && body.scrollHeight > body.clientHeight && getComputedStyle(body).overflowY === 'auto') {
+      const targetOffset = target.getBoundingClientRect().top - body.getBoundingClientRect().top;
+      body.scrollTop += targetOffset - (body.clientHeight - target.offsetHeight) / 2;
+    } else {
+      target.scrollIntoView?.({ block: 'center', inline: 'nearest' });
+    }
+  }, [activeEvidenceTab, passage, selectedEvidence]);
+
   const submittedAtText = latestAttempt?.submittedAt ? formatDateTime(latestAttempt.submittedAt) : 'Chưa có';
   const isPending = activeItem.status === 'PENDING';
   const needsSupport = activeItem.status === 'FLAGGED' || activeItem.status === 'DEADLINE_MISSED';
@@ -1441,16 +1495,44 @@ function MentorReviewDetailPane({
     toast.success('Đã tổng hợp nhận xét chi tiết từ bảng tiêu chí.');
   };
 
-  const handleRefreshAi = async () => {
+  const handleRefreshAi = async (forEvidence = false, evidenceMetric?: PulseAiDetailEvidenceKey) => {
+    if (aiRefreshInFlight.current) return;
+    aiRefreshInFlight.current = true;
+    setAiEvidenceLookupFinished(false);
     try {
-      await refreshAiMutation.mutateAsync({
+      const freshQueue = await refreshAiMutation.mutateAsync({
         includeReviewed: true,
         organizationId,
         submissionId: activeItem.submissionId,
+        evidenceMetric,
       });
-      toast.success('Đã cập nhật phân tích mới cho bài nộp này.');
+      const freshHint = freshQueue.items.find((item) => item.submissionId === activeItem.submissionId)?.aiHint;
+      if (!forEvidence && freshHint?.source === 'GEMINI' && freshHint.reviewedAt !== activeItem.aiHint?.reviewedAt) {
+        toast.success('Đã cập nhật phân tích mới cho bài nộp này.');
+      } else if (!forEvidence) {
+        toast.error('Chưa nhận được phân tích mới. Hãy thử lại.');
+      }
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Không làm mới được phân tích. Thử lại sau.'));
+      if (!forEvidence) toast.error(apiErrorMessage(err, 'Không làm mới được phân tích. Thử lại sau.'));
+    } finally {
+      setAiEvidenceLookupFinished(true);
+      aiRefreshInFlight.current = false;
+    }
+  };
+
+  const showAiEvidence = (metric: PulseAiDetailEvidenceKey, label: string, note: string) => {
+    setSelectedEvidence({ metric, label, note });
+    setActiveEvidenceTab('ESSAY');
+    if (isPending && latestAttempt?.evidenceText?.trim() && aiEvidence?.[metric] === undefined) {
+      void handleRefreshAi(true, metric);
+    }
+  };
+
+  const showCriterionEvidence = (index: number) => {
+    setSelectedEvidence({ criterion: index });
+    setActiveEvidenceTab('ESSAY');
+    if (!essayReport.isPromptCopy && isPending && latestAttempt?.evidenceText?.trim() && criterionEvidence?.[index] === undefined) {
+      void handleRefreshAi(true);
     }
   };
 
@@ -1696,7 +1778,7 @@ function MentorReviewDetailPane({
             </button>
           </div>
 
-          <div className="mw-ev-body" role="tabpanel">
+          <div ref={evidenceBodyRef} className="mw-ev-body" role="tabpanel">
             {activeEvidenceTab === 'ESSAY' && (
               <>
                 <div className="mw-course-meta-strip">
@@ -1710,48 +1792,51 @@ function MentorReviewDetailPane({
                   </div>
                 </div>
 
-                {/* Always render essay prompt before employee evidence */}
-                <div className="mw-prompt-box" aria-label="Đề bài thực hành yêu cầu">
-                  <div className="mw-prompt-header">
+                <details className="mw-prompt-details">
+                  <summary>
+                    <FileText size={15} aria-hidden="true" />
                     <span className="mw-prompt-label">
                       Đề bài thực hành yêu cầu
                       {activeItem.assignment?.title ? `: ${activeItem.assignment.title}` : ''}
                     </span>
+                    <ChevronDown size={14} className="mw-disclosure-chevron" aria-hidden="true" />
+                  </summary>
+                  <div className="mw-prompt-box">
                     {!activeItem.assignment?.promptHtml && (
                       <span className="mw-prompt-tag">Đề chuẩn theo khung khóa học</span>
                     )}
-                  </div>
-                  {activeItem.assignment?.promptHtml ? (
-                    <RichText body={activeItem.assignment.promptHtml} />
-                  ) : (
-                    <p style={{ margin: 0 }}>
-                      Mô tả một nhiệm vụ thực tế của vị trí {activeItem.positionName || 'hiện tại'} thuộc lĩnh vực{' '}
-                      {(activeItem.domainName || activeItem.courseTitle).toLowerCase()} ({tierLabel.toLowerCase()}): nêu rõ
-                      nguồn dữ liệu, hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo.
-                    </p>
-                  )}
+                    {activeItem.assignment?.promptHtml ? (
+                      <RichText body={activeItem.assignment.promptHtml} />
+                    ) : (
+                      <p style={{ margin: 0 }}>
+                        Mô tả một nhiệm vụ thực tế của vị trí {activeItem.positionName || 'hiện tại'} thuộc lĩnh vực{' '}
+                        {(activeItem.domainName || activeItem.courseTitle).toLowerCase()} ({tierLabel.toLowerCase()}): nêu rõ
+                        nguồn dữ liệu, hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo.
+                      </p>
+                    )}
 
-                  {activeItem.rubric && activeItem.rubric.length > 0 ? (
-                    <ul className="mw-prompt-criteria">
-                      {effectiveCriteria.map((req, idx) => (
-                        <li key={req.number || idx}>
-                          {req.title}
-                          {req.weightPercent != null
-                            ? ` (${req.weightPercent}%${req.isRequired ? ' · Bắt buộc' : ''})`
-                            : req.isRequired
-                              ? ' (Bắt buộc)'
-                              : ''}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : assignmentCriteria.length > 0 ? (
-                    <ul className="mw-prompt-criteria">
-                      {assignmentCriteria.map((req, idx) => (
-                        <li key={idx}>{req}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
+                    {activeItem.rubric && activeItem.rubric.length > 0 ? (
+                      <ul className="mw-prompt-criteria">
+                        {effectiveCriteria.map((req, idx) => (
+                          <li key={req.number || idx}>
+                            {req.title}
+                            {req.weightPercent != null
+                              ? ` (${req.weightPercent}%${req.isRequired ? ' · Bắt buộc' : ''})`
+                              : req.isRequired
+                                ? ' (Bắt buộc)'
+                                : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : assignmentCriteria.length > 0 ? (
+                      <ul className="mw-prompt-criteria">
+                        {assignmentCriteria.map((req, idx) => (
+                          <li key={idx}>{req}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                </details>
 
                 <div>
                   <div
@@ -1786,12 +1871,47 @@ function MentorReviewDetailPane({
                       </div>
                     </div>
                   )}
-                  <div className="mw-essay-paper">{essayContent}</div>
+                  {evidenceLabel && (
+                    <div ref={evidenceNoticeRef} className="mw-evidence-notice">
+                      <div role="status">
+                        <strong>{evidenceLabel}</strong>
+                        <span>
+                          {isLookingUpEvidence
+                            ? 'AI đang tìm đoạn liên quan trong bài làm…'
+                            : passage?.source === 'quote'
+                            ? 'Đoạn trích từ bài làm'
+                            : passage
+                              ? 'Đoạn có cụm từ liên quan, cần đối chiếu'
+                              : selectedExcerpt === undefined && aiEvidenceLookupFinished
+                                ? activeItem.aiHint?.evidenceLookupStatus === 'NOT_CONFIGURED'
+                                  ? 'Backend hiện chưa có cấu hình Gemini để tìm dẫn chứng.'
+                                  : 'Chưa nhận được dẫn chứng từ AI. Bấm lại để thử lại.'
+                                : 'Chưa tìm thấy đoạn phù hợp trong bài làm'}
+                        </span>
+                      </div>
+                      <button type="button" onClick={() => setSelectedEvidence(null)} aria-label="Bỏ đối chiếu bài làm">
+                        <X size={15} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="mw-essay-paper">
+                    {passage ? (
+                      <>
+                        {essayContent.slice(0, passage.start)}
+                        <mark ref={passageRef} className="mw-essay-highlight">{essayContent.slice(passage.start, passage.end)}</mark>
+                        {essayContent.slice(passage.end)}
+                      </>
+                    ) : essayContent}
+                  </div>
                 </div>
 
                 {earlierAttempts.length > 0 && (
                   <details className="mw-history-details">
-                    <summary>Lịch sử các lần nộp trước ({earlierAttempts.length})</summary>
+                    <summary>
+                      <History size={15} aria-hidden="true" />
+                      <span>Lịch sử các lần nộp trước ({earlierAttempts.length})</span>
+                      <ChevronDown size={14} className="mw-disclosure-chevron" aria-hidden="true" />
+                    </summary>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
                       {earlierAttempts.map((prev, idx) => (
                         <div
@@ -2057,7 +2177,7 @@ function MentorReviewDetailPane({
                     AI phân tích lúc {formatDateTime(activeItem.aiHint.reviewedAt)}
                   </span>
                 )}
-                {essayReport.mode === 'GEMINI' && isPending && (
+                {isPending && latestAttempt?.evidenceText?.trim() && (
                   <button
                     type="button"
                     className="mw-ai-refresh-btn"
@@ -2121,10 +2241,11 @@ function MentorReviewDetailPane({
             {activeItem.aiHint?.detail && (
               <details className="mw-ai-details">
                 <summary>
+                  <ListFilter size={15} aria-hidden="true" />
                   <span>
                     Chi tiết 5 chỉ số phân tích bài nộp (trọng tâm {activeItem.aiHint.detail.relevanceScore}/100)
                   </span>
-                  <ChevronDown size={14} aria-hidden="true" />
+                  <ChevronDown size={14} className="mw-disclosure-chevron" aria-hidden="true" />
                 </summary>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 8 }}>
                   {AI_DETAIL_METRICS.map((m) => {
@@ -2133,66 +2254,65 @@ function MentorReviewDetailPane({
                     const badScore = m.invert ? score : 100 - score;
                     const barColor = badScore >= 70 ? '#e11d48' : badScore >= 40 ? '#d97706' : '#059669';
                     return (
-                      <div
+                      <button
                         key={m.key}
-                        style={{
-                          background: '#ffffff',
-                          borderRadius: 9,
-                          padding: '7px 10px',
-                          border: '1px solid #e2e8f0',
-                        }}
+                        type="button"
+                        className="mw-ai-evidence-btn"
+                        aria-label={`Xem dẫn chứng: ${m.label}`}
+                        aria-pressed={selectedMetric?.metric === m.key}
+                        onClick={() => showAiEvidence(m.key, m.label, note)}
                       >
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontSize: 12,
-                            fontWeight: 650,
-                            marginBottom: 4,
-                          }}
-                        >
-                          <span style={{ color: '#1e293b' }}>{m.label}</span>
+                        <span className="mw-ai-evidence-head">
+                          <strong>{m.label}</strong>
                           <span style={{ color: barColor }}>{score}/100</span>
-                        </div>
-                        <div style={{ height: 5, background: '#f1f5f9', borderRadius: 9999, overflow: 'hidden' }}>
-                          <div style={{ width: `${score}%`, height: '100%', background: barColor }} />
-                        </div>
-                        {note && <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4 }}>{note}</div>}
-                      </div>
+                          <Search size={14} aria-hidden="true" />
+                        </span>
+                        <span className="mw-ai-evidence-track" aria-hidden="true">
+                          <span style={{ width: `${score}%`, background: barColor }} />
+                        </span>
+                        {note && <span className="mw-ai-evidence-note">{note}</span>}
+                      </button>
                     );
                   })}
                   {activeItem.aiHint.detail.verdict && (
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: '#1e293b',
-                        background: '#ffffff',
-                        borderRadius: 9,
-                        padding: '8px 10px',
-                        border: '1px solid #e2e8f0',
-                      }}
+                    <button
+                      type="button"
+                      className="mw-ai-evidence-btn"
+                      aria-label="Xem dẫn chứng: Kết luận sơ bộ"
+                      aria-pressed={selectedMetric?.metric === 'verdict'}
+                      onClick={() => showAiEvidence('verdict', 'Kết luận sơ bộ', activeItem.aiHint?.detail?.verdict ?? '')}
                     >
-                      <strong>Kết luận sơ bộ:</strong> {activeItem.aiHint.detail.verdict}
-                    </div>
+                      <span className="mw-ai-evidence-head">
+                        <strong>Kết luận sơ bộ</strong>
+                        <Search size={14} aria-hidden="true" />
+                      </span>
+                      <span className="mw-ai-evidence-note">{activeItem.aiHint.detail.verdict}</span>
+                    </button>
                   )}
                 </div>
               </details>
             )}
 
-            <div className="mw-ai-draft-box">
-              <span className="mw-ai-draft-label">Nhận xét nháp đề xuất</span>
-              <p className="mw-ai-draft-text">{essayReport.draftFeedback}</p>
-              {isPending && (
-                <button
-                  type="button"
-                  className="mw-ai-insert-btn"
-                  onClick={handleApplyAiDraft}
-                >
-                  <Sparkles size={13} aria-hidden="true" />
-                  <span>Chèn gợi ý vào nhận xét</span>
-                </button>
-              )}
-            </div>
+            <details className="mw-ai-draft-details">
+              <summary>
+                <MessageSquarePlus size={15} aria-hidden="true" />
+                <span>Nhận xét nháp đề xuất</span>
+                <ChevronDown size={14} className="mw-disclosure-chevron" aria-hidden="true" />
+              </summary>
+              <div className="mw-ai-draft-box">
+                <p className="mw-ai-draft-text">{essayReport.draftFeedback}</p>
+                {isPending && (
+                  <button
+                    type="button"
+                    className="mw-ai-insert-btn"
+                    onClick={handleApplyAiDraft}
+                  >
+                    <Sparkles size={13} aria-hidden="true" />
+                    <span>Chèn gợi ý vào nhận xét</span>
+                  </button>
+                )}
+              </div>
+            </details>
           </section>
 
           {/* Decision / Support / Reviewed Panel */}
@@ -2204,7 +2324,7 @@ function MentorReviewDetailPane({
                   <div className="mw-rubric-head">
                     <div>
                       <h3>Chấm chi tiết tự luận</h3>
-                      <p>Đánh giá từng tiêu chí trước khi chốt điểm và gửi nhận xét.</p>
+                      <p>Mở tiêu chí để xem gợi ý. Chọn mức đạt để chấm điểm.</p>
                     </div>
                     <div className="mw-rubric-head-actions">
                       <span className={`mw-rubric-score-pill${hasRatedAnyCriterion ? ' is-active' : ''}`}>
@@ -2230,11 +2350,7 @@ function MentorReviewDetailPane({
                   <div className="mw-rubric-list">
                     {rubricRows.map((row, idx) => {
                       const aiCrit = essayReport.criteriaStatus[idx];
-                      const showNoteBox =
-                        row.status === 'PARTIAL' ||
-                        row.status === 'FAIL' ||
-                        Boolean(row.note) ||
-                        Boolean(expandedNoteKeys[row.number]);
+                      const showNoteBox = expandedNoteKeys[row.number] ?? Boolean(row.note);
                       const rowStateClass =
                         row.status === 'PASS'
                           ? ' is-pass'
@@ -2276,35 +2392,54 @@ function MentorReviewDetailPane({
                               <span>{showNoteBox ? 'Ẩn ghi chú' : 'Ghi chú'}</span>
                             </button>
                           </div>
-                          <div className="mw-rubric-crit-body">
-                            <div className="mw-rubric-crit-title">{row.title}</div>
-                            {row.description && (
-                              <div className="mw-rubric-crit-desc">{row.description}</div>
-                            )}
-                          </div>
-
-                          {(aiCrit?.met !== null || aiCrit?.aiNote) && (
-                            <div
-                              className={`mw-rubric-ai-cue ${
-                                essayReport.mode === 'GEMINI'
-                                  ? aiCrit.met === true
-                                    ? 'is-met'
-                                    : 'is-gap'
-                                  : 'is-fallback'
-                              }`}
-                            >
-                              <strong>
-                                {essayReport.mode === 'GEMINI'
-                                  ? `Gợi ý: ${
-                                      aiCrit.met === true
-                                        ? 'Đạt'
-                                        : aiCrit.met === false
-                                          ? 'Chưa đạt'
-                                          : 'Tham khảo'
-                                    }`
-                                  : `Từ khóa: ${aiCrit.met === true ? 'Có từ liên quan' : 'Chưa thấy từ khớp'}`}
-                              </strong>
-                              {aiCrit.aiNote && <span> · {aiCrit.aiNote}</span>}
+                          <button
+                            type="button"
+                            className="mw-rubric-criterion-link"
+                            aria-expanded={expandedCriterion === idx}
+                            onClick={() => setExpandedCriterion(expandedCriterion === idx ? null : idx)}
+                          >
+                            <span>{row.title}</span>
+                            <ChevronDown size={14} className="mw-disclosure-chevron" aria-hidden="true" />
+                          </button>
+                          {expandedCriterion === idx && (
+                            <div className="mw-rubric-crit-body">
+                              {row.description && (
+                                <div className="mw-rubric-crit-desc">{row.description}</div>
+                              )}
+                              {aiCrit && (aiCrit.met !== null || aiCrit.aiNote) && (
+                                <div
+                                  className={`mw-rubric-ai-cue ${
+                                    essayReport.mode === 'GEMINI'
+                                      ? aiCrit.met === true
+                                        ? 'is-met'
+                                        : 'is-gap'
+                                      : 'is-fallback'
+                                  }`}
+                                >
+                                  <strong>
+                                    {essayReport.mode === 'GEMINI'
+                                      ? `Gợi ý: ${
+                                          aiCrit.met === true
+                                            ? 'Đạt'
+                                            : aiCrit.met === false
+                                              ? 'Chưa đạt'
+                                              : 'Tham khảo'
+                                        }`
+                                      : `Từ khóa: ${aiCrit.met === true ? 'Có từ liên quan' : 'Chưa thấy từ khớp'}`}
+                                  </strong>
+                                  {aiCrit.aiNote && <span> · {aiCrit.aiNote}</span>}
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                className="mw-rubric-find-evidence"
+                                aria-label={`Tìm trong bài làm: ${row.title}`}
+                                aria-pressed={selectedCriterion === idx}
+                                onClick={() => showCriterionEvidence(idx)}
+                              >
+                                <Search size={13} aria-hidden="true" />
+                                Tìm trong bài làm
+                              </button>
                             </div>
                           )}
 

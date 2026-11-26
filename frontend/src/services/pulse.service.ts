@@ -610,6 +610,8 @@ export type PulseReviewStatus = 'PENDING' | 'RETRY_WAIT' | 'RETRY_READY' | 'DEAD
 export interface PulseAiHint {
   checks: boolean[];
   criterionNotes?: string[] | null;
+  criterionEvidence?: (string | null)[] | null;
+  evidenceLookupStatus?: 'NOT_CONFIGURED' | 'UNAVAILABLE' | null;
   source?: 'GEMINI' | 'KEYWORD_FALLBACK';
   model?: string | null;
   /** When the AI made this review (ISO). Stored reviews keep their time, so reopening the queue does not change it. */
@@ -642,7 +644,10 @@ export interface PulseAiFraudItem {
   note: string;
 }
 
+export type PulseAiDetailEvidenceKey = 'plagiarism' | 'ai' | 'relevance' | 'depth' | 'clarity' | 'verdict';
+
 export interface PulseAiDetail {
+  evidence?: Partial<Record<PulseAiDetailEvidenceKey, string | null>> | null;
   plagiarismScore: number;
   plagiarismNote: string;
   aiGeneratedScore: number;
@@ -821,6 +826,7 @@ export const pulseReviewService = {
     refreshAi = false,
     refreshSubmissionId?: string,
     departmentId?: string,
+    evidenceMetric?: PulseAiDetailEvidenceKey,
   ) => {
     const params: Record<string, string | boolean> = {};
     if (includeReviewed) params.includeReviewed = true;
@@ -828,6 +834,7 @@ export const pulseReviewService = {
     if (departmentId) params.departmentId = departmentId;
     if (refreshAi) params.refreshAi = true;
     if (refreshSubmissionId) params.refreshSubmissionId = refreshSubmissionId;
+    if (evidenceMetric) params.evidenceMetric = evidenceMetric;
     return apiClient.get<ApiResponse<PulseFinalReviewQueue>>('/pulse/final-reviews', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
