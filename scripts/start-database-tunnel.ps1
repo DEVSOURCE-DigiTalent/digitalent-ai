@@ -1,7 +1,7 @@
 param(
-    [string]$KeyPath = 'D:\digitalent-ai\infra\terraform\digitalent_key.pem',
-    [string]$SshHost = '18.142.12.139',
-    [string]$SshUser = 'ubuntu',
+    [string]$KeyPath = (Join-Path $env:USERPROFILE '.ssh\id_ed25519'),
+    [string]$SshHost = '45.117.166.184',
+    [string]$SshUser = 'root',
     [int]$LocalPort = 5432
 )
 
