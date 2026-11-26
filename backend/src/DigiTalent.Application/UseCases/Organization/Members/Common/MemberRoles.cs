@@ -3,25 +3,27 @@ using DigiTalent.Domain.Constants.Authorization;
 namespace DigiTalent.Application.UseCases.Organization.Members;
 
 /// <summary>
-/// Validates the three organization-scoped roles managed by the members API.
+/// Validates the enterprise roles managed by the members API.
 /// </summary>
 public static class MemberRoles
 {
     public const string Owner = "OWNER";
     public const string Manager = "MANAGER";
     public const string Employee = "EMPLOYEE";
+    public const string Research = Roles.Research;
 
     /// <summary>Enterprise roles in display order (highest first).</summary>
-    public static readonly IReadOnlyList<string> All = new[] { Owner, Manager, Employee };
+    public static readonly IReadOnlyList<string> All = new[] { Owner, Manager, Research, Employee };
 
     /// <summary>Organization roles the members API grants and revokes.</summary>
-    public static readonly IReadOnlyList<string> ManagedRoleCodes = new[] { Roles.Owner, Roles.Manager, Roles.Employee };
+    public static readonly IReadOnlyList<string> ManagedRoleCodes = new[] { Roles.Owner, Roles.Manager, Roles.Research, Roles.Employee };
 
     /// <summary>System role → enterprise role; null for an unknown code.</summary>
     public static string? FromRoleCode(string roleCode) => roleCode switch
     {
         Roles.Owner => Owner,
         Roles.Manager => Manager,
+        Roles.Research => Research,
         Roles.Employee => Employee,
         _ => null,
     };
@@ -41,6 +43,7 @@ public static class MemberRoles
     {
         Roles.Owner => Roles.Owner,
         Roles.Manager => Roles.Manager,
+        Roles.Research => Roles.Research,
         Roles.Employee => Roles.Employee,
         _ => null,
     };

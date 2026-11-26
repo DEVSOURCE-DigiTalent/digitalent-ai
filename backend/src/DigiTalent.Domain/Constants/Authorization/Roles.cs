@@ -12,6 +12,7 @@ public static class Roles
     public const string Owner = "OWNER";
     public const string Manager = "MANAGER";
     public const string Employee = "EMPLOYEE";
+    public const string Research = "RND";
 
     /// <summary>
     /// Chuyển đổi mã vai trò về các role chuẩn (PLATFORM_ADMIN, MENTOR, OWNER, MANAGER, EMPLOYEE).
@@ -40,6 +41,7 @@ public static class Roles
         (Mentor, "Mentor", "GLOBAL"),
         (Owner, "Enterprise Owner", "ORGANIZATION"),
         (Manager, "Department Manager", "DEPARTMENT"),
+        (Research, "Research & Development", "ORGANIZATION"),
         (Employee, "Employee", "SELF"),
     };
 }
