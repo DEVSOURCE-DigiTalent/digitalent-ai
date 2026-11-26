@@ -1,5 +1,6 @@
+import { useCourseBuilderService } from './course-builder-service';
 import { useState } from 'react';
-import { platformCatalogService, type PlatformAsset } from '@/services/platform-catalog.service';
+import { type PlatformAsset } from '@/services/platform-catalog.service';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
@@ -33,6 +34,7 @@ export const formatSize = (bytes: number) =>
 
 /** Uploads one file at a time and reports its progress (0..100). */
 export function useAssetUpload() {
+  const service = useCourseBuilderService();
   const [progress, setProgress] = useState<number | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
 
@@ -40,7 +42,7 @@ export function useAssetUpload() {
     setFileName(file.name);
     setProgress(0);
     try {
-      return await platformCatalogService.uploadAsset(file, setProgress);
+      return await service.uploadAsset(file, setProgress);
     } finally {
       setProgress(null);
       setFileName(null);

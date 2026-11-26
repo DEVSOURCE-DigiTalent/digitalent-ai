@@ -148,6 +148,7 @@ export interface CatalogQuestion {
   text: string;
   explanation: string | null;
   blockId: string | null;
+  isFinalQuiz?: boolean;
   options: { optionId: string; text: string; isCorrect: boolean }[];
 }
 
