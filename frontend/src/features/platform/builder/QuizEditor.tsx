@@ -1,7 +1,8 @@
+import { useCourseBuilderService } from './course-builder-service';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { platformCatalogService, type CatalogModule, type CatalogQuestion } from '@/services/platform-catalog.service';
+import { type CatalogModule, type CatalogQuestion } from '@/services/platform-catalog.service';
 import { QUESTIONS_MIN, QUESTIONS_RECOMMENDED, errorMessage } from '../components/pulse-format';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
 import { HelpCircle, Plus, X } from 'lucide-react';
@@ -14,14 +15,17 @@ const MIN_OPTIONS = 2;
  * Review questions of one module (Pulse rule: each attempt draws 2 of them; a wrong answer sends the learner back to
  * the block the question is linked to). One question is open for editing at a time and saved with "Lưu câu hỏi".
  */
-export function QuizEditor({ module, editable, edit }: { module: CatalogModule; editable: boolean; edit: CourseEdit }) {
+export function QuizEditor({ module, editable, edit, internal = false }: {
+  module: CatalogModule; editable: boolean; edit: CourseEdit; internal?: boolean;
+}) {
   useUiLanguage();
+  const service = useCourseBuilderService();
   const [openId, setOpenId] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState(module.quizTitle);
   const count = module.questions.length;
 
   const addQuestion = () =>
-    edit((v, c) => platformCatalogService.addQuestion(v, c, module.moduleId))
+    edit((v, c) => service.addQuestion(v, c, module.moduleId))
       .then((detail) => {
         const added = detail.modules.find((m) => m.moduleId === module.moduleId)?.questions.at(-1);
         if (added) setOpenId(added.questionId);
@@ -31,7 +35,7 @@ export function QuizEditor({ module, editable, edit }: { module: CatalogModule; 
   const saveTitle = () => {
     const title = quizTitle.trim();
     if (!title || title === module.quizTitle) return;
-    edit((v, c) => platformCatalogService.updateModule(v, c, module.moduleId, { title: module.title, quizTitle: title })).catch((err) =>
+    edit((v, c) => service.updateModule(v, c, module.moduleId, { title: module.title, quizTitle: title })).catch((err) =>
       toast.error(errorMessage(err)),
     );
   };
@@ -48,7 +52,9 @@ export function QuizEditor({ module, editable, edit }: { module: CatalogModule; 
           </div>
           <div className="pa-cb-panel-desc">
             {translateUi(
-              `Ngân hàng hiện có ${count} câu hỏi. Mỗi lượt ôn tập rút ${Math.min(QUESTIONS_MIN, count)} câu; nhân viên trả lời sai cần ôn lại khối học liệu tương ứng.`,
+              internal
+                ? `Ngân hàng có ${count} câu hỏi ôn tập nội bộ.`
+                : `Ngân hàng hiện có ${count} câu hỏi. Mỗi lượt ôn tập rút ${Math.min(QUESTIONS_MIN, count)} câu; nhân viên trả lời sai cần ôn lại khối học liệu tương ứng.`,
             )}
           </div>
         </div>
@@ -167,6 +173,7 @@ function QuestionRow({
 
 function QuestionForm({ question, module, onClose, edit }: { question: CatalogQuestion; module: CatalogModule; onClose: () => void; edit: CourseEdit }) {
   useUiLanguage();
+  const service = useCourseBuilderService();
   const [text, setText] = useState(question.text);
   const [explanation, setExplanation] = useState(question.explanation ?? '');
   const [blockId, setBlockId] = useState(question.blockId ?? '');
@@ -190,7 +197,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
   const save = () => {
     setSaving(true);
     edit((v, c) =>
-      platformCatalogService.updateQuestion(v, c, question.questionId, {
+      service.updateQuestion(v, c, question.questionId, {
         text: text.trim(),
         explanation: explanation.trim() || null,
         blockId: blockId || null,
@@ -206,7 +213,7 @@ function QuestionForm({ question, module, onClose, edit }: { question: CatalogQu
   };
 
   const remove = () =>
-    edit((v, c) => platformCatalogService.removeQuestion(v, c, question.questionId))
+    edit((v, c) => service.removeQuestion(v, c, question.questionId))
       .then(() => toast.success('Đã xóa câu hỏi.'))
       .catch((err) => toast.error(errorMessage(err)));
 

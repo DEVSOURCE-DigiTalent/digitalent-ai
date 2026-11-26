@@ -294,6 +294,7 @@ public class OrganizationStructureTests
         roles.Select(r => (r.Role, r.MemberCount, r.Assignable)).Should().Equal(
             (MemberRoles.Owner, 1, true),
             (MemberRoles.Manager, 1, true),
+            (MemberRoles.Research, 0, false),
             (MemberRoles.Employee, 1, true));
         roles[0].Permissions.Should().Equal(Permissions.UserRole.UserRead);
     }

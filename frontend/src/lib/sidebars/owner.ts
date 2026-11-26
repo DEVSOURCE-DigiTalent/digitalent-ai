@@ -27,6 +27,7 @@ export const OWNER_SIDEBAR: SidebarConfig = [
   { label: 'Nhân sự', icon: Users, screenId: 'OW-02', activeFor: ['OW-03', 'OW-06', 'OW-07', 'OW-09', 'OW-10', 'OW-13'] },
   { label: 'Khoảng trống năng lực', icon: TrendingUp, screenId: 'OW-21', activeFor: ['OW-22', 'OW-19', 'OW-20'] },
   { label: 'Khóa học', icon: BookOpen, screenId: 'OW-23', activeFor: ['OW-24', 'OW-28', 'OW-29', 'OW-30', 'OW-31', 'OW-32', 'OW-33', 'OW-34'], trial: 'open' },
+  { label: 'Tùy chỉnh khóa học R&D', icon: BookOpen, screenId: 'RD-01', trial: 'open' },
 
   // ── CÁC CÔNG CỤ KHÁC ──
   { label: 'Các công cụ khác' },

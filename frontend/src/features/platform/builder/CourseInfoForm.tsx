@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useFramework, useFrameworks } from '@/hooks/use-platform-catalog';
 import { platformCatalogService, type CatalogCourseDetail } from '@/services/platform-catalog.service';
 import { LEVEL_NAMES, errorMessage, formatMoney } from '../components/pulse-format';
+import { CourseBuilderPanel } from './CourseBuilderLayout';
 import type { CourseEdit } from './builder-types';
 import {
   Layers,
@@ -438,23 +439,11 @@ export function CourseInfoForm({
         </div>
       </div>
 
-      {/* ✦ BẢNG KHUNG 2: Nội dung & Chuẩn đầu ra */}
-      <div className="pa-cb-panel">
-        <div className="pa-cb-panel-head">
-          <div>
-            <div className="pa-cb-panel-title">
-              <BookOpen size={18} style={{ color: 'var(--pa-accent, #b85c24)' }} aria-hidden="true" />
-              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                {translateUi('Tên và mục tiêu')}
-              </h2>
-            </div>
-            <div className="pa-cb-panel-desc">
-              {translateUi('Tên khóa học và kết quả đạt được, hiển thị cho nhân viên và tổ chức.')}
-            </div>
-          </div>
-        </div>
-
-        <div className="pa-cb-panel-body">
+      <CourseBuilderPanel
+        icon={<BookOpen size={18} aria-hidden="true" />}
+        title={translateUi('Tên và mục tiêu')}
+        description={translateUi('Tên khóa học và kết quả đạt được, hiển thị cho nhân viên và tổ chức.')}
+      >
           <div>
             <label className="pa-cb-field-label" htmlFor="field-title">
               <span>{translateUi('Tên khóa học')} <span style={{ color: '#dc2626' }}>*</span></span>
@@ -493,8 +482,7 @@ export function CourseInfoForm({
               {translateUi('Hiển thị trên trang giới thiệu khóa học cho tổ chức và nhân viên trước khi bắt đầu học.')}
             </span>
           </div>
-        </div>
-      </div>
+      </CourseBuilderPanel>
 
       {/* ✦ BẢNG KHUNG 3: Chính sách đào tạo & Phát hành */}
       <div className="pa-cb-panel">

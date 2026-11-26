@@ -15,6 +15,7 @@ import { WORKSPACES } from '@/lib/roles';
 import { PLATFORM_SCREENS } from '@/lib/screens/platform';
 import { PLATFORM_SIDEBAR } from '@/lib/sidebars/platform';
 import { MANAGER_SIDEBAR } from '@/lib/sidebars/manager';
+import { RND_SIDEBAR } from '@/lib/sidebars';
 import type { SidebarConfig } from '@/lib/sidebars/types';
 import { findEnterpriseScreen } from '@/lib/screens/enterprise';
 import { useDirectionalHeader, useScrollState } from './use-directional-header';
@@ -189,7 +190,7 @@ export function Topbar({ portal, sidebarConfig, onOpenMobileNav, isMobileNavOpen
             </button>
 
             {/* Opens the guide again (its last step points here: data-tour="help"). */}
-            {!isManager && <button
+            {!isManager && sidebarConfig !== RND_SIDEBAR && <button
               type="button"
               data-tour="help"
               onClick={() => {

@@ -18,7 +18,7 @@ import { InviteMembersModal } from '../components/InviteMembersModal';
 import { MEMBER_STATUS_LABELS, MEMBER_STATUS_VARIANTS, roleLabel, rolesLabel } from '../member-labels';
 
 const PAGE_SIZE = 15;
-const ENTERPRISE_ROLES = [ROLES.OWNER, ROLES.MANAGER, ROLES.EMPLOYEE];
+const ENTERPRISE_ROLES = [ROLES.OWNER, ROLES.MANAGER, ROLES.RND, ROLES.EMPLOYEE];
 
 const SELECT_CLASS =
   'px-2.5 py-1.5 text-xs bg-ent-raised border border-ent-line rounded-lg text-ent-fg focus:outline-none focus:ring-1 focus:ring-ent-accent';

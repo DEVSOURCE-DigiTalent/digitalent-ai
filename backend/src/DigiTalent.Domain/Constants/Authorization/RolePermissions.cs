@@ -10,8 +10,17 @@ public static class RolePermissions
 {
     public static readonly IReadOnlyDictionary<string, string[]> Defaults = new Dictionary<string, string[]>
     {
+        [Roles.Research] = new[]
+        {
+            Permissions.Research.ManageCourses,
+            Permissions.Account.ViewOwn,
+            Permissions.Account.UpdateOwnProfile,
+            Permissions.Account.ChangeOwnPassword,
+        },
         [Roles.Owner] = new[]
         {
+            Permissions.Research.ManageCourses,
+            Permissions.Research.Configure,
             Permissions.Account.ViewOwn,
             Permissions.Account.UpdateOwnProfile,
             Permissions.Account.ChangeOwnPassword,

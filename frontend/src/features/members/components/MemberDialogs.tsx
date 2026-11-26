@@ -16,6 +16,7 @@ import { SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
 import { roleLabel } from '../member-labels';
 import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import './member-dialogs.css';
+import { useResearchSettings } from '@/features/enterprise-research/research-api';
 
 interface MemberDialogProps {
   member: MemberListItem;
@@ -26,6 +27,7 @@ interface MemberDialogProps {
 const ROLE_SUMMARIES: Record<string, string> = {
   OWNER: 'Toàn quyền quản trị và phân quyền.',
   MANAGER: 'Theo dõi, phân công và đánh giá trong phòng ban.',
+  RND: 'Soạn và áp dụng nội dung đào tạo của doanh nghiệp.',
   EMPLOYEE: 'Học tập, đánh giá và thực hiện nhiệm vụ.',
 };
 
@@ -37,7 +39,9 @@ export function ChangeRoleModal({ member, open, onClose }: MemberDialogProps) {
   const groupId = useId();
   const current = member.roles[0];
   const [selected, setSelected] = useState(current);
-  const options = ROLE_DESCRIPTIONS.filter((d) => assignableRoles(user.roles).some((r) => r === d.role) || d.role === current);
+  const research = useResearchSettings(open && user.roles.includes('OWNER'));
+  const options = ROLE_DESCRIPTIONS.filter((d) => d.role === current ||
+    (assignableRoles(user.roles).includes(d.role) && (d.role !== 'RND' || research.data === true)));
 
   const save = async () => {
     try {

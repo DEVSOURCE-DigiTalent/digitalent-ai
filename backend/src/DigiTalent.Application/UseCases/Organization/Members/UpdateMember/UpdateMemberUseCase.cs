@@ -120,6 +120,10 @@ public class UpdateMemberUseCase : IUseCase<UpdateMemberUseCaseInput, UpdateMemb
             .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { UserRole = ur, r.Code })
             .ToListAsync();
 
+        if (desired.Contains(Roles.Research) && current.All(r => r.Code != Roles.Research) &&
+            (!roleIds.ContainsKey(Roles.Research) || !await Research.EnterpriseResearch.IsEnabledAsync(_context, organizationId)))
+            throw new BadRequestException("Bật tính năng R&D trong cài đặt doanh nghiệp trước khi cấp vai trò.", "roles", "RND_DISABLED");
+
         var managesDepartment = member.EmployeeId.HasValue && await _context.Departments.AnyAsync(d =>
             d.OrganizationId == organizationId && d.ManagerEmployeeId == member.EmployeeId && d.Status != Statuses.MasterData.Archived);
         if (managesDepartment && !desired.Contains(Roles.Manager)

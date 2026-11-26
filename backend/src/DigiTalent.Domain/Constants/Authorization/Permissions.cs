@@ -6,6 +6,12 @@ namespace DigiTalent.Domain.Constants.Authorization;
 /// </summary>
 public static class Permissions
 {
+    public static class Research
+    {
+        public const string ManageCourses = "rnd.course.manage";
+        public const string Configure = "rnd.configure";
+    }
+
     public static class Account
     {
         public const string ViewOwn = "account.view_own";
