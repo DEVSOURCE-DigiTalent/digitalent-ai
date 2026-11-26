@@ -1,9 +1,4 @@
 using DigiTalent.Application.Common;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
@@ -14,15 +9,24 @@ namespace DigiTalent.Application.UseCases.Platform.Catalog;
 /// <summary>
 /// Projects a published catalog into the existing organization Learning schema. Each publication creates an
 /// immutable course revision; enrollments, submitted answers and certificates keep their original course ids.
-/// Called inside the catalog publication transaction, never from a read endpoint or while editing a draft.
+/// Called inside the catalog publication transaction (or when a version is applied to one organization), never from a
+/// read endpoint or while editing a draft.
 /// </summary>
 public sealed class PlatformLearningPublisher(IApplicationDbContext context)
 {
-    public async Task PublishAsync(Guid versionId, Guid? authorId, DateTimeOffset now, Guid? organizationId = null, bool includeUnchanged = false)
+    /// <param name="onlyCourseIds">Project only these courses (platform course ids), whatever their change kind.</param>
+    /// <param name="reapply">
+    /// A version applied again (an organization going back to an older version, then forward) gets a new revision even
+    /// though the row was projected before; otherwise a row already projected is skipped (idempotent publication).
+    /// </param>
+    public async Task PublishAsync(Guid versionId, Guid? authorId, DateTimeOffset now, Guid? organizationId = null, bool includeUnchanged = false,
+        IReadOnlyCollection<Guid>? onlyCourseIds = null, bool reapply = false)
     {
+        var only = onlyCourseIds?.ToList();
         var published = await (from row in context.PlatformCatalogCourses.AsNoTracking()
                                join identity in context.PlatformCourses.AsNoTracking() on row.CourseId equals identity.Id
-                               where row.VersionId == versionId && (includeUnchanged || row.ChangeKind != PlatformCatalog.ChangeKind.Unchanged)
+                               where row.VersionId == versionId
+                                     && (only == null ? includeUnchanged || row.ChangeKind != PlatformCatalog.ChangeKind.Unchanged : only.Contains(row.CourseId))
                                select new { Row = row, identity.Code }).ToListAsync();
         foreach (var item in published)
         {
@@ -48,95 +52,39 @@ public sealed class PlatformLearningPublisher(IApplicationDbContext context)
             var questions = await context.PlatformModuleQuestions.AsNoTracking().Where(q => moduleIds.Contains(q.ModuleId)).OrderBy(q => q.SortOrder).ToListAsync();
             var questionIds = questions.Select(q => q.Id).ToList();
             var options = await context.PlatformQuestionOptions.AsNoTracking().Where(o => questionIds.Contains(o.QuestionId)).OrderBy(o => o.SortOrder).ToListAsync();
+            var content = new CourseRevisionContent(item.Row.Title, item.Row.Outcome, item.Row.Level, item.Row.FinalTitle, item.Row.FinalPrompt,
+                PlatformCourseContentReader.Criteria(item.Row.FinalCriteria),
+                modules.Select(module =>
+                {
+                    var own = blocks.Where(b => b.ModuleId == module.Id).ToList();
+                    var ownIds = own.Select(b => b.Id).ToHashSet();
+                    return new CourseRevisionModule(module.Title, module.QuizTitle, own, slides.Where(s => ownIds.Contains(s.BlockId)).ToList(),
+                        questions.Where(q => q.ModuleId == module.Id).Select(q => new CourseRevisionQuestion(q.QuestionText, q.Explanation, q.IsFinalQuiz, q.BlockId,
+                            options.Where(o => o.QuestionId == q.Id).Select(o => new CourseRevisionOption(o.OptionText, o.IsCorrect, o.SortOrder)).ToList())).ToList());
+                }).ToList(), item.Row.Id);
 
             foreach (var group in targets.GroupBy(c => (c.OrganizationId, c.Code)))
             {
                 var previous = group.OrderByDescending(c => c.VersionNo).First();
                 var isNew = !aliases.Contains(previous.Code);
                 var targetCode = isNew ? CourseCodes.Canonical(code) : previous.Code;
-                var id = Id($"catalog-learning:{item.Row.Id}:{previous.OrganizationId}:{targetCode}");
-                if (await context.Courses.AnyAsync(c => c.Id == id)) continue;
-                var course = new Course
+                var versionNo = isNew ? 1 : await context.Courses.Where(c => c.OrganizationId == previous.OrganizationId && c.Code == previous.Code).MaxAsync(c => c.VersionNo) + 1;
+                var seed = $"catalog-learning:{item.Row.Id}:{previous.OrganizationId}:{targetCode}";
+                var id = Id(seed);
+                if (await context.Courses.AnyAsync(c => c.Id == id))
                 {
-                    Id = id, OrganizationId = previous.OrganizationId, Code = targetCode,
-                    VersionNo = isNew ? 1 : await context.Courses.Where(c => c.OrganizationId == previous.OrganizationId && c.Code == previous.Code).MaxAsync(c => c.VersionNo) + 1,
-                    SupersedesCourseId = isNew ? null : previous.Id, Title = item.Row.Title, ShortName = previous.ShortName,
-                    Description = item.Row.Outcome, Purpose = previous.Purpose, EntryLevel = previous.EntryLevel,
-                    EstimatedDurationMinutes = previous.EstimatedDurationMinutes, CertificateEnabled = previous.CertificateEnabled,
-                    CertificateValidityDays = previous.CertificateValidityDays, Status = Statuses.Course.Published,
-                    CreatedByUserId = authorId ?? previous.CreatedByUserId, CreatedAt = now, UpdatedAt = now, RowVersion = 1,
-                };
-                context.Courses.Add(course);
-                var teaching = await context.CourseCompetencies.AsNoTracking().Where(c => c.CourseId == previous.Id).ToListAsync();
-                context.CourseCompetencies.AddRange(teaching.Select(c => new CourseCompetency
-                {
-                    CourseId = id, CompetencyId = c.CompetencyId, TargetLevel = (short)item.Row.Level,
-                    CoverageType = c.CoverageType, CoverageWeight = c.CoverageWeight, Note = c.Note,
-                }));
-                var prerequisites = await context.CoursePrerequisites.AsNoTracking().Where(p => p.CourseId == previous.Id).ToListAsync();
-                context.CoursePrerequisites.AddRange(prerequisites.Select(p => new CoursePrerequisite { CourseId = id, PrerequisiteCourseId = p.PrerequisiteCourseId }));
-                var outcomes = await context.CourseLearningOutcomes.AsNoTracking().Where(o => o.CourseId == previous.Id).ToListAsync();
-                context.CourseLearningOutcomes.AddRange(outcomes.Select(o => new CourseLearningOutcome
-                {
-                    CourseId = id, Code = o.Code, CompetencyId = o.CompetencyId, TargetLevel = (short)item.Row.Level,
-                    OutcomeType = o.OutcomeType, Statement = o.Statement, SourceType = o.SourceType, SourceRef = o.SourceRef,
-                    AssessmentMethod = o.AssessmentMethod, SortOrder = o.SortOrder, CreatedAt = now, UpdatedAt = now,
-                }));
-                var bank = new QuestionBank { OrganizationId = previous.OrganizationId, Title = $"{item.Row.Title} · v{course.VersionNo}", Status = "ACTIVE", OwnerUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now };
-                context.QuestionBanks.Add(bank);
-                foreach (var (module, moduleIndex) in modules.Select((m, i) => (m, i)))
-                {
-                    var mapped = new CourseModule { CourseId = id, Code = $"{course.Code}-CH{moduleIndex + 1}", Title = module.Title, SortOrder = moduleIndex + 1, IsRequired = true, Status = Statuses.CourseContent.Active, CreatedAt = now, UpdatedAt = now };
-                    context.CourseModules.Add(mapped);
-                    var lessonIds = new Dictionary<Guid, (Guid Id, int Order)>();
-                    var order = 0;
-                    foreach (var page in PlatformLessonPages.Group(blocks.Where(b => b.ModuleId == module.Id)))
-                    {
-                        var block = page.FirstOrDefault(b => b.BlockType == PlatformCatalog.BlockType.Text) ?? page[0];
-                        var content = block.BodyHtml;
-                        var titleMatch = Regex.Match(content ?? "", @"<h[234]\b[^>]*>(.*?)</h[234]>", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-                        var lesson = new Lesson
-                        {
-                            ModuleId = mapped.Id, Code = $"{course.Code}-CH{moduleIndex + 1}-S{++order:00}",
-                            Title = titleMatch.Success ? WebUtility.HtmlDecode(Regex.Replace(titleMatch.Groups[1].Value, "<[^>]*>", "")) : block.Caption ?? $"{module.Title} · {order}",
-                            LessonType = block.BlockType == PlatformCatalog.BlockType.Video ? "VIDEO" : "TEXT",
-                            ContentBody = content, SortOrder = order, IsRequired = true, CompletionRule = "VIEW", Status = Statuses.CourseContent.Active,
-                            CreatedAt = now, UpdatedAt = now,
-                        };
-                        context.Lessons.Add(lesson);
-                        var media = new List<(Guid AssetId, string? Caption)>();
-                        foreach (var part in page)
-                        {
-                            lessonIds[part.Id] = (lesson.Id, order);
-                            if (part.AssetId is { } assetId) media.Add((assetId, part.AltText ?? part.Caption));
-                            media.AddRange(slides.Where(s => s.BlockId == part.Id).Select(s => (s.AssetId, s.Caption)));
-                        }
-                        foreach (var (entry, mediaIndex) in media.Select((entry, i) => (entry, i)))
-                            context.LearningMaterials.Add(new LearningMaterial { LessonId = lesson.Id, Title = (entry.Caption ?? lesson.Title)[..Math.Min(250, (entry.Caption ?? lesson.Title).Length)], MaterialType = "LINK", ExternalUrl = $"platform-asset:{entry.AssetId:D}", SortOrder = mediaIndex + 1, CreatedAt = now, UpdatedAt = now });
-                    }
-                    var assessment = new Assessment { CourseId = id, ModuleId = mapped.Id, Code = $"{course.Code}-CH{moduleIndex + 1}-QUIZ", VersionNo = 1, Title = module.QuizTitle, AssessmentType = Statuses.AssessmentType.Quiz, PassingScore = DigiTalent.Application.UseCases.Pulse.PulseRules.ModuleQuizPassPercent, Status = Statuses.Assessment.Published, CreatedByUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now, RowVersion = 1 };
-                    context.Assessments.Add(assessment);
-                    foreach (var (question, index) in questions.Where(q => q.ModuleId == module.Id).Select((q, i) => (q, i)))
-                    {
-                        var mappedQuestion = new Question { BankId = bank.Id, QuestionType = "MULTIPLE_CHOICE", Difficulty = $"L{item.Row.Level}", Content = question.QuestionText, Explanation = question.Explanation, IsFinalQuiz = question.IsFinalQuiz, Status = "APPROVED", CreatedByUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now };
-                        context.Questions.Add(mappedQuestion);
-                        // Keep the authored page association. Older unlinked quizzes retain their existing fallback.
-                        var sort = question.BlockId is { } blockId && lessonIds.TryGetValue(blockId, out var linked) ? (linked.Order - 1) * 2 + 1 : index + 1;
-                        context.AssessmentQuestions.Add(new AssessmentQuestion { AssessmentId = assessment.Id, QuestionId = mappedQuestion.Id, Points = 1, SortOrder = sort });
-                        context.QuestionOptions.AddRange(options.Where(o => o.QuestionId == question.Id).Select(o => new QuestionOption { QuestionId = mappedQuestion.Id, Content = o.OptionText, IsCorrect = o.IsCorrect, SortOrder = o.SortOrder, CreatedAt = now, UpdatedAt = now }));
-                    }
+                    // Already the revision in use, or a plain re-run of a publication: nothing to do.
+                    if (!reapply || previous.Id == id) continue;
+                    id = Id($"{seed}:r{versionNo}");
+                    if (await context.Courses.AnyAsync(c => c.Id == id)) continue;
                 }
-                context.PracticalTaskTemplates.Add(new PracticalTaskTemplate
-                {
-                    OrganizationId = previous.OrganizationId, RelatedCourseId = id, Title = item.Row.FinalTitle,
-                    Description = item.Row.FinalPrompt, ExpectedOutput = item.Row.Outcome,
-                    GeneralMarkingCriteria = JsonSerializer.Serialize(new { track = "general", criteria = PlatformCourseContentReader.Criteria(item.Row.FinalCriteria), catalogCourseId = item.Row.Id }),
-                    SourceType = "MANUAL", Status = "ACTIVE", CreatedByUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now,
-                });
-                context.Assessments.Add(new Assessment { CourseId = id, Code = $"{course.Code}-FINAL", VersionNo = 1, Title = item.Row.FinalTitle, AssessmentType = "FINAL", IsFinal = true, PassingScore = 70, Status = Statuses.Assessment.Published, CreatedByUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now, RowVersion = 1 });
+                await CourseRevisionWriter.WriteAsync(context, previous, id, targetCode, versionNo, isNew, content, authorId, now);
+                // DigiTalent content replaces a company version R&D applied to this course; R&D keeps it as a draft.
+                await DigiTalent.Application.UseCases.Organization.Research.EnterpriseResearch.ReleaseCompanyVersionAsync(
+                    context, previous.OrganizationId, targetCode);
             }
         }
     }
 
-    private static Guid Id(string value) => new(MD5.HashData(Encoding.UTF8.GetBytes(value)));
+    private static Guid Id(string value) => CourseRevisionWriter.Id(value);
 }
