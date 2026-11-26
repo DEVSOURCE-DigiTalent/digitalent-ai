@@ -1,0 +1,2010 @@
+{
+  "source": "Thông tư 02/2025/TT-BGDĐT ngày 24/01/2025 của Bộ GD&ĐT – Khung năng lực số cho người học (Phụ lục, mục A–C)",
+  "systemLevels": {
+    "1": {
+      "name": "Cơ bản",
+      "bac": [
+        1,
+        2
+      ]
+    },
+    "2": {
+      "name": "Trung cấp",
+      "bac": [
+        3,
+        4
+      ]
+    },
+    "3": {
+      "name": "Nâng cao",
+      "bac": [
+        5,
+        6
+      ]
+    }
+  },
+  "note": "DigiTalent dùng 3 mức (bậc 1–6); Chuyên sâu (bậc 7–8) giữ lại để tham chiếu, ngoài phạm vi khóa học.",
+  "domains": [
+    {
+      "number": 1,
+      "name": "Khai thác dữ liệu và thông tin",
+      "overview": "Tập trung vào khả năng tìm kiếm, lọc, đánh giá và quản lý dữ liệu, thông tin, cũng như nội dung số; bao gồm các kỹ năng xác định nguồn thông tin đáng tin cậy, tổ chức dữ liệu một cách hiệu quả và sử dụng chúng để hỗ trợ ra quyết định hoặc giải quyết vấn đề trong môi trường số.",
+      "description": "Xác định được rõ nhu cầu thông tin, xác định được vị trí và truy xuất được dữ liệu, thông tin và nội dung số. Đánh giá được mức độ liên quan của nguồn và nội dung của chúng. Lưu trữ, quản lý và tổ chức được dữ liệu, thông tin và nội dung số.",
+      "competencies": [
+        {
+          "code": "1.1",
+          "name": "Duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số",
+          "description": "Xác định được nhu cầu thông tin, tìm kiếm được dữ liệu, thông tin và nội dung trong môi trường số, truy cập chúng và khai thác được kết quả tìm kiếm. Tạo và cập nhật được chiến lược tìm kiếm.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được nhu cầu thông tin, tìm kiếm dữ liệu, thông tin và nội dung thông qua tìm kiếm đơn giản trong môi trường số.",
+                "Tìm được cách truy cập những dữ liệu, thông tin và nội dung này cũng như điều hướng giữa chúng.",
+                "Xác định được các chiến lược tìm kiếm đơn giản."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Xác định được nhu cầu thông tin.",
+                "Tìm được dữ liệu, thông tin và nội dung thông qua tìm kiếm đơn giản trong môi trường số.",
+                "Tìm được cách truy cập những dữ liệu, thông tin và nội dung này cũng như điều hướng giữa chúng.",
+                "Xác định được các chiến lược tìm kiếm đơn giản."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Giải thích được nhu cầu thông tin.",
+                "Thực hiện được rõ ràng và theo quy trình các tìm kiếm để tìm dữ liệu, thông tin và nội dung trong môi trường số.",
+                "Giải thích được cách truy cập và điều hướng các kết quả tìm kiếm.",
+                "Giải thích được rõ ràng và theo quy trình chiến lược tìm kiếm."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể tự mình:",
+              "outcomes": [
+                "Minh họa được nhu cầu thông tin.",
+                "Tổ chức được tìm kiếm dữ liệu, thông tin và nội dung trong môi trường số.",
+                "Mô tả được cách truy cập những dữ liệu, thông tin và nội dung này cũng như điều hướng giữa chúng.",
+                "Tổ chức được các chiến lược tìm kiếm."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Đáp ứng được nhu cầu thông tin.",
+                "Áp dụng được kỹ thuật tìm kiếm để lấy được dữ liệu, thông tin và nội dung trong môi trường số.",
+                "Chỉ cho người khác cách truy cập những dữ liệu, thông tin và nội dung này cũng như điều hướng giữa chúng.",
+                "Tự đề xuất được chiến lược tìm kiếm."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Đánh giá được nhu cầu thông tin.",
+                "Điều chỉnh được chiến lược tìm kiếm để tìm ra dữ liệu, thông tin và nội dung phù hợp nhất trong môi trường số.",
+                "Giải thích được cách truy cập những dữ liệu, thông tin và nội dung thích hợp nhất và điều hướng giữa chúng.",
+                "Sử dụng linh hoạt và đa dạng chiến lược tìm kiếm."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp với định nghĩa hạn chế liên quan đến việc duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào thực tiễn và tri thức đồng thời hướng dẫn người khác trong việc duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp để giải quyết các vấn đề phức tạp với nhiều yếu tố tương tác liên quan đến việc duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "1.2",
+          "name": "Đánh giá dữ liệu, thông tin và nội dung số",
+          "description": "Phân tích, so sánh và đánh giá được độ tin cậy và tính xác thực của nguồn dữ liệu, thông tin và nội dung số. Phân tích, giải thích và đánh giá được dữ liệu, thông tin và nội dung số.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Phát hiện được độ tin cậy và độ chính xác của các nguồn chung của dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Phát hiện được độ tin cậy và độ chính xác của các nguồn chung của dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Thực hiện phân tích, so sánh, đánh giá được độ tin cậy và độ chính xác của các nguồn dữ liệu, thông tin và nội dung số đã được tổ chức rõ ràng.",
+                "Thực hiện phân tích, diễn giải và đánh giá được dữ liệu, thông tin và nội dung số được xác định rõ ràng."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Thực hiện phân tích, so sánh và đánh giá được các nguồn dữ liệu, thông tin và nội dung số.",
+                "Thực hiện phân tích, diễn giải và đánh giá được dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Thực hiện đánh giá được độ tin cậy và độ tin cậy của các nguồn dữ liệu, thông tin và nội dung số.",
+                "Tiến hành đánh giá được các dữ liệu, thông tin và nội dung số khác nhau."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Đánh giá có tính phê phán được độ tin cậy và độ chính xác của các nguồn dữ liệu, thông tin và nội dung số.",
+                "Đánh giá có tính phê phán được dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp với định nghĩa hạn chế có liên quan đến việc phân tích và đánh giá độ đáng tin cậy và chính xác các nguồn dữ liệu, thông tin và nội dung trong môi trường số.",
+                "Tích hợp được sự hiểu biết của bản thân để đóng góp vào thực tế và kiến thức chuyên môn, đồng thời hướng dẫn người khác trong việc phân tích và đánh giá độ tin cậy và chính xác của của dữ liệu, thông tin, nội dung số và nguồn của chúng."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp để giải quyết các vấn đề phức tạp với nhiều các yếu tố tác động liên quan đến việc phân tích, đánh giá độ tin cậy và chính xác nguồn dữ liệu, thông tin và nội dung trong môi trường số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "1.3",
+          "name": "Quản lý dữ liệu, thông tin và nội dung số",
+          "description": "Tổ chức, lưu trữ và truy xuất được dữ liệu, thông tin và nội dung trong môi trường số. Tổ chức và sắp xếp được chúng trong một môi trường có cấu trúc.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được cách tổ chức, lưu trữ và truy xuất dữ liệu, thông tin và nội dung một cách đơn giản trong môi trường số.",
+                "Nhận biết được nơi để sắp xếp dữ liệu, thông tin và nội dung một cách đơn giản trong môi trường có cấu trúc."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Xác định được cách tổ chức, lưu trữ và truy xuất dữ liệu, thông tin và nội dung một cách đơn giản trong môi trường số.",
+                "Nhận biết được nơi để sắp xếp dữ liệu, thông tin và nội dung một cách đơn giản trong môi trường có cấu trúc."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Lựa chọn được dữ liệu, thông tin và nội dung để tổ chức, lưu trữ và truy xuất chúng một cách thường xuyên trong môi trường số.",
+                "Sắp xếp chúng một cách trật tự trong một môi trường có cấu trúc."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Sắp xếp được thông tin, dữ liệu, nội dung để dễ dàng lưu trữ và truy xuất.",
+                "Tổ chức được thông tin, dữ liệu và nội dung trong một môi trường có cấu trúc."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Thao tác được thông tin, dữ liệu và nội dung để tổ chức, lưu trữ và truy xuất dễ dàng hơn.",
+                "Triển khai được việc tổ chức và sắp xếp dữ liệu, thông tin và nội dung trong môi trường có cấu trúc."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Điều chỉnh được việc quản lý thông tin, dữ liệu và nội dung để dễ dàng nhất cho việc thu hồi và lưu trữ.",
+                "Điều chỉnh được thông tin, dữ liệu và nội dung để chúng được tổ chức và sắp xếp trong môi trường có cấu trúc phù hợp nhất."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được giải pháp cho các vấn đề phức tạp với định nghĩa hạn chế liên quan đến việc quản lý dữ liệu, thông tin và nội dung để tổ chức, lưu trữ và truy xuất chúng trong môi trường số có cấu trúc.",
+                "Tích hợp được sự hiểu biết của bản thân để đóng góp vào thực tế và kiến thức chuyên môn, đồng thời hướng dẫn người khác quản lý dữ liệu, thông tin và nội dung số trong môi trường số có cấu trúc."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp để giải quyết các vấn đề phức tạp với nhiều các các yếu tố tác động liên quan đến việc quản lý dữ liệu, thông tin và nội dung để tổ chức, lưu trữ và truy xuất chúng trong môi trường số có cấu trúc.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Giao tiếp và hợp tác trong môi trường số",
+      "overview": "Nhấn mạnh khả năng sử dụng công nghệ số để tương tác, chia sẻ thông tin, làm việc nhóm và tham gia các cộng đồng trực tuyến; bao gồm các kỹ năng như giao tiếp hiệu quả qua các kênh số, tôn trọng đa dạng văn hóa, quản lý danh tính số và thúc đẩy hợp tác trong môi trường kỹ thuật số.",
+      "description": "Tương tác, giao tiếp và hợp tác thông qua công nghệ số đồng thời nhận thức rõ được sự đa dạng về văn hóa và thế hệ. Tham gia và đóng góp cho xã hội thông qua các dịch vụ công và tư và thực hiện quyền công dân. Quản lý danh tính số và danh tiếng của bản thân.",
+      "competencies": [
+        {
+          "code": "2.1",
+          "name": "Tương tác thông qua công nghệ số",
+          "description": "Tương tác thông qua các công nghệ số khác nhau và nhận biết được phương tiện giao tiếp số phù hợp cho một bối cảnh cụ thể.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Lựa chọn được các công nghệ số đơn giản để tương tác.",
+                "Xác định được các phương tiện giao tiếp đơn giản thích hợp cho một bối cảnh cụ thể."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Lựa chọn được các công nghệ số đơn giản để tương tác.",
+                "Xác định được các phương tiện giao tiếp đơn giản thích hợp cho một bối cảnh cụ thể."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Thực hiện được các tương tác được xác định rõ ràng và thường xuyên với các công nghệ số.",
+                "Lựa chọn được các phương tiện giao tiếp số phù hợp được xác định rõ ràng và phù hợp với quy trình cho một bối cảnh cụ thể."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Lựa chọn được nhiều công nghệ số để tương tác.",
+                "Lựa chọn được nhiều phương tiện giao tiếp số phù hợp cho một bối cảnh cụ thể."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Sử dụng được nhiều công nghệ số để tương tác.",
+                "Chỉ được cho người khác thấy phương tiện giao tiếp số nào thích hợp nhất cho một bối cảnh cụ thể."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Thích nghi được với nhiều công nghệ số để có sự tương tác phù hợp nhất.",
+                "Thích nghi được các phương tiện giao tiếp phù hợp nhất cho một bối cảnh cụ thể."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp, liên quan đến tương tác thông qua công nghệ số và phương tiện giao tiếp số.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào thực tiễn và kiến thức chuyên môn, đồng thời hướng dẫn những người khác tương tác thông qua công nghệ số."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp với nhiều yếu tố tương tác gắn liền với sự tương tác thông qua công nghệ số và phương tiện giao tiếp số.",
+                "Đề xuất được những ý tưởng và quy trình mới trong lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "2.2",
+          "name": "Chia sẻ thông tin và nội dung thông qua công nghệ số",
+          "description": "Chia sẻ dữ liệu, thông tin và nội dung số với người khác thông qua các công nghệ số phù hợp. Đóng vai trò là người trung gian, hiểu biết về thực hành trích dẫn và ghi chú nguồn.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể",
+              "outcomes": [
+                "Nhận biết được các công nghệ số đơn giản, phù hợp để chia sẻ dữ liệu, thông tin và nội dung số.",
+                "Nhận biết được tham chiếu và ghi chú nguồn cơ bản."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Nhận biết được các công nghệ số đơn giản, phù hợp để chia sẻ dữ liệu, thông tin và nội dung số.",
+                "Nhận biết được tham chiếu và ghi chú nguồn cơ bản."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Lựa chọn và xác định rõ các công nghệ số phù hợp để trao đổi dữ liệu, thông tin và nội dung số.",
+                "Giải thích với vai trò là người trung gian để chia sẻ thông tin và xác định rõ nội dung thông qua các công nghệ số.",
+                "Minh họa rõ ràng và thường xuyên các phương pháp tham chiếu và ghi chú nguồn."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Vận dụng được các công nghệ số phù hợp để chia sẻ dữ liệu, thông tin và nội dung số.",
+                "Giải thích được cách đóng vai trò trung gian để chia sẻ thông tin và nội dung thông qua công nghệ số.",
+                "Áp dụng được các phương pháp tham chiếu và ghi chú nguồn."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Chia sẻ dữ liệu, thông tin và nội dung số thông qua nhiều công cụ số phù hợp.",
+                "Hướng dẫn người khác cách đóng vai trò trung gian để chia sẻ thông tin và nội dung thông qua công nghệ số.",
+                "Áp dụng được nhiều phương pháp tham chiếu và ghi nguồn khác nhau."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Đánh giá được các công nghệ số phù hợp nhất để chia sẻ thông tin và nội dung.",
+                "Thích ứng được vai trò trung gian của mình.",
+                "Thay đổi được cách sử dụng các phương pháp tham chiếu và ghi chú phù hợp hơn."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được giải pháp cho các vấn đề phức tạp liên quan đến việc chia sẻ thông qua công nghệ số.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào thực tiễn và kiến thức chuyên môn, đồng thời hướng dẫn người khác chia sẻ thông qua công nghệ số."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp có nhiều yếu tố tương tác liên quan đến việc chia sẻ thông qua công nghệ số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "2.3",
+          "name": "Sử dụng công nghệ số để thực hiện trách nhiệm công dân",
+          "description": "Tham gia vào xã hội thông qua việc sử dụng các dịch vụ số công cộng và tư nhân. Tìm kiếm được cơ hội, để trao quyền và thu hút công dân thông qua các công nghệ số phù hợp.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được các dịch vụ số đơn giản để có thể tham gia vào xã hội.",
+                "Nhận biết được các công nghệ số đơn giản, phù hợp để nâng cao năng lực cho bản thân và tham gia vào xã hội với tư cách là một công dân."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Xác định được các dịch vụ số đơn giản để có thể tham gia vào xã hội.",
+                "Nhận biết được các công nghệ số đơn giản, phù hợp để nâng cao năng lực cho bản thân và tham gia vào xã hội với tư cách là một công dân."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Lựa chọn được các dịch vụ số được xác định rõ ràng và phổ biến để tham gia vào xã hội.",
+                "Xác định được các công nghệ số rõ ràng và thích hợp để tự mình trang bị và tham gia vào xã hội như một công dân."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Lựa chọn được các dịch vụ số để tham gia vào xã hội.",
+                "Thảo luận về các công nghệ số phù hợp để nâng cao năng lực của bản thân và tham gia vào xã hội với tư cách là một công."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Đề xuất được các dịch vụ số khác nhau để tham gia vào xã hội.",
+                "Sử dụng được các công nghệ số thích hợp để tự mình trang bị và tham gia vào xã hội như một công dân."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Thay đổi được việc sử dụng các dịch vụ số phù hợp nhất để tham gia vào xã hội.",
+                "Thay đổi được cách sử dụng các công nghệ số phù hợp nhất để nâng cao năng lực cho bản thân và tham gia vào xã hội với tư cách là một công dân."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp liên quan đến việc tham gia quyền công dân thông qua công nghệ số.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào thực tiễn và kiến thức chuyên môn cũng như hướng dẫn những người khác tham gia vào quyền công dân thông qua công nghệ số."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp với nhiều yếu tố tương tác liên quan đến việc tham gia quyền công dân thông qua công nghệ số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "2.4",
+          "name": "Hợp tác thông qua công nghệ số",
+          "description": "Sử dụng được các công cụ và công nghệ số cho các quá trình hợp tác cũng như để cùng xây dựng và đồng sáng tạo dữ liệu, tài nguyên và kiến thức.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Chọn được những công cụ và công nghệ số đơn giản cho các quá trình cộng tác."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Chọn được những công cụ và công nghệ số đơn giản cho các quá trình hợp tác."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Lựa chọn được các công cụ và công nghệ số được xác định rõ ràng và thường xuyên cho các quá trình hợp tác."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Lựa chọn được các công cụ và công nghệ số cho các quá trình hợp tác."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Đề xuất được các công cụ và công nghệ số khác nhau cho các quá trình hợp tác."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Thay đổi cách sử dụng các công cụ và công nghệ số phù hợp nhất cho các quy trình hợp tác.",
+                "Chọn được các công cụ và công nghệ số thích hợp nhất để cùng xây dựng và tạo ra dữ liệu, tài nguyên và kiến thức."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Thay đổi cách sử dụng các công cụ và công nghệ số phù hợp nhất cho các quy trình hợp tác.",
+                "Chọn được các công cụ và công nghệ số thích hợp nhất để cùng xây dựng và tạo ra dữ liệu, tài nguyên và kiến thức."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp với nhiều yếu tố tương tác liên quan đến việc sử dụng các quy trình hợp tác và xây dựng, đồng sáng tạo dữ liệu, tài nguyên và kiến thức thông qua các công cụ và công nghệ số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "2.5",
+          "name": "Thực hiện quy tắc ứng xử trên mạng",
+          "description": "Nhận thức được các chuẩn mực hành vi và kiến thức khi sử dụng công nghệ số và tương tác trong môi trường số. Điều chỉnh các chiến lược giao tiếp phù hợp với đối tượng cụ thể và nhận thức được sự đa dạng về văn hóa và thế hệ trong môi trường số.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể",
+              "outcomes": [
+                "Phân biệt được chuẩn mực hành vi đơn giản và biết cách sử dụng công nghệ số và tương tác trong môi trường số.",
+                "Chọn được các phương thức và chiến lược giao tiếp đơn giản phù hợp trong môi trường số.",
+                "Phân biệt được các khía cạnh đơn giản của sự đa dạng về văn hóa và thế hệ cần được tính đến trong môi trường số."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Phân biệt được các chuẩn mực hành vi đơn giản và biết cách sử dụng công nghệ số và tương tác trong môi trường số.",
+                "Chọn được các phương thức và chiến lược giao tiếp đơn giản phù hợp trong môi trường số.",
+                "Phân biệt được các khía cạnh đơn giản của sự đa dạng về văn hóa và thế hệ cần được tính đến trong môi trường số."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Làm rõ được các chuẩn mực và bí quyết hành vi thông thường và được xác định rõ ràng trong khi sử dụng công nghệ số và tương tác trong môi trường số.",
+                "Thể hiện được các chiến lược giao tiếp thường xuyên và xác định rõ ràng phương thức giao tiếp phù hợp trong môi trường số.",
+                "Mô tả các khía cạnh đa dạng về văn hóa và thế hệ được xác định rõ ràng và thông thường cần xem xét trong môi trường số."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Thảo luận về các chuẩn mực hành vi và cách sử dụng công nghệ số và tương tác trong môi trường số.",
+                "Thảo luận các chiến lược giao tiếp phù hợp trong môi trường số.",
+                "Thảo luận các khía cạnh đa dạng về văn hóa và thế hệ cần xem xét trong môi trường số."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Áp dụng được các chuẩn mực hành vi và bí quyết, cách khác nhau khi sử dụng công nghệ số và tương tác trong môi trường số.",
+                "Áp dụng được các chiến lược giao tiếp khác nhau trong môi trường số một cách phù hợp.",
+                "Áp dụng được các khía cạnh đa dạng về văn hóa và thế hệ khác nhau để xem xét trong môi trường số."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Điều chỉnh các chuẩn mực hành vi và cách phù hợp nhất khi sử dụng công nghệ số và tương tác trong môi trường số.",
+                "Điều chỉnh các chiến lược giao tiếp phù hợp nhất trong môi trường số.",
+                "Áp dụng được các khía cạnh đa dạng về văn hóa và thế hệ khác nhau trong môi trường số."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra các giải pháp cho các vấn đề phức tạp có liên quan đến nghi thức số tôn trọng các đối tượng khác nhau và sự đa dạng về văn hóa và thế hệ.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào kiến thức và thực tiễn nghề nghiệp cũng như hướng dẫn người khác giao tiếp trong môi trường số."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp để giải quyết các vấn đề phức tạp với nhiều yếu tố tương tác liên quan đến nghi thức số, tôn trọng các đối tượng khác nhau và sự đa dạng về văn hóa và thế hệ.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực này."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "2.6",
+          "name": "Quản lý danh tính số",
+          "description": "Tạo và quản lý được một hoặc nhiều danh tính số để bảo vệ danh tiếng của bản thân, làm việc với dữ liệu mà một người tạo ra bằng nhiều công cụ, môi trường và dịch vụ số.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được danh tính số.",
+                "Mô tả được những cách đơn giản để bảo vệ danh tiếng trực tuyến của bản thân.",
+                "Nhận biết được dữ liệu đơn giản do mình tạo ra thông qua các công cụ, môi trường hoặc dịch vụ số."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Xác định được danh tính số.",
+                "Mô tả được những cách đơn giản để bảo vệ danh tiếng trực tuyến của bản thân.",
+                "Nhận biết được dữ liệu đơn giản do mình tạo ra thông qua các công cụ, môi trường hoặc dịch vụ số."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Phân biệt được một loạt các danh tính số thông thường và được xác định rõ ràng.",
+                "Giải thích được những cách được xác định rõ ràng và thường xuyên để bảo vệ danh tiếng trực tuyến của bản thân.",
+                "Mô tả dữ liệu được xác định rõ ràng mà bạn thường xuyên thu được thông qua các công cụ, môi trường hoặc dịch vụ số."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Hiển thị được nhiều danh tính số cụ thể.",
+                "Thảo luận những cách cụ thể để bảo vệ danh tiếng trực tuyến của bản thân.",
+                "Thao tác dữ liệu cá nhân tạo ra thông qua các công cụ, môi trường hoặc dịch vụ số."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Sử dụng được nhiều danh tính số khác nhau.",
+                "Áp dụng được các cách khác nhau để bảo vệ danh tính trực tuyến của bản thân.",
+                "Sử dụng được dữ liệu tạo ra thông qua công cụ, môi trường và một số dịch vụ số."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Phân biệt được nhiều danh tính số.",
+                "Giải thích được các cách thích hợp hơn để bảo vệ danh tiếng của bản thân.",
+                "Thay đổi được dữ liệu được tạo ra thông qua một số công cụ, môi trường và dịch vụ."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp liên quan đến quản lý danh tính số và bảo vệ danh tiếng trực tuyến của mọi người.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào kiến thức và thực hành chuyên môn cũng như hướng dẫn người khác quản lý danh tính số."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp với nhiều yếu tố tương tác liên quan đến quản lý danh tính số và bảo vệ danh tiếng trực tuyến của mọi người.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực này."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Sáng tạo nội dung số",
+      "overview": "Tập trung vào khả năng tạo, chỉnh sửa và chia sẻ nội dung số; bao gồm các kỹ năng như phát triển nội dung mới, áp dụng bản quyền và giấy phép, lập trình cơ bản và tích hợp kiến thức từ nhiều nguồn để tạo ra sản phẩm số phù hợp và sáng tạo.",
+      "description": "Tạo lập và biên tập được nội dung số. Cải tiến và kết hợp được thông tin và nội dung vào vốn tri thức sẵn có trong khi đó hiểu được hệ thống giấy phép và bản quyền liên quan đến quá trình sáng tạo nội dung số. Biết được cách đưa ra các hướng dẫn có thể hiểu được cho hệ thống máy tính.",
+      "competencies": [
+        {
+          "code": "3.1",
+          "name": "Phát triển nội dung số",
+          "description": "Tạo và chỉnh sửa được nội dung số ở các định dạng khác nhau, nhằm thể hiện bản thân thông qua các phương tiện số.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được các cách tạo và chỉnh sửa nội dung đơn giản ở các định dạng đơn giản.",
+                "Chọn được cách thể hiện bản thân thông qua việc tạo ra các phương tiện số đơn giản."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Xác định được các cách tạo và chỉnh sửa nội dung đơn giản ở các định dạng đơn giản.",
+                "Chọn được cách thể hiện bản thân thông qua việc tạo ra các phương tiện số đơn giản."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Chỉ ra được cách tạo và chỉnh sửa nội dung có khái niệm cụ thể và mang tính phổ thông bằng những định dạng rõ ràng, phổ biến.",
+                "Thể hiện được bản thân thông qua việc tạo ra các phương tiện số thông thường và được xác định rõ ràng."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Chỉ ra được cách tạo và chỉnh sửa nội dung ở các định dạng khác nhau.",
+                "Thể hiện được bản thân thông qua việc tạo ra các phương tiện số."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Áp dụng được các cách tạo và chỉnh sửa nội dung ở các định dạng khác nhau.",
+                "Chỉ ra được những cách thể hiện bản thân thông qua việc tạo ra các phương tiện số."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Thay đổi được nội dung bằng các định dạng phù hợp nhất.",
+                "Điều chỉnh được cách thể hiện bản thân thông qua việc tạo ra các phương tiện số phù hợp nhất."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được giải pháp cho các vấn đề phức tạp ở một số khía cạnh liên quan đến việc tạo, chỉnh sửa nội dung ở các định dạng khác nhau, và tự thể hiện bản thân thông qua các phương tiện số.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào kiến thức và thực hành nghề nghiệp cũng như hướng dẫn người khác phát triển nội dung."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp để giải quyết các vấn đề phức tạp, với nhiều yếu tố ảnh hưởng lẫn nhau, liên quan đến việc tạo và xuất bản nội dung ở các định dạng khác nhau và tự thể hiện bản thân thông qua các phương tiện số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "3.2",
+          "name": "Tích hợp và tạo lập lại nội dung số",
+          "description": "Sửa đổi, tinh chỉnh và tích hợp được thông tin và nội dung mới vào khối kiến thức và tài nguyên hiện có để tạo ra nội dung và kiến thức mới, độc đáo và phù hợp.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Chọn được các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp các mục đơn giản có nội dung và thông tin mới để tạo ra những nội dung và thông tin mới và độc đáo."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Chọn được các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp các mục đơn giản có nội dung và thông tin mới để tạo ra những nội dung và thông tin mới và độc đáo."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Giải thích được các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp các mục nội dung và thông tin mới được xác định rõ ràng để tạo ra những nội dung và thông tin mới và độc đáo."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Thảo luận các cách sửa đổi, tinh chỉnh, cải thiện và tích hợp nội dung và thông tin mới để tạo ra những nội dung và thông tin mới và độc đáo."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Làm việc với các mục nội dung và thông tin mới khác nhau, sửa đổi, tinh chỉnh, cải thiện và tích hợp chúng để tạo ra những mục mới và độc đáo."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Đánh giá những cách phù hợp nhất để sửa đổi, sàng lọc, cải thiện và tích hợp các mục nội dung và thông tin cụ thể mới để tạo ra những nội dung và thông tin mới và độc đáo."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp ở một số khía cạnh liên quan đến việc sửa đổi, tinh chỉnh, cải thiện và tích hợp nội dung và thông tin mới vào kiến thức hiện có để tạo ra những kiến thức mới và độc đáo.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào kiến thức và thực hành nghề nghiệp, đồng thời hướng dẫn người khác tích hợp và xây dựng lại nội dung."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp, có nhiều yếu tố ảnh hưởng lẫn nhau, liên quan đến sửa đổi, sàng lọc, cải tiến và tích hợp nội dung, thông tin mới vào kiến thức hiện có để tạo ra kiến thức mới, độc đáo.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "3.3",
+          "name": "Thực thi bản quyền và giấy phép",
+          "description": "Hiểu được cách áp dụng bản quyền và giấy phép cho thông tin và nội dung số.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được các quy tắc đơn giản về bản quyền và giấy phép áp dụng cho dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Xác định được các quy tắc đơn giản về bản quyền và giấy phép áp dụng cho dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Chỉ ra được các quy tắc thông thường và được xác định rõ ràng về bản quyền và giấy phép áp dụng cho dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Thảo luận các quy tắc về bản quyền và giấy phép áp dụng cho thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Áp dụng được các quy định khác nhau về bản quyền và giấy phép cho dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Chọn được các quy tắc phù hợp nhất để áp dụng bản quyền và giấy phép cho dữ liệu, thông tin và nội dung số."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp ở một số khía cạnh liên quan đến việc áp dụng bản quyền và giấy phép cho dữ liệu, thông tin và nội dung số.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào thực tiễn và kiến thức chuyên môn cũng như hướng dẫn người khác áp dụng bản quyền và giấy phép."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp để giải quyết các vấn đề phức tạp, có nhiều yếu tố ảnh hưởng lẫn nhau, liên quan đến việc áp dụng bản quyền, giấy phép đối với dữ liệu, thông tin và nội dung số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "3.4",
+          "name": "Lập trình",
+          "description": "Lập kế hoạch và phát triển được một chuỗi các câu lệnh dễ hiểu cho một hệ thống máy tính để giải quyết một vấn đề nhất định hoặc thực hiện một nhiệm vụ cụ thể.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Liệt kê được các hướng dẫn đơn giản để hệ thống máy tính giải quyết một vấn đề đơn giản hoặc thực hiện một nhiệm vụ đơn giản."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Liệt kê được các hướng dẫn đơn giản để hệ thống máy tính giải quyết một vấn đề đơn giản hoặc thực hiện một nhiệm vụ đơn giản."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Liệt kê được các hướng dẫn thông thường và được xác định rõ ràng cho một hệ thống máy tính để giải quyết các vấn đề thường ngày hoặc thực hiện các tác vụ thường ngày."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Liệt kê được các hướng dẫn cho một hệ thống máy tính để giải quyết một vấn đề nhất định hoặc thực hiện một nhiệm vụ cụ thể."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Tự thao tác được bằng các hướng dẫn dành cho hệ thống máy tính để giải quyết một vấn đề khác hoặc thực hiện các nhiệm vụ khác nhau."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Xác định được các hướng dẫn thích hợp nhất cho hệ thống máy tính để giải quyết một vấn đề nhất định và thực hiện các nhiệm vụ cụ thể."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp, ở một số khía cạnh, liên quan đến việc lập kế hoạch và phát triển các hướng dẫn cho hệ thống máy tính và thực hiện một nhiệm vụ bằng hệ thống máy tính.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào kiến thức và thực hành nghề nghiệp cũng như hướng dẫn người khác lập trình."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp, có nhiều yếu tố tác động, liên quan đến việc lập kế hoạch và phát triển các hướng dẫn cho hệ thống máy tính và thực hiện một nhiệm vụ sử dụng hệ thống máy tính.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "name": "An toàn",
+      "overview": "Tập trung vào việc bảo vệ dữ liệu, thiết bị, sức khỏe và môi trường số; bao gồm các kỹ năng như bảo mật thông tin cá nhân, quản lý rủi ro mạng, sử dụng công nghệ số an toàn, bảo đảm sức khỏe tâm lý và thể chất khi tương tác trong môi trường số và thúc đẩy trách nhiệm bảo vệ môi trường kỹ thuật số.",
+      "description": "Bảo vệ được các thiết bị, nội dung, dữ liệu cá nhân và quyền riêng tư trong môi trường số. Bảo vệ được sức khỏe thể chất và tinh thần, đồng thời nhận biết các công nghệ số giúp tăng cường thịnh vượng xã hội và hòa hợp trong xã hội. Nhận thức về tác động môi trường của công nghệ số và việc sử công nghệ số.",
+      "competencies": [
+        {
+          "code": "4.1",
+          "name": "Bảo vệ thiết bị",
+          "description": "Bảo vệ được thiết bị và nội dung số; hiểu được rõ rủi ro và mối đe dọa trong môi trường số; nắm được các biện pháp an toàn và bảo mật; quan tâm đến mức độ tin cậy và quyền riêng tư.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Nhận biết được cách bảo vệ thiết bị và nội dung số một cách đơn giản.",
+                "Phân biệt được rủi ro và mối đe dọa đơn giản trong môi trường số.",
+                "Chọn lựa được các biện pháp an toàn và bảo mật đơn giản.",
+                "Nhận biết được những cách thức đơn giản để quan tâm đến mức độ tin cậy và quyền riêng tư."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và",
+              "outcomes": [
+                "Nhận biết được cách bảo vệ thiết bị và nội dung số một cách đơn giản.",
+                "Phân biệt được rủi ro và mối đe dọa đơn giản trong môi trường số.",
+                "Tuân theo được các biện pháp an toàn và bảo mật đơn giản.",
+                "Nhận biết được những cách thức đơn giản để quan tâm đến mức độ tin cậy và quyền riêng tư."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Chỉ ra được những cách thức cơ bản và phổ biến để bảo vệ thiết bị và nội dung số.",
+                "Phân biệt được những rủi ro và mối đe dọa cơ bản và phổ biến trong môi trường số.",
+                "Chọn lựa được các biện pháp an toàn và bảo mật rõ ràng và thường xuyên.",
+                "Chỉ ra được những cách thức cơ bản và phổ biến để quan tâm đến mức độ tin cậy và quyền riêng tư."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Thiết lập được những cách thức bảo vệ thiết bị và nội dung số.",
+                "Phân biệt được rủi ro và mối đe dọa trong môi trường số.",
+                "Chọn lựa được các biện pháp an toàn và bảo mật.",
+                "Giải thích được các cách thức để quan tâm đến mức độ tin cậy và quyền riêng tư."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Áp dụng được các cách khác nhau để bảo vệ thiết bị và nội dung số.",
+                "Nhận thức được sự đa dạng của các rủi ro và đe dọa trong môi trường số.",
+                "Áp dụng được các biện pháp an toàn và bảo mật.",
+                "Sử dụng được các cách thức khác nhau để quan tâm đến mức độ tin cậy và quyền riêng tư."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Chọn lựa được cách bảo vệ phù hợp nhất cho thiết bị và nội dung số.",
+                "Phân biệt được rủi ro và mối đe dọa trong môi trường số.",
+                "Chọn lựa được các biện pháp an toàn và bảo mật phù hợp nhất.",
+                "Đánh giá được các biện pháp để quan tâm đến mức độ tin cậy và quyền riêng tư một cách phù hợp nhất."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Thiết lập được các giải pháp cho những vấn đề mới và phức tạp liên quan đến việc bảo vệ thiết bị và nội dung số, quản lý rủi ro và mối đe dọa, áp dụng các biện pháp an toàn và bảo mật, và bảo đảm mức độ tin cậy và quyền riêng tư trong môi trường số.",
+                "Tích hợp được kiến thức của bản thân để góp phần tạo nên các nội dung lý thuyết cũng như thực hành mang tính chuyên nghiệp, hướng dẫn người khác trong việc bảo vệ thiết bị."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp với nhiều yếu tố tương tác liên quan đến việc bảo vệ thiết bị và nội dung số, quản lý rủi ro và mối đe dọa, áp dụng các biện pháp an toàn và bảo mật, và bảo đảm mức độ tin cậy và quyền riêng tư trong môi trường số.",
+                "Đề xuất được ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "4.2",
+          "name": "Bảo vệ dữ liệu cá nhân và quyền riêng tư",
+          "description": "Bảo vệ được dữ liệu cá nhân và quyền riêng tư trong môi trường số. Hiểu được cách sử dụng và chia sẻ thông tin định danh cá nhân một cách an toàn, có khả năng bảo vệ bản thân và người khác. Hiểu được cách các dịch vụ số sử dụng “Chính sách Quyền riêng tư” để thông báo phương thức sử dụng dữ liệu cá nhân.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Lựa chọn được những cách thức đơn giản để bảo vệ dữ liệu cá nhân và quyền riêng tư trong môi trường số.",
+                "Nhận biết được các cách sử dụng và chia sẻ thông tin định danh cá nhân một cách an toàn, có khả năng bảo vệ bản thân và người khác.",
+                "Nhận diện được các tuyên bố cơ bản trong chính sách quyền riêng tư về cách sử dụng dữ liệu cá nhân trong dịch vụ số."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Lựa chọn được những cách thức đơn giản để bảo vệ dữ liệu cá nhân và quyền riêng tư trong môi trường số.",
+                "Nhận biết được các cách sử dụng và chia sẻ thông tin định danh cá nhân một cách an toàn, có khả năng bảo vệ bản thân và người khác.",
+                "Nhận diện được các tuyên bố cơ bản trong chính sách quyền riêng tư về cách sử dụng dữ liệu cá nhân trong dịch vụ số."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Giải thích được các cách thức cơ bản và phổ biến để bảo vệ dữ liệu cá nhân và quyền riêng tư trong môi trường số.",
+                "Giải thích được các cách thức cơ bản và phổ biến để sử dụng và chia sẻ thông tin định danh cá nhân một cách an toàn.",
+                "Chỉ ra được các tuyên bố cơ bản và phổ biến trong chính sách quyền riêng tư về cách sử dụng dữ liệu cá nhân trong các dịch vụ số."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Thảo luận về cách bảo vệ dữ liệu cá nhân và quyền riêng tư trong môi trường số.",
+                "Thảo luận về cách sử dụng và chia sẻ thông tin định danh cá nhân một cách an toàn.",
+                "Chỉ ra được các tuyên bố trong chính sách quyền riêng tư về cách sử dụng dữ liệu cá nhân trong các dịch vụ số."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Áp dụng được các cách thức khác nhau để bảo vệ dữ liệu cá nhân và quyền riêng tư trong môi trường số.",
+                "Áp dụng được các cách thức đặc thù để chia sẻ dữ liệu cá nhân một cách an toàn.",
+                "Giải thích được các tuyên bố trong chính sách quyền riêng tư về cách sử dụng dữ liệu cá nhân trong các dịch vụ số."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Chọn lựa cách thức phù hợp nhất để bảo vệ dữ liệu cá nhân và quyền riêng tư trong môi trường số.",
+                "Đánh giá cách thức phù hợp nhất để sử dụng và chia sẻ thông tin định danh cá nhân.",
+                "Đánh giá mức độ phù hợp của các tuyên bố trong chính sách quyền riêng tư về cách sử dụng dữ liệu cá nhân."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Thiết lập được các giải pháp cho các vấn đề mới và phức tạp liên quan đến việc bảo vệ dữ liệu cá nhân và quyền riêng tư trong môi trường số.",
+                "Tích hợp kiến thức của bản thân để góp phần tạo nên các nội dung lý thuyết cũng như thực hành mang tính chuyên nghiệp, hướng dẫn người khác trong việc bảo vệ dữ liệu cá nhân và quyền riêng tư."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Thiết lập được các giải pháp cho các vấn đề phức tạp với nhiều yếu tố tương tác liên quan đến việc bảo vệ dữ liệu cá nhân và quyền riêng tư trong môi trường số.",
+                "Đề xuất được ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "4.3",
+          "name": "Bảo vệ sức khỏe và an sinh số",
+          "description": "Tránh được rủi ro và đe dọa đến sức khỏe thể chất và tinh thần khi sử dụng công nghệ số. Bảo vệ được bản thân và người khác khỏi nguy cơ trong môi trường số (ví dụ: bắt nạt trên mạng). Nhận biết được những công nghệ số giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Phân biệt được các cách thức đơn giản để tránh rủi ro và đe dọa đến sức khỏe thể chất và tinh thần khi sử dụng công nghệ số.",
+                "Lựa chọn được những cách thức đơn giản để bảo vệ bản thân khỏi nguy cơ trong môi trường số.",
+                "Nhận biết được những công nghệ số đơn giản giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Phân biệt được các cách thức đơn giản để tránh rủi ro và đe dọa đến sức khỏe thể chất và tinh thần khi sử dụng công nghệ số.",
+                "Lựa chọn được những cách thức đơn giản để bảo vệ bản thân khỏi nguy cơ trong môi trường số.",
+                "Nhận biết được những công nghệ số đơn giản giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Giải thích được những cách thức cơ bản và phổ biến để tránh rủi ro và đe dọa đối với sức khỏe thể chất và tinh thần khi sử dụng công nghệ số.",
+                "Lựa chọn được những cách thức cơ bản và phổ biến để bảo vệ bản thân khỏi nguy cơ trong môi trường số.",
+                "Chỉ ra được những công nghệ số cơ bản và phổ biến giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Giải thích được những cách thức để tránh những sự đe dọa liên quan đến việc sử dụng công nghệ số đối với sức khỏe thể chất và tinh thần.",
+                "Lựa chọn được cách thức bảo vệ bản thân và người khác khỏi nguy cơ trong môi trường số.",
+                "Thảo luận về những công nghệ số giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Trình bày được các cách thức khác nhau để tránh rủi ro và đe dọa đến sức khỏe thể chất và tinh thần khi sử dụng công nghệ số.",
+                "Áp dụng được các cách thức khác nhau để bảo vệ bản thân và người khác khỏi nguy cơ trong môi trường số.",
+                "Trình bày được các công nghệ số khác nhau giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Phân biệt được cách thức phù hợp nhất để tránh rủi ro và đe dọa đến sức khỏe thể chất và tinh thần khi sử dụng công nghệ số.",
+                "Vận dụng được cách thức phù hợp nhất để bảo vệ bản thân và người khác khỏi nguy cơ trong môi trường số.",
+                "Linh hoạt trong cách sử dụng những công nghệ số giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Thiết lập được các giải pháp cho các vấn đề mới và phức tạp liên quan liên quan đến việc tránh rủi ro và đe dọa đối với sức khỏe khi sử dụng công nghệ số để bảo vệ bản thân và người khác khỏi nguy cơ trong môi trường số và sử dụng công nghệ số giúp tăng cường thịnh vượng xã hội và sự hòa hợp trong xã hội.",
+                "Tích hợp được kiến thức của bản thân để góp phần tạo nên các nội dung lý thuyết cũng như thực hành mang tính chuyên nghiệp và hướng dẫn người khác trong việc bảo vệ sức khỏe."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Thiết lập được các giải pháp cho các vấn đề phức tạp với nhiều yếu tố tương tác liên quan đến việc tránh rủi ro và đe dọa đối với sức khỏe khi sử dụng công nghệ số để bảo vệ bản thân và người khác khỏi nguy cơ trong môi trường số và sử dụng công nghệ số giúp tăng cường thịnh vượng xã hội và hòa hợp trong xã hội.",
+                "Đề xuất được ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "4.4",
+          "name": "Bảo vệ môi trường",
+          "description": "Nhận thức được tác động của công nghệ số và việc sử dụng công nghệ số đối với môi trường.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Nhận biết được tác động cơ bản của công nghệ số và việc sử dụng công nghệ số đối với môi trường."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Nhận biết được tác động cơ bản của công nghệ số và việc sử dụng công nghệ số đối với môi trường."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Chỉ ra được những tác động cơ bản và phổ biến của công nghệ số và việc sử dụng công nghệ số đối với môi trường."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Thảo luận về các cách thức bảo vệ môi trường khỏi tác động của công nghệ số và việc sử dụng công nghệ số."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Trình bày được các cách thức khác nhau để bảo vệ môi trường khỏi tác động của công nghệ số và việc sử dụng công nghệ số."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Chọn lựa được giải pháp phù hợp nhất để bảo vệ môi trường khỏi tác động của công nghệ số và việc sử dụng công nghệ."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Thiết lập được các giải pháp cho các vấn đề mới và phức tạp liên quan đến việc bảo vệ môi trường khỏi tác động của công nghệ số và việc sử dụng công nghệ số.",
+                "Tích hợp được kiến thức của bản thân để góp phần tạo nên các nội dung lý thuyết cũng như thực hành mang tính chuyên nghiệp và hướng dẫn người khác trong việc bảo vệ môi trường."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Thiết lập được các giải pháp cho các vấn đề phức tạp với nhiều yếu tố tương tác liên quan đến việc bảo vệ môi trường khỏi tác động của công nghệ số và việc sử dụng công nghệ số.",
+                "Đề xuất được ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "name": "Giải quyết vấn đề",
+      "overview": "Tập trung vào khả năng tư duy phản biện và sáng tạo để xác định, phân tích và giải quyết các vấn đề trong môi trường số; bao gồm các kỹ năng như khắc phục sự cố kỹ thuật, học hỏi công nghệ mới, điều chỉnh nhu cầu số để đạt mục tiêu và sử dụng công nghệ để đổi mới hoặc giải quyết các thách thức thực tiễn.",
+      "description": "Nhận diện được nhu cầu và các vấn đề cũng như giải quyết các vấn đề và tình huống trong môi trường số. Sử dụng được các công cụ số để đổi mới quy trình và sản phẩm. Cập nhật được sự tiến bộ của công nghệ số.",
+      "competencies": [
+        {
+          "code": "5.1",
+          "name": "Giải quyết các vấn đề kỹ thuật",
+          "description": "Xác định được các vấn đề kỹ thuật khi vận hành thiết bị, sử dụng môi trường số và giải quyết chúng (từ xử lý sự cố đến giải quyết các vấn đề phức tạp hơn).",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được các vấn đề kỹ thuật đơn giản khi vận hành thiết bị và sử dụng môi trường số.",
+                "Xác định được các giải pháp đơn giản để giải quyết chúng."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Xác định được các vấn đề kỹ thuật đơn giản khi vận hành thiết bị và sử dụng môi trường số.",
+                "Xác định được các giải pháp đơn giản để giải quyết chúng."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Chỉ ra được các vấn đề kỹ thuật thông thường và được xác định rõ ràng khi vận hành thiết bị và sử dụng môi trường số.",
+                "Chọn được các giải pháp được xác định rõ ràng và thông thường cho chúng."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Phân biệt được các vấn đề kỹ thuật khi vận hành thiết bị và sử dụng môi trường số.",
+                "Chọn được giải pháp cho chúng."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Đánh giá được các vấn đề kỹ thuật khi sử dụng môi trường số và vận hành các thiết bị số.",
+                "Áp dụng được các giải pháp khác nhau cho chúng."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Thẩm định được các vấn đề kỹ thuật khi vận hành thiết bị và sử dụng môi trường số.",
+                "Giải quyết chúng bằng những giải pháp phù hợp nhất."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp ở một số khía cạnh liên quan đến vấn đề kỹ thuật khi vận hành thiết bị và sử dụng môi trường số.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào kiến thức và thực hành nghề nghiệp cũng như hướng dẫn người khác giải quyết các vấn đề kỹ thuật."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp, có nhiều yếu ảnh hưởng, liên quan đến vấn đề kỹ thuật khi vận hành thiết bị và sử dụng môi trường số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "5.2",
+          "name": "Xác định nhu cầu và giải pháp công nghệ",
+          "description": "Đánh giá được nhu cầu và xác định, đánh giá, lựa chọn, sử dụng các công cụ số cùng với các giải pháp công nghệ khả thi để giải quyết chúng. Điều chỉnh và tùy chỉnh được môi trường số theo nhu cầu cá nhân (ví dụ: khả năng tiếp cận).",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được nhu cầu cá nhân.",
+                "Nhận ra được các công cụ số đơn giản và các giải pháp công nghệ có thể có để giải quyết những nhu cầu đó.",
+                "Chọn được những cách đơn giản để điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Xác định được nhu cầu cá nhân.",
+                "Nhận ra được các công cụ số đơn giản và các giải pháp công nghệ có thể có để giải quyết những nhu cầu đó.",
+                "Chọn được những cách đơn giản để điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Chỉ ra được những nhu cầu được xác định rõ ràng và thường xuyên.",
+                "Chọn được các công cụ số thông thường và được xác định rõ ràng cũng như các giải pháp công nghệ có thể có để giải quyết những nhu cầu đó.",
+                "Chọn được những cách thông thường và được xác định rõ ràng để điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Giải thích nhu cầu cá nhân.",
+                "Lựa chọn được các công cụ số và các giải pháp công nghệ có thể có để giải quyết những nhu cầu đó.",
+                "Chọn được cách điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Đánh giá được nhu cầu cá nhân.",
+                "Áp dụng được các công cụ số khác nhau và các giải pháp công nghệ có thể có để giải quyết những nhu cầu đó.",
+                "Sử dụng được các cách khác nhau để điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Đánh giá được nhu cầu cá nhân.",
+                "Chọn được các công cụ số phù hợp nhất và các giải pháp công nghệ có thể có để giải quyết những nhu cầu đó.",
+                "Quyết định được những cách thích hợp nhất để điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp, ở một số khía cạnh, bằng cách sử dụng các công cụ số và các giải pháp công nghệ có thể có, đồng thời điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào kiến thức và thực hành nghề nghiệp, đồng thời hướng dẫn người khác xác định nhu cầu và các giải pháp công nghệ."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp để giải quyết các vấn đề phức tạp, với nhiều yếu tố ảnh hưởng lẫn nhau, bằng cách sử dụng các công cụ số và các giải pháp công nghệ có thể có, đồng thời điều chỉnh và tùy chỉnh môi trường số theo nhu cầu cá nhân.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "5.3",
+          "name": "Sử dụng sáng tạo công nghệ số",
+          "description": "Sử dụng các công cụ và công nghệ số để tạo ra kiến thức, đổi mới quy trình và sản phẩm. Gắn kết cá nhân và tập thể vào quá trình xử lý nhận thức để hiểu và giải quyết các vấn đề mang tính khái niệm và các tình huống có vấn đề trong môi trường số.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được các công cụ và công nghệ số đơn giản có thể được sử dụng để tạo ra kiến thức và đổi mới quy trình cũng như sản phẩm.",
+                "Thể hiện được sự quan tâm của cá nhân và tập thể đến quá trình xử lý nhận thức đơn giản để hiểu và giải quyết các vấn đề khái niệm đơn giản và các tình huống có vấn đề trong môi trường số."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Xác định được các công cụ và công nghệ số đơn giản có thể được sử dụng để tạo ra kiến thức và đổi mới quy trình cũng như sản phẩm.",
+                "Tuân theo quy trình nhận thức đơn giản của cá nhân và tập thể để hiểu và giải quyết các vấn đề khái niệm đơn giản và các tình huống có vấn đề trong môi trường số."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Chọn được các công cụ và công nghệ số có thể được sử dụng để tạo ra kiến thức rõ ràng cũng như các quy trình và sản phẩm đổi mới được xác định rõ ràng.",
+                "Gắn kết được cá nhân và tập thể vào một số quá trình xử lý nhận thức để hiểu và giải quyết các vấn đề mang tính khái niệm và tình huống có vấn đề thông thường và được xác định rõ ràng trong môi trường số."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Phân biệt được các công cụ và công nghệ số có thể được sử dụng để tạo ra kiến thức và đổi mới quy trình và sản phẩm.",
+                "Gắn kết được cá nhân và tập thể vào quá trình xử lý nhận thức để hiểu và giải quyết các vấn đề khái niệm và tình huống có vấn đề trong môi trường số."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Áp dụng được các công cụ và công nghệ số khác nhau để tạo ra kiến thức cũng như các quy trình và sản phẩm đổi mới.",
+                "Áp dụng xử lý nhận thức của cá nhân và tập thể để giải quyết các vấn đề khái niệm và tình huống có vấn đề khác nhau trong môi trường số."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Điều chỉnh được các công cụ và công nghệ số phù hợp nhất để tạo ra kiến thức cũng như đổi mới quy trình và sản phẩm.",
+                "Giải quyết được các vấn đề khái niệm và tình huống có vấn đề của cá nhân và tập thể trong môi trường số."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp ở một số khía cạnh bằng cách sử dụng các công cụ và công nghệ số.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào kiến thức và thực hành nghề nghiệp cũng như hướng dẫn người khác sử dụng công nghệ số một cách sáng tạo."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp với nhiều yếu tố ảnh hưởng lẫn nhau bằng các công cụ và công nghệ số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "5.4",
+          "name": "Xác định các vấn đề cần cải thiện về năng lực số",
+          "description": "Hiểu được năng lực số của chính mình cần được cải thiện hoặc cập nhật ở đâu. Có thể hỗ trợ người khác phát triển năng lực số của họ. Tìm kiếm được cơ hội phát triển bản thân và cập nhật sự phát triển số.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Nhận ra được năng lực số của tôi cần được cải thiện hoặc cập nhật ở đâu.",
+                "Xác định được nơi để tìm kiếm cơ hội phát triển bản thân và cập nhật sự phát triển số."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Nhận ra được năng lực số của tôi cần được cải thiện hoặc cập nhật ở đâu.",
+                "Xác định được nơi để tìm kiếm cơ hội phát triển bản thân và cập nhật sự phát triển số."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Giải thích được năng lực số của bản thân cần được cải thiện hoặc cập nhật ở đâu.",
+                "Chỉ ra được nơi để tìm kiếm các cơ hội được xác định rõ ràng để phát triển bản thân và cập nhật sự phát triển số."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Thảo luận về lĩnh vực năng lực số của bản thân cần được cải thiện hoặc cập nhật.",
+                "Chỉ ra được cách hỗ trợ người khác phát triển năng lực số của họ.",
+                "Chỉ ra được nơi để tìm kiếm cơ hội phát triển bản thân và cập nhật sự phát triển số."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Chứng minh được năng lực số của tôi cần được cải thiện hoặc cập nhật ở đâu.",
+                "Minh họa được những cách khác nhau để hỗ trợ người khác phát triển năng lực số của họ.",
+                "Đề xuất được các cơ hội khác nhau để phát triển bản thân và cập nhật sự phát triển số."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Quyết định được những cách thích hợp nhất để cải thiện hoặc cập nhật nhu cầu về năng lực số của chính mình.",
+                "Đánh giá được sự phát triển năng lực số của người khác.",
+                "Lựa chọn được những cơ hội thích hợp nhất để phát triển bản thân và cập nhật những phát triển mới."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp cho các vấn đề phức tạp ở một số khía cạnh liên quan đến việc nâng cao năng lực số và tìm cơ hội phát triển bản thân cũng như cập nhật những phát triển mới.",
+                "Tích hợp được kiến thức của bản thân để đóng góp vào kiến thức và thực hành chuyên môn cũng như hướng dẫn người khác xác định khoảng trống về năng lực số."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Tạo ra được các giải pháp giải quyết các vấn đề phức tạp, với nhiều yếu tố ảnh hưởng lẫn nhau, liên quan đến nâng cao năng lực số, tìm kiếm cơ hội phát triển bản thân và bắt kịp xu hướng phát triển số.",
+                "Đề xuất được những ý tưởng và quy trình mới cho lĩnh vực cụ thể."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Ứng dụng trí tuệ nhân tạo",
+      "overview": "Tập trung vào việc hiểu, sử dụng và đánh giá các công cụ, hệ thống trí tuệ nhân tạo (AI) một cách có đạo đức và trách nhiệm; gồm các kỹ năng như nhận biết cách AI hoạt động, áp dụng AI vào các nhiệm vụ thực tiễn, đánh giá tác động đạo đức và xã hội của AI và bảo đảm việc sử dụng AI một cách minh bạch, công bằng và có trách nhiệm.",
+      "description": "Có kiến thức và kỹ năng cho phép người học hiểu, đánh giá và sử dụng các hệ thống và công cụ AI một cách an toàn, hiệu quả và có trách nhiệm.",
+      "competencies": [
+        {
+          "code": "6.1",
+          "name": "Hiểu biết về AI (trong đó có Gen AI)",
+          "description": "Hiểu được cách AI ảnh hưởng đến cuộc sống hàng ngày và vai trò của AI trong các lĩnh vực khác nhau. Nắm vững được nguyên tắc hoạt động của AI, khả năng và hạn chế của AI.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Xác định được các khái niệm cơ bản của AI.",
+                "Nhớ lại được các ứng dụng đơn giản của AI trong cuộc sống hàng ngày."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Giải thích được nguyên tắc hoạt động cơ bản của AI.",
+                "Diễn giải được các thuật ngữ và khái niệm liên quan đến AI."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Áp dụng được các nguyên tắc cơ bản của AI để giải quyết vấn đề đơn giản.",
+                "Thực hiện được các thao tác cơ bản trên các công cụ AI."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Phân tích được cách AI hoạt động trong các ứng dụng cụ thể.",
+                "So sánh được các hệ thống AI khác nhau và cách chúng xử lý dữ liệu."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Đánh giá được hiệu quả của các hệ thống AI trong việc giải quyết các vấn đề cụ thể.",
+                "Kiểm tra được các giới hạn và tiềm năng của AI trong các lĩnh vực khác nhau."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Tổng hợp được kiến thức để đề xuất cải tiến cho các hệ thống AI.",
+                "Thiết kế được các giải pháp AI sáng tạo cho các vấn đề phức tạp."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Phát triển được các hệ thống AI tiên tiến và tùy chỉnh theo nhu cầu cụ thể.",
+                "Tổ chức được việc triển khai các dự án ứng dụng AI có tính phức tạp."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Nghiên cứu và cập nhật được các lý thuyết mới về AI.",
+                "Đánh giá và xây dựng được chiến lược dài hạn cho việc ứng dụng AI trong tổ chức."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "6.2",
+          "name": "Sử dụng AI có đạo đức và trách nhiệm",
+          "description": "Sử dụng hiệu quả các hệ thống AI và hiểu rõ ứng dụng thực tế của chúng. Sử dụng được AI để tạo nội dung, khám phá kiến thức và giải quyết các vấn đề trong công việc và cuộc sống hàng ngày.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Nhận diện được các công cụ AI đơn giản.",
+                "Thực hiện được các thao tác cơ bản với các công cụ AI.",
+                "Nhận thức được cơ bản về các vấn đề đạo đức và pháp lý liên quan đến AI."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Áp dụng được các công cụ AI để giải quyết vấn đề đơn giản.",
+                "Tương tác được với các hệ thống AI cơ bản.",
+                "Tuân thủ các quy định pháp luật cơ bản khi sử dụng AI."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Sử dụng được các công cụ AI trong công việc và học tập hàng ngày.",
+                "Thực hành được các kỹ năng sử dụng AI thông qua các bài tập và dự án nhỏ.",
+                "Xem xét các khía cạnh đạo đức khi sử dụng AI, bảo đảm không vi phạm quyền riêng tư và bảo mật dữ liệu."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Tối ưu hóa việc sử dụng các công cụ AI để đạt hiệu quả cao hơn.",
+                "Quản lý được việc triển khai các công cụ AI trong các dự án nhỏ.",
+                "Bảo vệ được dữ liệu cá nhân và tuân thủ các quy định pháp luật về bảo mật thông tin khi sử dụng AI."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Phát triển được các ứng dụng AI tùy chỉnh để giải quyết các vấn đề cụ thể.",
+                "Điều chỉnh được các hệ thống AI để phù hợp với nhu cầu cụ thể.",
+                "Đánh giá và giảm thiểu được các rủi ro đạo đức và pháp lý liên quan đến việc sử dụng AI."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Tích hợp được các công cụ AI vào quy trình làm việc hiện có.",
+                "Giám sát và bảo đảm được các hệ thống AI hoạt động đúng cách và hiệu quả.",
+                "Chịu trách nhiệm về các quyết định và kết quả do hệ thống AI đưa ra, bảo đảm tuân thủ quy định pháp luật và chuẩn mực đạo đức."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Đổi mới và tạo ra được các ứng dụng AI mới và tiên tiến.",
+                "Đào tạo người khác về cách sử dụng AI hiệu quả.",
+                "Lãnh đạo được việc sử dụng AI trong tổ chức một cách có trách nhiệm và đạo đức."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Xây dựng được chiến lược dài hạn cho việc ứng dụng AI trong tổ chức.",
+                "Lãnh đạo và quản lý được các dự án ứng dụng AI có phức tạp cao.",
+                "Bảo đảm mọi hoạt động liên quan đến AI trong tổ chức đều tuân thủ các quy định pháp luật và tiêu chuẩn đạo đức."
+              ]
+            }
+          ]
+        },
+        {
+          "code": "6.3",
+          "name": "Đánh giá các công cụ AI",
+          "description": "Đánh giá và lọc được thông tin từ các nguồn được tạo ra hoặc xử lý bằng AI, để hiểu rõ hơn về tính đáng tin cậy và cách sử dụng thông tin đó. Đánh giá được AI trên các khía cạnh minh bạch, an toàn, đạo đức và tác động.",
+          "levels": [
+            {
+              "bac": 1,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản và có hướng dẫn, người học có thể:",
+              "outcomes": [
+                "Nhận diện được các yếu tố cơ bản của hệ thống AI cần được đánh giá.",
+                "Mô tả được các chức năng chính của hệ thống AI."
+              ]
+            },
+            {
+              "bac": 2,
+              "tier": "Cơ bản",
+              "context": "Ở trình độ cơ bản, với khả năng tự chủ và hướng dẫn phù hợp khi cần, người học có thể:",
+              "outcomes": [
+                "Giải thích được cách thức hoạt động của các hệ thống AI đơn giản.",
+                "Tóm tắt được các đặc điểm và ứng dụng của hệ thống AI."
+              ]
+            },
+            {
+              "bac": 3,
+              "tier": "Trung cấp",
+              "context": "Với các vấn đề đơn giản, người học có thể tự mình:",
+              "outcomes": [
+                "Phân tích được hiệu quả của hệ thống AI trong việc giải quyết các vấn đề cụ thể.",
+                "So sánh được hiệu suất của các hệ thống AI khác nhau."
+              ]
+            },
+            {
+              "bac": 4,
+              "tier": "Trung cấp",
+              "context": "Dựa trên nhu cầu riêng và với các vấn đề được xác định rõ ràng và không thường xuyên, người học có thể độc lập:",
+              "outcomes": [
+                "Đánh giá được độ chính xác và tin cậy của các hệ thống AI.",
+                "Xem xét được các kết quả và đưa ra nhận xét về hiệu quả của hệ thống AI."
+              ]
+            },
+            {
+              "bac": 5,
+              "tier": "Nâng cao",
+              "context": "Khi tự mình và hướng dẫn người khác, người học có thể:",
+              "outcomes": [
+                "Phê phán được các khía cạnh kỹ thuật và đạo đức của hệ thống AI.",
+                "Kiểm tra và xác minh được tính chính xác của các quyết định do hệ thống AI đưa ra."
+              ]
+            },
+            {
+              "bac": 6,
+              "tier": "Nâng cao",
+              "context": "Ở trình độ nâng cao, trên cơ sở nhu cầu của chính mình và người khác, trong bối cảnh phức tạp, người học có thể:",
+              "outcomes": [
+                "Đưa ra được khuyến nghị cải tiến cho hệ thống AI dựa trên kết quả đánh giá.",
+                "Phát triển được các tiêu chuẩn và hướng dẫn đánh giá hệ thống AI."
+              ]
+            },
+            {
+              "bac": 7,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ rất chuyên sâu, người học có thể:",
+              "outcomes": [
+                "Đánh giá được chiến lược ứng dụng AI trong tổ chức và đưa ra kế hoạch dài hạn.",
+                "Thẩm định và xác nhận được hiệu quả của các hệ thống AI phức tạp."
+              ]
+            },
+            {
+              "bac": 8,
+              "tier": "Chuyên sâu",
+              "context": "Ở trình độ chuyên sâu cao nhất, người học có thể:",
+              "outcomes": [
+                "Nghiên cứu và phát triển được các phương pháp đánh giá mới cho hệ thống AI.",
+                "Lãnh đạo được các dự án đánh giá hệ thống AI và đưa ra các báo cáo chi tiết."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
