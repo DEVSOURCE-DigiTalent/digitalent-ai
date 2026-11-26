@@ -99,6 +99,8 @@ export const PERMISSIONS = {
   COURSE_ASSIGNMENT_CANCEL: 'course_assignment.cancel',
   LEARNING_PROGRESS_READ: 'learning_progress.read',
   LESSON_COMPLETE: 'lesson.complete',
+  // Course versions published by DigiTalent: apply to the organization or keep the current one (OWNER, later R&D)
+  COURSE_UPDATE_REVIEW: 'course_update.review',
 
   // Assessment & Question Bank (6.10)
   QUESTION_BANK_READ: 'question_bank.read',

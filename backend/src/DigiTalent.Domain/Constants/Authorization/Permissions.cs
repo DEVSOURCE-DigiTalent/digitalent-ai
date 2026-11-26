@@ -107,6 +107,11 @@ public static class Permissions
         public const string ReadProgress = "learning_progress.read";
         public const string CompleteLesson = "lesson.complete";
         public const string SelfEnroll = "enrollment.self_enroll";
+        /// <summary>
+        /// Review a course version DigiTalent published: apply it to the organization or keep the current one.
+        /// OWNER and RND hold it; the company's R&amp;D decides when it has one, the owner otherwise.
+        /// </summary>
+        public const string ReviewCourseUpdate = "course_update.review";
     }
 
     public static class Assessment

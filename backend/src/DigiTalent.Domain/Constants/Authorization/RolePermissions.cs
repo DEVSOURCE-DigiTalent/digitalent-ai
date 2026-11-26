@@ -13,6 +13,8 @@ public static class RolePermissions
         [Roles.Research] = new[]
         {
             Permissions.Research.ManageCourses,
+            // R&D decides on the course versions DigiTalent publishes (the owner only when the company has no R&D).
+            Permissions.Learning.ReviewCourseUpdate,
             Permissions.Account.ViewOwn,
             Permissions.Account.UpdateOwnProfile,
             Permissions.Account.ChangeOwnPassword,
@@ -65,6 +67,8 @@ public static class RolePermissions
             Permissions.Learning.ReadAssignment,
             Permissions.Learning.CancelAssignment,
             Permissions.Learning.ReadProgress,
+            // Course versions published by DigiTalent reach the organization only when it applies them.
+            Permissions.Learning.ReviewCourseUpdate,
             // Internal organization content, explicitly approved for OWNER.
             Permissions.Learning.Create,
             Permissions.Learning.Update,
