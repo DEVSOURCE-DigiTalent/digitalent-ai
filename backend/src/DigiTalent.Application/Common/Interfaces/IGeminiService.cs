@@ -20,6 +20,11 @@ public interface IGeminiService
         IReadOnlyList<PulseCriterionDto>? rubric = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Returns a passage from the submission, an empty string for no matching passage, or null if the lookup failed.</summary>
+    Task<string?> FindEvidencePassageAsync(
+        string evidenceText, string metric, string note, CancellationToken cancellationToken = default) =>
+        Task.FromResult<string?>(null);
+
     /// <summary>
     /// Gợi ý điểm (0–10) và nhận xét cho các bài tự luận của bài đánh giá dùng thử. Null khi chưa cấu hình khóa hoặc AI
     /// không trả lời được — không có điểm giả thay thế.

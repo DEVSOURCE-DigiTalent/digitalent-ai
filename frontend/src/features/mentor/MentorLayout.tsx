@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthGuard } from '@/components/guards/AuthGuard';
+import { useDirectionalHeader, useScrollState } from '@/components/layout/use-directional-header';
 import { RequireWorkspace } from '@/components/guards/RequireWorkspace';
 import { WORKSPACES } from '@/lib/roles';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -104,6 +105,11 @@ function MentorShell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const { scrolled, scrollProgress } = useScrollState();
+  const { hidden, reveal } = useDirectionalHeader(
+    headerRef, true, location.pathname, profileOpen || notifOpen || searchModalOpen,
+  );
 
   if (lastPathname !== location.pathname) {
     setLastPathname(location.pathname);
@@ -187,6 +193,13 @@ function MentorShell() {
 
   return (
     <div className="pulse-ui mentor-ui" data-testid="mentor-layout">
+      <div
+        ref={headerRef}
+        className="mw-adaptive-header"
+        data-hidden={hidden}
+        data-scrolled={scrolled}
+        onFocusCapture={reveal}
+      >
       <header className="app-header pa-header-mentor">
         <div className="mw-header-left">
           <NavLink className="brand" to="/mentor/enterprises" aria-label="DigiTalent AI, trang chủ Mentor">
@@ -392,7 +405,11 @@ function MentorShell() {
             )}
           </div>
         </div>
+        <div className="mw-header-progress" aria-hidden="true">
+          <span style={{ width: `${scrollProgress}%` }} />
+        </div>
       </header>
+      </div>
 
       <div className="app-shell role-mentor-shell">
         <main className="main-area role-mentor-main">

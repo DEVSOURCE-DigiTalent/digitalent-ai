@@ -1,5 +1,28 @@
 import { useEffect, useState, type RefObject } from 'react';
 
+export function useScrollState() {
+  const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const update = () => {
+      const y = window.scrollY;
+      const range = document.documentElement.scrollHeight - window.innerHeight;
+      setScrolled(y > 10);
+      setScrollProgress(range > 0 ? Math.min(100, Math.max(0, (y / range) * 100)) : 0);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  return { scrolled, scrollProgress };
+}
+
 export function useDirectionalHeader(ref: RefObject<HTMLDivElement | null>, enabled: boolean, route: string, pinned: boolean) {
   const [hidden, setHidden] = useState(false);
 

@@ -328,8 +328,48 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 var inputHash = PulseAiReviewStore.InputHash(evidence, prompt, criteria, courseContent, item.DomainName, item.Tier, rubric, events);
 
                 // Same submission, same inputs: the stored review is shown and the AI is not called again.
-                var saved = forceRefresh ? null : PulseAiReviewStore.Reuse(stored, item.Kind, item.SubmissionId, inputHash);
-                if (saved != null)
+                var saved = PulseAiReviewStore.Reuse(stored, item.Kind, item.SubmissionId, inputHash);
+                if (input.EvidenceMetric != null && input.RefreshSubmissionId is { } targetId && targetId != item.SubmissionId)
+                {
+                    item.AiHint = saved;
+                    return;
+                }
+                if (forceRefresh && input.RefreshSubmissionId == item.SubmissionId &&
+                    input.EvidenceMetric is { } metric && saved?.Detail is { } detail)
+                {
+                    item.AiHint = saved;
+                    var note = metric switch
+                    {
+                        "plagiarism" => detail.PlagiarismNote,
+                        "ai" => detail.AiGeneratedNote,
+                        "relevance" => detail.RelevanceNote,
+                        "depth" => detail.DepthNote,
+                        "clarity" => detail.ClarityNote,
+                        "verdict" => detail.Verdict,
+                        _ => null,
+                    };
+                    if (note == null || detail.Evidence?.ContainsKey(metric) == true) return;
+
+                    if (!_gemini.IsConfigured)
+                    {
+                        item.AiHint = saved with { EvidenceLookupStatus = "NOT_CONFIGURED" };
+                        return;
+                    }
+                    var passage = await _gemini.FindEvidencePassageAsync(evidence, metric, note);
+                    if (passage == null)
+                    {
+                        item.AiHint = saved with { EvidenceLookupStatus = "UNAVAILABLE" };
+                        return;
+                    }
+                    var excerpts = detail.Evidence?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? new();
+                    excerpts[metric] = passage.Length == 0 ? null : passage;
+                    var enriched = saved with { Detail = detail with { Evidence = excerpts } };
+                    item.AiHint = enriched;
+                    reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, inputHash, enriched));
+                    return;
+                }
+
+                if (!forceRefresh && saved != null)
                 {
                     item.AiHint = saved;
                     return;
@@ -344,6 +384,12 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                     item.DomainName,
                     item.Tier,
                     rubric) with { ReviewedAt = _clock.GetUtcNow() };
+                if (saved != null &&
+                    (evaluated.Source != PulseAiReviewStore.AiSource || (saved.Detail != null && evaluated.Detail == null)))
+                {
+                    item.AiHint = saved;
+                    return;
+                }
                 item.AiHint = evaluated;
                 reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, inputHash, evaluated));
             })

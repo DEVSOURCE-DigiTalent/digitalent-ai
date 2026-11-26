@@ -148,7 +148,10 @@ function SharedSecuritySettings() {
       )}
 
       {/* 2-Column Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.25fr) minmax(320px, 0.75fr)', gap: 24, alignItems: 'start', marginBottom: 24 }}>
+      <div
+        className={isMentor ? 'mw-security-grid' : undefined}
+        style={{ display: 'grid', gridTemplateColumns: 'var(--mw-security-columns, minmax(0, 1.25fr) minmax(320px, 0.75fr))', gap: 24, alignItems: 'start', marginBottom: 24 }}
+      >
         {/* Left Column: Change Password Form */}
         <section className="surface pad" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 14, borderBottom: '1px solid #f1f5f9', marginBottom: 18 }}>

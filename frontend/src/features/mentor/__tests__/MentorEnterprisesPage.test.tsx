@@ -244,7 +244,8 @@ describe('MentorEnterprisesPage operational hub', () => {
 
     await screen.findByText('Tổng 2 doanh nghiệp');
 
-    fireEvent.change(screen.getByLabelText('Lọc theo giai đoạn doanh nghiệp'), { target: { value: 'TRIAL' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Lọc theo giai đoạn doanh nghiệp' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Doanh nghiệp dùng thử' }));
     expect(screen.getByText('Tổng 1 doanh nghiệp')).toBeInTheDocument();
     expect(screen.getByText('Beta Retail Trial')).toBeInTheDocument();
     expect(screen.queryByText('DigiTalent Demo Company')).not.toBeInTheDocument();
@@ -289,6 +290,14 @@ describe('MentorEnterprisesPage operational hub', () => {
     const nav = screen.getByRole('navigation', { name: 'Phân trang danh sách' });
     expect(nav.textContent).toContain('Hiển thị 1 đến 10 trong tổng 12 doanh nghiệp');
     expect(within(await screen.findByRole('table')).getAllByRole('row').slice(1)).toHaveLength(10);
+
+    const pageSizeControl = within(nav).getByRole('combobox', { name: 'Số dòng mỗi trang' });
+    fireEvent.click(pageSizeControl);
+    fireEvent.click(screen.getByRole('option', { name: '20' }));
+    expect(within(screen.getByRole('table')).getAllByRole('row').slice(1)).toHaveLength(12);
+    expect(pageSizeControl).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(pageSizeControl);
+    fireEvent.click(screen.getByRole('option', { name: '10' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Trang sau' }));
     expect(nav.textContent).toContain('Hiển thị 11 đến 12 trong tổng 12 doanh nghiệp');

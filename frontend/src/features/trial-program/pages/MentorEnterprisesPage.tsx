@@ -6,7 +6,6 @@ import {
   Building2,
   CheckCircle2,
   Clock,
-  GraduationCap,
   LayoutGrid,
   List,
   RefreshCw,
@@ -20,6 +19,7 @@ import type { MentorEnterpriseItem, PulseFinalReviewItem } from '@/services/puls
 import { getAvatarColor, initials } from '@/features/platform/components/pulse-format';
 import { levelName } from '@/features/pulse-employee/lib/labels';
 import { PaginationBar } from '@/features/trial-program/components/PaginationBar';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 import { formatShortOrgCode } from '@/features/trial-program/lib/mentor-ai-guidance';
 import { formatDateTime } from '@/lib/utils';
 import '@/features/trial-program/mentor-workspace.css';
@@ -160,34 +160,28 @@ export function MentorEnterprisesPage() {
   const enterpriseCount = data?.totalEnterprises ?? allItems.length;
 
   return (
-    <div className="mw-workbench">
-      {/* Borderless Operational Header + Right Submission Summary Tabs */}
+    <div className="mw-workbench mw-enterprises-page">
       <header className="mw-hub-hero" aria-label="Tổng quan chấm bài">
         <div className="mw-hub-hero-copy">
-          <div className="mw-badge-pill">
-            <GraduationCap size={13} aria-hidden="true" />
-            <span>Không gian Mentor</span>
-          </div>
           <h1 className="mw-main-title">Tổng quan chấm bài</h1>
-          <p className="mw-sub-title">
-            {enterpriseCount > 0
-              ? pendingTotal > 0 || attentionTotal > 0
-                ? `Hiện có ${pendingTotal} bài chờ chấm và ${attentionTotal} bài cần hỗ trợ trên ${enterpriseCount} doanh nghiệp phụ trách.`
-                : `Tất cả bài nộp thuộc ${enterpriseCount} doanh nghiệp phụ trách đã được xử lý xong.`
-              : 'Theo dõi bài nộp cuối cấp sau mỗi cấp độ theo từng doanh nghiệp được phân công.'}
-          </p>
+          {!isLoading && !error && (
+            <p className="mw-hub-hero-scope">
+              <Building2 size={14} aria-hidden="true" />
+              <span><strong>{enterpriseCount}</strong> doanh nghiệp phụ trách</span>
+            </p>
+          )}
         </div>
 
         <nav className="mw-hub-stat-tabs" aria-label="Phân loại nhanh bài nộp">
           <button
             type="button"
-            className={`mw-hub-stat-tab tone-amber${pendingTotal > 0 ? ' has-items' : ''}`}
+            className="mw-hub-stat-tab tone-amber"
             onClick={() => navigate('/mentor/course-reviews', { state: { mentorFilter: { statusFilter: 'PENDING' } } })}
           >
             <div className="mw-hub-stat-head">
               <div className="mw-hub-stat-metric">
                 <span className="mw-hub-stat-icon" aria-hidden="true">
-                  <Clock size={13} />
+                  <Clock size={18} />
                 </span>
                 <strong className="mw-hub-stat-value">{pendingTotal}</strong>
               </div>
@@ -198,13 +192,13 @@ export function MentorEnterprisesPage() {
 
           <button
             type="button"
-            className={`mw-hub-stat-tab tone-rose${attentionTotal > 0 ? ' has-items' : ''}`}
+            className="mw-hub-stat-tab tone-rose"
             onClick={() => navigate('/mentor/course-reviews', { state: { mentorFilter: { statusFilter: 'ATTENTION' } } })}
           >
             <div className="mw-hub-stat-head">
               <div className="mw-hub-stat-metric">
                 <span className="mw-hub-stat-icon" aria-hidden="true">
-                  <AlertCircle size={13} />
+                  <AlertCircle size={18} />
                 </span>
                 <strong className="mw-hub-stat-value">{attentionTotal}</strong>
               </div>
@@ -221,7 +215,7 @@ export function MentorEnterprisesPage() {
             <div className="mw-hub-stat-head">
               <div className="mw-hub-stat-metric">
                 <span className="mw-hub-stat-icon" aria-hidden="true">
-                  <CheckCircle2 size={13} />
+                  <CheckCircle2 size={18} />
                 </span>
                 <strong className="mw-hub-stat-value">{reviewedTotal}</strong>
               </div>
@@ -306,10 +300,10 @@ export function MentorEnterprisesPage() {
           <div className="mw-filter-chips" role="tablist" aria-label="Lọc doanh nghiệp theo tình trạng chấm">
             {(
               [
-                { id: 'ALL', label: 'Tất cả', count: tabCounts.ALL },
-                { id: 'PENDING', label: 'Cần chấm bài', count: tabCounts.PENDING },
-                { id: 'ATTENTION', label: 'Cần hỗ trợ', count: tabCounts.ATTENTION },
-                { id: 'DONE', label: 'Đã hoàn tất', count: tabCounts.DONE },
+                { id: 'ALL', label: 'Tất cả', count: tabCounts.ALL, icon: Building2 },
+                { id: 'PENDING', label: 'Cần chấm bài', count: tabCounts.PENDING, icon: Clock },
+                { id: 'ATTENTION', label: 'Cần hỗ trợ', count: tabCounts.ATTENTION, icon: AlertCircle },
+                { id: 'DONE', label: 'Đã hoàn tất', count: tabCounts.DONE, icon: CheckCircle2 },
               ] as const
             ).map((tab) => (
               <button
@@ -323,6 +317,7 @@ export function MentorEnterprisesPage() {
                   setPage(1);
                 }}
               >
+                <tab.icon size={14} aria-hidden="true" />
                 <span>{tab.label}</span>
                 <span className="mw-f-badge">{tab.count}</span>
               </button>
@@ -362,34 +357,38 @@ export function MentorEnterprisesPage() {
 
         <div className="mw-filter-row-bottom">
           <div className="mw-filter-selects">
-            <select
-              className="mw-select-v3"
+            <OwnerFilterSelect
+              variant="mentor"
+              icon="filter"
               value={stageFilter}
-              onChange={(e) => {
-                setStageFilter(e.target.value as EnterpriseStageFilter);
+              onChange={(value) => {
+                setStageFilter(value as EnterpriseStageFilter);
                 setPage(1);
               }}
-              aria-label="Lọc theo giai đoạn doanh nghiệp"
-            >
-              <option value="ALL">Tất cả giai đoạn</option>
-              <option value="OFFICIAL">Doanh nghiệp chính thức</option>
-              <option value="TRIAL">Doanh nghiệp dùng thử</option>
-            </select>
+              label="Lọc theo giai đoạn doanh nghiệp"
+              options={[
+                { value: 'ALL', label: 'Tất cả giai đoạn' },
+                { value: 'OFFICIAL', label: 'Doanh nghiệp chính thức' },
+                { value: 'TRIAL', label: 'Doanh nghiệp dùng thử' },
+              ]}
+            />
 
-            <select
-              className="mw-select-v3"
+            <OwnerFilterSelect
+              variant="mentor"
+              icon="sort"
               value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value as EnterpriseSortKey);
+              onChange={(value) => {
+                setSortBy(value as EnterpriseSortKey);
                 setPage(1);
               }}
-              aria-label="Sắp xếp doanh nghiệp"
-            >
-              <option value="PRIORITY">Ưu tiên cần chấm</option>
-              <option value="PENDING_DESC">Nhiều bài chờ nhất</option>
-              <option value="LATEST_DESC">Nộp gần đây nhất</option>
-              <option value="NAME_ASC">Tên A đến Z</option>
-            </select>
+              label="Sắp xếp doanh nghiệp"
+              options={[
+                { value: 'PRIORITY', label: 'Ưu tiên cần chấm' },
+                { value: 'PENDING_DESC', label: 'Nhiều bài chờ nhất' },
+                { value: 'LATEST_DESC', label: 'Nộp gần đây nhất' },
+                { value: 'NAME_ASC', label: 'Tên A đến Z' },
+              ]}
+            />
           </div>
 
           <div className="mw-results-meta">
@@ -585,6 +584,7 @@ export function MentorEnterprisesPage() {
 
             <div className="mw-ledger-wrap">
               <PaginationBar
+                modernControls
                 page={currentPage}
                 pageSize={pageSize}
                 totalItems={sortedFiltered.length}
@@ -720,6 +720,7 @@ export function MentorEnterprisesPage() {
             </table>
 
             <PaginationBar
+              modernControls
               page={currentPage}
               pageSize={pageSize}
               totalItems={sortedFiltered.length}

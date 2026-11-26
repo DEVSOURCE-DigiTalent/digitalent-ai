@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
 
 interface PaginationBarProps {
   page: number;
@@ -10,6 +11,7 @@ interface PaginationBarProps {
   pageSizeOptions?: number[];
   /** Show the "Hiển thị x đến y trong tổng z" text. */
   showSummary?: boolean;
+  modernControls?: boolean;
 }
 
 function buildPageNumbers(current: number, totalPages: number): (number | 'ellipsis')[] {
@@ -40,6 +42,7 @@ export function PaginationBar({
   onPageSizeChange,
   pageSizeOptions = [10, 20, 50],
   showSummary = true,
+  modernControls = false,
 }: PaginationBarProps) {
   if (totalItems <= 0) return null;
 
@@ -59,22 +62,35 @@ export function PaginationBar({
           </span>
         )}
 
-        <label className="mw-page-size-label">
+        <div className="mw-page-size-label">
           <span>Số dòng:</span>
-          <select
-            className="mw-page-size-select"
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            aria-label="Số dòng mỗi trang"
-            title="Số dòng mỗi trang"
-          >
-            {pageSizeOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        </label>
+          {modernControls ? (
+            <OwnerFilterSelect
+              variant="mentor"
+              icon="rows"
+              className="mw-page-size-dropdown"
+              label="Số dòng mỗi trang"
+              value={String(pageSize)}
+              options={pageSizeOptions.map((size) => ({ value: String(size), label: String(size) }))}
+              onChange={(value) => onPageSizeChange(Number(value))}
+              menuMinWidth={112}
+            />
+          ) : (
+            <select
+              className="mw-page-size-select"
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              aria-label="Số dòng mỗi trang"
+              title="Số dòng mỗi trang"
+            >
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
       <div className="mw-pagination-controls">

@@ -402,6 +402,8 @@ public sealed record PulseCriterionDto(string Number, string Title, string Descr
 public sealed record PulseAiHintDto(IReadOnlyList<bool> Checks, string Summary)
 {
     public IReadOnlyList<string>? CriterionNotes { get; init; }
+    public IReadOnlyList<string?>? CriterionEvidence { get; init; }
+    public string? EvidenceLookupStatus { get; init; }
     public string Source { get; init; } = "KEYWORD_FALLBACK";
     public string? Model { get; init; }
     /// <summary>When this hint was made: now for a fresh review, the stored time for one reused from pulse_ai_reviews.</summary>
@@ -426,6 +428,7 @@ public sealed record PulseAiFraudItemDto
 
 public sealed record PulseAiDetailDto
 {
+    public IReadOnlyDictionary<string, string?>? Evidence { get; init; }
     public int PlagiarismScore { get; init; }
     public string PlagiarismNote { get; init; } = "";
     public int AiGeneratedScore { get; init; }

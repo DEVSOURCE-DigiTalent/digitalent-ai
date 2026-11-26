@@ -152,6 +152,30 @@ public class MentorReviewEnhancementTests
     }
 
     [Fact]
+    public async Task GeminiService_ResolvesEvidenceFromOriginalNumberedPassage()
+    {
+        static string Response(string text) => System.Text.Json.JsonSerializer.Serialize(new
+        {
+            candidates = new[] { new { content = new { parts = new[] { new { text } } } } },
+        });
+        var handler = new RecordingHttpHandler(
+            (HttpStatusCode.OK, Response("""{"passage":2}""")),
+            (HttpStatusCode.OK, Response("""{"passage":0}""")),
+            (HttpStatusCode.OK, Response("""{"passage":99}""")));
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Gemini:ApiKey"] = "unit-test-key" })
+            .Build();
+        var service = new GeminiService(new HttpClient(handler), config, NullLogger<GeminiService>.Instance);
+        const string essay = "Mở đầu\r\n\r\n  Tách thiết bị khỏi mạng nội bộ.  \r\nKết luận";
+
+        (await service.FindEvidencePassageAsync(essay, "depth", "Có nêu bước cô lập thiết bị"))
+            .Should().Be("Tách thiết bị khỏi mạng nội bộ.");
+        (await service.FindEvidencePassageAsync(essay, "ai", "Nhận xét chỉ dựa trên thời gian làm bài"))
+            .Should().BeEmpty();
+        (await service.FindEvidencePassageAsync(essay, "clarity", "Nhận xét khác")).Should().BeNull();
+    }
+
+    [Fact]
     public async Task GeminiService_WithoutApiKey_ReturnsKeywordFallback()
     {
         var prevGemini = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
@@ -231,12 +255,33 @@ public class MentorReviewEnhancementTests
         g1.Items.Single().AiHint!.Source.Should().Be("GEMINI");
         g2.Items.Single().AiHint!.Source.Should().Be("GEMINI");
 
+        var evidenceRequest = new GetPulseFinalReviewsUseCaseInput
+        {
+            RefreshAi = true,
+            RefreshSubmissionId = submitted.SubmissionId,
+            EvidenceMetric = "depth",
+        };
+        var withPassage = await ucReal.ExecuteAsync(evidenceRequest);
+        var reusedPassage = await ucReal.ExecuteAsync(evidenceRequest);
+        realGemini.CallCount.Should().Be(1, "looking up passages should not repeat grading");
+        realGemini.PassageCallCount.Should().Be(1, "a passage for the metric can be reused");
+        withPassage.Items.Single().AiHint!.Detail!.Evidence!["depth"].Should().NotBeNullOrEmpty();
+        reusedPassage.Items.Single().AiHint!.Summary.Should().Be(g2.Items.Single().AiHint!.Summary);
+
         await ucReal.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput
         {
             RefreshAi = true,
             RefreshSubmissionId = submitted.SubmissionId,
         });
         realGemini.CallCount.Should().Be(2);
+
+        var failedRefresh = await ucFallback.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput
+        {
+            RefreshAi = true,
+            RefreshSubmissionId = submitted.SubmissionId,
+        });
+        fallbackGemini.CallCount.Should().Be(3);
+        failedRefresh.Items.Single().AiHint!.Source.Should().Be("GEMINI");
     }
 
     [Fact]
@@ -504,6 +549,7 @@ public class MentorReviewEnhancementTests
 
     private sealed class CountingGeminiService(string source) : IGeminiService
     {
+        public int PassageCallCount { get; private set; }
         public int CallCount { get; private set; }
         public bool IsConfigured => source == "GEMINI";
 
@@ -524,7 +570,15 @@ public class MentorReviewEnhancementTests
                 Source = source,
                 Model = source == "GEMINI" ? "gemini-2.5-flash" : null,
                 CriterionNotes = criteria.Select(c => $"Ghi chú cho {c}").ToList(),
+                Detail = source == "GEMINI" ? new PulseAiDetailDto { DepthNote = "Đối chiếu nội dung" } : null,
             });
+        }
+
+        public Task<string?> FindEvidencePassageAsync(
+            string evidenceText, string metric, string note, CancellationToken cancellationToken = default)
+        {
+            PassageCallCount++;
+            return Task.FromResult<string?>(evidenceText);
         }
 
         public Task<Application.UseCases.TrialProgram.TrialEssayAiReviewDto?> EvaluateTrialEssaysAsync(
