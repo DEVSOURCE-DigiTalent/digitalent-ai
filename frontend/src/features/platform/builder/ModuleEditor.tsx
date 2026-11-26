@@ -8,6 +8,8 @@ import { errorMessage } from '../components/pulse-format';
 import { BlockCard } from './BlockCard';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
 import { QuizEditor } from './QuizEditor';
+import { BlockAiNote, ModuleAiPanel } from './ModuleAiPanel';
+import { useModuleAi } from './use-module-ai';
 import { Layers, BookOpen, Trash2, ArrowRight, ArrowLeft, Plus, X, AlertTriangle } from 'lucide-react';
 
 const two = (n: number) => String(n).padStart(2, '0');
@@ -34,6 +36,7 @@ export function ModuleEditor({
 }) {
   useUiLanguage();
   const service = useCourseBuilderService();
+  const ai = useModuleAi(course, module, edit);
   const [title, setTitle] = useState(module.title);
   const [addAt, setAddAt] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -167,6 +170,9 @@ export function ModuleEditor({
         </div>
       </div>
 
+      {/* ✦ Trợ lý AI theo Thông tư 02 (admin và R&D dùng chung): kiểm tra, gợi ý; nhận xét nằm dưới từng trang */}
+      <ModuleAiPanel ai={ai} editable={editable} moduleId={module.moduleId} />
+
       {/* ✦ BẢNG KHUNG 2: Khối học liệu mô đun */}
       <div className="pa-cb-panel">
         <div className="pa-cb-panel-head">
@@ -250,6 +256,7 @@ export function ModuleEditor({
                     onToggle={() => setEditingId(editingId === block.blockId ? null : block.blockId)}
                     edit={edit}
                   />
+                  <BlockAiNote ai={ai} block={block} editable={editable} />
                 </div>
               ))}
               {addBar(module.blocks.length)}
@@ -258,8 +265,8 @@ export function ModuleEditor({
         </div>
       </div>
 
-      {/* ✦ BẢNG KHUNG 3: Ngân hàng câu hỏi trắc nghiệm ôn tập */}
-      <QuizEditor key={module.moduleId} module={module} editable={editable} edit={edit} internal={internal} />
+      {/* ✦ BẢNG KHUNG 3: Ngân hàng câu hỏi trắc nghiệm ôn tập (câu AI bắt lỗi có dải đỏ ngay dưới) */}
+      <QuizEditor key={module.moduleId} module={module} editable={editable} edit={edit} internal={internal} aiFlags={ai.questionFlags} />
 
       {/* ✦ THANH ĐIỀU HƯỚNG CHÂN TRANG */}
       <div className="pa-cb-action-footer">

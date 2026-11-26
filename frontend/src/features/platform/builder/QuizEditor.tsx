@@ -1,11 +1,12 @@
 import { useCourseBuilderService } from './course-builder-service';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { toast } from 'sonner';
 import { type CatalogModule, type CatalogQuestion } from '@/services/platform-catalog.service';
 import { QUESTIONS_MIN, QUESTIONS_RECOMMENDED, errorMessage } from '../components/pulse-format';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
 import { HelpCircle, Plus, X } from 'lucide-react';
+import { QuestionAiFlag } from './ModuleAiPanel';
 
 const letter = (index: number) => String.fromCharCode(65 + index);
 const MAX_OPTIONS = 5;
@@ -15,8 +16,10 @@ const MIN_OPTIONS = 2;
  * Review questions of one module (Pulse rule: each attempt draws 2 of them; a wrong answer sends the learner back to
  * the block the question is linked to). One question is open for editing at a time and saved with "Lưu câu hỏi".
  */
-export function QuizEditor({ module, editable, edit, internal = false }: {
+export function QuizEditor({ module, editable, edit, internal = false, aiFlags }: {
   module: CatalogModule; editable: boolean; edit: CourseEdit; internal?: boolean;
+  /** Problems the AI found in the last check, by question id (shown under the question). */
+  aiFlags?: ReadonlyMap<string, string>;
 }) {
   useUiLanguage();
   const service = useCourseBuilderService();
@@ -93,16 +96,18 @@ export function QuizEditor({ module, editable, edit, internal = false }: {
 
         <div className="pa-questions">
           {module.questions.map((question) => (
-            <QuestionRow
-              key={question.questionId}
-              question={question}
-              module={module}
-              open={editable && openId === question.questionId}
-              editable={editable}
-              onOpen={() => setOpenId(openId === question.questionId ? null : question.questionId)}
-              onClose={() => setOpenId(null)}
-              edit={edit}
-            />
+            <Fragment key={question.questionId}>
+              <QuestionRow
+                question={question}
+                module={module}
+                open={editable && openId === question.questionId}
+                editable={editable}
+                onOpen={() => setOpenId(openId === question.questionId ? null : question.questionId)}
+                onClose={() => setOpenId(null)}
+                edit={edit}
+              />
+              {aiFlags?.get(question.questionId) && <QuestionAiFlag problem={aiFlags.get(question.questionId)!} />}
+            </Fragment>
           ))}
           {count === 0 && (
             <p style={{ margin: 0, padding: '16px 0', fontSize: 13, color: '#64748b', textAlign: 'center' }}>
