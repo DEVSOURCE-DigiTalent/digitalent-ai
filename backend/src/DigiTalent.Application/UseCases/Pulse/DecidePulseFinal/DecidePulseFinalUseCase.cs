@@ -43,6 +43,13 @@ public class DecidePulseFinalUseCase : IUseCase<DecidePulseFinalUseCaseInput, De
             throw new ConflictException("Bài nộp này đã có quyết định.");
         }
 
+        if (enrollment.Status == Statuses.Enrollment.Cancelled)
+        {
+            // The company applied new content to the course: the employee learns it again from the start (CourseRelearn).
+            throw new BadRequestException(
+                "Bài này đã hủy vì công ty áp dụng nội dung mới cho khóa; nhân viên học lại từ đầu.", "submissionId", "SUBMISSION_CANCELLED");
+        }
+
         var latest = await _context.CourseFinalSubmissions
             .Where(s => s.EnrollmentId == enrollment.Id)
             .MaxAsync(s => s.AttemptNo);
