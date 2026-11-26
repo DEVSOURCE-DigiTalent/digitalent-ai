@@ -47,8 +47,8 @@ public class RewriteModulePageUseCase : IUseCase<RewriteModulePageUseCaseInput, 
 
         var known = competencies.SelectMany(c => c.Outcomes).Select(o => o.Id).ToHashSet();
         result.PageNumber = input.PageNumber;
-        result.Html = html;
-        result.Title = result.Title.Trim();
+        result.Html = ContentAiRequests.Clean(html);
+        result.Title = ContentAiRequests.Clean(result.Title, title: true);
         result.Covers = result.Covers.Where(known.Contains).Distinct().ToList();
         return result;
     }

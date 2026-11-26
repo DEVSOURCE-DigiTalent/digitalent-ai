@@ -39,10 +39,10 @@ public class ContentAiTests
             .Callback<ModuleContentAiRequest, CancellationToken>((r, _) => sent = r)
             .ReturnsAsync(new ModuleContentSuggestionOutput
             {
-                Lessons = { new SuggestedLessonDto { Title = "Chọn giải pháp", Html = "<p>Nội dung</p><script>alert(1)</script>" } },
+                Lessons = { new SuggestedLessonDto { Title = "Trang 4: Chọn giải pháp [5.2-b3-1]", Html = "<p>Nội dung [5.2-b3-1]</p><script>alert(1)</script>" } },
                 Questions =
                 {
-                    new SuggestedQuestionDto { Text = "Câu 1?", OutcomeId = "5.2-b3-1", Options = { new() { Text = "A", IsCorrect = true }, new() { Text = "B" } } },
+                    new SuggestedQuestionDto { Text = "Câu 1 [5.2-b3-1]?", OutcomeId = "5.2-b3-1", Options = { new() { Text = "A (5.2-b3-1)", IsCorrect = true }, new() { Text = "B" } } },
                     new SuggestedQuestionDto { Text = "Câu 2?", OutcomeId = "9.9-b1-1", Options = { new() { Text = "A", IsCorrect = true }, new() { Text = "B" } } },
                 },
             });
@@ -62,7 +62,11 @@ public class ContentAiTests
         sent.Lessons.Single().Should().Contain("Đã có nội dung").And.NotContain("<b>");
         result.Competencies.Single().Bac.Should().Be("3–4");
         result.Competencies.Single().Outcomes.Should().OnlyContain(o => o.Bac == 3 || o.Bac == 4);
-        result.Lessons.Single().Html.Should().Contain("Nội dung").And.NotContain("script");
+        result.Lessons.Single().Html.Should().Contain("Nội dung").And.NotContain("script").And.NotContain("5.2-b3-1");
+        // Learners never see the requirement ids or the AI's page numbers.
+        result.Lessons.Single().Title.Should().Be("Chọn giải pháp");
+        result.Questions[0].Text.Should().Be("Câu 1?");
+        result.Questions[0].Options[0].Text.Should().Be("A");
         result.Questions.Select(q => q.OutcomeId).Should().Equal("5.2-b3-1", null);
     }
 

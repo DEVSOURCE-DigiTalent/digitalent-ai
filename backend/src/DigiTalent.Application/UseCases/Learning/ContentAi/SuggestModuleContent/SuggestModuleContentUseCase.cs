@@ -35,9 +35,15 @@ public class SuggestModuleContentUseCase : IUseCase<SuggestModuleContentUseCaseI
 
         result.Competencies = competencies;
         result.Lessons = result.Lessons
-            .Select(l => new SuggestedLessonDto { Title = l.Title.Trim(), Html = _sanitizer.Sanitize(l.Html) })
+            .Select(l => new SuggestedLessonDto { Title = ContentAiRequests.Clean(l.Title, title: true), Html = ContentAiRequests.Clean(_sanitizer.Sanitize(l.Html)) })
             .Where(l => _sanitizer.PlainText(l.Html).Trim().Length > 0)
             .ToList();
+        foreach (var question in result.Questions)
+        {
+            question.Text = ContentAiRequests.Clean(question.Text);
+            question.Explanation = question.Explanation is null ? null : ContentAiRequests.Clean(question.Explanation);
+            foreach (var option in question.Options) option.Text = ContentAiRequests.Clean(option.Text);
+        }
         var known = competencies.SelectMany(c => c.Outcomes).Select(o => o.Id).ToHashSet();
         foreach (var question in result.Questions.Where(q => q.OutcomeId != null && !known.Contains(q.OutcomeId)))
         {
