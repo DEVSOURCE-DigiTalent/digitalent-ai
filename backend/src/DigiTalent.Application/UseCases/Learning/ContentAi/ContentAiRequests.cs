@@ -62,6 +62,18 @@ public static class ContentAiRequests
     private static string Squeeze(string text) =>
         System.Text.RegularExpressions.Regex.Replace(text, @"[ \t]{2,}", " ").Trim();
 
+    /// <summary>
+    /// What the AI writes for learners must not carry the requirement ids it was given ("[5.2-b1-1]") or its own page
+    /// numbers ("Trang 4: …"); the ids belong in outcomeId / covers only.
+    /// </summary>
+    public static string Clean(string? text, bool title = false)
+    {
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(text ?? "", @"\s*[\[(]\s*\d+\.\d+-b\d+-\d+\s*[\])]", "");
+        if (title) cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"^\s*trang\s*\d+\s*[:.\-–]\s*", "",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return cleaned.Trim();
+    }
+
     /// <summary>Stable id of one requirement: "{competency}-b{bậc}-{n}".</summary>
     public static string OutcomeId(string competency, int bac, int index) => $"{competency}-b{bac}-{index + 1}";
 

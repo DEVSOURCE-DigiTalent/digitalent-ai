@@ -426,9 +426,9 @@ public sealed class GeminiService : IGeminiService
     {
         if (!IsConfigured) return null;
 
-        // Kept short so the answer comes back in one call even when the model is busy; the author asks again for more.
-        var existing = request.Questions.Count;
-        var questionCount = existing >= 10 ? 3 : Math.Clamp(10 - existing, 3, 5);
+        // 4 pages and 10 questions (a whole review quiz) per call; the author asks again for more.
+        const int pageCount = 4;
+        const int questionCount = 10;
         var prompt =
             "Bạn là chuyên gia thiết kế khóa học năng lực số cho nhân viên doanh nghiệp vừa và nhỏ tại Việt Nam, "
             + "bám đúng Khung năng lực số của Thông tư 02/2025/TT-BGDĐT.\n"
@@ -437,10 +437,11 @@ public sealed class GeminiService : IGeminiService
             + "NỘI DUNG MÔ-ĐUN ĐANG CÓ (không lặp lại, chỉ bổ sung chỗ còn thiếu):\n" + LessonsText(request) + "\n\n"
             + "CÂU HỎI ÔN TẬP ĐANG CÓ:\n" + QuestionsText(request, withAnswers: false) + "\n\n"
             + "Hãy soạn:\n"
-            + $"1) 2 trang bài học mới, mỗi trang 120–200 từ, đúng mức {request.LevelName} (không dạy nội dung của mức cao hơn), "
+            + $"1) {pageCount} trang bài học mới, mỗi trang 120–200 từ, mỗi trang một ý khác nhau, đúng mức {request.LevelName} (không dạy nội dung của mức cao hơn), "
             + "có ví dụ trong công việc văn phòng, kinh doanh, kế toán hoặc nhân sự; viết HTML đơn giản chỉ dùng <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>.\n"
             + $"2) {questionCount} câu hỏi ôn tập trắc nghiệm: mỗi câu đúng 4 lựa chọn, chỉ 1 lựa chọn đúng, kèm giải thích ngắn; "
             + "mỗi câu ghi outcomeId của yêu cầu mà nó kiểm tra; ưu tiên các yêu cầu nội dung hiện có chưa đáp ứng.\n"
+            + "Không ghi outcomeId hay số trang vào tiêu đề, nội dung trang, câu hỏi và lựa chọn (outcomeId chỉ ghi ở trường outcomeId).\n"
             + "Trả JSON thuần (không markdown): {\"lessons\":[{\"title\":\"...\",\"html\":\"...\"}],"
             + "\"questions\":[{\"text\":\"...\",\"options\":[{\"text\":\"...\",\"isCorrect\":true}],\"explanation\":\"...\",\"outcomeId\":\"1.1-b3-2\"}],"
             + "\"note\":\"1–2 câu lưu ý cho người soạn\"}. Trả lời bằng tiếng Việt.";
@@ -565,7 +566,7 @@ public sealed class GeminiService : IGeminiService
             + "CÁC TRANG CỦA MÔ-ĐUN (để giữ mạch bài, không lặp nội dung của trang khác):\n" + LessonsText(request) + "\n\n"
             + $"Hãy VIẾT LẠI TRANG {pageNumber}: giữ chủ đề chính của trang và sửa các điểm sau:\n{fixes}\n"
             + $"Yêu cầu: đúng mức {request.LevelName} (không dạy nội dung của mức cao hơn); 150–280 từ; có ví dụ trong công việc văn phòng, "
-            + "kinh doanh, kế toán hoặc nhân sự; HTML đơn giản chỉ dùng <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>; không đánh số trang trong tiêu đề.\n"
+            + "kinh doanh, kế toán hoặc nhân sự; HTML đơn giản chỉ dùng <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>; không đánh số trang trong tiêu đề, không ghi outcomeId vào tiêu đề hay nội dung.\n"
             + "Trả JSON thuần (không markdown): {\"title\":\"...\",\"html\":\"...\",\"covers\":[\"outcomeId\"],\"note\":\"1 câu: đã sửa gì\"}. "
             + "Trả lời bằng tiếng Việt.";
 
