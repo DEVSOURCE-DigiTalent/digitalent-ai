@@ -138,7 +138,7 @@ public class PlatformCatalogController : ControllerBase
         [FromServices] IUseCase<GetPlatformCatalogPublishCheckUseCaseInput, PlatformPublishCheck> useCase) =>
         Ok(ApiResponse<PlatformPublishCheck>.Ok(await useCase.ExecuteAsync(new GetPlatformCatalogPublishCheckUseCaseInput { VersionNo = versionNo })));
 
-    // POST api/v1/platform/catalog/versions/{versionNo}/publish — body { releaseNote? }
+    // POST api/v1/platform/catalog/versions/{versionNo}/publish — body { releaseNote?, applyToAllOrganizations? }
     [HttpPost("catalog/versions/{versionNo:int}/publish")]
     [HasPermission(Permissions.Platform.CatalogManage)]
     public async Task<ActionResult<ApiResponse<PlatformCatalogVersionDetail>>> PublishVersion(
@@ -148,6 +148,31 @@ public class PlatformCatalogController : ControllerBase
     {
         input.VersionNo = versionNo;
         return Ok(ApiResponse<PlatformCatalogVersionDetail>.Ok(await useCase.ExecuteAsync(input), "Version published."));
+    }
+
+    // ----- Version applied to one organization --------------------------------------------------
+
+    // GET api/v1/platform/organizations/{organizationId}/catalog-version?versionNo= — the organization's version and
+    // what moving it to versionNo (default: the newest) changes
+    [HttpGet("organizations/{organizationId:guid}/catalog-version")]
+    [HasPermission(Permissions.Platform.CatalogRead)]
+    public async Task<ActionResult<ApiResponse<OrganizationCatalogVersionOutput>>> GetOrganizationCatalogVersion(
+        Guid organizationId,
+        [FromQuery] int? versionNo,
+        [FromServices] IUseCase<GetOrganizationCatalogVersionUseCaseInput, OrganizationCatalogVersionOutput> useCase) =>
+        Ok(ApiResponse<OrganizationCatalogVersionOutput>.Ok(await useCase.ExecuteAsync(
+            new GetOrganizationCatalogVersionUseCaseInput { OrganizationId = organizationId, VersionNo = versionNo })));
+
+    // POST api/v1/platform/organizations/{organizationId}/catalog-version — body { versionNo, reason? }
+    [HttpPost("organizations/{organizationId:guid}/catalog-version")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<OrganizationCatalogVersionOutput>>> ApplyOrganizationCatalogVersion(
+        Guid organizationId,
+        [FromBody] ApplyOrganizationCatalogVersionUseCaseInput input,
+        [FromServices] IUseCase<ApplyOrganizationCatalogVersionUseCaseInput, OrganizationCatalogVersionOutput> useCase)
+    {
+        input.OrganizationId = organizationId;
+        return Ok(ApiResponse<OrganizationCatalogVersionOutput>.Ok(await useCase.ExecuteAsync(input), "Catalog version applied."));
     }
 
     // PUT api/v1/platform/catalog/versions/{versionNo}/prices — body { items: [{ courseId, price, salesStatus }] }

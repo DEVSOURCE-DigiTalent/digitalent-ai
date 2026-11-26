@@ -4,8 +4,10 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import apiClient from '@/services/api-client';
 import { type CatalogBlock, type CatalogCourseDetail, type CatalogModule, type CatalogQuestion, type PlatformAsset } from '@/services/platform-catalog.service';
 import type { CourseBuilderService } from '@/features/platform/builder/course-builder-service';
+import { researchKeys, type ResearchCourseContent } from './research-api';
 
-type State = { revision: number; course: CatalogCourseDetail; hasDraft: boolean; hasApplied: boolean };
+/** problems = what must be fixed before the content shown can be applied (empty = ready). */
+type State = { revision: number; course: CatalogCourseDetail; hasDraft: boolean; hasApplied: boolean; problems: string[] };
 type Change = (course: CatalogCourseDetail) => void;
 
 function find<T>(items: T[], matches: (item: T) => boolean) {
@@ -33,7 +35,8 @@ export function useResearchAuthoring(courseId: string) {
   const userId = useCurrentUser((state) => state.user?.id);
   const client = useQueryClient();
   const key = useMemo(() => ['enterprise-rnd', userId, 'editor', courseId] as const, [userId, courseId]);
-  const resource = `/enterprise/rnd/courses/${courseId}/editor`;
+  const base = `/enterprise/rnd/courses/${courseId}`;
+  const resource = `${base}/editor`;
   const query = useQuery({
     queryKey: key,
     queryFn: async () => (await apiClient.get<{ data: State }>(resource)).data.data,
@@ -63,13 +66,18 @@ export function useResearchAuthoring(courseId: string) {
       pending.current = next.catch(() => {});
       return next;
     };
-    const save = (change: Change, apply = false) => publish(async (state) => {
+    const save = (change: Change) => publish(async (state) => {
       const course = structuredClone(state.course);
       change(course);
-      return (await apiClient.put<{ data: State }>(apply ? `${resource}/applied` : resource, {
+      return (await apiClient.put<{ data: State }>(resource, {
         revision: state.revision, modules: course.modules, final: course.final,
       })).data.data;
     });
+    // Applying or removing the company version writes a new course revision (a new course id): reload the list.
+    const changed = async () => {
+      await client.invalidateQueries({ queryKey: researchKeys.courses(userId) });
+      void client.invalidateQueries({ queryKey: ['pulse'] });
+    };
     const modify = (change: Change) => save(change).then((result) => result.course);
     const resolveAsset = (course: CatalogCourseDetail, id: string) => {
       const asset = uploads.get(id) ?? course.modules.flatMap((module) => module.blocks)
@@ -144,13 +152,27 @@ export function useResearchAuthoring(courseId: string) {
     };
     return {
       service,
-      create: () => save(() => {}),
-      apply: () => save(() => {}, true),
-      remove: (kind: 'draft' | 'applied') => publish(async (state) => (await apiClient.delete<{ data: State }>(`${resource}/${kind}`, {
+      /** Employees learn and take the tests on the draft (or the content in use) from now on. */
+      apply: (info: ResearchCourseContent) => publish(async (state) =>
+        (await apiClient.post<{ data: State }>(`${base}/apply`, { revision: state.revision, info })).data.data).then(async (saved) => {
+        await changed();
+        return saved;
+      }),
+      /** Employees go back to the standard content; the company version becomes the draft. */
+      removeApplied: () => publish(async (state) => (await apiClient.delete<{ data: State }>(`${base}/apply`, {
         params: { revision: state.revision },
-      })).data.data),
+      })).data.data).then(async (saved) => {
+        await changed();
+        return saved;
+      }),
+      discardDraft: () => publish(async (state) => (await apiClient.delete<{ data: State }>(`${resource}/draft`, {
+        params: { revision: state.revision },
+      })).data.data).then(async (saved) => {
+        await client.invalidateQueries({ queryKey: researchKeys.courses(userId) });
+        return saved;
+      }),
     };
-  }, [client, key, resource]);
+  }, [base, client, key, resource, userId]);
 
   return { ...query, ...editor };
 }

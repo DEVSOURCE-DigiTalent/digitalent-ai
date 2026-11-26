@@ -102,6 +102,7 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   PLATFORM_CATALOG_COURSE_ADDED: 'Thêm khóa học vào bản nháp',
   PLATFORM_CATALOG_COURSE_REMOVED: 'Bỏ khóa học khỏi bản nháp',
   PLATFORM_CATALOG_PUBLISHED: 'Công bố phiên bản khóa học',
+  PLATFORM_CATALOG_APPLIED: 'Áp phiên bản chương trình học cho tổ chức',
   PLATFORM_CATALOG_PRICES_UPDATED: 'Cập nhật giá khóa học',
   PLATFORM_COURSE_DRAFT_SAVED: 'Lưu nháp khóa học',
   PLATFORM_COURSE_PUBLISHED: 'Công bố khóa học',

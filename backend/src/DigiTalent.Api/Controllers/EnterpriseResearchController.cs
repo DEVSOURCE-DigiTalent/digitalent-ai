@@ -35,17 +35,13 @@ public sealed class EnterpriseResearchController(EnterpriseResearch research) : 
     [HttpPut("courses/{id:guid}/draft")]
     [HasPermission(Permissions.Research.ManageCourses)]
     public async Task<ApiResponse<ResearchCourseVersion>> SaveDraft(Guid id, ResearchCourseContent content) =>
-        ApiResponse<ResearchCourseVersion>.Ok(await research.SaveAsync(id, content, apply: false));
-
-    [HttpPut("courses/{id:guid}/applied")]
-    [HasPermission(Permissions.Research.ManageCourses)]
-    public async Task<ApiResponse<ResearchCourseVersion>> Apply(Guid id, ResearchCourseContent content) =>
-        ApiResponse<ResearchCourseVersion>.Ok(await research.SaveAsync(id, content, apply: true));
+        ApiResponse<ResearchCourseVersion>.Ok(await research.SaveAsync(id, content));
 
     [HttpGet("courses/{id:guid}/editor")]
     [HasPermission(Permissions.Research.ManageCourses)]
-    public async Task<ApiResponse<ResearchAuthoringVersion>> GetEditor(Guid id, [FromServices] PlatformCourseContentReader reader) =>
-        ApiResponse<ResearchAuthoringVersion>.Ok(await research.GetAuthoringAsync(id, reader));
+    public async Task<ApiResponse<ResearchAuthoringVersion>> GetEditor(Guid id, [FromServices] PlatformCourseContentReader reader,
+        [FromServices] IHtmlContentSanitizer sanitizer) =>
+        ApiResponse<ResearchAuthoringVersion>.Ok(await research.GetAuthoringAsync(id, reader, sanitizer));
 
     [HttpPut("courses/{id:guid}/editor")]
     [HasPermission(Permissions.Research.ManageCourses)]
@@ -53,23 +49,25 @@ public sealed class EnterpriseResearchController(EnterpriseResearch research) : 
         [FromServices] PlatformCourseContentReader reader, [FromServices] IHtmlContentSanitizer sanitizer) =>
         ApiResponse<ResearchAuthoringVersion>.Ok(await research.SaveAuthoringAsync(id, input, reader, sanitizer));
 
-    [HttpPut("courses/{id:guid}/editor/applied")]
-    [HasPermission(Permissions.Research.ManageCourses)]
-    public async Task<ApiResponse<ResearchAuthoringVersion>> ApplyEditor(Guid id, ResearchAuthoringInput input,
-        [FromServices] PlatformCourseContentReader reader, [FromServices] IHtmlContentSanitizer sanitizer) =>
-        ApiResponse<ResearchAuthoringVersion>.Ok(await research.SaveAuthoringAsync(id, input, reader, sanitizer, apply: true));
-
     [HttpDelete("courses/{id:guid}/editor/draft")]
     [HasPermission(Permissions.Research.ManageCourses)]
-    public async Task<ApiResponse<ResearchAuthoringVersion>> DiscardEditor(Guid id, [FromQuery] int revision,
-        [FromServices] PlatformCourseContentReader reader) =>
-        ApiResponse<ResearchAuthoringVersion>.Ok(await research.RemoveAuthoringAsync(id, revision, reader, applied: false));
+    public async Task<ApiResponse<ResearchAuthoringVersion>> DiscardDraft(Guid id, [FromQuery] int revision,
+        [FromServices] PlatformCourseContentReader reader, [FromServices] IHtmlContentSanitizer sanitizer) =>
+        ApiResponse<ResearchAuthoringVersion>.Ok(await research.DiscardDraftAsync(id, revision, reader, sanitizer));
 
-    [HttpDelete("courses/{id:guid}/editor/applied")]
+    /// <summary>Applies the company version: a new course revision employees learn and take tests on.</summary>
+    [HttpPost("courses/{id:guid}/apply")]
     [HasPermission(Permissions.Research.ManageCourses)]
-    public async Task<ApiResponse<ResearchAuthoringVersion>> RemoveAppliedEditor(Guid id, [FromQuery] int revision,
-        [FromServices] PlatformCourseContentReader reader) =>
-        ApiResponse<ResearchAuthoringVersion>.Ok(await research.RemoveAuthoringAsync(id, revision, reader, applied: true));
+    public async Task<ApiResponse<ResearchAuthoringVersion>> Apply(Guid id, ResearchApplyInput input,
+        [FromServices] PlatformCourseContentReader reader, [FromServices] IHtmlContentSanitizer sanitizer) =>
+        ApiResponse<ResearchAuthoringVersion>.Ok(await research.ApplyCompanyVersionAsync(id, input, reader, sanitizer));
+
+    /// <summary>Employees go back to the standard content; the company version stays as R&D's draft.</summary>
+    [HttpDelete("courses/{id:guid}/apply")]
+    [HasPermission(Permissions.Research.ManageCourses)]
+    public async Task<ApiResponse<ResearchAuthoringVersion>> RemoveApplied(Guid id, [FromQuery] int revision,
+        [FromServices] PlatformCourseContentReader reader, [FromServices] IHtmlContentSanitizer sanitizer) =>
+        ApiResponse<ResearchAuthoringVersion>.Ok(await research.RemoveCompanyVersionAsync(id, revision, reader, sanitizer));
 
     [HttpPost("courses/{id:guid}/editor/assets")]
     [HasPermission(Permissions.Research.ManageCourses)]

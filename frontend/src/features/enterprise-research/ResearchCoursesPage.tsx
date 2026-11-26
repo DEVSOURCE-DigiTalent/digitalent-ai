@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, CheckCircle2, Eye, GraduationCap, Layers, Plus, S
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Modal } from '@/components/shared/Modal';
+import { CourseUpdateBanner } from '@/features/organization/components/CourseUpdateBanner';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { apiErrorMessage } from '@/lib/utils';
 import { LessonSlide } from '@/features/pulse-employee/components/LessonSlide';
@@ -26,19 +27,34 @@ import { useResearchAuthoring } from './research-authoring';
 const smallButton = 'btn btn-outline btn-small inline-flex items-center gap-1.5';
 const two = (value: number) => String(value).padStart(2, '0');
 type Section = 'info' | 'practice' | 'final' | number;
+type EditorAction = 'apply' | 'discard' | 'unpublish';
+const EMPTY = { title: '', objective: '', practice: '' };
+
+/** Where a problem the server reports can be fixed ("Mô đun 2: …" → module 2). */
+function problemTarget(problem: string): Section | undefined {
+  const module = /^Mô đun (\d+):/.exec(problem);
+  if (module) return Number(module[1]) - 1;
+  if (/cuối khóa/i.test(problem)) return 'final';
+  if (/^Mục tiêu/.test(problem)) return 'info';
+  return undefined;
+}
 
 export function ResearchCoursesPage() {
   const settings = useResearchSettings();
   const courses = useResearchCourses(settings.data === true);
   const isOwner = useCurrentUser((state) => state.user?.roles.includes('OWNER') === true);
   const [params, setParams] = useSearchParams();
-  const selected = courses.data?.find((course) => course.courseId === params.get('course')) ?? courses.data?.[0];
+  // A course is picked by its code: applying the company version gives the course a new revision (a new id).
+  const wanted = params.get('course');
+  const selected = courses.data?.find((course) => course.code === wanted || course.courseId === wanted) ?? courses.data?.[0];
   const settingsLink = isOwner && <Link className={smallButton} to="/enterprise/settings"><Settings size={14} /> Cài đặt R&D</Link>;
   const requesting = settings.isPending || (settings.data === true && courses.isPending);
   const failed = settings.isError || (settings.data === true && courses.isError);
 
   return (
     <div className="pulse-ui pa-console !min-h-0">
+      {/* A course version DigiTalent published waits for R&D's decision (shown only to who may read it). */}
+      <CourseUpdateBanner />
       {requesting ? <Loading /> : failed ? (
         <p className="notice warning" role="alert">
           Không tải được dữ liệu R&D. <button type="button" className={smallButton} onClick={() => void (settings.isError ? settings.refetch() : courses.refetch())}>Thử lại</button>
@@ -50,13 +66,13 @@ export function ResearchCoursesPage() {
         </CourseBuilderPanel>
       ) : (
         <ResearchEditor
-          key={selected.courseId}
+          key={selected.code}
           course={selected}
           actions={<>
-            <select className="pa-cb-input max-w-full sm:max-w-[300px]" style={{ width: 'auto' }} aria-label="Chọn khóa học R&D" value={selected.courseId}
+            <select className="pa-cb-input max-w-full sm:max-w-[300px]" style={{ width: 'auto' }} aria-label="Chọn khóa học R&D" value={selected.code}
               onChange={(event) => setParams({ course: event.target.value })}>
               {courses.data?.map((course) => (
-                <option key={course.courseId} value={course.courseId}>{course.code} · {course.title}</option>
+                <option key={course.code} value={course.code}>{course.code} · {course.title}</option>
               ))}
             </select>
             {settingsLink}
@@ -70,9 +86,9 @@ export function ResearchCoursesPage() {
 function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: ReactNode }) {
   const [params, setParams] = useSearchParams();
   const formId = useId();
-  const [content, setContent] = useState(course.draft ?? course.applied ?? { title: '', objective: '', practice: '' });
+  const [content, setContent] = useState(course.draft ?? course.applied ?? EMPTY);
   const [previewIndex, setPreviewIndex] = useState<number>();
-  const [editorAction, setEditorAction] = useState<'apply' | 'discard' | 'unpublish'>();
+  const [editorAction, setEditorAction] = useState<EditorAction>();
   const [busy, setBusy] = useState(false);
   const save = useSaveResearchCourse();
   const authoring = useResearchAuthoring(course.courseId);
@@ -82,10 +98,17 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
   const section: Section = raw === 'practice' || raw === 'final' ? raw
     : raw && /^\d+$/.test(raw) && Number(raw) < modules.length ? Number(raw) : 'info';
   const preview = useResearchPreview(course.courseId, !builder && (previewIndex !== undefined || typeof section === 'number'));
-  const canSave = Boolean(content.objective.trim() && content.practice.trim()) && !save.isPending;
-  const draftChanged = course.applied && course.draft &&
-    (course.applied.title !== course.draft.title || course.applied.objective !== course.draft.objective || course.applied.practice !== course.draft.practice);
-  const status = draftChanged ? 'Có bản nháp mới' : course.applied ? 'Đang áp dụng' : course.draft ? 'Bản nháp' : 'Chưa tùy chỉnh';
+  const hasApplied = Boolean(authoring.data?.hasApplied || course.applied);
+  const hasDraft = Boolean(authoring.data?.hasDraft || course.draft);
+  const status = hasApplied ? (hasDraft ? 'Bản doanh nghiệp · có thay đổi chưa áp dụng' : 'Đang dùng bản doanh nghiệp')
+    : hasDraft ? 'Bản nháp chưa áp dụng' : 'Đang dùng bản chuẩn';
+  const objective = content.objective.trim();
+  // The same rules as a DigiTalent publication; the objective is checked here because the form is not saved yet.
+  const problems = [
+    ...(objective && objective.length < 10 ? ['Mục tiêu học tập cần ít nhất 10 ký tự (để trống thì dùng mục tiêu của khóa chuẩn).'] : []),
+    ...(authoring.data?.problems ?? []),
+  ];
+  const problemSections = new Set(problems.map(problemTarget));
   const accessLabel = course.tier === 1 ? 'Miễn phí' : 'Đã mua';
   const go = (target: Section) => {
     setParams((current) => {
@@ -95,44 +118,45 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
       return next;
     }, { replace: true });
   };
-  const runEditorAction = async (action: 'add' | 'create' | 'apply' | 'discard' | 'unpublish') => {
+  const runEditorAction = async (action: 'add' | EditorAction) => {
     if (!builder || busy) return;
     setBusy(true);
     try {
       if (action === 'add') {
         const updated = await authoring.service.addModule(builder.versionNo, builder.courseId, `Mô đun ${two(modules.length + 1)}`);
         go(updated.modules.length - 1);
-      } else if (action === 'create') {
-        await authoring.create();
-        toast.success('Đã tạo bản nháp biên soạn.');
       } else if (action === 'apply') {
-        await authoring.apply();
-        toast.success('Đã áp dụng chương trình biên soạn trong doanh nghiệp.');
-      } else {
-        await authoring.remove(action === 'discard' ? 'draft' : 'applied');
+        await authoring.apply(content);
+        toast.success('Đã áp dụng bản doanh nghiệp. Nhân viên học khóa này lại từ đầu theo nội dung mới.');
+      } else if (action === 'discard') {
+        await authoring.discardDraft();
+        setContent(course.applied ?? EMPTY);
         go('info');
-        toast.success(action === 'discard' ? 'Đã bỏ bản nháp biên soạn.' : 'Đã gỡ chương trình đã áp dụng.');
+        toast.success('Đã bỏ các thay đổi chưa áp dụng.');
+      } else {
+        await authoring.removeApplied();
+        toast.success('Đã gỡ bản doanh nghiệp. Nhân viên học lại theo nội dung chuẩn.');
       }
       setEditorAction(undefined);
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Không hoàn thành được thao tác biên soạn.'));
+      toast.error(apiErrorMessage(error, 'Không hoàn thành được thao tác.'));
     } finally {
       setBusy(false);
     }
   };
-  const submit = async (apply: boolean) => {
-    if (!canSave) return;
+  const saveInfo = async () => {
+    if (save.isPending) return;
     try {
-      const result = await save.mutateAsync({ courseId: course.courseId, content, apply });
+      const result = await save.mutateAsync({ courseId: course.courseId, content });
       if (result.draft) setContent(result.draft);
-      toast.success(apply ? 'Đã áp dụng bản tùy chỉnh cho doanh nghiệp.' : 'Đã lưu bản nháp.');
+      toast.success('Đã lưu bản nháp.');
     } catch (error) {
-      toast.error(apiErrorMessage(error, 'Không lưu được bản tùy chỉnh.'));
+      toast.error(apiErrorMessage(error, 'Không lưu được bản nháp.'));
     }
   };
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    void submit(false);
+    void saveInfo();
   };
   const renderLessons = (index: number) => {
     if (preview.isPending) return <Loading />;
@@ -148,19 +172,21 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
     <>
       <CourseBuilderHeader
         title={course.title} code={course.code} level={course.tier}
-        status={<span className={draftChanged || !course.applied ? 'pa-cb-version-draft-badge' : 'pa-cb-version-current-badge'}>
-          {(draftChanged || !course.applied) && <Sparkles size={12} aria-hidden="true" />}
-          {authoring.data?.hasDraft ? 'Bản nháp biên soạn' : authoring.data?.hasApplied ? 'Đã áp dụng chương trình' : status}
+        status={<span className={hasDraft || !hasApplied ? 'pa-cb-version-draft-badge' : 'pa-cb-version-current-badge'}>
+          {hasDraft && <Sparkles size={12} aria-hidden="true" />}
+          {status}
         </span>}
         subtitle={<p className="pa-ov-subtitle" style={{ margin: 0 }}>R&D doanh nghiệp · {modules.length} mô đun</p>}
         actions={<>
           {actions}
           <button type="button" className={smallButton} onClick={() => setPreviewIndex(typeof section === 'number' ? section : 0)}
             disabled={modules.length === 0}><Eye size={14} /> Xem thử như nhân viên</button>
-          {builder && !authoring.data?.hasDraft && <button type="button" className={smallButton} disabled={busy} onClick={() => void runEditorAction('create')}>Tạo bản nháp biên soạn</button>}
-          {authoring.data?.hasDraft && <button type="button" className={smallButton} disabled={busy} onClick={() => setEditorAction('apply')}>Áp dụng chương trình</button>}
-          {authoring.data?.hasDraft && <button type="button" className={smallButton} disabled={busy} onClick={() => setEditorAction('discard')}>Bỏ bản nháp biên soạn</button>}
-          {authoring.data?.hasApplied && <button type="button" className={smallButton} disabled={busy} onClick={() => setEditorAction('unpublish')}>Gỡ chương trình đã áp dụng</button>}
+          {hasDraft && <button type="button" className={smallButton} disabled={busy || !builder} onClick={() => setEditorAction('discard')}>Bỏ bản nháp</button>}
+          {hasApplied && <button type="button" className={smallButton} disabled={busy || !builder} onClick={() => setEditorAction('unpublish')}>Gỡ bản doanh nghiệp</button>}
+          <button type="button" className="btn btn-primary btn-small inline-flex items-center gap-1.5" disabled={busy || !builder}
+            onClick={() => setEditorAction('apply')}>
+            <CheckCircle2 size={14} aria-hidden="true" /> Áp dụng cho doanh nghiệp
+          </button>
         </>}
       />
 
@@ -174,7 +200,9 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
         <div className="pa-ol-label">Mô đun</div>
         {modules.map((title, index) => (
           <CourseOutlineItem key={builder?.modules[index]?.moduleId ?? index} number={two(index + 1)} title={title}
-            detail={builder ? `${builder.modules[index]?.blocks.length} khối · ${builder.modules[index]?.questions.length} câu hỏi` : 'Nội dung khóa gốc'}
+            detail={builder
+              ? `${builder.modules[index]?.blocks.length} khối · ${builder.modules[index]?.questions.length} câu hỏi${problemSections.has(index) ? ' · cần sửa' : ''}`
+              : 'Nội dung khóa gốc'}
             active={section === index} onClick={() => go(index)} />
         ))}
         {builder && <button type="button" className="pa-ol-add" disabled={busy} onClick={() => void runEditorAction('add')}>
@@ -182,8 +210,8 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
         </button>}
         <div className="pa-ol-label">Cuối khóa</div>
         {builder && <CourseOutlineItem icon={<GraduationCap size={14} aria-hidden="true" />} title={builder.final.title || 'Bài cuối khóa'}
-          detail="Thực hành theo chương trình nội bộ" active={section === 'final'} onClick={() => go('final')} />}
-        <CourseOutlineItem icon={<GraduationCap size={14} aria-hidden="true" />} title="Thực hành nội bộ"
+          detail={problemSections.has('final') ? 'Cần sửa' : 'Đề bài và tiêu chí chấm'} active={section === 'final'} onClick={() => go('final')} />}
+        <CourseOutlineItem icon={<GraduationCap size={14} aria-hidden="true" />} title="Thực hành nội bộ" detail="Không bắt buộc"
           active={section === 'practice'} onClick={() => go('practice')} />
       </>}>
         {builder && (typeof section === 'number' || section === 'final') ? (
@@ -205,8 +233,8 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
                 <div className="pa-cb-meta-cell"><span className="pa-cb-meta-label">Quyền truy cập</span><span className="pa-cb-meta-value">{accessLabel}</span></div>
               </div>
             </CourseBuilderPanel>
-            <CourseBuilderPanel icon={<BookOpen size={18} aria-hidden="true" />} title="Tên và mục tiêu" description={course.description ||
-              'Tên khóa học và kết quả đạt được, hiển thị cho nhân viên trong doanh nghiệp.'}>
+            <CourseBuilderPanel icon={<BookOpen size={18} aria-hidden="true" />} title="Tên và mục tiêu"
+              description="Không bắt buộc. Để trống thì nhân viên thấy tên và mục tiêu của khóa chuẩn.">
               <div>
                 <label className="pa-cb-field-label" htmlFor={`${formId}-title`}>Tên hiển thị nội bộ<span aria-hidden="true">{content.title.length}/200</span></label>
                 <input id={`${formId}-title`} className="pa-cb-input" value={content.title} maxLength={200} placeholder={course.title} disabled={save.isPending}
@@ -214,7 +242,8 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
               </div>
               <div>
                 <label className="pa-cb-field-label" htmlFor={`${formId}-objective`}>Mục tiêu học tập của doanh nghiệp<span aria-hidden="true">{content.objective.length}/2000</span></label>
-                <textarea id={`${formId}-objective`} className="pa-cb-textarea" rows={4} required maxLength={2000} value={content.objective} disabled={save.isPending}
+                <textarea id={`${formId}-objective`} className="pa-cb-textarea" rows={4} maxLength={2000} value={content.objective} disabled={save.isPending}
+                  placeholder={course.description ?? undefined}
                   onChange={(event) => setContent({ ...content, objective: event.target.value })} />
               </div>
             </CourseBuilderPanel>
@@ -228,29 +257,15 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
 
           {section === 'practice' && (
             <CourseBuilderPanel icon={<GraduationCap size={18} aria-hidden="true" />} title="Thực hành nội bộ"
-              description="Hướng dẫn nhân viên vận dụng nội dung khóa học vào công việc.">
+              description="Không bắt buộc. Nhân viên thấy hướng dẫn này ở trang khóa học.">
               <label className="pa-cb-field-label" htmlFor={`${formId}-practice`}>Hướng dẫn thực hành nội bộ<span aria-hidden="true">{content.practice.length}/8000</span></label>
-              <textarea id={`${formId}-practice`} className="pa-cb-textarea" rows={7} required maxLength={8000} value={content.practice} disabled={save.isPending}
+              <textarea id={`${formId}-practice`} className="pa-cb-textarea" rows={7} maxLength={8000} value={content.practice} disabled={save.isPending}
                 onChange={(event) => setContent({ ...content, practice: event.target.value })} />
             </CourseBuilderPanel>
           )}
 
-          {course.applied && (
-            <details className="pa-cb-panel p-4">
-              <summary className="cursor-pointer font-semibold">Xem nội dung đang áp dụng</summary>
-              <div className="pa-cb-outcome-box mt-3 space-y-3 whitespace-pre-wrap">
-                <p className="font-semibold">{course.applied.title || course.title}</p>
-                <p><strong>Mục tiêu</strong><br />{course.applied.objective}</p>
-                <p><strong>Thực hành</strong><br />{course.applied.practice}</p>
-              </div>
-            </details>
-          )}
-
           <div className="pa-cb-action-footer flex-wrap">
-            <button type="submit" className={smallButton} disabled={!canSave}>Lưu nháp</button>
-            <button type="button" className="btn btn-primary btn-small inline-flex items-center gap-1.5" disabled={!canSave} onClick={() => void submit(true)}>
-              <CheckCircle2 size={14} aria-hidden="true" /> Áp dụng cho doanh nghiệp
-            </button>
+            <button type="submit" className={smallButton} disabled={save.isPending}>Lưu nháp</button>
             {section !== 'practice' && (
               <button type="button" className={smallButton}
                 onClick={() => go(section === 'info' && course.modules.length > 0 ? 0 : typeof section === 'number' && section + 1 < course.modules.length ? section + 1 : 'practice')}>
@@ -265,12 +280,6 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
       {previewIndex !== undefined && !builder && (
         <Modal open onClose={() => setPreviewIndex(undefined)} title="Xem thử như nhân viên" description={content.title.trim() || course.title} size="xl">
           <div className="pulse-ui pa-console !min-h-0">
-            {(content.objective || content.practice) && (
-              <CourseBuilderPanel icon={<BookOpen size={18} aria-hidden="true" />} title="Nội dung của doanh nghiệp">
-                {content.objective && <p className="whitespace-pre-wrap"><strong>Mục tiêu học tập</strong><br />{content.objective}</p>}
-                {content.practice && <p className="whitespace-pre-wrap"><strong>Hướng dẫn thực hành</strong><br />{content.practice}</p>}
-              </CourseBuilderPanel>
-            )}
             <label className="pa-cb-field-label" htmlFor={`${formId}-preview`}>Mô đun</label>
             <select id={`${formId}-preview`} className="pa-cb-input mb-3" value={previewIndex}
               onChange={(event) => setPreviewIndex(Number(event.target.value))}>
@@ -280,20 +289,46 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
           </div>
         </Modal>
       )}
-      {editorAction && <Modal open onClose={() => !busy && setEditorAction(undefined)}
-        title={editorAction === 'apply' ? 'Áp dụng chương trình?' : editorAction === 'discard' ? 'Bỏ bản nháp biên soạn?' : 'Gỡ chương trình đã áp dụng?'}
-        footer={<>
-          <button type="button" className={smallButton} disabled={busy} onClick={() => setEditorAction(undefined)}>Hủy</button>
-          <button type="button" className="btn btn-primary btn-small" disabled={busy} onClick={() => void runEditorAction(editorAction)}>
-            {editorAction === 'apply' ? 'Áp dụng' : editorAction === 'discard' ? 'Bỏ bản nháp' : 'Gỡ chương trình'}
-          </button>
-        </>}>
-        <p>{editorAction === 'apply'
-          ? 'Nhân viên có quyền học sẽ thấy mô đun, câu hỏi ôn tập và bài thực hành đã biên soạn.'
-          : editorAction === 'discard'
-            ? 'Trình biên soạn sẽ quay về chương trình đang áp dụng hoặc nội dung khóa gốc.'
-            : 'Nhân viên sẽ quay về chương trình gốc. Bạn vẫn có thể tiếp tục làm việc với bản nháp hiện có.'}</p>
-      </Modal>}
+      {editorAction && <EditorActionDialog action={editorAction} busy={busy} problems={problems} hasDraft={hasDraft} hasApplied={hasApplied}
+        onCancel={() => !busy && setEditorAction(undefined)} onConfirm={() => void runEditorAction(editorAction)}
+        onFix={(target) => { setEditorAction(undefined); go(target); }} />}
     </>
+  );
+}
+
+function EditorActionDialog({ action, busy, problems, hasDraft, hasApplied, onCancel, onConfirm, onFix }: {
+  action: EditorAction; busy: boolean; problems: string[]; hasDraft: boolean; hasApplied: boolean;
+  onCancel: () => void; onConfirm: () => void; onFix: (target: Section) => void;
+}) {
+  const blocked = action === 'apply' && problems.length > 0;
+  const title = blocked ? 'Chưa áp dụng được'
+    : action === 'apply' ? 'Áp dụng cho doanh nghiệp?' : action === 'discard' ? 'Bỏ bản nháp?' : 'Gỡ bản doanh nghiệp?';
+  const what = hasDraft ? 'bản nháp đang soạn' : hasApplied ? 'bản doanh nghiệp đang dùng' : 'nội dung chuẩn';
+  return (
+    <Modal open onClose={onCancel} title={title}
+      footer={<>
+        <button type="button" className={smallButton} disabled={busy} onClick={onCancel}>{blocked ? 'Đóng' : 'Hủy'}</button>
+        {!blocked && <button type="button" className="btn btn-primary btn-small" disabled={busy} onClick={onConfirm}>
+          {action === 'apply' ? 'Áp dụng' : action === 'discard' ? 'Bỏ bản nháp' : 'Gỡ bản doanh nghiệp'}
+        </button>}
+      </>}>
+      {blocked ? <>
+        <p>Sửa các mục sau rồi bấm Áp dụng lại (cùng điều kiện DigiTalent dùng khi công bố khóa học):</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          {problems.map((problem) => {
+            const target = problemTarget(problem);
+            return <li key={problem}>
+              {target === undefined ? problem
+                : <button type="button" className="text-left underline" onClick={() => onFix(target)}>{problem}</button>}
+            </li>;
+          })}
+        </ul>
+      </> : action === 'apply' ? <>
+        <p>Nhân viên sẽ học, làm câu hỏi ôn tập, bài kiểm tra đầu vào và bài cuối khóa theo {what}, cùng tên, mục tiêu và hướng dẫn thực hành bạn đang nhập. Mentor chấm như cũ.</p>
+        <p className="mt-2">Ai đang học hoặc đã đạt khóa này đều học lại từ đầu; chứng nhận đã cấp vẫn được giữ.</p>
+      </> : action === 'discard'
+        ? <p>Bỏ các thay đổi chưa áp dụng (nội dung và thông tin khóa học). Nhân viên không bị ảnh hưởng.</p>
+        : <p>Nhân viên quay về nội dung chuẩn của DigiTalent và học lại khóa từ đầu; chứng nhận đã cấp vẫn được giữ. Bản doanh nghiệp được giữ lại làm bản nháp để bạn sửa và áp dụng lại.</p>}
+    </Modal>
   );
 }

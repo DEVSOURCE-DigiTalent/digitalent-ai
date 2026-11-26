@@ -217,6 +217,16 @@ export const OWNER_SCREENS: ScreenDef[] = [
     priority: 'P0',
   },
   {
+    // A course version DigiTalent published waits here until the company applies it or keeps its version.
+    id: 'OW-COURSE-UPDATES',
+    title: 'Cập nhật khóa học',
+    path: '/enterprise/courses/updates',
+    // R&D decides when the company has it; the owner otherwise (and always reads it).
+    roles: [ROLES.OWNER, ROLES.RND],
+    permission: P.COURSE_UPDATE_REVIEW,
+    priority: 'P1',
+  },
+  {
     id: 'OW-28',
     title: 'Phân công đào tạo',
     path: '/enterprise/assignments',

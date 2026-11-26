@@ -1,3 +1,4 @@
+using DigiTalent.Application.UseCases.Learning.ContentAi;
 using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Application.UseCases.TrialProgram;
 
@@ -32,6 +33,30 @@ public interface IGeminiService
     Task<TrialEssayAiReviewDto?> EvaluateTrialEssaysAsync(
         IReadOnlyList<TrialEssayAiInput> essays,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Drafts lesson pages and review questions for one module, following the Circular 02/2025 requirements of its
+    /// competency at the course level. Null when no key is configured or the AI did not answer.
+    /// </summary>
+    Task<ModuleContentSuggestionOutput?> SuggestModuleContentAsync(
+        ModuleContentAiRequest request, CancellationToken cancellationToken = default) =>
+        Task.FromResult<ModuleContentSuggestionOutput?>(null);
+
+    /// <summary>
+    /// Checks one module's lessons and questions against those requirements (met / partial / missing per requirement,
+    /// issues, question problems). Null when no key is configured or the AI did not answer — never a made-up result.
+    /// </summary>
+    Task<ModuleContentCheckOutput?> CheckModuleContentAsync(
+        ModuleContentAiRequest request, CancellationToken cancellationToken = default) =>
+        Task.FromResult<ModuleContentCheckOutput?>(null);
+
+    /// <summary>
+    /// Rewrites one page (1-based) of the module for its competency at the course level, fixing the notes given.
+    /// Null when no key is configured or the AI did not answer.
+    /// </summary>
+    Task<RewrittenPageOutput?> RewriteModulePageAsync(
+        ModuleContentAiRequest request, int pageNumber, IReadOnlyList<string> notes, CancellationToken cancellationToken = default) =>
+        Task.FromResult<RewrittenPageOutput?>(null);
 }
 
 public sealed record ProctoringEventInfo(string Kind, long OffsetMs, long? DurationMs);

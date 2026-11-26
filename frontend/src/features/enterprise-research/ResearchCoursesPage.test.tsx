@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import apiClient from '@/services/api-client';
 import type { CatalogCourseDetail } from '@/services/platform-catalog.service';
 import { ResearchCoursesPage } from './ResearchCoursesPage';
@@ -13,44 +13,84 @@ vi.mock('@/hooks/use-current-user', () => ({
 }));
 
 vi.mock('@/services/api-client', () => ({
-  default: { get: vi.fn(), put: vi.fn() },
+  default: { get: vi.fn(), put: vi.fn(), post: vi.fn(), delete: vi.fn() },
 }));
 
-it('saves a draft separately and displays an applied version only after publication', async () => {
-  vi.mocked(apiClient.get).mockImplementation(async (path) => ({
-    data: {
-      data: path.endsWith('/settings') ? true
-        : path.endsWith('/preview') ? [{ id: 'module-1', title: 'Nguồn dữ liệu', lessons: [] }]
-        : [{ courseId: 'basic-1', code: 'M1-F', tier: 1, title: 'Khai thác dữ liệu', modules: ['Nguồn dữ liệu'], draft: null, applied: null }],
-    },
-  }));
-  vi.mocked(apiClient.put).mockImplementation(async (path, content: ResearchCourseContent) => ({
-    data: { data: { draft: content, applied: path.endsWith('/applied') ? content : null } },
-  }));
+// The course update strip has its own tests; here nothing waits for R&D.
+vi.mock('@/hooks/use-course-updates', () => ({
+  useCourseUpdates: () => ({ data: undefined }),
+}));
 
+afterEach(() => vi.clearAllMocks());
+
+const detail = (): CatalogCourseDetail => ({
+  versionNo: 1, versionStatus: 'CURRENT', editable: true, courseId: 'basic-1', code: 'M1-F', codeEditable: false,
+  changeKind: 'UNCHANGED', frameworkId: 'framework', frameworkName: 'Khung năng lực số', domainId: 'domain',
+  domainName: 'Khai thác dữ liệu', level: 1, levelName: 'Cơ bản', title: 'Khai thác dữ liệu', outcome: '', price: 0,
+  salesStatus: 'OPEN', final: { title: 'Bài cuối khóa', promptHtml: '<p>Lập báo cáo</p>', criteria: ['Đúng số liệu'] },
+  modules: [{ moduleId: 'module-1', index: 0, title: 'Nguồn dữ liệu', quizTitle: 'Câu hỏi ôn tập', blocks: [], questions: [] }],
+});
+
+function renderPage() {
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <MemoryRouter><ResearchCoursesPage /></MemoryRouter>
     </QueryClientProvider>,
   );
+}
+
+function serve(problems: string[]) {
+  const list = [{ courseId: 'basic-1', code: 'M1-F', tier: 1, title: 'Khai thác dữ liệu', modules: ['Nguồn dữ liệu'], draft: null, applied: null }];
+  vi.mocked(apiClient.get).mockImplementation(async (path) => ({
+    data: {
+      data: path.endsWith('/settings') ? true
+        : path.endsWith('/editor') ? { course: detail(), revision: 3, hasDraft: false, hasApplied: false, problems }
+        : list,
+    },
+  }));
+}
+
+it('saves the information as a draft and applies the company version with one button', async () => {
+  serve([]);
+  vi.mocked(apiClient.put).mockImplementation(async (_path, content: ResearchCourseContent) => ({
+    data: { data: { draft: content, applied: null } },
+  }));
+  vi.mocked(apiClient.post).mockResolvedValue({
+    data: { data: { course: detail(), revision: 4, hasDraft: false, hasApplied: true, problems: [] } },
+  });
+  renderPage();
 
   await screen.findByRole('heading', { name: 'Khai thác dữ liệu' });
-  const content = { title: '', objective: 'Sử dụng dữ liệu mẫu', practice: 'Tạo báo cáo nội bộ' };
+  await screen.findByText('Đang dùng bản chuẩn');
+  // Only the information is typed here; practice and objective are optional.
+  const content = { title: '', objective: 'Sử dụng dữ liệu mẫu của công ty', practice: '' };
   fireEvent.change(screen.getByRole('textbox', { name: 'Mục tiêu học tập của doanh nghiệp' }), { target: { value: content.objective } });
-  fireEvent.click(screen.getByRole('button', { name: /Nguồn dữ liệu/ }));
-  await screen.findByText('Chưa có bài học trong mô đun này.');
-  expect(apiClient.get).toHaveBeenCalledWith('/enterprise/rnd/courses/basic-1/preview');
-  fireEvent.click(screen.getByRole('button', { name: 'Thực hành nội bộ' }));
-  fireEvent.change(screen.getByRole('textbox', { name: 'Hướng dẫn thực hành nội bộ' }), { target: { value: content.practice } });
   fireEvent.click(screen.getByRole('button', { name: 'Lưu nháp' }));
-  await screen.findByText('Bản nháp');
+  await screen.findByText('Bản nháp chưa áp dụng');
   expect(apiClient.put).toHaveBeenCalledWith('/enterprise/rnd/courses/basic-1/draft', content);
-  expect(screen.queryByText('Xem nội dung đang áp dụng')).toBeNull();
+  expect(screen.getAllByRole('button', { name: /Áp dụng cho doanh nghiệp/ })).toHaveLength(1);
 
-  fireEvent.click(screen.getByRole('button', { name: 'Áp dụng cho doanh nghiệp' }));
-  await screen.findByText('Đang áp dụng');
-  await waitFor(() => expect(apiClient.put).toHaveBeenLastCalledWith('/enterprise/rnd/courses/basic-1/applied', content));
-  expect(screen.getByText('Xem nội dung đang áp dụng')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: /Áp dụng cho doanh nghiệp/ }));
+  const dialog = await screen.findByRole('dialog');
+  expect(dialog).toHaveTextContent('học lại từ đầu');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Áp dụng' }));
+  await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('/enterprise/rnd/courses/basic-1/apply', { revision: 3, info: content }));
+  await screen.findByText('Đang dùng bản doanh nghiệp');
+  expect(screen.getByRole('button', { name: 'Gỡ bản doanh nghiệp' })).toBeInTheDocument();
+});
+
+it('lists what must be fixed before applying and opens the module to fix', async () => {
+  serve(['Mô đun 1: cần ít nhất 2 câu hỏi ôn tập (đang có 0).']);
+  renderPage();
+
+  // The outline marks the module to fix once the editor is loaded.
+  await screen.findByText(/0 khối · 0 câu hỏi · cần sửa/);
+  fireEvent.click(screen.getByRole('button', { name: /Áp dụng cho doanh nghiệp/ }));
+  const dialog = await screen.findByRole('dialog', { name: 'Chưa áp dụng được' });
+  expect(within(dialog).queryByRole('button', { name: 'Áp dụng' })).toBeNull();
+  fireEvent.click(within(dialog).getByRole('button', { name: /Mô đun 1: cần ít nhất 2 câu hỏi/ }));
+  expect(await screen.findByRole('heading', { name: 'Trợ lý soạn nội dung theo Thông tư 02' })).toBeInTheDocument();
+  expect(apiClient.post).not.toHaveBeenCalled();
 });
 
 it('uses the shared module editor for adding, renaming and removing a module in the enterprise draft', async () => {
@@ -63,13 +103,13 @@ it('uses the shared module editor for adding, renaming and removing a module in 
   let revision = 0;
   vi.mocked(apiClient.get).mockImplementation(async (path) => ({
     data: { data: path.endsWith('/settings') ? true
-      : path.endsWith('/editor') ? { course, revision, hasDraft: revision > 0, hasApplied: false }
+      : path.endsWith('/editor') ? { course, revision, hasDraft: revision > 0, hasApplied: false, problems: [] }
       : [{ courseId: course.courseId, code: course.code, tier: 1, title: course.title, modules: [], draft: null, applied: null }] },
   }));
   vi.mocked(apiClient.put).mockImplementation(async (path, input: Pick<CatalogCourseDetail, 'modules' | 'final'>) => {
     expect(path).toBe('/enterprise/rnd/courses/basic-1/editor');
     Object.assign(course, { modules: input.modules, final: input.final });
-    return { data: { data: { course: structuredClone(course), revision: ++revision, hasDraft: true, hasApplied: false } } };
+    return { data: { data: { course: structuredClone(course), revision: ++revision, hasDraft: true, hasApplied: false, problems: [] } } };
   });
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -83,6 +123,9 @@ it('uses the shared module editor for adding, renaming and removing a module in 
   fireEvent.blur(title);
   await screen.findByRole('button', { name: /Quy trình nội bộ/ });
   await waitFor(() => expect(course.modules[0]?.title).toBe('Quy trình nội bộ'));
+  // R&D gets the same AI help as the admin builder on its company draft.
+  expect(screen.getByRole('heading', { name: 'Trợ lý soạn nội dung theo Thông tư 02' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Kiểm tra theo Thông tư' })).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: 'Xóa mô đun', exact: true }));
   const confirmation = await screen.findByRole('dialog');

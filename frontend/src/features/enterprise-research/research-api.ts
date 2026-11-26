@@ -24,7 +24,7 @@ export interface ResearchCourse extends ResearchCourseVersion {
 }
 
 const resource = '/enterprise/rnd';
-const keys = {
+export const researchKeys = {
   settings: (userId?: string) => ['enterprise-rnd', userId, 'settings'] as const,
   courses: (userId?: string) => ['enterprise-rnd', userId, 'courses'] as const,
   preview: (userId: string | undefined, courseId: string) => ['enterprise-rnd', userId, 'preview', courseId] as const,
@@ -33,7 +33,7 @@ const keys = {
 export function useResearchSettings(enabled = true) {
   const userId = useCurrentUser((state) => state.user?.id);
   return useQuery({
-    queryKey: keys.settings(userId),
+    queryKey: researchKeys.settings(userId),
     queryFn: async () => (await apiClient.get<{ data: boolean }>(`${resource}/settings`)).data.data,
     enabled: enabled && Boolean(userId),
     retry: false,
@@ -47,8 +47,8 @@ export function useSetResearchEnabled() {
     mutationFn: async (enabled: boolean) =>
       (await apiClient.put<{ data: boolean }>(`${resource}/settings`, JSON.stringify(enabled))).data.data,
     onSuccess: async (enabled) => {
-      client.setQueryData(keys.settings(userId), enabled);
-      await client.invalidateQueries({ queryKey: keys.courses(userId) });
+      client.setQueryData(researchKeys.settings(userId), enabled);
+      await client.invalidateQueries({ queryKey: researchKeys.courses(userId) });
     },
   });
 }
@@ -56,23 +56,23 @@ export function useSetResearchEnabled() {
 export function useResearchCourses(enabled: boolean) {
   const userId = useCurrentUser((state) => state.user?.id);
   return useQuery({
-    queryKey: keys.courses(userId),
+    queryKey: researchKeys.courses(userId),
     queryFn: async () => (await apiClient.get<{ data: ResearchCourse[] }>(`${resource}/courses`)).data.data,
     enabled: enabled && Boolean(userId),
   });
 }
 
+/** Saves the information form as R&D's draft; employees see it once the company version is applied. */
 export function useSaveResearchCourse() {
   const userId = useCurrentUser((state) => state.user?.id);
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async ({ courseId, content, apply }: { courseId: string; content: ResearchCourseContent; apply: boolean }) =>
-      (await apiClient.put<{ data: ResearchCourseVersion }>(`${resource}/courses/${courseId}/${apply ? 'applied' : 'draft'}`, content)).data.data,
-    onSuccess: (version, { courseId, apply }) => {
-      client.setQueryData<ResearchCourse[]>(keys.courses(userId), (courses) => courses?.map((course) =>
+    mutationFn: async ({ courseId, content }: { courseId: string; content: ResearchCourseContent }) =>
+      (await apiClient.put<{ data: ResearchCourseVersion }>(`${resource}/courses/${courseId}/draft`, content)).data.data,
+    onSuccess: (version, { courseId }) => {
+      client.setQueryData<ResearchCourse[]>(researchKeys.courses(userId), (courses) => courses?.map((course) =>
         course.courseId === courseId ? { ...course, ...version } : course,
       ));
-      if (apply) void client.invalidateQueries({ queryKey: ['pulse', 'courses'] });
     },
   });
 }
@@ -80,7 +80,7 @@ export function useSaveResearchCourse() {
 export function useResearchPreview(courseId: string, open: boolean) {
   const userId = useCurrentUser((state) => state.user?.id);
   return useQuery({
-    queryKey: keys.preview(userId, courseId),
+    queryKey: researchKeys.preview(userId, courseId),
     queryFn: async () => (await apiClient.get<{ data: { id: string; title: string; lessons: PulseSlide[] }[] }>(
       `${resource}/courses/${courseId}/preview`,
     )).data.data,

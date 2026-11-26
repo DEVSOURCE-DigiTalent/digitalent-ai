@@ -15,14 +15,12 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
     private readonly IApplicationDbContext _context;
     private readonly PulseCourseWorkspace _workspace;
     private readonly PulseSkipTest _skip;
-    private readonly IPlatformAssetUrlSigner? _assetSigner;
 
-    public GetPulseCourseUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace, PulseSkipTest skip, IPlatformAssetUrlSigner? assetSigner = null)
+    public GetPulseCourseUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace, PulseSkipTest skip)
     {
         _context = context;
         _workspace = workspace;
         _skip = skip;
-        _assetSigner = assetSigner;
     }
 
     public async Task<GetPulseCourseUseCaseOutput> ExecuteAsync(GetPulseCourseUseCaseInput input)
@@ -79,9 +77,6 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
             Purpose = state.Course.Purpose,
             EnterpriseContent = full
                 ? await EnterpriseResearch.GetAppliedAsync(_context, snapshot.Employee.OrganizationId, state.Course.Code)
-                : null,
-            EnterpriseCurriculum = full && _assetSigner is not null
-                ? await EnterpriseResearch.GetAppliedCurriculumAsync(_context, snapshot.Employee.OrganizationId, state.Course.Code, _assetSigner)
                 : null,
             EstimatedMinutes = state.Course.EstimatedMinutes,
             VersionNo = state.Course.VersionNo,

@@ -8,7 +8,6 @@ public class GetPulseCourseUseCaseOutput
     public string? Description { get; set; }
     public string? Purpose { get; set; }
     public ResearchCourseContent? EnterpriseContent { get; set; }
-    public ResearchAppliedCurriculum? EnterpriseCurriculum { get; set; }
     public int? EstimatedMinutes { get; set; }
     public int VersionNo { get; set; }
     public PulseDomainDto Domain { get; set; } = new();

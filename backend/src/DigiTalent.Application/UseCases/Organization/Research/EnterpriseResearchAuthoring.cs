@@ -10,7 +10,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Organization.Research;
 
-public sealed record ResearchAuthoringVersion(int Revision, PlatformCatalogCourseDetail Course, bool HasDraft, bool HasApplied);
+/// <param name="Problems">What must be fixed before the content shown can be applied (empty = ready).</param>
+public sealed record ResearchAuthoringVersion(int Revision, PlatformCatalogCourseDetail Course, bool HasDraft, bool HasApplied,
+    IReadOnlyList<string> Problems);
 public sealed record ResearchAuthoringInput(int Revision, List<PlatformModuleDto> Modules, PlatformCourseFinalDto Final);
 
 public sealed partial class EnterpriseResearch
@@ -20,7 +22,8 @@ public sealed partial class EnterpriseResearch
     private sealed record AuthoringContent(List<PlatformModuleDto> Modules, PlatformCourseFinalDto Final);
     private sealed record AuthoringState(int Revision, AuthoringContent? Draft, AuthoringContent? Applied);
 
-    public async Task<ResearchAuthoringVersion> GetAuthoringAsync(Guid courseId, PlatformCourseContentReader reader)
+    public async Task<ResearchAuthoringVersion> GetAuthoringAsync(Guid courseId, PlatformCourseContentReader reader,
+        IHtmlContentSanitizer sanitizer)
     {
         var orgId = await RequireEnabledAsync();
         var source = await AuthoringSourceAsync(orgId, courseId, reader);
@@ -31,11 +34,12 @@ public sealed partial class EnterpriseResearch
             source.Modules = saved.Modules;
             source.Final = saved.Final;
         }
-        return ToAuthoring(state, source);
+        return ToAuthoring(state, source, Problems(new AuthoringContent(source.Modules, source.Final), sanitizer));
     }
 
+    /// <summary>Saves R&D's draft; employees see it only once it is applied (<see cref="ApplyCompanyVersionAsync"/>).</summary>
     public async Task<ResearchAuthoringVersion> SaveAuthoringAsync(Guid courseId, ResearchAuthoringInput input,
-        PlatformCourseContentReader reader, IHtmlContentSanitizer sanitizer, bool apply = false)
+        PlatformCourseContentReader reader, IHtmlContentSanitizer sanitizer)
     {
         ResearchAuthoringVersion? result = null;
         await context.ExecuteInSerializableTransactionAsync(async () =>
@@ -46,33 +50,34 @@ public sealed partial class EnterpriseResearch
             if (state.Revision != input.Revision)
                 throw new ConflictException("Bản nháp đã thay đổi. Tải lại khóa học trước khi tiếp tục.");
             var content = new AuthoringContent(input.Modules, input.Final);
-            Validate(content, sanitizer, apply);
+            Validate(content, sanitizer, apply: false);
             await RefreshAssetsAsync(orgId, source, content, reader, state.Draft, state.Applied);
-            state = new AuthoringState(state.Revision + 1, apply ? null : content, apply ? content : state.Applied);
+            state = new AuthoringState(state.Revision + 1, content, state.Applied);
             await WriteAsync(orgId, AuthoringPrefix + source.Code, state);
             source.Modules = content.Modules;
             source.Final = content.Final;
-            result = ToAuthoring(state, source);
+            result = ToAuthoring(state, source, Problems(content, sanitizer));
         });
         return result!;
     }
 
-    public async Task<ResearchAuthoringVersion> RemoveAuthoringAsync(Guid courseId, int revision,
-        PlatformCourseContentReader reader, bool applied)
+    /// <summary>Drops R&D's drafts (course content and information); the content in use stays.</summary>
+    public async Task<ResearchAuthoringVersion> DiscardDraftAsync(Guid courseId, int revision,
+        PlatformCourseContentReader reader, IHtmlContentSanitizer sanitizer)
     {
         await context.ExecuteInSerializableTransactionAsync(async () =>
         {
             var orgId = await RequireEnabledAsync();
-            var source = await AuthoringSourceAsync(orgId, courseId, reader);
-            var state = await ReadAuthoringAsync(context, orgId, source.Code);
+            var origin = await SourceRowAsync(orgId, courseId);
+            var state = await ReadAuthoringAsync(context, orgId, origin.Code);
             if (state.Revision != revision)
                 throw new ConflictException("Bản nháp đã thay đổi. Tải lại khóa học trước khi tiếp tục.");
-            var next = applied
-                ? state with { Revision = revision + 1, Applied = null }
-                : state with { Revision = revision + 1, Draft = null };
-            await WriteAsync(orgId, AuthoringPrefix + source.Code, next);
+            await WriteAsync(orgId, AuthoringPrefix + origin.Code, state with { Revision = revision + 1, Draft = null });
+            var info = await context.SystemSettings.FirstOrDefaultAsync(s => s.OrganizationId == orgId && s.Key == Key(origin.Code));
+            if (info is not null && ReadVersion(info.Value).Draft is not null)
+                await WriteAsync(orgId, info.Key, ReadVersion(info.Value) with { Draft = null }, info);
         });
-        return await GetAuthoringAsync(courseId, reader);
+        return await GetAuthoringAsync(courseId, reader, sanitizer);
     }
 
     public async Task<PlatformAssetDto> UploadAuthoringAssetAsync(Guid courseId, UploadPlatformAssetUseCaseInput input,
@@ -85,39 +90,40 @@ public sealed partial class EnterpriseResearch
         return asset;
     }
 
-    public static async Task<ResearchAppliedCurriculum?> GetAppliedCurriculumAsync(IApplicationDbContext db,
-        Guid orgId, string code, IPlatformAssetUrlSigner signer)
-    {
-        var applied = (await ReadAuthoringAsync(db, orgId, CourseCodes.Canonical(code))).Applied;
-        if (applied is null) return null;
+    private sealed record SourceRow(string Code, int VersionNo, Guid VersionId, Guid PlatformCourseId);
 
-        foreach (var block in applied.Modules.SelectMany(m => m.Blocks))
-        {
-            if (block.Asset is not null) block.Asset.Url = signer.ContentPath(block.Asset.AssetId);
-            foreach (var item in block.Items) item.Asset.Url = signer.ContentPath(item.Asset.AssetId);
-        }
-        return new ResearchAppliedCurriculum(applied.Modules.Select(module => new ResearchAppliedModule(
-            module.ModuleId, module.Title, module.Blocks, module.Questions
-                .Where(question => !question.IsFinalQuiz)
-                .Select(question => new ResearchPracticeQuestion(question.QuestionId, question.Text,
-                    question.Options.Select(option => new ResearchPracticeOption(option.OptionId, option.Text)).ToList())).ToList())).ToList(), applied.Final);
-    }
-
-    private async Task<PlatformCatalogCourseDetail> AuthoringSourceAsync(Guid orgId, Guid courseId, PlatformCourseContentReader reader)
+    /// <summary>
+    /// Where the standard content of the course comes from: the DigiTalent catalog version the organization learns from
+    /// (the version in use when that version lacks the course).
+    /// </summary>
+    private async Task<SourceRow> SourceRowAsync(Guid orgId, Guid courseId)
     {
         var course = (await AllowedCoursesAsync(orgId)).FirstOrDefault(item => item.CourseId == courseId)
             ?? throw new NotFoundException("Khóa học không thuộc danh mục R&D của doanh nghiệp.");
         var aliases = CourseCodes.Aliases(course.Code);
-        var source = await (from entry in context.PlatformCatalogCourses.AsNoTracking()
-                            join version in context.PlatformCatalogVersions on entry.VersionId equals version.Id
-                            join platformCourse in context.PlatformCourses on entry.CourseId equals platformCourse.Id
-                            where version.Status == Statuses.PlatformCatalogVersion.Current && aliases.Contains(platformCourse.Code)
-                            orderby platformCourse.Id == courseId descending, version.VersionNo descending
-                            select new { Version = version.VersionNo, Id = entry.CourseId }).FirstOrDefaultAsync()
+        var current = await context.PlatformCatalogVersions.AsNoTracking()
+            .Where(v => v.Status == Statuses.PlatformCatalogVersion.Current).Select(v => (int?)v.VersionNo).FirstOrDefaultAsync();
+        var applied = current is { } latest
+            ? (await new PlatformCatalogApplier(context).VersionsAsync(new[] { orgId }, latest))[orgId]
+            : 0;
+        var rows = await (from entry in context.PlatformCatalogCourses.AsNoTracking()
+                          join version in context.PlatformCatalogVersions on entry.VersionId equals version.Id
+                          join platformCourse in context.PlatformCourses on entry.CourseId equals platformCourse.Id
+                          where version.Status != Statuses.PlatformCatalogVersion.Draft && aliases.Contains(platformCourse.Code)
+                          select new { version.VersionNo, VersionId = version.Id, version.Status, entry.CourseId }).ToListAsync();
+        var source = rows.OrderByDescending(r => r.VersionNo == applied)
+                         .ThenByDescending(r => r.Status == Statuses.PlatformCatalogVersion.Current)
+                         .ThenByDescending(r => r.VersionNo).FirstOrDefault()
             ?? throw new NotFoundException("Khóa học chưa có phiên bản biên soạn được công bố.");
-        var detail = await reader.ReadAsync(source.Version, source.Id);
+        return new SourceRow(CourseCodes.Canonical(course.Code), source.VersionNo, source.VersionId, source.CourseId);
+    }
+
+    private async Task<PlatformCatalogCourseDetail> AuthoringSourceAsync(Guid orgId, Guid courseId, PlatformCourseContentReader reader)
+    {
+        var source = await SourceRowAsync(orgId, courseId);
+        var detail = await reader.ReadAsync(source.VersionNo, source.PlatformCourseId);
         detail.CourseId = courseId;
-        detail.Code = CourseCodes.Canonical(course.Code);
+        detail.Code = source.Code;
         return detail;
     }
 
@@ -207,14 +213,10 @@ public sealed partial class EnterpriseResearch
         return value is null ? new(0, null, null) : JsonSerializer.Deserialize<AuthoringState>(value, JsonOptions)!;
     }
 
-    private static ResearchAuthoringVersion ToAuthoring(AuthoringState state, PlatformCatalogCourseDetail course)
+    private static ResearchAuthoringVersion ToAuthoring(AuthoringState state, PlatformCatalogCourseDetail course,
+        IReadOnlyList<string> problems)
     {
         course.Editable = true;
-        return new(state.Revision, course, state.Draft is not null, state.Applied is not null);
+        return new(state.Revision, course, state.Draft is not null, state.Applied is not null, problems);
     }
 }
-
-public sealed record ResearchAppliedCurriculum(IReadOnlyList<ResearchAppliedModule> Modules, PlatformCourseFinalDto Final);
-public sealed record ResearchAppliedModule(Guid ModuleId, string Title, List<PlatformBlockDto> Blocks, List<ResearchPracticeQuestion> Questions);
-public sealed record ResearchPracticeQuestion(Guid QuestionId, string Text, List<ResearchPracticeOption> Options);
-public sealed record ResearchPracticeOption(Guid OptionId, string Text);

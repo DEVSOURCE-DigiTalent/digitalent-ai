@@ -75,6 +75,31 @@ export interface CatalogVersionSummary {
   frameworkCount: number;
   newCount: number;
   editedCount: number;
+  /** Organizations whose employees learn from this version (it was applied to them). */
+  organizationCount?: number;
+}
+
+/** A course that changes when a version is applied to an organization. */
+export interface CatalogApplyChange {
+  courseId: string;
+  code: string;
+  title: string;
+  level: number;
+  kind: 'UPDATED' | 'ADDED';
+}
+
+/** The catalog version an organization learns from, the versions it can move to and what a move changes. */
+export interface OrganizationCatalogVersion {
+  organizationId: string;
+  organizationName: string;
+  provisioned: boolean;
+  versionNo: number;
+  latestVersionNo: number;
+  versions: { versionNo: number; status: CatalogVersionStatus; publishedAt: string | null; releaseNote: string | null }[];
+  targetVersionNo: number;
+  changes: CatalogApplyChange[];
+  /** Set when the organization chose to keep its version instead of the newest one. */
+  kept?: { versionNo: number; reason: string; keptAt: string; keptBy?: string | null } | null;
 }
 
 export interface CatalogVersionsOutput {
@@ -240,8 +265,17 @@ export const platformCatalogService = {
   discardDraft: (versionNo: number) => unwrap<CatalogVersionsOutput>(apiClient.delete(`/platform/catalog/versions/${versionNo}`)),
   getVersion: (versionNo: number) => unwrap<CatalogVersionDetail>(apiClient.get(`/platform/catalog/versions/${versionNo}`)),
   getPublishCheck: (versionNo: number) => unwrap<PublishCheck>(apiClient.get(`/platform/catalog/versions/${versionNo}/publish-check`)),
-  publishVersion: (versionNo: number, releaseNote?: string) =>
-    unwrap<CatalogVersionDetail>(apiClient.post(`/platform/catalog/versions/${versionNo}/publish`, { releaseNote })),
+  /** applyToAllOrganizations: every organization moves to this version now; otherwise each keeps its version until applied. */
+  publishVersion: (versionNo: number, releaseNote?: string, applyToAllOrganizations = true) =>
+    unwrap<CatalogVersionDetail>(apiClient.post(`/platform/catalog/versions/${versionNo}/publish`, { releaseNote, applyToAllOrganizations })),
+  /** The version an organization learns from and what moving it to versionNo (default: the newest) changes. */
+  getOrganizationCatalogVersion: (organizationId: string, versionNo?: number) =>
+    unwrap<OrganizationCatalogVersion>(
+      apiClient.get(`/platform/organizations/${organizationId}/catalog-version`, { params: versionNo ? { versionNo } : undefined }),
+    ),
+  /** Moves one organization to a published version (an older one needs a reason ≥ 10 characters). */
+  applyOrganizationCatalogVersion: (organizationId: string, body: { versionNo: number; reason?: string }) =>
+    unwrap<OrganizationCatalogVersion>(apiClient.post(`/platform/organizations/${organizationId}/catalog-version`, body)),
   /** Đơn giá: course price (bought once per organization) and sales status of several courses in the draft (Basic stays free). */
   updatePrices: (versionNo: number, items: { courseId: string; price: number; salesStatus: CatalogSalesStatus }[]) =>
     unwrap<CatalogVersionDetail>(apiClient.put(`/platform/catalog/versions/${versionNo}/prices`, { items })),

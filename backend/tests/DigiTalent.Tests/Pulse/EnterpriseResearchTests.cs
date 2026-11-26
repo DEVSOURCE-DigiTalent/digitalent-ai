@@ -1,9 +1,12 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Organization.Research;
+using DigiTalent.Application.UseCases.Platform.Catalog;
 using DigiTalent.Application.UseCases.Pulse;
+using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
+using DigiTalent.Infrastructure.Content;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -13,6 +16,8 @@ namespace DigiTalent.Tests.Pulse;
 
 public class EnterpriseResearchTests
 {
+    private static readonly IHtmlContentSanitizer Sanitizer = new HtmlContentSanitizer();
+
     [Fact]
     public async Task OwnerControlsResearchAndOnlyAppliedContentReachesTheLearner()
     {
@@ -26,6 +31,7 @@ public class EnterpriseResearchTests
         await context.SaveChangesAsync();
 
         var catalog = new PulseCatalogReader(context);
+        var reader = Reader(context);
         var ownerApi = new EnterpriseResearch(context, Caller(owner, organizationId), catalog);
         var rndApi = new EnterpriseResearch(context, Caller(researcher, organizationId), catalog);
 
@@ -48,23 +54,141 @@ public class EnterpriseResearchTests
 
         var source = basic.Single(course => course.Code == "M2-F");
         var content = new ResearchCourseContent("Khóa học nội bộ", "Lập báo cáo theo mẫu công ty.", "Dùng dữ liệu đào tạo để thực hành.");
-        await Assert.ThrowsAsync<NotFoundException>(() => rndApi.SaveAsync(excluded.CourseId, content, apply: false));
+        await Assert.ThrowsAsync<NotFoundException>(() => rndApi.SaveAsync(excluded.CourseId, content));
         await Assert.ThrowsAsync<NotFoundException>(() => rndApi.PreviewAsync(excluded.CourseId, Mock.Of<IPlatformAssetUrlSigner>()));
         (await rndApi.PreviewAsync(source.CourseId, Mock.Of<IPlatformAssetUrlSigner>()))
             .Should().Contain(module => module.Lessons.Count > 0);
 
+        // Nothing but the information is required: practice and objective may stay empty in a draft.
+        await rndApi.SaveAsync(source.CourseId, new ResearchCourseContent("", "", ""));
         var learner = await world.AsAsync(PulseTestWorld.EmployeeEmail);
-        var input = new GetPulseCourseUseCaseInput { CourseId = source.CourseId };
-        await rndApi.SaveAsync(source.CourseId, content, apply: false);
-        (await learner.GetCourse.ExecuteAsync(input)).EnterpriseContent.Should().BeNull();
-        await rndApi.SaveAsync(source.CourseId, content, apply: true);
-        await rndApi.SaveAsync(source.CourseId, content with { Title = "Bản nháp mới" }, apply: false);
-        (await learner.GetCourse.ExecuteAsync(input)).EnterpriseContent.Should().Be(content);
+        await rndApi.SaveAsync(source.CourseId, content);
+        (await learner.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = source.CourseId })).EnterpriseContent.Should().BeNull();
+
+        var editor = await rndApi.GetAuthoringAsync(source.CourseId, reader, Sanitizer);
+        await rndApi.ApplyCompanyVersionAsync(source.CourseId, new ResearchApplyInput(editor.Revision, content), reader, Sanitizer);
+        context.ChangeTracker.Clear();
+        var applied = (await rndApi.ListAsync()).Single(course => course.Code == "M2-F");
+        await rndApi.SaveAsync(applied.CourseId, content with { Title = "Bản nháp mới" });
+        var course = await learner.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = applied.CourseId });
+        course.EnterpriseContent.Should().Be(content);
+        course.Course.Title.Should().Be("Khóa học nội bộ");
 
         await ownerApi.SetEnabledAsync(false);
-        await Assert.ThrowsAsync<ForbiddenException>(() => rndApi.SaveAsync(source.CourseId, content, apply: true));
-        (await learner.GetCourse.ExecuteAsync(input)).EnterpriseContent.Should().Be(content);
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            rndApi.ApplyCompanyVersionAsync(applied.CourseId, new ResearchApplyInput(editor.Revision + 1, content), reader, Sanitizer));
+        (await learner.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = applied.CourseId })).EnterpriseContent.Should().Be(content);
     }
+
+    [Fact]
+    public async Task AppliedCompanyVersionIsTheCourseEmployeesLearnUntilRemovedOrReplacedByDigiTalent()
+    {
+        using var world = await PulseTestWorld.CreateAsync();
+        var context = world.Context;
+        var owner = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        var organizationId = owner.OrganizationId!.Value;
+        var reader = Reader(context);
+        var research = new EnterpriseResearch(context, Caller(owner, organizationId), new PulseCatalogReader(context), world.Clock);
+        await research.SetEnabledAsync(true);
+        var standard = (await research.ListAsync()).Single(course => course.Code == "M2-F");
+        var completed = await context.Enrollments.AsNoTracking()
+            .Where(e => e.CourseId == standard.CourseId && e.Status == Statuses.Enrollment.Completed).Select(e => e.Id).ToListAsync();
+        completed.Should().NotBeEmpty("employee@ passed M2-F in the seed");
+
+        var editor = await research.GetAuthoringAsync(standard.CourseId, reader, Sanitizer);
+        editor.Problems.Should().BeEmpty("the standard content can be applied as it is");
+        var standardTitle = editor.Course.Modules[0].Title;
+
+        // R&D writes its own first page and question; an empty module is not ready to apply.
+        var modules = editor.Course.Modules;
+        modules[0].Title = "Báo cáo theo mẫu công ty";
+        modules[0].Blocks.Insert(0, new PlatformBlockDto
+        {
+            BlockId = Guid.NewGuid(), Type = PlatformCatalog.BlockType.Text,
+            BodyHtml = "<h3>Mẫu báo cáo nội bộ</h3><p>Dùng mẫu BC-01 của công ty cho mọi báo cáo tháng.</p>",
+        });
+        modules[0].Questions.Add(new PlatformQuestionDto
+        {
+            QuestionId = Guid.NewGuid(), Text = "Báo cáo tháng dùng mẫu nào?",
+            Options = [new PlatformOptionDto { OptionId = Guid.NewGuid(), Text = "BC-01", IsCorrect = true },
+                new PlatformOptionDto { OptionId = Guid.NewGuid(), Text = "BC-99" }],
+        });
+        modules.Add(new PlatformModuleDto { ModuleId = Guid.NewGuid(), Title = "Mô đun trống", QuizTitle = "Câu hỏi ôn tập" });
+        var draft = await research.SaveAuthoringAsync(standard.CourseId, new ResearchAuthoringInput(editor.Revision, modules, editor.Course.Final), reader, Sanitizer);
+        draft.HasDraft.Should().BeTrue();
+        draft.Problems.Should().Contain(p => p.Contains($"Mô đun {modules.Count}: chưa có nội dung"))
+            .And.Contain(p => p.Contains($"Mô đun {modules.Count}: cần ít nhất"));
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            research.ApplyCompanyVersionAsync(standard.CourseId, new ResearchApplyInput(draft.Revision, null), reader, Sanitizer));
+        context.ChangeTracker.Clear();
+        (await context.Courses.CountAsync(c => c.OrganizationId == organizationId && c.Code == "M2-F")).Should().Be(1, "a draft never reaches employees");
+
+        modules.RemoveAt(modules.Count - 1);
+        draft = await research.SaveAuthoringAsync(standard.CourseId, new ResearchAuthoringInput(draft.Revision, modules, editor.Course.Final), reader, Sanitizer);
+        draft.Problems.Should().BeEmpty();
+        var applied = await research.ApplyCompanyVersionAsync(standard.CourseId, new ResearchApplyInput(draft.Revision, null), reader, Sanitizer);
+        context.ChangeTracker.Clear();
+        applied.HasApplied.Should().BeTrue();
+        applied.HasDraft.Should().BeFalse();
+
+        // A new revision of the course in the company, with R&D's pages and questions.
+        var revision = await context.Courses.AsNoTracking()
+            .Where(c => c.OrganizationId == organizationId && c.Code == "M2-F").OrderByDescending(c => c.VersionNo).FirstAsync();
+        revision.Id.Should().Be(applied.Course.CourseId);
+        revision.SupersedesCourseId.Should().Be(standard.CourseId);
+        (await research.ListAsync()).Single(c => c.Code == "M2-F").CourseId.Should().Be(revision.Id);
+        var firstModule = await context.CourseModules.AsNoTracking().Where(m => m.CourseId == revision.Id).OrderBy(m => m.SortOrder).FirstAsync();
+        firstModule.Title.Should().Be("Báo cáo theo mẫu công ty");
+        (await context.Lessons.AsNoTracking().Where(l => l.ModuleId == firstModule.Id).OrderBy(l => l.SortOrder).FirstAsync())
+            .Title.Should().Be("Mẫu báo cáo nội bộ");
+        var quizQuestions = await (from assessment in context.Assessments.AsNoTracking()
+                                   join link in context.AssessmentQuestions.AsNoTracking() on assessment.Id equals link.AssessmentId
+                                   join question in context.Questions.AsNoTracking() on link.QuestionId equals question.Id
+                                   where assessment.ModuleId == firstModule.Id
+                                   select question.Content).ToListAsync();
+        quizQuestions.Should().Contain("Báo cáo tháng dùng mẫu nào?");
+        (await context.Assessments.AnyAsync(a => a.CourseId == revision.Id && a.IsFinal)).Should().BeTrue();
+
+        // Everyone learns it again from the start: the old pass no longer counts.
+        (await context.Enrollments.AsNoTracking().Where(e => completed.Contains(e.Id)).Select(e => e.Status).ToListAsync())
+            .Should().OnlyContain(status => status == Statuses.Enrollment.Cancelled);
+        var learner = await world.AsAsync(PulseTestWorld.EmployeeEmail);
+        var course = await learner.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = revision.Id });
+        course.Modules[0].Title.Should().Be("Báo cáo theo mẫu công ty");
+        (await EnterpriseResearch.CompanyVersionCodesAsync(context, organizationId, ["M2-F"])).Should().Contain("M2-F");
+
+        // Removing it writes the standard content again; R&D keeps its version as a draft.
+        var removed = await research.RemoveCompanyVersionAsync(revision.Id, applied.Revision, reader, Sanitizer);
+        context.ChangeTracker.Clear();
+        removed.HasApplied.Should().BeFalse();
+        removed.HasDraft.Should().BeTrue();
+        removed.Course.Modules[0].Title.Should().Be("Báo cáo theo mẫu công ty", "the editor shows R&D's draft");
+        var back = await context.Courses.AsNoTracking()
+            .Where(c => c.OrganizationId == organizationId && c.Code == "M2-F").OrderByDescending(c => c.VersionNo).FirstAsync();
+        back.VersionNo.Should().Be(revision.VersionNo + 1);
+        removed.Course.CourseId.Should().Be(back.Id);
+        (await context.CourseModules.AsNoTracking().Where(m => m.CourseId == back.Id).OrderBy(m => m.SortOrder).FirstAsync())
+            .Title.Should().Be(standardTitle);
+
+        // DigiTalent content written for the course (an update the company applies) replaces the company version too.
+        var again = await research.ApplyCompanyVersionAsync(back.Id, new ResearchApplyInput(removed.Revision, null), reader, Sanitizer);
+        context.ChangeTracker.Clear();
+        var version = await context.PlatformCatalogVersions.AsNoTracking().SingleAsync(v => v.Status == Statuses.PlatformCatalogVersion.Current);
+        var platformCourse = await context.PlatformCourses.AsNoTracking().SingleAsync(c => c.Code == "M2-F");
+        await new PlatformLearningPublisher(context).PublishAsync(version.Id, null, world.Clock.GetUtcNow(), organizationId,
+            onlyCourseIds: [platformCourse.Id], reapply: true);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        (await EnterpriseResearch.CompanyVersionCodesAsync(context, organizationId, ["M2-F"])).Should().BeEmpty();
+        var latest = (await research.ListAsync()).Single(c => c.Code == "M2-F");
+        var state = await research.GetAuthoringAsync(latest.CourseId, reader, Sanitizer);
+        state.HasApplied.Should().BeFalse();
+        state.HasDraft.Should().BeTrue();
+        state.Revision.Should().BeGreaterThan(again.Revision);
+    }
+
+    private static PlatformCourseContentReader Reader(IApplicationDbContext context) =>
+        new(context, Mock.Of<IPlatformAssetUrlSigner>());
 
     private static ICurrentUser Caller(User user, Guid organizationId)
     {

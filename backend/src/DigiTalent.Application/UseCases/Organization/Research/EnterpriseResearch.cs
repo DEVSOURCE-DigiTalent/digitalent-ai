@@ -17,7 +17,8 @@ public sealed record ResearchCourseItem(Guid CourseId, string Code, string Title
     IReadOnlyList<string> Modules, ResearchCourseContent? Draft, ResearchCourseContent? Applied);
 public sealed record ResearchModulePreview(Guid Id, string Title, IReadOnlyList<PulseSlideDto> Lessons);
 
-public sealed partial class EnterpriseResearch(IApplicationDbContext context, ICurrentUser currentUser, PulseCatalogReader catalog)
+public sealed partial class EnterpriseResearch(IApplicationDbContext context, ICurrentUser currentUser, PulseCatalogReader catalog,
+    TimeProvider? time = null)
 {
     public const string Prefix = "rnd.";
     private const string EnabledKey = Prefix + "enabled";
@@ -86,14 +87,10 @@ public sealed partial class EnterpriseResearch(IApplicationDbContext context, IC
             }).ToList())).ToList();
     }
 
-    public async Task<ResearchCourseVersion> SaveAsync(Guid courseId, ResearchCourseContent content, bool apply)
+    /// <summary>Saves the information form as R&D's draft; it reaches employees with <see cref="ApplyCompanyVersionAsync"/>.</summary>
+    public async Task<ResearchCourseVersion> SaveAsync(Guid courseId, ResearchCourseContent content)
     {
-        var normalized = new ResearchCourseContent(content.Title?.Trim() ?? "", content.Objective?.Trim() ?? "",
-            content.Practice?.Trim() ?? "");
-        if (normalized.Title.Length > 200 || normalized.Objective.Length is < 1 or > 2000 ||
-            normalized.Practice.Length is < 1 or > 8000)
-            throw new BadRequestException("Nhập mục tiêu và hướng dẫn thực hành trong giới hạn cho phép.");
-
+        var normalized = Normalize(content)!;
         ResearchCourseVersion? version = null;
         await context.ExecuteInSerializableTransactionAsync(async () =>
         {
@@ -102,7 +99,7 @@ public sealed partial class EnterpriseResearch(IApplicationDbContext context, IC
                 ?? throw new NotFoundException("Khóa học không thuộc danh mục R&D của doanh nghiệp.");
             var key = Key(course.Code);
             var existing = await context.SystemSettings.FirstOrDefaultAsync(s => s.OrganizationId == orgId && s.Key == key);
-            version = new ResearchCourseVersion(normalized, apply ? normalized : ReadVersion(existing?.Value).Applied);
+            version = new ResearchCourseVersion(normalized, ReadVersion(existing?.Value).Applied);
             await WriteAsync(orgId, key, version, existing);
         });
         return version!;

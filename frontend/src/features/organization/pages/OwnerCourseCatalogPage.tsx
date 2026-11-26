@@ -11,6 +11,7 @@ import { useCompetencyCategories } from '@/hooks/use-competencies';
 import { courseCategories } from '@/features/courses/course-catalog';
 import type { CourseListItem } from '@/services/assignment.service';
 import { CourseDomainIcon } from '../components/CourseArtwork';
+import { CourseUpdateBanner } from '../components/CourseUpdateBanner';
 import {
   LEVELS,
   buildCourseTree,
@@ -210,6 +211,8 @@ export function OwnerCourseCatalogPage() {
             )}
           </div>
         </header>
+
+        <CourseUpdateBanner />
 
         {gapCode && !isLoading && !isError && (
           <div className="course-gap-context" data-course-domain={referredDomain} role="status">
