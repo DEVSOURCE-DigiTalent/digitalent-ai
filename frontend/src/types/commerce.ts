@@ -141,7 +141,7 @@ export interface SetupPosition {
   jobGrade?: string;
 }
 
-export type MemberRole = 'OWNER' | 'MANAGER' | 'EMPLOYEE';
+export type MemberRole = 'OWNER' | 'MANAGER' | 'RND' | 'EMPLOYEE';
 
 export interface InviteRow {
   email: string;

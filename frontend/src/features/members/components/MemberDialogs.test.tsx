@@ -4,12 +4,16 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { MemberListItem } from '@/services/member.service';
 import { ChangeRoleModal, PlacementModal } from './MemberDialogs';
 
-const { updateMember } = vi.hoisted(() => ({ updateMember: vi.fn().mockResolvedValue({}) }));
+const { updateMember, researchSettings } = vi.hoisted(() => ({
+  updateMember: vi.fn().mockResolvedValue({}),
+  researchSettings: vi.fn(),
+}));
 
 vi.mock('@/hooks/use-current-user', () => ({
   useCurrentUser: (selector: (state: { user: { id: string; roles: string[] } }) => unknown) => selector({ user: { id: 'owner', roles: ['OWNER'] } }),
 }));
 vi.mock('@/hooks/use-members', () => ({ useUpdateMember: () => ({ mutateAsync: updateMember, isPending: false }) }));
+vi.mock('@/features/enterprise-research/research-api', () => ({ useResearchSettings: researchSettings }));
 vi.mock('@/hooks/use-departments', () => ({ useDepartments: () => ({ data: { items: [{ id: 'dept-1', name: 'Kế toán' }] } }) }));
 vi.mock('@/hooks/use-job-positions', () => ({ useJobPositions: () => ({ data: { items: [{ id: 'position-1', name: 'Kế toán viên' }] } }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -19,7 +23,10 @@ const member: MemberListItem = {
 };
 
 describe('MemberDialogs', () => {
-  beforeEach(() => updateMember.mockClear());
+  beforeEach(() => {
+    updateMember.mockClear();
+    researchSettings.mockReturnValue({ data: false });
+  });
 
   it('creates a profile only after a department is selected', async () => {
     render(<PlacementModal member={member} open onClose={vi.fn()} />);
@@ -36,8 +43,17 @@ describe('MemberDialogs', () => {
     render(<ChangeRoleModal member={member} open onClose={vi.fn()} />);
     const save = screen.getByRole('button', { name: 'Lưu thay đổi' });
     expect(save.hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('radio', { name: /R&D/ })).toBeNull();
     fireEvent.click(screen.getByRole('radio', { name: /Quản lý/ }));
     fireEvent.click(save);
     await waitFor(() => expect(updateMember).toHaveBeenCalledWith({ id: 'member-1', data: { roles: ['MANAGER'] } }));
+  });
+
+  it('lets the owner assign R&D once the enterprise enables it', async () => {
+    researchSettings.mockReturnValue({ data: true });
+    render(<ChangeRoleModal member={member} open onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('radio', { name: /R&D/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }));
+    await waitFor(() => expect(updateMember).toHaveBeenCalledWith({ id: 'member-1', data: { roles: ['RND'] } }));
   });
 });

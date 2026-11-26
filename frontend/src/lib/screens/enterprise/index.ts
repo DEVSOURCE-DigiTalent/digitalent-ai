@@ -11,7 +11,17 @@ export * from './work';
 export * from './manager';
 export * from './employee';
 
-const SHARED_ROLES = [ROLES.OWNER, ROLES.MANAGER, ROLES.EMPLOYEE];
+const SHARED_ROLES = [ROLES.OWNER, ROLES.MANAGER, ROLES.RND, ROLES.EMPLOYEE];
+
+export const RND_COURSES_SCREEN: ScreenDef = {
+  id: 'RD-01',
+  title: 'Tùy chỉnh khóa học',
+  path: '/enterprise/rnd/courses',
+  roles: [ROLES.RND, ROLES.OWNER],
+  permission: 'rnd.course.manage',
+  allowUnpaid: true,
+  priority: 'P0',
+};
 
 /** Topbar and Account screens available to all enterprise users (spec v2.1 §3.6, §9). */
 export const ENTERPRISE_SHARED_SCREENS: ScreenDef[] = [
@@ -63,6 +73,7 @@ export const ENTERPRISE_SCREENS: ScreenDef[] = [
   ...WORK_SCREENS,
   ...MANAGER_SCREENS,
   ...EMPLOYEE_SCREENS,
+  RND_COURSES_SCREEN,
   ...ENTERPRISE_SHARED_SCREENS,
 ];
 

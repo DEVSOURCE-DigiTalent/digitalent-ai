@@ -6,7 +6,7 @@ import { ENTERPRISE_PORTAL } from '../../lib/portals';
 import { WORKSPACES } from '../../lib/roles';
 
 import { useCurrentUser } from '../../hooks/use-current-user';
-import { sidebarFor } from '../../lib/sidebars';
+import { RND_SIDEBAR, sidebarFor } from '../../lib/sidebars';
 import { useEnterpriseTheme } from '../../hooks/use-enterprise-theme';
 import { isSubscriptionUsable } from '../../lib/personal-access';
 import { AssistantWidget } from '../../features/assistant/components/AssistantWidget';
@@ -16,6 +16,7 @@ export function EnterpriseLayout() {
   const user = useCurrentUser((s) => s.user);
   const subscriptionStatus = useCurrentUser((s) => s.getSubscriptionStatus)();
   const isUnpaid = subscriptionStatus && !isSubscriptionUsable(subscriptionStatus) ? true : undefined;
+  const sidebar = sidebarFor(user);
   
   useEnterpriseTheme(); // Mount theme
 
@@ -24,9 +25,9 @@ export function EnterpriseLayout() {
       <RequireWorkspace workspace={WORKSPACES.ENTERPRISE}>
         <RequireOnboarded>
           <div data-testid="enterprise-layout">
-            <MainLayout portal={ENTERPRISE_PORTAL} sidebarConfig={sidebarFor(user)} isUnpaid={isUnpaid} />
+            <MainLayout portal={ENTERPRISE_PORTAL} sidebarConfig={sidebar} isUnpaid={isUnpaid} />
             {!isUnpaid && <AssistantWidget />}
-            <RoleTutorialContainer />
+            {sidebar !== RND_SIDEBAR && <RoleTutorialContainer />}
           </div>
         </RequireOnboarded>
       </RequireWorkspace>

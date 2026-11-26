@@ -43,6 +43,7 @@ export function resolveNextStep(user: SessionUser | null | undefined): string {
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
   if (normalized.includes(ROLES.OWNER)) return ownerHomePath(user);
   if (normalized.includes(ROLES.MANAGER)) return '/enterprise/team';
+  if (normalized.includes(ROLES.RND)) return '/enterprise/rnd/courses';
   if (normalized.includes(ROLES.EMPLOYEE)) return '/enterprise/me';
   return '/forbidden';
 }
@@ -83,6 +84,7 @@ export function getDashboardPath(user: SessionUser | null | undefined): string {
   if (resolved === WORKSPACES.PERSONAL) return '/personal/dashboard';
   if (normalized.includes(ROLES.OWNER)) return ownerHomePath(user);
   if (normalized.includes(ROLES.MANAGER)) return '/enterprise/team';
+  if (normalized.includes(ROLES.RND)) return '/enterprise/rnd/courses';
   if (normalized.includes(ROLES.EMPLOYEE)) return '/enterprise/me';
   return '/forbidden';
 }
