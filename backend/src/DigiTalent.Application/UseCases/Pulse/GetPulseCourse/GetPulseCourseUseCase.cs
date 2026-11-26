@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Learning.Content;
+using DigiTalent.Application.UseCases.Organization.Research;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Pulse;
@@ -14,12 +15,14 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
     private readonly IApplicationDbContext _context;
     private readonly PulseCourseWorkspace _workspace;
     private readonly PulseSkipTest _skip;
+    private readonly IPlatformAssetUrlSigner? _assetSigner;
 
-    public GetPulseCourseUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace, PulseSkipTest skip)
+    public GetPulseCourseUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace, PulseSkipTest skip, IPlatformAssetUrlSigner? assetSigner = null)
     {
         _context = context;
         _workspace = workspace;
         _skip = skip;
+        _assetSigner = assetSigner;
     }
 
     public async Task<GetPulseCourseUseCaseOutput> ExecuteAsync(GetPulseCourseUseCaseInput input)
@@ -74,6 +77,12 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
             Course = PulseMapping.Course(state),
             Description = state.Course.Description,
             Purpose = state.Course.Purpose,
+            EnterpriseContent = full
+                ? await EnterpriseResearch.GetAppliedAsync(_context, snapshot.Employee.OrganizationId, state.Course.Code)
+                : null,
+            EnterpriseCurriculum = full && _assetSigner is not null
+                ? await EnterpriseResearch.GetAppliedCurriculumAsync(_context, snapshot.Employee.OrganizationId, state.Course.Code, _assetSigner)
+                : null,
             EstimatedMinutes = state.Course.EstimatedMinutes,
             VersionNo = state.Course.VersionNo,
             Domain = PulseMapping.Domain(state.Domain),

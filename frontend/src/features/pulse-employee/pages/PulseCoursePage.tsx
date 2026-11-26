@@ -19,6 +19,8 @@ import type { PulseCourseDetail } from '@/services/pulse.service';
 import { LoadError, PageSkeleton } from '../components/ui';
 import { pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
+import { BlockPreview } from '@/features/platform/builder/BlockCard';
+import '@/features/platform/pulse-catalog.css';
 import '../pulse-skip-test.css';
 
 /**
@@ -61,7 +63,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
   const approved = course.approved;
   const viaPre = course.approvedVia === 'PRE_ASSESSMENT';
   const preAssessmentPath = PULSE_PATHS.preAssessment(course.courseId);
-  const formattedTitle = toSentenceCase(course.title);
+  const formattedTitle = detail.enterpriseContent?.title || toSentenceCase(course.title);
 
   // Trạng thái hành động
   const canPreAssess = course.preStatus === 'REQUIRED' || detail.nextAction === 'PRE_ASSESSMENT';
@@ -88,6 +90,17 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
 
         <h1 className="pu-c-main-title">{formattedTitle}</h1>
       </header>
+
+      {detail.enterpriseContent && (
+        <section className="pu-c-summary-card" aria-label="Nội dung áp dụng tại doanh nghiệp">
+          <div className="min-w-0 space-y-3 p-4">
+            <h2 className="text-base font-bold">Nội dung áp dụng tại doanh nghiệp</h2>
+            <div><h3 className="text-sm font-semibold">Mục tiêu học tập</h3><p className="whitespace-pre-wrap break-words text-sm">{detail.enterpriseContent.objective}</p></div>
+            <div><h3 className="text-sm font-semibold">Hướng dẫn thực hành</h3><p className="whitespace-pre-wrap break-words text-sm">{detail.enterpriseContent.practice}</p></div>
+          </div>
+        </section>
+      )}
+      {detail.enterpriseCurriculum && <EnterpriseCurriculum curriculum={detail.enterpriseCurriculum} />}
 
       {/* ── 2. Thẻ Tiến độ & Hành động Trọng tâm ───────────────────────── */}
       <section className="pu-c-summary-card" aria-label="Tiến độ và bước tiếp theo">
@@ -556,5 +569,43 @@ function SkipTestCard({ test, skipPath }: { test: NonNullable<PulseCourseDetail[
         </Link>
       )}
     </div>
+  );
+}
+
+function EnterpriseCurriculum({ curriculum }: { curriculum: NonNullable<PulseCourseDetail['enterpriseCurriculum']> }) {
+  return (
+    <section className="pu-c-summary-card" aria-label="Chương trình nội bộ">
+      <div className="min-w-0 w-full space-y-3 p-4">
+        <h2 className="text-base font-bold">Chương trình nội bộ</h2>
+        {curriculum.modules.map((module) => (
+          <details key={module.moduleId} className="rounded-lg border border-slate-200 p-3">
+            <summary className="cursor-pointer font-semibold">{module.title}</summary>
+            <div className="pulse-ui mt-3 space-y-3">
+              {module.blocks.map((block) => <BlockPreview key={block.blockId} block={block} learner />)}
+              {module.questions.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Câu hỏi ôn tập</h3>
+                  <ol className="list-decimal space-y-2 pl-5">
+                    {module.questions.map((question) => (
+                      <li key={question.questionId}>
+                        <p>{question.text}</p>
+                        <ul className="list-disc pl-5">{question.options.map((option) => <li key={option.optionId}>{option.text}</li>)}</ul>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          </details>
+        ))}
+        <details className="rounded-lg border border-slate-200 p-3">
+          <summary className="cursor-pointer font-semibold">{curriculum.final.title}</summary>
+          <div className="pulse-ui mt-3">
+            <div className="pa-rich" dangerouslySetInnerHTML={{ __html: curriculum.final.promptHtml }} />
+          </div>
+          <ul className="list-disc pl-5">{curriculum.final.criteria.map((criterion, index) => <li key={index}>{criterion}</li>)}</ul>
+        </details>
+      </div>
+    </section>
   );
 }

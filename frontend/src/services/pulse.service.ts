@@ -1,6 +1,7 @@
 import apiClient from './api-client';
 import type { LessonMedia, CourseFinalContent } from '@/types/learning-content';
 import type { ApiResponse } from '../types/api';
+import type { CatalogBlock, CatalogCourseDetail } from './platform-catalog.service';
 
 /**
  * Trang nhân viên Pulse — khớp DigiTalent.Application/UseCases/Pulse (Api/Controllers/MyPulseController.cs).
@@ -254,6 +255,16 @@ export interface PulseCourseModule {
 export type PulseCourseNextAction = 'PRE_ASSESSMENT' | 'PRE_REVIEW' | 'MODULE' | 'FINAL' | 'PREVIEW' | 'LOCKED' | 'DONE';
 
 export interface PulseCourseDetail {
+  enterpriseContent?: { title: string; objective: string; practice: string } | null;
+  enterpriseCurriculum?: {
+    modules: {
+      moduleId: string;
+      title: string;
+      blocks: CatalogBlock[];
+      questions: { questionId: string; text: string; options: { optionId: string; text: string }[] }[];
+    }[];
+    final: CatalogCourseDetail['final'];
+  } | null;
   course: PulseCourseSummary;
   description?: string | null;
   purpose?: string | null;
