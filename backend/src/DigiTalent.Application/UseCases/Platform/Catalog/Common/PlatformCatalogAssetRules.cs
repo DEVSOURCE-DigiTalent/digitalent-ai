@@ -35,7 +35,7 @@ public static class PlatformCatalogAssetRules
             throw new BadRequestException(sizeMsg, "file", "FILE_TOO_LARGE");
         }
 
-        var normalizedName = Path.GetFileName(fileName ?? string.Empty).Trim();
+        var normalizedName = Path.GetFileName((fileName ?? string.Empty).Replace('\\', '/')).Trim();
         if (string.IsNullOrEmpty(normalizedName))
         {
             normalizedName = "asset";
