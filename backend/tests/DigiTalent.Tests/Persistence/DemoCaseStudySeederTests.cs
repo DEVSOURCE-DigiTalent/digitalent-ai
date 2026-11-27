@@ -286,4 +286,48 @@ public class DemoCaseStudySeederTests : IDisposable
         var csvLines = await File.ReadAllLinesAsync(csvPath);
         csvLines.Should().HaveCount(23); // Header + 22 accounts
     }
+
+    [Fact]
+    public async Task ResetDemoPasswordsAsync_GeneratesReadableFormat_UpdatesHashes_SetsLastLogin_AndExportsCsv()
+    {
+        var dbName = $"demo-pwd-reset-{Guid.NewGuid():N}";
+        await using var provider = BuildServiceProvider(dbName);
+        var csvPath = CreateTempCsvPath();
+
+        using (var scope = provider.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+
+            await DbSeeder.SeedAsync(db, hasher);
+            var seeded = await DemoCaseStudySeeder.SeedAsync(db, hasher, csvPath, trialOrgCount: 0);
+            var oldPasswords = seeded.ExportedAccounts.ToDictionary(a => a.Email, a => a.Password, StringComparer.OrdinalIgnoreCase);
+
+            var reset = await DemoCaseStudySeeder.ResetDemoPasswordsAsync(db, hasher, csvPath, trialOrgCount: 0);
+            reset.UsersCreated.Should().Be(37);
+            reset.ExportedAccounts.Should().HaveCount(12);
+
+            foreach (var acc in reset.ExportedAccounts)
+            {
+                acc.Password.Should().MatchRegex("^Demo[A-HJ-NP-Z2-9]{3}-[a-km-z2-9]{4}-[a-km-z2-9]{4}$");
+                acc.Password.Should().NotContainAny("l", "I", "1", "O", "0");
+                acc.Password.Should().NotBe(oldPasswords[acc.Email]);
+
+                var dbUser = await db.Users.AsNoTracking().SingleAsync(u => u.Email == acc.Email);
+                hasher.Verify(acc.Password, dbUser.PasswordHash).Should().BeTrue();
+                dbUser.LastLoginAt.Should().NotBeNull();
+            }
+
+            // Demo mentor must only see DEMO-* orgs, never non-DEMO orgs seeded by DbSeeder
+            var mentorUser = await db.Users.AsNoTracking().SingleAsync(u => u.Email == DemoCaseStudySeeder.MentorEmail);
+            var currentMentor = new Mock<ICurrentUser>();
+            currentMentor.Setup(c => c.UserId).Returns(mentorUser.Id);
+            currentMentor.Setup(c => c.Roles).Returns(new List<string> { Roles.Mentor });
+            currentMentor.Setup(c => c.IsAuthenticated).Returns(true);
+            var reviewScope = new DigiTalent.Application.UseCases.Pulse.PulseReviewScope(
+                db, new DigiTalent.Application.Common.Authorization.EmployeeScope(db, currentMentor.Object), currentMentor.Object);
+            var visibleCodes = await reviewScope.ReviewableOrganizations().Select(o => o.Code).ToListAsync();
+            visibleCodes.Should().ContainSingle().Which.Should().Be(DemoCaseStudySeeder.MainOrgCode);
+        }
+    }
 }

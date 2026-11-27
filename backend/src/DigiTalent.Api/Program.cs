@@ -75,10 +75,11 @@ if (app.Environment.IsProduction())
     }
 }
 
-// Chạy CLI seed-demo / reset-seed-demo (tách riêng, không khởi động HTTP server)
+// Chạy CLI seed-demo / reset-seed-demo / reset-demo-passwords (tách riêng, không khởi động HTTP server)
 var isSeedDemo = args.Any(a => a is "seed-demo" or "--seed-demo");
 var isResetSeedDemo = args.Any(a => a is "reset-seed-demo" or "--reset-seed-demo");
-if (isSeedDemo || isResetSeedDemo)
+var isResetDemoPasswords = args.Any(a => a is "reset-demo-passwords" or "--reset-demo-passwords");
+if (isSeedDemo || isResetSeedDemo || isResetDemoPasswords)
 {
     var mainOnly = args.Any(a => a is "--main-only");
     var csvArg = args.FirstOrDefault(a => a.StartsWith("--csv=", StringComparison.OrdinalIgnoreCase))?[6..];
@@ -89,6 +90,13 @@ if (isSeedDemo || isResetSeedDemo)
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
     await db.Database.MigrateAsync();
+
+    if (isResetDemoPasswords)
+    {
+        var pwdResult = await DemoCaseStudySeeder.ResetDemoPasswordsAsync(db, hasher, csvPath, trialOrgs);
+        Console.WriteLine($"[demo-seed] Đã đặt lại mật khẩu cho {pwdResult.UsersCreated} tài khoản demo ({pwdResult.OrganizationsSeeded} tổ chức), csv={pwdResult.CsvPath} ({pwdResult.ExportedAccounts.Count} dòng).");
+        return;
+    }
 
     var result = isResetSeedDemo
         ? await DemoCaseStudySeeder.ResetAndReseedAsync(db, hasher, csvPath, trialOrgs, Console.WriteLine)

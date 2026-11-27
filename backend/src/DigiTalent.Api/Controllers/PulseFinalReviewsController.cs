@@ -26,7 +26,10 @@ public class PulseFinalReviewsController : ControllerBase
         [FromQuery] Guid? departmentId = null,
         [FromQuery] bool refreshAi = false,
         [FromQuery] Guid? refreshSubmissionId = null,
-        [FromQuery] string? evidenceMetric = null)
+        [FromQuery] string? evidenceMetric = null,
+        [FromQuery] int? page = null,
+        [FromQuery] int? pageSize = null,
+        [FromQuery] bool skipAi = false)
     {
         var result = await useCase.ExecuteAsync(new GetPulseFinalReviewsUseCaseInput
         {
@@ -36,6 +39,9 @@ public class PulseFinalReviewsController : ControllerBase
             RefreshAi = refreshAi,
             RefreshSubmissionId = refreshSubmissionId,
             EvidenceMetric = evidenceMetric,
+            Page = page,
+            PageSize = pageSize,
+            SkipAi = skipAi,
         });
         return Ok(ApiResponse<GetPulseFinalReviewsUseCaseOutput>.Ok(result));
     }

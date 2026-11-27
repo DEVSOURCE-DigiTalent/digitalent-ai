@@ -163,6 +163,7 @@ export interface UsePulseFinalReviewsOptions {
   includeReviewed?: boolean;
   organizationId?: string;
   departmentId?: string;
+  skipAi?: boolean;
 }
 
 export function usePulseFinalReviews(enabledOrOptions: boolean | UsePulseFinalReviewsOptions = true) {
@@ -170,10 +171,11 @@ export function usePulseFinalReviews(enabledOrOptions: boolean | UsePulseFinalRe
   const includeReviewed = typeof enabledOrOptions === 'boolean' ? false : (enabledOrOptions.includeReviewed ?? false);
   const organizationId = typeof enabledOrOptions === 'boolean' ? undefined : enabledOrOptions.organizationId;
   const departmentId = typeof enabledOrOptions === 'boolean' ? undefined : enabledOrOptions.departmentId;
+  const skipAi = typeof enabledOrOptions === 'boolean' ? false : (enabledOrOptions.skipAi ?? false);
   return useQuery({
     ...learningContentQueryOptions,
-    queryKey: PULSE_KEYS.finalReviews(includeReviewed, organizationId, departmentId),
-    queryFn: () => pulseReviewService.getQueue(includeReviewed, organizationId, false, undefined, departmentId).then((r) => r.data.data!),
+    queryKey: [...PULSE_KEYS.finalReviews(includeReviewed, organizationId, departmentId), skipAi ? 'no-ai' : 'with-ai'],
+    queryFn: () => pulseReviewService.getQueue(includeReviewed, organizationId, false, undefined, departmentId, undefined, skipAi).then((r) => r.data.data!),
     enabled,
   });
 }
