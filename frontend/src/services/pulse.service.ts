@@ -75,7 +75,12 @@ export type PulseProctoringEventKind =
   | 'MULTIPLE_FACES'
   | 'LOOKING_AWAY'
   | 'FACE_CHECK_ON'
-  | 'FACE_CHECK_OFF';
+  | 'FACE_CHECK_OFF'
+  // Thao tác trên trang bài làm (canonical v3.10). COPY / PASTE: detail = "ESSAY|QUESTION|PAGE:{số ký tự}".
+  | 'COPY'
+  | 'PASTE'
+  | 'IDLE'
+  | 'SECOND_SCREEN';
 
 export interface PulsePerson {
   employeeId: string;
@@ -829,6 +834,7 @@ export const pulseReviewService = {
     refreshSubmissionId?: string,
     departmentId?: string,
     evidenceMetric?: PulseAiDetailEvidenceKey,
+    skipAi = false,
   ) => {
     const params: Record<string, string | boolean> = {};
     if (includeReviewed) params.includeReviewed = true;
@@ -837,6 +843,7 @@ export const pulseReviewService = {
     if (refreshAi) params.refreshAi = true;
     if (refreshSubmissionId) params.refreshSubmissionId = refreshSubmissionId;
     if (evidenceMetric) params.evidenceMetric = evidenceMetric;
+    if (skipAi) params.skipAi = true;
     return apiClient.get<ApiResponse<PulseFinalReviewQueue>>('/pulse/final-reviews', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });

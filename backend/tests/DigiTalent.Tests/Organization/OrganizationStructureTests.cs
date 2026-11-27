@@ -35,6 +35,8 @@ public class OrganizationStructureTests
     public async Task Members_ListProfilesAccountsAndInvitations_WithFilters()
     {
         var f = await Fixture.CreateAsync();
+        (await f.Context.Departments.FindAsync(f.World.DepartmentB.Id))!.ManagerEmployeeId = null;
+        await f.Context.SaveChangesAsync();
 
         var invite = await f.Invite(new InviteMemberRow
         {
@@ -193,7 +195,7 @@ public class OrganizationStructureTests
     public async Task UpdateMember_ChangesRolesAndPlacement_ButKeepsTheLastOwner()
     {
         var f = await Fixture.CreateAsync();
-        var member = await f.CreateAccountAsync("member@test.local", Roles.Employee, f.World.Analyst);
+        var member = await f.CreateAccountAsync("member@test.local", Roles.Employee, f.World.Unassigned);
 
         var promotedWithoutAssignment = () => f.Update(new UpdateMemberUseCaseInput
         {
@@ -256,13 +258,13 @@ public class OrganizationStructureTests
     public async Task DeactivateAndReactivate_ToggleAccessAndKeepTheReason()
     {
         var f = await Fixture.CreateAsync();
-        var member = await f.CreateAccountAsync("leaver@test.local", Roles.Employee, f.World.AnalystInDepartmentB);
+        var member = await f.CreateAccountAsync("leaver@test.local", Roles.Employee, f.World.NoActiveSetEmployee);
 
         var deactivated = await new DeactivateMemberUseCase(f.Context, f.CurrentUser, f.Audit.Object, f.Directory)
             .ExecuteAsync(new DeactivateMemberUseCaseInput { Id = member.Id, Reason = "  Nghỉ việc  " });
         deactivated.Status.Should().Be(MemberStatuses.Inactive);
         deactivated.DeactivatedReason.Should().Be("Nghỉ việc");
-        (await f.Context.Employees.AsNoTracking().SingleAsync(e => e.Id == f.World.AnalystInDepartmentB.Id))
+        (await f.Context.Employees.AsNoTracking().SingleAsync(e => e.Id == f.World.NoActiveSetEmployee.Id))
             .Status.Should().Be(Statuses.Employee.Inactive);
 
         var self = () => new DeactivateMemberUseCase(f.Context, f.CurrentUser, f.Audit.Object, f.Directory)
@@ -351,6 +353,9 @@ public class OrganizationStructureTests
         var list = await new GetPagedDepartmentsUseCase(f.Context, f.CurrentUser)
             .ExecuteAsync(new GetPagedDepartmentsUseCaseInput { PageSize = 10 });
         list.Items.Single(d => d.Id == f.World.DepartmentB.Id).Headcount.Should().Be(2);
+
+        (await f.Context.Departments.FindAsync(f.World.DepartmentB.Id))!.ManagerEmployeeId = null;
+        await f.Context.SaveChangesAsync();
 
         var inactiveManager = () => new UpdateDepartmentUseCase(f.Context, f.CurrentUser, f.Audit.Object).ExecuteAsync(new UpdateDepartmentUseCaseInput
         {

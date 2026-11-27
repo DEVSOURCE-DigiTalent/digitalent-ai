@@ -49,8 +49,7 @@ describe('Router Configuration & Surface Separation', () => {
 
       // The landing page is lazy-loaded (first import is slow when the whole suite runs in parallel)
       // and brings its own navigation and footer.
-      expect(await screen.findByTestId('landing-page', {}, { timeout: 10_000 })).toBeInTheDocument();
-      expect(await screen.findByRole('heading', { level: 1, name: /Định vị năng lực số/ })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: /Phát triển đội ngũ nhân sự/ }, { timeout: 10_000 })).toBeInTheDocument();
       expect(screen.queryByTestId('public-layout')).not.toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
@@ -191,7 +190,7 @@ describe('Router Configuration & Surface Separation', () => {
       renderWithRouter('/enterprise/overview', queryClient);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập hệ thống' })).toBeInTheDocument();
       });
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
@@ -200,7 +199,7 @@ describe('Router Configuration & Surface Separation', () => {
       renderWithRouter('/enterprise/departments', queryClient);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập hệ thống' })).toBeInTheDocument();
       });
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
@@ -209,7 +208,7 @@ describe('Router Configuration & Surface Separation', () => {
       renderWithRouter('/organization/departments', queryClient);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập hệ thống' })).toBeInTheDocument();
       });
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
@@ -236,7 +235,7 @@ describe('Router Configuration & Surface Separation', () => {
       signInAsMock(MOCK_EMAILS.platform);
       renderWithRouter('/enterprise/overview', queryClient);
 
-      expect(await screen.findByTestId('platform-layout')).toBeInTheDocument();
+      expect(await screen.findByRole('complementary', { name: 'Điều hướng quản trị nền tảng' })).toBeInTheDocument();
       expect(screen.queryByTestId('enterprise-layout')).not.toBeInTheDocument();
     });
 
@@ -244,7 +243,7 @@ describe('Router Configuration & Surface Separation', () => {
       signInAsMock(MOCK_EMAILS.manager);
       renderWithRouter('/enterprise', queryClient);
 
-      expect(await screen.findByRole('heading', { level: 1, name: 'Quyết định việc cần ưu tiên.' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Tổng quan phòng ban' })).toBeInTheDocument();
     });
 
     it('redirects the old manager learning link to the Pulse learning path', async () => {

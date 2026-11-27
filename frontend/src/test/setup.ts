@@ -57,9 +57,63 @@ if (typeof HTMLMediaElement !== 'undefined') {
   HTMLMediaElement.prototype.pause = () => { };
 }
 
+if (typeof globalThis.IntersectionObserver === 'undefined') {
+  globalThis.IntersectionObserver = class IntersectionObserver {
+    private readonly callback: IntersectionObserverCallback;
+    constructor(callback: IntersectionObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      const rect = target.getBoundingClientRect();
+      this.callback(
+        [
+          {
+            isIntersecting: true,
+            target,
+            intersectionRatio: 1,
+            boundingClientRect: rect,
+            intersectionRect: rect,
+            rootBounds: null,
+            time: Date.now(),
+          },
+        ],
+        this as unknown as globalThis.IntersectionObserver,
+      );
+    }
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  } as unknown as typeof globalThis.IntersectionObserver;
+}
+
 if (typeof window !== 'undefined') {
   window.scrollTo = vi.fn();
-  // Fix Node.js 20+ undici and JSDOM AbortSignal / Request mismatch
+  // Node 20/24 undici Request rejects jsdom AbortSignal instances during React Router navigation.
+  if (typeof globalThis.Request === 'function') {
+    try {
+      new globalThis.Request('http://localhost', { signal: new globalThis.AbortController().signal });
+    } catch {
+      const NativeRequest = globalThis.Request;
+      globalThis.Request = class PatchedRequest extends NativeRequest {
+        constructor(input: RequestInfo | URL, init?: RequestInit) {
+          if (init && 'signal' in init && init.signal) {
+            let safeInit: RequestInit = init;
+            try {
+              new NativeRequest('http://localhost', { signal: init.signal });
+            } catch {
+              const { signal: _drop, ...rest } = init;
+              safeInit = rest;
+            }
+            super(input, safeInit);
+          } else {
+            super(input, init);
+          }
+        }
+      } as typeof Request;
+    }
+  }
   window.AbortController = globalThis.AbortController;
   window.AbortSignal = globalThis.AbortSignal;
   window.Request = globalThis.Request;

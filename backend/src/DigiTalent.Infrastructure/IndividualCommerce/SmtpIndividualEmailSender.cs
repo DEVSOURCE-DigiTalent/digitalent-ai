@@ -77,6 +77,12 @@ public class SmtpIndividualEmailSender : IIndividualEmailSender
         CancellationToken cancellationToken,
         bool throwOnFailure = false)
     {
+        if (DemoEmailGuard.IsDemoAddress(recipientEmail))
+        {
+            _logger.LogInformation("[SmtpIndividualEmailSender] Skipped SMTP for demo address {Recipient}.", recipientEmail);
+            return;
+        }
+
         var outboxItem = new EmailOutboxItem
         {
             RecipientEmail = recipientEmail,

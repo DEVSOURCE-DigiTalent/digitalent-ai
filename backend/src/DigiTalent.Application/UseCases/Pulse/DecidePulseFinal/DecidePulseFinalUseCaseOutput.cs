@@ -9,4 +9,5 @@ public class DecidePulseFinalUseCaseOutput
     public string EnrollmentStatus { get; set; } = string.Empty;
     public DateTimeOffset? RetryOpensAt { get; set; }
     public DateTimeOffset? RetryDueAt { get; set; }
+    public string? CertificateCode { get; set; }
 }

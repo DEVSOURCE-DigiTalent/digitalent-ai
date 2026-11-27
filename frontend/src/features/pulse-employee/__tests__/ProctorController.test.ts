@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AxiosError, AxiosHeaders } from 'axios';
 import { pulseService } from '@/services/pulse.service';
-import { ProctorController } from '../exam/proctor';
+import { IDLE_MS, ProctorController } from '../exam/proctor';
 import type { FaceDetector } from '../exam/face-detector';
 import type { FaceObservation } from '../exam/face-signals';
 
@@ -336,6 +336,77 @@ describe('ProctorController · nhận diện khuôn mặt trên máy', () => {
     await vi.advanceTimersByTimeAsync(10_000);
 
     expect(controller.getSnapshot().events.map((e) => e.kind)).toEqual(['STARTED', 'FACE_CHECK_ON', 'CAMERA_STOPPED']);
+    controller.dispose();
+  });
+});
+
+describe('ProctorController · copy, paste, idle and extra screens (canonical v3.10)', () => {
+  /** Một sự kiện clipboard của trình duyệt (jsdom không có ClipboardEvent đầy đủ). */
+  function clipboard(type: 'copy' | 'paste', target: Element, text = '') {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
+    target.dispatchEvent(event);
+  }
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+    vi.useRealTimers();
+    delete (window.screen as Screen & { isExtended?: boolean }).isExtended;
+  });
+
+  it('logs where a paste or copy happened and how many characters, never the text', async () => {
+    document.body.innerHTML = `
+      <section data-proctor-area="question"><p id="prompt">Đề bài</p>
+        <textarea id="essay" data-proctor-area="essay"></textarea></section>
+      <p id="elsewhere">Khác</p>`;
+    const controller = await readyController();
+    await controller.start();
+
+    clipboard('paste', document.getElementById('essay')!, 'x'.repeat(640));
+    const essay = document.getElementById('essay') as HTMLTextAreaElement;
+    essay.value = 'abcdefghij';
+    essay.setSelectionRange(2, 7);
+    clipboard('copy', essay);
+    vi.spyOn(document, 'getSelection').mockReturnValue({ toString: () => 'Đề bài đầy đủ' } as Selection);
+    clipboard('copy', document.getElementById('prompt')!);
+    clipboard('paste', document.getElementById('elsewhere')!, '');
+
+    const logged = controller.getSnapshot().events.filter((e) => e.kind === 'COPY' || e.kind === 'PASTE');
+    expect(logged.map((e) => [e.kind, e.detail])).toEqual([
+      ['PASTE', 'ESSAY:640'],
+      ['COPY', 'ESSAY:5'],
+      ['COPY', 'QUESTION:13'],
+    ]);
+    await controller.flushEvents();
+    const sent = vi.mocked(pulseService.recordProctoringEvents).mock.calls.flatMap(([, batch]) => batch);
+    expect(sent.some((e) => e.detail?.includes('x'))).toBe(false);
+    controller.dispose();
+  });
+
+  it('logs a long stretch without typing or moving the mouse once the employee acts again', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+    const controller = await readyController();
+    await controller.start();
+
+    vi.advanceTimersByTime(30_000);
+    document.dispatchEvent(new Event('keydown'));
+    vi.advanceTimersByTime(IDLE_MS + 15_000);
+    document.dispatchEvent(new Event('pointerdown'));
+
+    const idle = controller.getSnapshot().events.filter((e) => e.kind === 'IDLE');
+    expect(idle).toHaveLength(1);
+    expect(idle[0]).toEqual(expect.objectContaining({ offsetMs: 30_000, durationMs: IDLE_MS + 15_000 }));
+    controller.dispose();
+  });
+
+  it('records a second monitor once, at the start of the exam', async () => {
+    (window.screen as Screen & { isExtended?: boolean }).isExtended = true;
+    const controller = await readyController();
+    await controller.start();
+
+    const screens = controller.getSnapshot().events.filter((e) => e.kind === 'SECOND_SCREEN');
+    expect(screens).toEqual([expect.objectContaining({ kind: 'SECOND_SCREEN', detail: 'EXTENDED' })]);
+    expect(screens[0]!.offsetMs).toBeLessThan(5_000);
     controller.dispose();
   });
 });

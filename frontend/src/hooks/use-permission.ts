@@ -209,4 +209,8 @@ export const PERMISSIONS = {
   // Dùng thử doanh nghiệp: chủ doanh nghiệp mời nhân viên và gửi yêu cầu chấm; mentor chấm bài
   TRIAL_MANAGE: 'trial.manage',
   TRIAL_REVIEW: 'trial.review',
+
+  // Báo cáo hành vi khi làm bài cuối khóa (trong Khoảng trống năng lực OW-21)
+  BEHAVIOR_REPORT_READ: 'behavior_report.read',
+  BEHAVIOR_REPORT_ANALYZE: 'behavior_report.analyze',
 } as const;

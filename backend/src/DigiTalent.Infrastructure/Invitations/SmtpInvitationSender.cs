@@ -33,6 +33,12 @@ public sealed class SmtpInvitationSender : IInvitationSender
     {
         var baseUrl = _urlResolver.GetFrontendBaseUrl();
         var link = $"{baseUrl}/activate/{Uri.EscapeDataString(invitation.Token)}";
+        if (DemoEmailGuard.IsDemoAddress(invitation.Email))
+        {
+            _logger.LogInformation("[SmtpInvitationSender] Skipped SMTP for demo address {Email}.", invitation.Email);
+            return _links.ExposeDebugLink ? link : null;
+        }
+
         var bodyHtml = EmailTemplateBuilder.BuildInvitationEmail(
             invitation.FullName,
             invitation.OrganizationName,

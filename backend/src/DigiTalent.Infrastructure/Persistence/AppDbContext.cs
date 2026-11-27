@@ -83,6 +83,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<ProctoringRecording> ProctoringRecordings => Set<ProctoringRecording>();
     public DbSet<ProctoringEvent> ProctoringEvents => Set<ProctoringEvent>();
     public DbSet<PulseAiReview> PulseAiReviews => Set<PulseAiReview>();
+    public DbSet<ProctoringBehaviorReport> ProctoringBehaviorReports => Set<ProctoringBehaviorReport>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<LearningMaterial> LearningMaterials => Set<LearningMaterial>();
     public DbSet<Lesson> Lessons => Set<Lesson>();

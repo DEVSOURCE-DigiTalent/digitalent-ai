@@ -75,6 +75,37 @@ if (app.Environment.IsProduction())
     }
 }
 
+// Chạy CLI seed-demo / reset-seed-demo / reset-demo-passwords (tách riêng, không khởi động HTTP server)
+var isSeedDemo = args.Any(a => a is "seed-demo" or "--seed-demo");
+var isResetSeedDemo = args.Any(a => a is "reset-seed-demo" or "--reset-seed-demo");
+var isResetDemoPasswords = args.Any(a => a is "reset-demo-passwords" or "--reset-demo-passwords");
+if (isSeedDemo || isResetSeedDemo || isResetDemoPasswords)
+{
+    var mainOnly = args.Any(a => a is "--main-only");
+    var csvArg = args.FirstOrDefault(a => a.StartsWith("--csv=", StringComparison.OrdinalIgnoreCase))?[6..];
+    var csvPath = !string.IsNullOrWhiteSpace(csvArg) ? csvArg : ResolveDefaultDemoCsvPath();
+    var trialOrgs = mainOnly ? 0 : 10;
+
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    await db.Database.MigrateAsync();
+
+    if (isResetDemoPasswords)
+    {
+        var pwdResult = await DemoCaseStudySeeder.ResetDemoPasswordsAsync(db, hasher, csvPath, trialOrgs);
+        Console.WriteLine($"[demo-seed] Đã đặt lại mật khẩu cho {pwdResult.UsersCreated} tài khoản demo ({pwdResult.OrganizationsSeeded} tổ chức), csv={pwdResult.CsvPath} ({pwdResult.ExportedAccounts.Count} dòng).");
+        return;
+    }
+
+    var result = isResetSeedDemo
+        ? await DemoCaseStudySeeder.ResetAndReseedAsync(db, hasher, csvPath, trialOrgs, Console.WriteLine)
+        : await DemoCaseStudySeeder.SeedAsync(db, hasher, csvPath, trialOrgs);
+
+    Console.WriteLine($"[demo-seed] Hoàn tất: organizationsSeeded={result.OrganizationsSeeded}, usersCreated={result.UsersCreated}, employeesCreated={result.EmployeesCreated}, csv={result.CsvPath} ({result.ExportedAccounts.Count} dòng).");
+    return;
+}
+
 // Chạy migration & seed khi ở Development hoặc khi có cờ ApplyMigrations/--migrate (trừ khi cố ý tắt bằng ApplyMigrations=false)
 var applyMigrations = !string.Equals(app.Configuration["ApplyMigrations"], "false", StringComparison.OrdinalIgnoreCase) &&
                       (app.Environment.IsDevelopment() ||
@@ -134,3 +165,18 @@ app.MapHub<DigiTalent.Api.Hubs.NotificationHub>("/hubs/notifications");
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 
 app.Run();
+
+static string ResolveDefaultDemoCsvPath()
+{
+    var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+    while (dir != null)
+    {
+        if (Directory.Exists(Path.Combine(dir.FullName, "backend")) &&
+            File.Exists(Path.Combine(dir.FullName, ".gitignore")))
+        {
+            return Path.Combine(dir.FullName, "demo-accounts.csv");
+        }
+        dir = dir.Parent;
+    }
+    return Path.Combine(Directory.GetCurrentDirectory(), "demo-accounts.csv");
+}

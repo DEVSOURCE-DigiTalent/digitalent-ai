@@ -91,28 +91,50 @@ public static class PlatformCatalogSeeder
 
         // 2. Eighteen standard courses (identity + mirror of the version in use)
         var courses = await db.PlatformCourses.ToListAsync();
+        var existingPlatformCodes = courses.Select(c => c.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var c in courses)
         {
+            string? normalized = null;
             if (c.Code.StartsWith("A", StringComparison.OrdinalIgnoreCase) && c.Code.Length > 2 && char.IsDigit(c.Code[1]))
             {
-                c.Code = "M" + c.Code[1..];
+                normalized = "M" + c.Code[1..];
             }
             else if (c.Code.StartsWith("AI1-", StringComparison.OrdinalIgnoreCase))
             {
-                c.Code = "M6-" + c.Code[4..];
+                normalized = "M6-" + c.Code[4..];
+            }
+
+            if (normalized != null && !existingPlatformCodes.Contains(normalized))
+            {
+                existingPlatformCodes.Remove(c.Code);
+                c.Code = normalized;
+                existingPlatformCodes.Add(normalized);
             }
         }
 
         var tenantCourses = await db.Courses.ToListAsync();
+        var existingTenantKeys = tenantCourses.Select(tc => (tc.OrganizationId, Code: tc.Code.ToUpperInvariant())).ToHashSet();
         foreach (var tc in tenantCourses)
         {
+            string? normalized = null;
             if (tc.Code.StartsWith("A", StringComparison.OrdinalIgnoreCase) && tc.Code.Length > 2 && char.IsDigit(tc.Code[1]))
             {
-                tc.Code = "M" + tc.Code[1..];
+                normalized = "M" + tc.Code[1..];
             }
             else if (tc.Code.StartsWith("AI1-", StringComparison.OrdinalIgnoreCase))
             {
-                tc.Code = "M6-" + tc.Code[4..];
+                normalized = "M6-" + tc.Code[4..];
+            }
+
+            if (normalized != null)
+            {
+                var targetKey = (tc.OrganizationId, Code: normalized.ToUpperInvariant());
+                if (!existingTenantKeys.Contains(targetKey))
+                {
+                    existingTenantKeys.Remove((tc.OrganizationId, Code: tc.Code.ToUpperInvariant()));
+                    tc.Code = normalized;
+                    existingTenantKeys.Add(targetKey);
+                }
             }
         }
 

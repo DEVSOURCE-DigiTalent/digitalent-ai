@@ -53,7 +53,10 @@ describe('guided enterprise trial', () => {
     mount(<TrialRegisterPage />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Tiếp tục' })).toBeEnabled());
     for (const [label, value] of [['Tên doanh nghiệp', 'Acme'], ['Người liên hệ', 'Owner'], ['Email công việc', 'owner@acme.test']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
-    for (const [label, value] of [['Ngành', 'Công nghệ thông tin'], ['Quy mô', '1-20']]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ngành' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Công nghệ thông tin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Quy mô' }));
+    fireEvent.click(screen.getByRole('option', { name: '1-20 nhân sự' }));
     fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục' }));
     expect(api.register).not.toHaveBeenCalled();
 
@@ -170,6 +173,6 @@ describe('guided enterprise trial', () => {
     expect(await screen.findByText(/Chỉ đọc/)).toBeInTheDocument(); expect(await screen.findByText('Pending person')).toBeInTheDocument(); expect(screen.getByRole('button', { name: 'Gửi lời mời' })).toBeDisabled(); expect(screen.getByRole('link', { name: 'Xem gói phù hợp' })).toHaveAttribute('href', '/business/pricing');
   });
   it('refetches context on remount instead of using client business truth', async () => {
-    const first = mount(<TrialWorkspacePage />); await screen.findByText(/requirements-v1/); first.unmount(); mount(<TrialWorkspacePage />); await screen.findByText(/requirements-v1/); expect(api.context).toHaveBeenCalledTimes(2);
+    const first = mount(<TrialWorkspacePage />); await screen.findByText(/Vị trí đã chọn: CRM/); first.unmount(); mount(<TrialWorkspacePage />); await screen.findByText(/Vị trí đã chọn: CRM/); expect(api.context).toHaveBeenCalledTimes(2);
   });
 });

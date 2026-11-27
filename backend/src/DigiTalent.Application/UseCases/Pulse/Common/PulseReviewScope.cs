@@ -1,4 +1,5 @@
 using DigiTalent.Application.Common.Authorization;
+using DigiTalent.Application.Common.Email;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Domain.Constants;
@@ -14,12 +15,15 @@ namespace DigiTalent.Application.UseCases.Pulse;
 /// Với mentor DigiTalent: chấm bài dùng thử của doanh nghiệp được phân công (khi doanh nghiệp đang dùng thử) VÀ bài
 /// nộp hoàn thành từng cấp/miền của nhân viên thuộc các doanh nghiệp chính thức / đã chuyển gói.
 /// Doanh nghiệp dùng thử chưa phân công hoặc đã giao mentor khác nằm ngoài phạm vi của mentor → 404.
+/// Riêng mentor demo (@demo.nanglucso.pro.vn) chỉ thấy các tổ chức DEMO-* để không lẫn với tổ chức thật.
 /// </summary>
 public class PulseReviewScope
 {
+    private const string DemoOrgPrefix = "DEMO-";
     private readonly IApplicationDbContext _context;
     private readonly EmployeeScope _scope;
     private readonly ICurrentUser _currentUser;
+    private bool? _isDemoReviewer;
 
     public PulseReviewScope(IApplicationDbContext context, EmployeeScope scope, ICurrentUser currentUser)
     {
@@ -29,6 +33,21 @@ public class PulseReviewScope
     }
 
     public Guid ReviewerUserId => _currentUser.UserId ?? throw new ForbiddenException("Không xác định được người chấm.");
+
+    private bool IsDemoReviewer()
+    {
+        if (_isDemoReviewer.HasValue)
+        {
+            return _isDemoReviewer.Value;
+        }
+
+        var email = _context.Users.AsNoTracking()
+            .Where(u => u.Id == ReviewerUserId)
+            .Select(u => u.Email)
+            .FirstOrDefault();
+        _isDemoReviewer = DemoEmailGuard.IsDemoAddress(email);
+        return _isDemoReviewer.Value;
+    }
 
     public IQueryable<Employee> ResultEmployees() =>
         _currentUser.IsDepartmentManager && !_currentUser.IsAdmin && !_currentUser.Roles.Contains(Roles.Mentor)
@@ -41,12 +60,14 @@ public class PulseReviewScope
         var openTrials = _context.TrialWorkspaces.Where(t => t.ConvertedAt == null);
         if (_currentUser.Roles.Contains(Roles.Mentor))
         {
+            var isDemo = IsDemoReviewer();
             var excludedTrials = openTrials
                 .Where(t => t.MentorUserId == null || t.MentorUserId != reviewerUserId)
                 .Select(t => t.OrganizationId);
             return _context.Employees.Where(e =>
                 (e.UserId == null || e.UserId != reviewerUserId)
-                && !excludedTrials.Contains(e.OrganizationId));
+                && !excludedTrials.Contains(e.OrganizationId)
+                && (!isDemo || _context.Organizations.Any(o => o.Id == e.OrganizationId && o.Code.StartsWith(DemoOrgPrefix))));
         }
 
         if (_currentUser.IsDepartmentManager && !_currentUser.IsAdmin)
@@ -65,12 +86,14 @@ public class PulseReviewScope
         var openTrials = _context.TrialWorkspaces.Where(t => t.ConvertedAt == null);
         if (_currentUser.Roles.Contains(Roles.Mentor))
         {
+            var isDemo = IsDemoReviewer();
             var excludedTrials = openTrials
                 .Where(t => t.MentorUserId == null || t.MentorUserId != reviewerUserId)
                 .Select(t => t.OrganizationId);
             return _context.Organizations.Where(o =>
                 o.Status == Statuses.Simple.Active
-                && !excludedTrials.Contains(o.Id));
+                && !excludedTrials.Contains(o.Id)
+                && (!isDemo || o.Code.StartsWith(DemoOrgPrefix)));
         }
 
         var trialOrganizations = openTrials.Select(t => t.OrganizationId);
