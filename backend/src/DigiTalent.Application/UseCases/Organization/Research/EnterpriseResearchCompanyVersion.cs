@@ -22,6 +22,9 @@ public sealed partial class EnterpriseResearch
 {
     private const string DefaultQuizTitle = "Câu hỏi ôn tập";
 
+    /// <summary>system_settings key: ids of every course revision written from a company version (JSON array).</summary>
+    private const string RevisionsKey = Prefix + "revisions";
+
     public async Task<ResearchAuthoringVersion> ApplyCompanyVersionAsync(Guid courseId, ResearchApplyInput input,
         PlatformCourseContentReader reader, IHtmlContentSanitizer sanitizer)
     {
@@ -29,7 +32,7 @@ public sealed partial class EnterpriseResearch
         ResearchAuthoringVersion? result = null;
         await context.ExecuteInSerializableTransactionAsync(async () =>
         {
-            var orgId = await RequireEnabledAsync();
+            var orgId = await RequireAccessAsync(write: true);
             var source = await AuthoringSourceAsync(orgId, courseId, reader);
             var state = await ReadAuthoringAsync(context, orgId, source.Code);
             if (state.Revision != input.Revision)
@@ -51,6 +54,7 @@ public sealed partial class EnterpriseResearch
                     + (problems.Count > 3 ? $" (và {problems.Count - 3} mục khác)" : ""));
 
             source.CourseId = (await WriteCompanyRevisionAsync(orgId, source, content, title, outcome)).Id;
+            await WriteAsync(orgId, RevisionsKey, (await CompanyRevisionIdsAsync(context, orgId)).Append(source.CourseId).ToList());
             await CourseRelearn.ResetAsync(context, orgId, new[] { source.Code });
             state = new AuthoringState(state.Revision + 1, null, content);
             await WriteAsync(orgId, AuthoringPrefix + source.Code, state);
@@ -69,7 +73,7 @@ public sealed partial class EnterpriseResearch
         var code = "";
         await context.ExecuteInSerializableTransactionAsync(async () =>
         {
-            var orgId = await RequireEnabledAsync();
+            var orgId = await RequireAccessAsync(write: true);
             var origin = await SourceRowAsync(orgId, courseId);
             code = origin.Code;
             var state = await ReadAuthoringAsync(context, orgId, origin.Code);
@@ -116,6 +120,17 @@ public sealed partial class EnterpriseResearch
                 setting.Value = JsonSerializer.Serialize(new ResearchCourseVersion(version.Draft ?? version.Applied, null), JsonOptions);
             }
         }
+    }
+
+    /// <summary>
+    /// Course revisions written from a company version: what DigiTalent's measures (the competency survey) leave out so
+    /// they keep comparing with the standard content.
+    /// </summary>
+    public static async Task<List<Guid>> CompanyRevisionIdsAsync(IApplicationDbContext db, Guid organizationId)
+    {
+        var value = await db.SystemSettings.AsNoTracking()
+            .Where(s => s.OrganizationId == organizationId && s.Key == RevisionsKey).Select(s => s.Value).SingleOrDefaultAsync();
+        return value is null ? new List<Guid>() : JsonSerializer.Deserialize<List<Guid>>(value, JsonOptions) ?? new List<Guid>();
     }
 
     /// <summary>Whether R&D applied a company version of these courses (canonical codes).</summary>
