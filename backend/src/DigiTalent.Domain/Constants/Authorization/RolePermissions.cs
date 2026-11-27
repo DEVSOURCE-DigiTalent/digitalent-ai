@@ -121,6 +121,10 @@ public static class RolePermissions
             Permissions.Assistant.Chat,
             Permissions.Trial.Manage,
 
+            // Báo cáo hành vi khi làm bài cuối khóa (trong Khoảng trống năng lực OW-21).
+            Permissions.BehaviorReport.Read,
+            Permissions.BehaviorReport.Analyze,
+
             Permissions.Feedback.Create,
             Permissions.Feedback.ReadOwn,
         },

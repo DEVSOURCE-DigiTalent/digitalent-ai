@@ -1,3 +1,4 @@
+using DigiTalent.Application.UseCases.BehaviorReports;
 using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Application.UseCases.TrialProgram;
 
@@ -32,6 +33,13 @@ public interface IGeminiService
     Task<TrialEssayAiReviewDto?> EvaluateTrialEssaysAsync(
         IReadOnlyList<TrialEssayAiInput> essays,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Phân tích hành vi khi làm bài cuối khóa từ nhật ký giám sát (không có video, tên hay nội dung bài làm). Null khi AI
+    /// không trả lời được — không có kết quả giả thay thế.
+    /// </summary>
+    Task<BehaviorAiResult?> AnalyzeExamBehaviorAsync(BehaviorAiInput input, CancellationToken cancellationToken = default) =>
+        Task.FromResult<BehaviorAiResult?>(null);
 }
 
 public sealed record ProctoringEventInfo(string Kind, long OffsetMs, long? DurationMs);

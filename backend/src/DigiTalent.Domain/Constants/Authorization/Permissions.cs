@@ -216,6 +216,16 @@ public static class Permissions
         public const string Review = "trial.review";
     }
 
+    /// <summary>
+    /// Báo cáo hành vi khi làm bài cuối khóa (canonical v3.10, trong Khoảng trống năng lực OW-21): chủ doanh nghiệp xem dòng thời gian, bằng chứng
+    /// và bản ghi; yêu cầu AI phân tích lại.
+    /// </summary>
+    public static class BehaviorReport
+    {
+        public const string Read = "behavior_report.read";
+        public const string Analyze = "behavior_report.analyze";
+    }
+
     public static class Feedback
     {
         public const string Create = "feedback.create";
