@@ -23,6 +23,9 @@ vi.mock('@/hooks/use-course-updates', () => ({
 
 afterEach(() => vi.clearAllMocks());
 
+// R&D in charge of the company's courses and allowed to edit them.
+const ACCESS = { enabled: true, purchased: true, inCharge: 'RND', researchers: 1, canView: true, canEdit: true, reason: null };
+
 const detail = (): CatalogCourseDetail => ({
   versionNo: 1, versionStatus: 'CURRENT', editable: true, courseId: 'basic-1', code: 'M1-F', codeEditable: false,
   changeKind: 'UNCHANGED', frameworkId: 'framework', frameworkName: 'Khung năng lực số', domainId: 'domain',
@@ -39,11 +42,11 @@ function renderPage() {
   );
 }
 
-function serve(problems: string[]) {
+function serve(problems: string[], access: Partial<typeof ACCESS> = {}) {
   const list = [{ courseId: 'basic-1', code: 'M1-F', tier: 1, title: 'Khai thác dữ liệu', modules: ['Nguồn dữ liệu'], draft: null, applied: null }];
   vi.mocked(apiClient.get).mockImplementation(async (path) => ({
     data: {
-      data: path.endsWith('/settings') ? true
+      data: path.endsWith('/access') ? { ...ACCESS, ...access }
         : path.endsWith('/editor') ? { course: detail(), revision: 3, hasDraft: false, hasApplied: false, problems }
         : list,
     },
@@ -102,7 +105,7 @@ it('uses the shared module editor for adding, renaming and removing a module in 
   };
   let revision = 0;
   vi.mocked(apiClient.get).mockImplementation(async (path) => ({
-    data: { data: path.endsWith('/settings') ? true
+    data: { data: path.endsWith('/access') ? ACCESS
       : path.endsWith('/editor') ? { course, revision, hasDraft: revision > 0, hasApplied: false, problems: [] }
       : [{ courseId: course.courseId, code: course.code, tier: 1, title: course.title, modules: [], draft: null, applied: null }] },
   }));
@@ -131,4 +134,29 @@ it('uses the shared module editor for adding, renaming and removing a module in 
   const confirmation = await screen.findByRole('dialog');
   fireEvent.click(within(confirmation).getByRole('button', { name: 'Xác nhận xóa', exact: true }));
   await waitFor(() => expect(course.modules).toHaveLength(0));
+});
+
+it('stays locked until the company has bought a course; R&D asks the owner to buy one', async () => {
+  serve([], {
+    purchased: false, canView: false, canEdit: false,
+    reason: 'Tùy chỉnh khóa học mở khi công ty đã mua ít nhất 1 khóa học. Các khóa Cơ bản miễn phí vẫn học bình thường.',
+  });
+  renderPage();
+
+  expect(await screen.findByText(/mua ít nhất 1 khóa học/)).toBeInTheDocument();
+  expect(screen.getByText('Nhờ chủ doanh nghiệp mua khóa học để mở phần này.')).toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: /Mua khóa học/ })).toBeNull();
+  expect(screen.queryByText('Không tải được dữ liệu R&D.')).toBeNull();
+});
+
+it('lets the owner of a company with R&D only view what R&D did', async () => {
+  serve([], { inCharge: 'RND', researchers: 2, canEdit: false });
+  renderPage();
+
+  expect(await screen.findByText(/Công ty đã có R&D \(2 tài khoản\)/)).toBeInTheDocument();
+  await screen.findByText('Đang dùng bản chuẩn');
+  expect(screen.queryByRole('button', { name: /Áp dụng cho doanh nghiệp/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Lưu nháp' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Thêm mô đun' })).toBeNull();
+  expect(screen.getByRole('textbox', { name: 'Mục tiêu học tập của doanh nghiệp' })).toBeDisabled();
 });

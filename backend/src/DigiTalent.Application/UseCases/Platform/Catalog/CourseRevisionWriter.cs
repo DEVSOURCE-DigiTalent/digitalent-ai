@@ -35,6 +35,18 @@ public static class CourseRevisionWriter
 {
     public static Guid Id(string value) => new(MD5.HashData(Encoding.UTF8.GetBytes(value)));
 
+    /// <summary>Titles go into 250-character columns; a page heading or a caption (up to 2000) may be longer.</summary>
+    private const int TitleLength = 250;
+
+    private static string Fit(string value) => value.Length <= TitleLength ? value : value[..(TitleLength - 1)].TrimEnd() + "…";
+
+    /// <summary>The page heading or caption, else "{module} · {n}"; never empty, never longer than the column.</summary>
+    private static string LessonTitle(string? candidate, string fallback)
+    {
+        var title = Regex.Replace(candidate ?? "", @"\s+", " ").Trim();
+        return Fit(title.Length > 0 ? title : fallback);
+    }
+
     public static async Task<Course> WriteAsync(IApplicationDbContext context, Course previous, Guid id, string code, int versionNo,
         bool isNew, CourseRevisionContent content, Guid? authorId, DateTimeOffset now)
     {
@@ -65,7 +77,7 @@ public static class CourseRevisionWriter
             OutcomeType = o.OutcomeType, Statement = o.Statement, SourceType = o.SourceType, SourceRef = o.SourceRef,
             AssessmentMethod = o.AssessmentMethod, SortOrder = o.SortOrder, CreatedAt = now, UpdatedAt = now,
         }));
-        var bank = new QuestionBank { OrganizationId = previous.OrganizationId, Title = $"{content.Title} · v{versionNo}", Status = "ACTIVE", OwnerUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now };
+        var bank = new QuestionBank { OrganizationId = previous.OrganizationId, Title = Fit($"{content.Title} · v{versionNo}"), Status = "ACTIVE", OwnerUserId = course.CreatedByUserId, CreatedAt = now, UpdatedAt = now };
         context.QuestionBanks.Add(bank);
         foreach (var (module, moduleIndex) in content.Modules.Select((m, i) => (m, i)))
         {
@@ -81,7 +93,8 @@ public static class CourseRevisionWriter
                 var lesson = new Lesson
                 {
                     ModuleId = mapped.Id, Code = $"{code}-CH{moduleIndex + 1}-S{++order:00}",
-                    Title = titleMatch.Success ? WebUtility.HtmlDecode(Regex.Replace(titleMatch.Groups[1].Value, "<[^>]*>", "")) : block.Caption ?? $"{module.Title} · {order}",
+                    Title = LessonTitle(titleMatch.Success ? WebUtility.HtmlDecode(Regex.Replace(titleMatch.Groups[1].Value, "<[^>]*>", "")) : block.Caption,
+                        $"{module.Title} · {order}"),
                     LessonType = block.BlockType == PlatformCatalog.BlockType.Video ? "VIDEO" : "TEXT",
                     ContentBody = body, SortOrder = order, IsRequired = true, CompletionRule = "VIEW", Status = Statuses.CourseContent.Active,
                     CreatedAt = now, UpdatedAt = now,

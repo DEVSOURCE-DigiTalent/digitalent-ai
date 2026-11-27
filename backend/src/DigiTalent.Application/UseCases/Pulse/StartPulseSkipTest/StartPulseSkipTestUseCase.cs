@@ -28,7 +28,7 @@ public class StartPulseSkipTestUseCase : IUseCase<StartPulseSkipTestUseCaseInput
 
     public async Task<StartPulseSkipTestUseCaseOutput> ExecuteAsync(StartPulseSkipTestUseCaseInput input)
     {
-        var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
+        var (snapshot, state) = await _workspace.ResolveForAnswerAsync(input.CourseId);
         var now = _workspace.Now;
         var courseId = PulseSkipTest.CourseIdOf(state);
         var pool = await _skip.LoadPoolAsync(state.Modules);

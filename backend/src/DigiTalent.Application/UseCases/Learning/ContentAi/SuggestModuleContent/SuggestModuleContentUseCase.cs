@@ -14,9 +14,11 @@ public class SuggestModuleContentUseCase : IUseCase<SuggestModuleContentUseCaseI
     private readonly IGeminiService _gemini;
     private readonly ITt02Framework _framework;
     private readonly IHtmlContentSanitizer _sanitizer;
+    private readonly ContentAiAccess _access;
 
-    public SuggestModuleContentUseCase(IGeminiService gemini, ITt02Framework framework, IHtmlContentSanitizer sanitizer)
+    public SuggestModuleContentUseCase(IGeminiService gemini, ITt02Framework framework, IHtmlContentSanitizer sanitizer, ContentAiAccess access)
     {
+        _access = access;
         _gemini = gemini;
         _framework = framework;
         _sanitizer = sanitizer;
@@ -24,6 +26,7 @@ public class SuggestModuleContentUseCase : IUseCase<SuggestModuleContentUseCaseI
 
     public async Task<ModuleContentSuggestionOutput> ExecuteAsync(SuggestModuleContentUseCaseInput input)
     {
+        await _access.EnsureAsync();
         if (!_gemini.IsConfigured)
         {
             throw new BadRequestException("Chưa cấu hình khóa AI (Gemini).", "ai", "AI_NOT_CONFIGURED");

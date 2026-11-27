@@ -22,6 +22,11 @@ public sealed class EnterpriseResearchController(EnterpriseResearch research) : 
     public async Task<ApiResponse<bool>> SetSettings([FromBody] bool enabled) =>
         ApiResponse<bool>.Ok(await research.SetEnabledAsync(enabled));
 
+    /// <summary>Who customises the company's courses and what the caller may do (view, edit).</summary>
+    [HttpGet("access")]
+    [HasPermission(Permissions.Research.ManageCourses)]
+    public async Task<ApiResponse<ResearchAccess>> GetAccess() => ApiResponse<ResearchAccess>.Ok(await research.GetAccessAsync());
+
     [HttpGet("courses")]
     [HasPermission(Permissions.Research.ManageCourses)]
     public async Task<ApiResponse<IReadOnlyList<ResearchCourseItem>>> GetCourses() =>

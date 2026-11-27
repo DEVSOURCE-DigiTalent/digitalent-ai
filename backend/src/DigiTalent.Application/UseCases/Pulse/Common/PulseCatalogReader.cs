@@ -19,15 +19,18 @@ public class PulseCatalogReader
         _context = context;
     }
 
-    public async Task<List<PulseCourseRef>> LoadAsync(Guid organizationId, IReadOnlyCollection<string>? trialCourseCodes = null)
+    /// <param name="excludeCourseIds">Revisions to leave out (the company versions R&amp;D applied, for the survey).</param>
+    public async Task<List<PulseCourseRef>> LoadAsync(Guid organizationId, IReadOnlyCollection<string>? trialCourseCodes = null,
+        IReadOnlyCollection<Guid>? excludeCourseIds = null)
     {
-        var many = await LoadManyAsync(new[] { organizationId }, trialCourseCodes);
+        var many = await LoadManyAsync(new[] { organizationId }, trialCourseCodes, excludeCourseIds);
         return many.GetValueOrDefault(organizationId) ?? new List<PulseCourseRef>();
     }
 
     public async Task<Dictionary<Guid, List<PulseCourseRef>>> LoadManyAsync(
         IReadOnlyCollection<Guid> organizationIds,
-        IReadOnlyCollection<string>? trialCourseCodes = null)
+        IReadOnlyCollection<string>? trialCourseCodes = null,
+        IReadOnlyCollection<Guid>? excludeCourseIds = null)
     {
         var orgIds = organizationIds.Distinct().ToList();
         if (orgIds.Count == 0)
@@ -37,6 +40,11 @@ public class PulseCatalogReader
 
         var publishedCourses = _context.Courses.AsNoTracking()
             .Where(course => orgIds.Contains(course.OrganizationId) && course.Status == Statuses.Course.Published);
+        if (excludeCourseIds is { Count: > 0 })
+        {
+            var excluded = excludeCourseIds.ToList();
+            publishedCourses = publishedCourses.Where(course => !excluded.Contains(course.Id));
+        }
         if (trialCourseCodes != null)
         {
             var trialAliases = trialCourseCodes.SelectMany(CourseCodes.Aliases).Distinct().ToArray();

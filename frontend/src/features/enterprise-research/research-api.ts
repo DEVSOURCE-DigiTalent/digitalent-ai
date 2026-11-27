@@ -24,8 +24,23 @@ export interface ResearchCourse extends ResearchCourseVersion {
 }
 
 const resource = '/enterprise/rnd';
+/**
+ * Who customises the company's courses: the owner of a company without R&D, the R&D accounts of a company with R&D
+ * (the owner then only views) — once a course is bought. reason = why the page is closed when canView is false.
+ */
+export interface ResearchAccess {
+  enabled: boolean;
+  purchased: boolean;
+  inCharge: 'OWNER' | 'RND';
+  researchers: number;
+  canView: boolean;
+  canEdit: boolean;
+  reason?: string | null;
+}
+
 export const researchKeys = {
   settings: (userId?: string) => ['enterprise-rnd', userId, 'settings'] as const,
+  access: (userId?: string) => ['enterprise-rnd', userId, 'access'] as const,
   courses: (userId?: string) => ['enterprise-rnd', userId, 'courses'] as const,
   preview: (userId: string | undefined, courseId: string) => ['enterprise-rnd', userId, 'preview', courseId] as const,
 };
@@ -40,6 +55,16 @@ export function useResearchSettings(enabled = true) {
   });
 }
 
+export function useResearchAccess() {
+  const userId = useCurrentUser((state) => state.user?.id);
+  return useQuery({
+    queryKey: researchKeys.access(userId),
+    queryFn: async () => (await apiClient.get<{ data: ResearchAccess }>(`${resource}/access`)).data.data,
+    enabled: Boolean(userId),
+    retry: false,
+  });
+}
+
 export function useSetResearchEnabled() {
   const userId = useCurrentUser((state) => state.user?.id);
   const client = useQueryClient();
@@ -48,6 +73,7 @@ export function useSetResearchEnabled() {
       (await apiClient.put<{ data: boolean }>(`${resource}/settings`, JSON.stringify(enabled))).data.data,
     onSuccess: async (enabled) => {
       client.setQueryData(researchKeys.settings(userId), enabled);
+      await client.invalidateQueries({ queryKey: researchKeys.access(userId) });
       await client.invalidateQueries({ queryKey: researchKeys.courses(userId) });
     },
   });
