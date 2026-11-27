@@ -72,7 +72,7 @@ def main():
     )
     dll = ROOT / "src/DigiTalent.Api/bin/Release/net8.0/DigiTalent.Api.dll"
     with tempfile.TemporaryFile(mode="w+t") as log:
-        process = subprocess.Popen(["dotnet", str(dll)], cwd=ROOT, env=env, stdout=log, stderr=log)
+        process = subprocess.Popen(["dotnet", str(dll)], cwd=dll.parent, env=env, stdout=log, stderr=log)
         try:
             wait_for_health(process)
             login("admin@digitalent.ai", password)
