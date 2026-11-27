@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react';
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import {
   recordingUrl,
@@ -8,7 +8,7 @@ import {
   type PulseProctoringEvent,
   type PulseRecordingSegment,
 } from '@/services/pulse.service';
-import { PROCTORING_EVENT_LABELS, RISK_LEVEL_LABELS, clock, formatDuration } from '@/features/pulse-employee/lib/labels';
+import { PROCTORING_EVENT_LABELS, RISK_LEVEL_LABELS, clock, eventDetailText, formatDuration } from '@/features/pulse-employee/lib/labels';
 import { ProctoringRiskPanel, RiskTag } from './ProctoringRiskPanel';
 
 const SPEEDS = [1, 1.5, 2] as const;
@@ -113,6 +113,24 @@ function syncVideo(
   }
 }
 
+/** Điều khiển trình phát từ bên ngoài (trang báo cáo hành vi: bấm dòng thời gian / bằng chứng để tua). */
+export interface RecordingPlayerHandle {
+  /** Tua tới mốc (ms trên đồng hồ phiên) và phát. */
+  play: (ms: number) => void;
+}
+
+/** Các phần bên dưới video; mặc định hiện cả (MG-13). */
+export interface RecordingPlayerParts {
+  lanes?: boolean;
+  /** Điểm đáng ngờ và mốc sự kiện trên thanh tua (trang có dòng thời gian riêng thì tắt). */
+  marks?: boolean;
+  risk?: boolean;
+  log?: boolean;
+}
+
+/** Bước làm tròn khi báo vị trí phát ra ngoài, để trang cha không vẽ lại mỗi khung hình. */
+const TIME_REPORT_STEP_MS = 200;
+
 /**
  * Bản ghi bài làm có giám sát cho người chấm (MG-13): màn hình (toàn bộ) + camera kèm micro trên một đồng hồ phiên.
  * Khoảng nhân viên dừng chia sẻ hiện là khoảng trống; mỗi lần rời tab hoặc dừng chia sẻ là một mốc để tua tới.
@@ -120,11 +138,21 @@ function syncVideo(
 export function RecordingPlayer({
   recording,
   aiFraud,
+  handleRef,
+  onTimeChange,
+  parts,
+  title = 'Bản ghi màn hình, camera và micro',
 }: {
   recording: PulseRecording;
   /** Nhận định hành vi thi của AI, gộp vào nhật ký giám sát. */
   aiFraud?: PulseAiFraud | null;
+  handleRef?: Ref<RecordingPlayerHandle>;
+  /** Vị trí đang phát (ms, làm tròn 200 ms). */
+  onTimeChange?: (ms: number) => void;
+  parts?: RecordingPlayerParts;
+  title?: string;
 }) {
+  const show = { lanes: true, marks: true, risk: true, log: true, ...parts };
   const total = useMemo(() => Math.max(
     1000,
     recording.durationMs ?? 0,
@@ -191,6 +219,13 @@ export function RecordingPlayer({
     seek(ms);
     setPlaying(true);
   }, [seek]);
+
+  useImperativeHandle(handleRef, () => ({ play: jumpAndPlay }), [jumpAndPlay]);
+
+  const reportedT = Math.floor(t / TIME_REPORT_STEP_MS) * TIME_REPORT_STEP_MS;
+  useEffect(() => {
+    onTimeChange?.(reportedT);
+  }, [onTimeChange, reportedT]);
 
   const attachPrimer = useCallback((video: HTMLVideoElement | null, span: Span | null) => {
     if (!video || !span) return undefined;
@@ -345,10 +380,10 @@ export function RecordingPlayer({
   return (
     <section className="pu-rplayer" aria-label="Bản ghi bài làm">
       <div className="pu-rplayer-head">
-        <h3>Bản ghi màn hình, camera và micro</h3>
+        <h3>{title}</h3>
         <span>
           {formatDuration(recording.durationMs ?? total)} · {flagged ? `${flagged} sự kiện cần xem` : 'không có sự kiện cần xem'}
-          {risk && <> · <RiskTag risk={risk} /></>}
+          {show.risk && risk && <> · <RiskTag risk={risk} /></>}
         </span>
       </div>
 
@@ -453,7 +488,7 @@ export function RecordingPlayer({
           <i key={g.start} className="pu-timeline-gap" style={{ left: percent(g.start), width: percent(g.end - g.start) }} />
         ))}
         <div className="pu-timeline-fill" style={{ width: percent(t) }} />
-        {risk?.moments.map((m) => (
+        {show.marks && risk?.moments.map((m) => (
           <button
             key={`risk-${m.startMs}`}
             type="button"
@@ -474,7 +509,7 @@ export function RecordingPlayer({
           aria-label="Vị trí trong bản ghi"
           aria-valuetext={`${clock(t)} trên ${clock(total)}`}
         />
-        {events
+        {show.marks && events
           .filter((e) => e.kind !== 'STARTED' && e.kind !== 'SUBMITTED')
           .map((e, index) => (
             <button
@@ -490,7 +525,7 @@ export function RecordingPlayer({
         <div className="pu-timeline-head" style={{ left: percent(t) }} />
       </div>
 
-      <div className="pu-lanes" aria-hidden>
+      {show.lanes && <div className="pu-lanes" aria-hidden>
         <span>Màn hình</span>
         <div className="pu-lane screen">
           {screens.map((s) => (
@@ -503,17 +538,17 @@ export function RecordingPlayer({
             <i key={s.segment.recordingId} style={{ left: percent(s.start), width: percent(s.end - s.start) }} />
           ))}
         </div>
-      </div>
+      </div>}
 
-      {risk && <ProctoringRiskPanel risk={risk} t={t} onSeek={jumpAndPlay} />}
+      {show.risk && risk && <ProctoringRiskPanel risk={risk} t={t} onSeek={jumpAndPlay} />}
 
-      {aiFraud?.summary && aiFraud.items.length > 0 && (
+      {show.log && aiFraud?.summary && aiFraud.items.length > 0 && (
         <p className="pu-rplayer-ai-summary">
           <strong>Cảnh báo hành vi thi (AI):</strong> {aiFraud.summary}
         </p>
       )}
 
-      {logRows.length > 0 && (
+      {show.log && logRows.length > 0 && (
         <ol className="pu-rplayer-events" aria-label="Nhật ký giám sát">
           {logRows.map((row, index) => {
             if (row.type === 'ai') {
@@ -547,7 +582,7 @@ export function RecordingPlayer({
                   <span className="text">
                     {PROCTORING_EVENT_LABELS[e.kind]}
                     {e.durationMs ? ` · ${formatDuration(e.durationMs)}` : ''}
-                    {e.detail && e.kind !== 'FACE_CHECK_OFF' ? ` · ${e.detail}` : ''}
+                    {eventDetailText(e) ? ` · ${eventDetailText(e)}` : ''}
                     {row.notes.map((note, k) => (
                       <span key={k} className="ai-note">AI: {note}</span>
                     ))}

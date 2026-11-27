@@ -64,7 +64,7 @@ public class ProctoringRecordingConfiguration : IEntityTypeConfiguration<Proctor
     }
 }
 
-/// <summary>Map ProctoringEvent với bảng "proctoring_events" (canonical v3.3 §20.3).</summary>
+/// <summary>Map ProctoringEvent với bảng "proctoring_events" (canonical v3.3 §20.3, v3.10: sao chép / dán, không thao tác, màn hình phụ).</summary>
 public class ProctoringEventConfiguration : IEntityTypeConfiguration<ProctoringEvent>
 {
     public void Configure(EntityTypeBuilder<ProctoringEvent> builder)
@@ -74,7 +74,8 @@ public class ProctoringEventConfiguration : IEntityTypeConfiguration<ProctoringE
             table.HasCheckConstraint("ck_proctoring_events_kind",
                 "kind IN ('STARTED', 'TAB_HIDDEN', 'FOCUS_LOST', 'SHARE_STOPPED', 'SHARE_RESUMED', " +
                 "'CAMERA_STOPPED', 'CAMERA_RESUMED', 'MIC_STOPPED', 'MIC_RESUMED', 'SUBMITTED', " +
-                "'FACE_MISSING', 'MULTIPLE_FACES', 'LOOKING_AWAY', 'FACE_CHECK_ON', 'FACE_CHECK_OFF')");
+                "'FACE_MISSING', 'MULTIPLE_FACES', 'LOOKING_AWAY', 'FACE_CHECK_ON', 'FACE_CHECK_OFF', " +
+                "'COPY', 'PASTE', 'IDLE', 'SECOND_SCREEN')");
             table.HasCheckConstraint("ck_proctoring_events_offsets",
                 "offset_ms >= 0 AND (duration_ms IS NULL OR duration_ms >= 0)");
         });

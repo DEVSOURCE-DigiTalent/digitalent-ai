@@ -20,6 +20,9 @@ import type { FaceEpisode, FaceSignalKind } from './face-signals';
  *     khi bật lại (đoạn ghi mới).
  *   - Nhận diện khuôn mặt chạy ngay trên máy (FaceMonitor): vắng mặt, nhiều người, nhìn ra ngoài được ghi vào nhật ký như các
  *     sự kiện khác; không gửi video đi chỉ để phân tích. Không chạy được thì bài vẫn làm tiếp (ghi FACE_CHECK_OFF).
+ *   - Thao tác (canonical v3.10): sao chép / dán (chỉ nơi và số ký tự, không ghi nội dung — vùng đánh dấu bằng
+ *     data-proctor-area="essay" | "question"), không gõ phím / di chuột từ IDLE_MS trở lên khi trang đang mở, máy nối thêm
+ *     màn hình (screen.isExtended, trình duyệt Chromium). Báo cáo hành vi do AI phân tích sau khi nộp dựa trên nhật ký này.
  */
 
 export type DeviceState = 'idle' | 'requesting' | 'on' | 'denied' | 'wrong-surface' | 'stopped';
@@ -76,6 +79,35 @@ const SCREEN_TYPES = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/w
 const CAMERA_TYPES = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
 const CHUNK_MS = 5000;
 const EVENT_FLUSH_MS = 4000;
+/** Không gõ phím, không di chuột trên trang bài làm đang mở từ chừng này trở lên thì ghi IDLE. */
+export const IDLE_MS = 90_000;
+const ACTIVITY_EVENTS = ['keydown', 'pointerdown', 'pointermove', 'wheel', 'input', 'touchstart'] as const;
+
+type ClipboardPlace = 'ESSAY' | 'QUESTION' | 'PAGE';
+
+/** Nơi xảy ra sao chép / dán: ô tự luận, đề và câu hỏi, hay chỗ khác của trang. */
+function clipboardPlace(target: EventTarget | null): ClipboardPlace {
+  const element = target instanceof Element ? target : target instanceof Node ? target.parentElement : null;
+  const area = element?.closest('[data-proctor-area]')?.getAttribute('data-proctor-area');
+  if (area === 'essay' || element instanceof HTMLTextAreaElement) return 'ESSAY';
+  if (area === 'question') return 'QUESTION';
+  return 'PAGE';
+}
+
+/** Số ký tự đang chọn để sao chép (ô nhập dùng selectionStart / End, chỗ khác dùng vùng chọn của trang). */
+function selectedChars(target: EventTarget | null): number {
+  if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+    const start = target.selectionStart ?? 0;
+    const end = target.selectionEnd ?? 0;
+    if (end > start) return end - start;
+  }
+  return document.getSelection?.()?.toString().length ?? 0;
+}
+
+/** Trình duyệt báo máy đang dùng nhiều màn hình (Window Management API); undefined khi không hỗ trợ. */
+function screenExtended(): boolean | undefined {
+  return (window.screen as Screen & { isExtended?: boolean }).isExtended;
+}
 
 function pickType(track: PulseRecordingTrack): string {
   const types = track === 'SCREEN' ? SCREEN_TYPES : CAMERA_TYPES;
@@ -196,6 +228,9 @@ export class ProctorController {
   private audioContext: AudioContext | null = null;
   private hiddenAt: number | null = null;
   private blurAt: number | null = null;
+  /** Lần gõ phím / di chuột gần nhất trên trang bài làm (Date.now()). */
+  private lastActivity: number | null = null;
+  private extendedScreen = false;
 
   private face: FaceMonitor | null = null;
 
@@ -355,6 +390,13 @@ export class ProctorController {
       document.addEventListener('visibilitychange', this.onVisibility);
       window.addEventListener('blur', this.onBlur);
       window.addEventListener('focus', this.onFocus);
+      document.addEventListener('copy', this.onCopy, true);
+      document.addEventListener('cut', this.onCopy, true);
+      document.addEventListener('paste', this.onPaste, true);
+      ACTIVITY_EVENTS.forEach((type) => document.addEventListener(type, this.onActivity, { capture: true, passive: true }));
+      this.lastActivity = Date.now();
+      this.checkScreens();
+      (window.screen as Screen & Partial<EventTarget>).addEventListener?.('change', this.checkScreens);
       this.flushTimer = setInterval(() => void this.flushEvents(), EVENT_FLUSH_MS);
       this.startFaceCheck();
       return session;
@@ -456,11 +498,13 @@ export class ProctorController {
   private onVisibility = () => {
     if (this.snapshot.phase !== 'recording' && this.snapshot.phase !== 'locked') return;
     if (document.visibilityState === 'hidden') {
+      this.noteActivity();
       this.hiddenAt = Date.now();
       this.blurAt = null;
     } else if (this.hiddenAt != null) {
       const start = this.hiddenAt;
       this.hiddenAt = null;
+      this.lastActivity = Date.now();
       this.log('TAB_HIDDEN', Math.max(0, start - (this.snapshot.startedAt ?? start)), Date.now() - start);
       void this.flushEvents();
     }
@@ -468,10 +512,12 @@ export class ProctorController {
 
   private onBlur = () => {
     if (this.snapshot.phase !== 'recording' || document.visibilityState === 'hidden') return;
+    this.noteActivity();
     this.blurAt = Date.now();
   };
 
   private onFocus = () => {
+    this.lastActivity = Date.now();
     if (this.blurAt == null || this.snapshot.phase !== 'recording') {
       this.blurAt = null;
       return;
@@ -482,7 +528,49 @@ export class ProctorController {
     if (duration >= 1000) this.log('FOCUS_LOST', Math.max(0, start - (this.snapshot.startedAt ?? start)), duration);
   };
 
+  // ── Thao tác trên trang bài làm ──
+
+  /**
+   * Một thao tác (hoặc lúc rời trang / nộp bài): khoảng lặng từ lần thao tác trước dài từ IDLE_MS trở lên thì ghi IDLE.
+   * Khoảng rời tab / rời cửa sổ / bài bị khóa không tính — chúng có sự kiện riêng.
+   */
+  private noteActivity(now = Date.now()) {
+    const last = this.lastActivity;
+    this.lastActivity = now;
+    if (last == null || this.snapshot.phase !== 'recording' || this.hiddenAt != null || this.blurAt != null) return;
+    const gap = now - last;
+    if (gap >= IDLE_MS) this.log('IDLE', Math.max(0, last - (this.snapshot.startedAt ?? last)), gap);
+  }
+
+  private onActivity = () => this.noteActivity();
+
+  private onCopy = (event: ClipboardEvent) => {
+    if (this.snapshot.phase !== 'recording') return;
+    const chars = selectedChars(event.target);
+    if (chars <= 0) return;
+    this.log('COPY', this.offset(), undefined, `${clipboardPlace(event.target)}:${chars}`);
+  };
+
+  private onPaste = (event: ClipboardEvent) => {
+    if (this.snapshot.phase !== 'recording') return;
+    const chars = event.clipboardData?.getData('text')?.length ?? 0;
+    if (chars <= 0) return;
+    this.noteActivity();
+    this.log('PASTE', this.offset(), undefined, `${clipboardPlace(event.target)}:${chars}`);
+    void this.flushEvents();
+  };
+
+  /** Máy chuyển sang dùng nhiều màn hình (lúc bắt đầu hoặc giữa bài): ghi SECOND_SCREEN một lần mỗi lần nối thêm. */
+  private checkScreens = () => {
+    const extended = screenExtended() === true;
+    if (extended && !this.extendedScreen && this.snapshot.sessionId) {
+      this.log('SECOND_SCREEN', this.offset(), undefined, 'EXTENDED');
+    }
+    this.extendedScreen = extended;
+  };
+
   private lock(reason: LockReason, kind: 'SHARE_STOPPED' | 'CAMERA_STOPPED' | 'MIC_STOPPED') {
+    this.noteActivity();
     const at = this.offset();
     this.log(kind, at);
     void this.flushEvents();
@@ -514,6 +602,7 @@ export class ProctorController {
     const at = this.offset();
     this.log(reason === 'SCREEN' ? 'SHARE_RESUMED' : reason === 'CAMERA' ? 'CAMERA_RESUMED' : 'MIC_RESUMED', at);
     const remaining = this.snapshot.lockReasons.filter((r) => r !== reason);
+    this.lastActivity = Date.now();
     this.set({ lockReasons: remaining });
     const track: PulseRecordingTrack = reason === 'SCREEN' ? 'SCREEN' : 'CAMERA';
     const otherCameraSource = track === 'CAMERA' && remaining.some((r) => r === 'CAMERA' || r === 'MIC');
@@ -530,6 +619,7 @@ export class ProctorController {
     const sessionId = this.snapshot.sessionId;
     if (!sessionId) throw new Error('Chưa bắt đầu phiên làm bài.');
     const durationMs = this.offset();
+    this.noteActivity();
     this.set({ phase: 'finishing' });
     // Khép các khoảng khuôn mặt đang theo dõi để chúng vào nhật ký trước lần gửi cuối.
     this.face?.stop();
@@ -550,6 +640,11 @@ export class ProctorController {
     document.removeEventListener('visibilitychange', this.onVisibility);
     window.removeEventListener('blur', this.onBlur);
     window.removeEventListener('focus', this.onFocus);
+    document.removeEventListener('copy', this.onCopy, true);
+    document.removeEventListener('cut', this.onCopy, true);
+    document.removeEventListener('paste', this.onPaste, true);
+    ACTIVITY_EVENTS.forEach((type) => document.removeEventListener(type, this.onActivity, true));
+    (window.screen as Screen & Partial<EventTarget>).removeEventListener?.('change', this.checkScreens);
     if (this.flushTimer) clearInterval(this.flushTimer);
     this.flushTimer = null;
     this.face?.stop();

@@ -75,7 +75,12 @@ export type PulseProctoringEventKind =
   | 'MULTIPLE_FACES'
   | 'LOOKING_AWAY'
   | 'FACE_CHECK_ON'
-  | 'FACE_CHECK_OFF';
+  | 'FACE_CHECK_OFF'
+  // Thao tác trên trang bài làm (canonical v3.10). COPY / PASTE: detail = "ESSAY|QUESTION|PAGE:{số ký tự}".
+  | 'COPY'
+  | 'PASTE'
+  | 'IDLE'
+  | 'SECOND_SCREEN';
 
 export interface PulsePerson {
   employeeId: string;

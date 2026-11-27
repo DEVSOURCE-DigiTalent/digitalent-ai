@@ -32,6 +32,10 @@ public class RecordPulseProctoringEventsUseCaseValidator : AbstractValidator<Rec
             item.RuleFor(e => e.Detail)
                 .MaximumLength(300)
                 .WithMessage("Ghi chú của sự kiện tối đa 300 ký tự.");
+            item.RuleFor(e => e.Detail)
+                .Must(detail => Statuses.ProctoringEventDetail.ParseClipboard(detail) != null)
+                .When(e => e.Kind is Statuses.ProctoringEvent.Copy or Statuses.ProctoringEvent.Paste)
+                .WithMessage("Sự kiện sao chép / dán cần ghi chú dạng NƠI:SỐ_KÝ_TỰ.");
         });
     }
 }

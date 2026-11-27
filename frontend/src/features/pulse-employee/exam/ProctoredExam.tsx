@@ -5,7 +5,7 @@ import pulseMark from '@/assets/pulse/pulse-mark.svg';
 import type { PulseAnswer, PulseCourseSummary, PulseCriterion, PulseExamKind, PulseExamQuestion, PulseReviewer } from '@/services/pulse.service';
 import { detectPromptCopy } from '@/lib/pulse-prompt-guard';
 import { btn } from '../lib/button';
-import { PROCTORING_EVENT_LABELS, clock, formatDuration, levelName, pulseErrorMessage } from '../lib/labels';
+import { PROCTORING_EVENT_LABELS, clock, eventDetailText, formatDuration, levelName, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
 import { ProctorController, proctoringSupported, type LockReason, type ProctorSnapshot } from './proctor';
 import { useNow } from './exam-helpers';
@@ -337,7 +337,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
             )}
 
             {/* Phần 2: Tự luận */}
-            <section id="pu-essay-section" className="pu-surface pu-pad pu-answer" aria-labelledby="pu-essay-title">
+            <section id="pu-essay-section" className="pu-surface pu-pad pu-answer" aria-labelledby="pu-essay-title" data-proctor-area="question">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
                   {questions.length > 0 ? 'Phần 2 · Tự luận' : 'Tự luận'}
@@ -353,6 +353,7 @@ export function ProctoredExam(props: ProctoredExamProps) {
               <label id="pu-answer-label" htmlFor="pu-evidence" className="pu-answer-label">Ghi chú minh chứng</label>
               <textarea
                 id="pu-evidence"
+                data-proctor-area="essay"
                 className={essayCopiesPrompt ? 'is-error' : undefined}
                 value={text}
                 onChange={(event) => setText(event.target.value)}
@@ -690,7 +691,7 @@ function DeviceCheck(props: ProctoredExamProps & {
                 </div>
                 <div className="pu-rule-content">
                   <strong>Độc lập làm bài</strong>
-                  <p>Tự làm bài 100%, không chuyển tab hoặc rời màn hình quá 10 giây.</p>
+                  <p>Tự làm bài 100%, không chuyển tab hoặc rời màn hình quá 10 giây. Sao chép, dán và màn hình phụ cũng được ghi vào nhật ký.</p>
                 </div>
               </div>
 
@@ -813,7 +814,7 @@ function ChoicePart({ questions, answers, passMark, disabled, onChoose }: {
 }) {
   const answered = questions.filter((q) => answers[q.questionId]).length;
   return (
-    <section className="pu-quiz pu-exam-choice" aria-labelledby="pu-choice-title">
+    <section className="pu-quiz pu-exam-choice" aria-labelledby="pu-choice-title" data-proctor-area="question">
       <div className="pu-exam-choice-head">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-blue-700">Phần 1 · Trắc nghiệm</span>
@@ -932,7 +933,7 @@ function FaceRow({ snapshot }: { snapshot: ProctorSnapshot }) {
 
 function getEventBadge(kind: string): 'ok' | 'warn' | 'crit' {
   if (['TAB_HIDDEN', 'FOCUS_LOST', 'SHARE_STOPPED', 'CAMERA_STOPPED', 'MIC_STOPPED'].includes(kind)) return 'crit';
-  if (['LOOKING_AWAY', 'MULTIPLE_FACES', 'FACE_MISSING'].includes(kind)) return 'warn';
+  if (['LOOKING_AWAY', 'MULTIPLE_FACES', 'FACE_MISSING', 'COPY', 'PASTE', 'SECOND_SCREEN', 'IDLE'].includes(kind)) return 'warn';
   return 'ok';
 }
 
@@ -1028,6 +1029,7 @@ export function ProctorPanel({
                 <span className="pu-log-text">
                   {PROCTORING_EVENT_LABELS[event.kind]}
                   {event.durationMs ? ` (${formatDuration(event.durationMs)})` : ''}
+                  {eventDetailText(event) ? ` · ${eventDetailText(event)}` : ''}
                 </span>
               </li>
             );
