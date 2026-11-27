@@ -32,7 +32,7 @@ public class StartPulseProctoringUseCase : IUseCase<StartPulseProctoringUseCaseI
 
     public async Task<StartPulseProctoringUseCaseOutput> ExecuteAsync(StartPulseProctoringUseCaseInput input)
     {
-        var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
+        var (snapshot, state) = await _workspace.ResolveForAnswerAsync(input.CourseId);
         Guid courseId;
         if (input.Kind == Statuses.ProctoringKind.PreAssessment)
         {

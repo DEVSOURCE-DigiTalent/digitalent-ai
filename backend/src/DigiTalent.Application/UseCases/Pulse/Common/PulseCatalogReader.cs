@@ -19,10 +19,17 @@ public class PulseCatalogReader
         _context = context;
     }
 
-    public async Task<List<PulseCourseRef>> LoadAsync(Guid organizationId, IReadOnlyCollection<string>? trialCourseCodes = null)
+    /// <param name="excludeCourseIds">Revisions to leave out (the company versions R&amp;D applied, for the survey).</param>
+    public async Task<List<PulseCourseRef>> LoadAsync(Guid organizationId, IReadOnlyCollection<string>? trialCourseCodes = null,
+        IReadOnlyCollection<Guid>? excludeCourseIds = null)
     {
         var publishedCourses = _context.Courses.AsNoTracking()
             .Where(course => course.OrganizationId == organizationId && course.Status == Statuses.Course.Published);
+        if (excludeCourseIds is { Count: > 0 })
+        {
+            var excluded = excludeCourseIds.ToList();
+            publishedCourses = publishedCourses.Where(course => !excluded.Contains(course.Id));
+        }
         if (trialCourseCodes != null)
         {
             var trialAliases = trialCourseCodes.SelectMany(CourseCodes.Aliases).Distinct().ToArray();

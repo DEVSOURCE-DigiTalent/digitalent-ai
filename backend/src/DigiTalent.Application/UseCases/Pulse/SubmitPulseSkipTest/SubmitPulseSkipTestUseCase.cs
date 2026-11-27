@@ -28,7 +28,7 @@ public class SubmitPulseSkipTestUseCase : IUseCase<SubmitPulseSkipTestUseCaseInp
 
     public async Task<SubmitPulseSkipTestUseCaseOutput> ExecuteAsync(SubmitPulseSkipTestUseCaseInput input)
     {
-        var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
+        var (snapshot, state) = await _workspace.ResolveForAnswerAsync(input.CourseId);
         if (!PulseSkipTest.CanTake(state))
         {
             throw new ForbiddenException(PulseSkipTest.MessageOf(PulseSkipTestStatus.Locked, state) ?? "Bạn chưa thể nộp bài kiểm tra đầu vào.");

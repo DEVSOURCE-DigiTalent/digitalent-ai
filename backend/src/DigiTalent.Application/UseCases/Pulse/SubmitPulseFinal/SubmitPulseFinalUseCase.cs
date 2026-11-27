@@ -34,7 +34,7 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
 
     public async Task<SubmitPulseFinalUseCaseOutput> ExecuteAsync(SubmitPulseFinalUseCaseInput input)
     {
-        var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
+        var (snapshot, state) = await _workspace.ResolveForAnswerAsync(input.CourseId);
         PulseCourseWorkspace.EnsureCanWork(state);
         if (state.Enrollment == null || !state.AllModulesPassed)
         {

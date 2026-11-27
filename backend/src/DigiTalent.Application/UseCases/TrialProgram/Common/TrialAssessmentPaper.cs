@@ -40,7 +40,9 @@ public class TrialAssessmentPaper
     /// <summary>Các lĩnh vực có khóa chuẩn của doanh nghiệp, theo thứ tự của khung.</summary>
     public async Task<List<TrialDomainInfo>> LoadDomainsAsync(Guid organizationId)
     {
-        var courses = await _catalog.LoadAsync(organizationId);
+        // The survey measures against DigiTalent's standard, never the company version R&D applied.
+        var courses = await _catalog.LoadAsync(organizationId,
+            excludeCourseIds: await DigiTalent.Application.UseCases.Organization.Research.EnterpriseResearch.CompanyRevisionIdsAsync(_context, organizationId));
         return await DomainsOfAsync(courses, organizationId);
     }
 
@@ -48,7 +50,9 @@ public class TrialAssessmentPaper
     {
         await EnsureBenchmarkQuestionsAsync(organizationId);
 
-        var courses = await _catalog.LoadAsync(organizationId);
+        // The survey measures against DigiTalent's standard, never the company version R&D applied.
+        var courses = await _catalog.LoadAsync(organizationId,
+            excludeCourseIds: await DigiTalent.Application.UseCases.Organization.Research.EnterpriseResearch.CompanyRevisionIdsAsync(_context, organizationId));
         var domains = await DomainsOfAsync(courses, organizationId);
         var modules = await _modules.LoadModulesAsync(courses.Select(c => c.CourseId).ToList(), includeContent: false);
         var quizIds = modules.Values.SelectMany(m => m).Where(m => m.QuizAssessmentId.HasValue)

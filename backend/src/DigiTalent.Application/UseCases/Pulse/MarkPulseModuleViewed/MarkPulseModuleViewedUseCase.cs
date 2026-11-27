@@ -24,7 +24,7 @@ public class MarkPulseModuleViewedUseCase : IUseCase<MarkPulseModuleViewedUseCas
 
     public async Task<MarkPulseModuleViewedUseCaseOutput> ExecuteAsync(MarkPulseModuleViewedUseCaseInput input)
     {
-        var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
+        var (snapshot, state) = await _workspace.ResolveForAnswerAsync(input.CourseId);
         var module = PulseCourseWorkspace.FindModule(state, input.ModuleId);
         PulseCourseWorkspace.EnsureModuleUnlocked(state, module);
         if (module.Slides.Count == 0)
