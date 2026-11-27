@@ -65,3 +65,7 @@ tfplan
 # Vitest temporary files
 frontend/vitest_output.txt
 frontend/vitest.config.ts.timestamp-*
+
+# Demo credentials export (never commit passwords)
+demo-accounts.csv
+**/demo-accounts.csv

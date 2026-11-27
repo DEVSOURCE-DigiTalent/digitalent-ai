@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mail;
+using DigiTalent.Application.Common.Email;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.IndividualCommerce;
 using Microsoft.Extensions.Logging;
@@ -27,7 +28,7 @@ public class SmtpAppEmailSender : IAppEmailSender
         string htmlBody,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(toEmail))
+        if (string.IsNullOrWhiteSpace(toEmail) || DemoEmailGuard.IsDemoAddress(toEmail))
             return false;
 
         if (string.IsNullOrWhiteSpace(_smtpOptions.Host) ||
