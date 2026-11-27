@@ -130,7 +130,34 @@ export const PROCTORING_EVENT_LABELS: Record<PulseProctoringEventKind, string> =
   LOOKING_AWAY: 'Nhìn ra ngoài màn hình',
   FACE_CHECK_ON: 'Bật nhận diện khuôn mặt trên máy',
   FACE_CHECK_OFF: 'Không chạy được nhận diện khuôn mặt',
+  COPY: 'Sao chép chữ',
+  PASTE: 'Dán chữ',
+  IDLE: 'Không gõ phím, không di chuột',
+  SECOND_SCREEN: 'Máy nối thêm màn hình',
 };
+
+const CLIPBOARD_PLACES = { ESSAY: 'ô tự luận', QUESTION: 'đề bài', PAGE: 'trang bài làm' } as const;
+export type ClipboardPlace = keyof typeof CLIPBOARD_PLACES;
+
+/** Ghi chú của sự kiện sao chép / dán: "ESSAY:640" → { place: 'ESSAY', chars: 640 }; null khi không đúng dạng. */
+export function clipboardDetail(detail: string | null | undefined): { place: ClipboardPlace; chars: number } | null {
+  const match = /^(ESSAY|QUESTION|PAGE):(\d+)$/.exec(detail ?? '');
+  return match ? { place: match[1] as ClipboardPlace, chars: Number(match[2]) } : null;
+}
+
+/**
+ * Phần mô tả thêm của một sự kiện trong nhật ký: "640 ký tự vào ô tự luận" với sao chép / dán, ghi chú thô với các sự kiện
+ * khác; null khi không có gì đáng hiện (ghi chú kỹ thuật của FACE_CHECK_OFF, SECOND_SCREEN).
+ */
+export function eventDetailText(event: { kind: PulseProctoringEventKind; detail?: string | null }): string | null {
+  if (event.kind === 'COPY' || event.kind === 'PASTE') {
+    const clip = clipboardDetail(event.detail);
+    if (!clip) return null;
+    return `${clip.chars.toLocaleString('vi-VN')} ký tự ${event.kind === 'COPY' ? 'từ' : 'vào'} ${CLIPBOARD_PLACES[clip.place]}`;
+  }
+  if (event.kind === 'FACE_CHECK_OFF' || event.kind === 'SECOND_SCREEN') return null;
+  return event.detail?.trim() || null;
+}
 
 /** Mức rủi ro gian lận của phiên làm bài có giám sát (MG-13). */
 export const RISK_LEVEL_LABELS: Record<PulseRiskLevel, string> = {
