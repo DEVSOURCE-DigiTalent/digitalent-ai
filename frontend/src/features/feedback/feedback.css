@@ -11,4 +11,8 @@ html:not(.ent-theme) .fb-scope {
   --ent-accent-soft: #eef2ff;
   --ent-bad: #b13a2c;
   --ent-bad-soft: #fbeae7;
+  --ent-ok: #0f7a55;
+  --ent-ok-soft: #e6f6ef;
+  --ent-warn: #9a5b07;
+  --ent-warn-soft: #fdf3e2;
 }
