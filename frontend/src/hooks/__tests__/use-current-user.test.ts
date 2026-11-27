@@ -72,9 +72,9 @@ describe('useCurrentUser', () => {
     expect(store().user?.workspace).toBe('enterprise');
   });
 
-  it('requires explicit permissions for platform admins and every other role', () => {
+  it('grants platform admins any permission and requires explicit permissions for every other role', () => {
     store().setUser({ ...baseUser, roles: ['PLATFORM_ADMIN'], permissions: [], workspace: 'platform' });
-    expect(store().hasPermission('anything.at_all')).toBe(false);
+    expect(store().hasPermission('anything.at_all')).toBe(true);
 
     store().setUser(baseUser);
     expect(store().hasPermission('skill_gap.read')).toBe(true);

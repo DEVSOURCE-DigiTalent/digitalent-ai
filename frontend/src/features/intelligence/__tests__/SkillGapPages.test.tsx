@@ -108,29 +108,54 @@ describe('SkillGapDetailPage', () => {
       </MemoryRouter>,
     );
 
+  const learningNeed = {
+    employeeId: 'emp-1',
+    employeeName: 'Employee',
+    departmentName: 'Operations',
+    positionId: 'pos-1',
+    positionName: 'Data Analyst',
+    state: 'NEEDS_LEARNING',
+    domains: [
+      {
+        categoryId: 'cat-1',
+        number: 1,
+        name: 'Khai thác dữ liệu và thông tin',
+        state: 'NEEDS_LEARNING',
+        currentLevel: 1,
+        requiredLevel: 3,
+        missingCompetencies: ['Data literacy'],
+        courseCode: 'M1-I',
+        courseTitle: 'Chiến lược tìm kiếm',
+        courseId: 'crs-1',
+      },
+    ],
+  };
+
   beforeEach(() => {
     vi.restoreAllMocks();
     loginAs([ROLES.OWNER], ['skill_gap.read', 'skill_gap.calculate']);
-    vi.spyOn(skillGapHooks, 'useCalculateSkillGap').mockReturnValue(mutationResult());
   });
 
-  it('shows the latest snapshot of the employee in the route', () => {
+  it('shows the learning plan of the employee in the route', () => {
+    const needs = vi.spyOn(skillGapHooks, 'useLearningNeeds').mockReturnValue(queryResult({ data: { items: [learningNeed], totalItems: 1, pageIndex: 1, pageSize: 1, totalPages: 1 } }));
     const runs = vi.spyOn(skillGapHooks, 'useSkillGapRuns').mockReturnValue(queryResult({ data: { items: [run], totalItems: 1, pageIndex: 1, pageSize: 1, totalPages: 1 } }));
     const detail = vi.spyOn(skillGapHooks, 'useSkillGapRun').mockReturnValue(queryResult({ data: run }));
     renderDetail();
 
-    expect(runs).toHaveBeenCalledWith({ employeeId: 'emp-1', latestOnly: true, pageIndex: 1, pageSize: 1 }, true);
-    expect(detail).toHaveBeenCalledWith('run-1');
+    expect(needs).toHaveBeenCalledWith({ employeeId: 'emp-1', pageIndex: 1, pageSize: 1 });
+    expect(runs).toHaveBeenCalledWith({ employeeId: 'emp-1', pageIndex: 1, pageSize: 1 }, false);
+    expect(detail).toHaveBeenCalledWith(undefined);
     expect(screen.getByRole('heading', { name: 'Employee' })).toBeInTheDocument();
-    expect(screen.getByText('47.5%')).toBeInTheDocument();
+    expect(screen.getByText('Chiến lược tìm kiếm')).toBeInTheDocument();
   });
 
-  it('explains that the employee has no snapshot yet', () => {
+  it('explains when the employee is missing', () => {
+    vi.spyOn(skillGapHooks, 'useLearningNeeds').mockReturnValue(queryResult({ data: { items: [], totalItems: 0, pageIndex: 1, pageSize: 1, totalPages: 0 } }));
     vi.spyOn(skillGapHooks, 'useSkillGapRuns').mockReturnValue(queryResult({ data: { items: [], totalItems: 0, pageIndex: 1, pageSize: 1, totalPages: 0 } }));
     const detail = vi.spyOn(skillGapHooks, 'useSkillGapRun').mockReturnValue(queryResult({}));
     renderDetail();
 
     expect(detail).toHaveBeenCalledWith(undefined);
-    expect(screen.getByRole('alert')).toHaveTextContent('Không tìm thấy thông tin khoảng trống năng lực');
+    expect(screen.getByRole('alert')).toHaveTextContent('Không tìm thấy nhân viên.');
   });
 });

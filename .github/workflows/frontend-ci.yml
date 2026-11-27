@@ -1,12 +1,13 @@
 name: Frontend CI
 
 on:
+  workflow_call:
   pull_request:
     paths:
       - 'frontend/**'
       - 'docker/**'
   push:
-    branches: [develop, main]
+    branches: [main]
     paths:
       - 'frontend/**'
       - 'docker/**'

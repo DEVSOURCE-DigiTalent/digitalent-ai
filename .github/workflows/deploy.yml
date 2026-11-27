@@ -11,8 +11,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  backend-ci:
+    name: Backend CI
+    uses: ./.github/workflows/backend-ci.yml
+
+  frontend-ci:
+    name: Frontend CI
+    uses: ./.github/workflows/frontend-ci.yml
+
   deploy:
     name: Deploy to VPS Server
+    needs: [backend-ci, frontend-ci]
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Remote Deployment via SSH

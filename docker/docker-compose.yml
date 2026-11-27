@@ -87,7 +87,7 @@ services:
       - backend_uploads:/app/uploads
       - platform_assets_data:/app/uploads/platform-assets
     restart: unless-stopped
-    entrypoint: [ "/bin/sh", "-c" ]
+    entrypoint: ["/bin/sh", "-c"]
     command:
       - |
         set -e
