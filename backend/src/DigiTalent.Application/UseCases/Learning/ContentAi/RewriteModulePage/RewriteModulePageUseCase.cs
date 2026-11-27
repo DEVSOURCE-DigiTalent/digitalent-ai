@@ -14,9 +14,11 @@ public class RewriteModulePageUseCase : IUseCase<RewriteModulePageUseCaseInput, 
     private readonly IGeminiService _gemini;
     private readonly ITt02Framework _framework;
     private readonly IHtmlContentSanitizer _sanitizer;
+    private readonly ContentAiAccess _access;
 
-    public RewriteModulePageUseCase(IGeminiService gemini, ITt02Framework framework, IHtmlContentSanitizer sanitizer)
+    public RewriteModulePageUseCase(IGeminiService gemini, ITt02Framework framework, IHtmlContentSanitizer sanitizer, ContentAiAccess access)
     {
+        _access = access;
         _gemini = gemini;
         _framework = framework;
         _sanitizer = sanitizer;
@@ -24,6 +26,7 @@ public class RewriteModulePageUseCase : IUseCase<RewriteModulePageUseCaseInput, 
 
     public async Task<RewrittenPageOutput> ExecuteAsync(RewriteModulePageUseCaseInput input)
     {
+        await _access.EnsureAsync();
         if (!_gemini.IsConfigured)
         {
             throw new BadRequestException("Chưa cấu hình khóa AI (Gemini).", "ai", "AI_NOT_CONFIGURED");

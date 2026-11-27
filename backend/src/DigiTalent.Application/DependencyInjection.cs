@@ -60,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<RecommendationWeightsProvider>();
         services.AddScoped<MemberDirectory>();
         services.AddScoped<DigiTalent.Application.UseCases.Organization.Research.EnterpriseResearch>();
+        services.AddScoped<DigiTalent.Application.UseCases.Learning.ContentAi.ContentAiAccess>();
         services.AddScoped<WorkforceReader>();
         services.AddScoped<LatestSkillGapRuns>();
         services.AddScoped<AnalyzedEmployees>();
