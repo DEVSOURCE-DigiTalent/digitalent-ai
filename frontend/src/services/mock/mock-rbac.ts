@@ -178,6 +178,9 @@ const OWNER = [
   P.BUSINESS_CONFIG_MANAGE,
   // Dùng thử doanh nghiệp: mời nhân viên, gửi yêu cầu chấm (backend RolePermissions)
   P.TRIAL_MANAGE,
+  // Báo cáo hành vi khi làm bài cuối khóa (trong Khoảng trống năng lực OW-21)
+  P.BEHAVIOR_REPORT_READ,
+  P.BEHAVIOR_REPORT_ANALYZE,
 ];
 
 /** Personal workspace users: the employee capabilities, without any organization data. */

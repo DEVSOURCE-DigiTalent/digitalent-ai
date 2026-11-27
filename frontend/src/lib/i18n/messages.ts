@@ -124,6 +124,8 @@ Khung năng lực số|Digital competency framework
 Nhân sự|People
 Thành viên|Members
 Khoảng trống năng lực|Competency gaps
+Hành vi khi thi|Exam behavior
+Bài thi cuối khóa|Final exams
 Khóa học|Courses
 Báo cáo chu kỳ|Cycle report
 Báo cáo & Phân tích|Reports & analytics
