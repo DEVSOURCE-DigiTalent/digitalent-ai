@@ -409,95 +409,134 @@ public static class DemoCaseStudySeeder
         summary.AppendLine($"  - skill_gap_runs: {skillGapRunIds.Count}");
         log?.Invoke(summary.ToString().TrimEnd());
 
+        HashSet<string>? existingTables = null;
+        if (db.Database.IsRelational())
+        {
+            var tableNames = await db.Database
+                .SqlQueryRaw<string>("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+                .ToListAsync(cancellationToken);
+            existingTables = tableNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
         await db.ExecuteInTransactionAsync(async () =>
         {
-            await DeleteWhereAsync(db, db.AuditLogs, a => (a.OrganizationId != null && orgIds.Contains(a.OrganizationId.Value)) || (a.ActorUserId != null && userIds.Contains(a.ActorUserId.Value)), cancellationToken);
-            await DeleteWhereAsync(db, db.Notifications, n => userIds.Contains(n.RecipientUserId), cancellationToken);
-            await DeleteWhereAsync(db, db.UserFeedbacks, f => userIds.Contains(f.UserId) || (f.OrganizationId != null && orgIds.Contains(f.OrganizationId.Value)), cancellationToken);
-            await DeleteWhereAsync(db, db.RecommendationReviews, r => orgIds.Contains(r.OrganizationId) || (r.DecidedByUserId != null && userIds.Contains(r.DecidedByUserId.Value)), cancellationToken);
+            if (existingTables != null && existingTables.Contains("proctoring_behavior_reports") && (orgIds.Count > 0 || proctoringSessionIds.Count > 0 || finalSubIds.Count > 0 || empIds.Count > 0))
+            {
+                var orgArr = orgIds.ToArray();
+                var sessArr = proctoringSessionIds.ToArray();
+                var finalArr = finalSubIds.ToArray();
+                var empArr = empIds.ToArray();
+                await db.Database.ExecuteSqlInterpolatedAsync(
+                    $"DELETE FROM proctoring_behavior_reports WHERE organization_id = ANY({orgArr}) OR session_id = ANY({sessArr}) OR final_submission_id = ANY({finalArr}) OR employee_id = ANY({empArr})",
+                    cancellationToken);
+            }
 
-            await DeleteWhereAsync(db, db.TrainingRiskScores, r => empIds.Contains(r.EmployeeId), cancellationToken);
-            await DeleteWhereAsync(db, db.ReadinessScores, r => empIds.Contains(r.EmployeeId), cancellationToken);
-            await DeleteWhereAsync(db, db.SkillGapItems, i => skillGapRunIds.Contains(i.SkillGapRunId), cancellationToken);
-            await DeleteWhereAsync(db, db.SkillGapRuns, r => empIds.Contains(r.EmployeeId), cancellationToken);
+            if (existingTables != null && existingTables.Contains("enterprise_placement_attempts") && (orgIds.Count > 0 || empIds.Count > 0))
+            {
+                var orgArr = orgIds.ToArray();
+                var empArr = empIds.ToArray();
+                await db.Database.ExecuteSqlInterpolatedAsync(
+                    $"DELETE FROM enterprise_placement_attempts WHERE organization_id = ANY({orgArr}) OR employee_id = ANY({empArr})",
+                    cancellationToken);
+            }
 
-            await DeleteWhereAsync(db, db.CertificateVerificationLogs, l => l.CertificateId != null && certIds.Contains(l.CertificateId.Value), cancellationToken);
-            await DeleteWhereAsync(db, db.Certificates, c => certIds.Contains(c.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.CertificateTemplates, t => orgIds.Contains(t.OrganizationId), cancellationToken);
+            if (existingTables != null && existingTables.Contains("competency_milestones") && (orgIds.Count > 0 || userIds.Count > 0))
+            {
+                var orgArr = orgIds.ToArray();
+                var usrArr = userIds.ToArray();
+                await db.Database.ExecuteSqlInterpolatedAsync(
+                    $"DELETE FROM competency_milestones WHERE organization_id = ANY({orgArr}) OR updated_by_user_id = ANY({usrArr})",
+                    cancellationToken);
+            }
+
+            await DeleteWhereAsync(db, db.AuditLogs, a => (a.OrganizationId != null && orgIds.Contains(a.OrganizationId.Value)) || (a.ActorUserId != null && userIds.Contains(a.ActorUserId.Value)), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Notifications, n => userIds.Contains(n.RecipientUserId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.UserFeedbacks, f => userIds.Contains(f.UserId) || (f.OrganizationId != null && orgIds.Contains(f.OrganizationId.Value)), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.RecommendationReviews, r => orgIds.Contains(r.OrganizationId) || (r.DecidedByUserId != null && userIds.Contains(r.DecidedByUserId.Value)), existingTables, cancellationToken);
+
+            await DeleteWhereAsync(db, db.TrainingRiskScores, r => empIds.Contains(r.EmployeeId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.ReadinessScores, r => empIds.Contains(r.EmployeeId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.SkillGapItems, i => skillGapRunIds.Contains(i.SkillGapRunId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.SkillGapRuns, r => empIds.Contains(r.EmployeeId), existingTables, cancellationToken);
+
+            await DeleteWhereAsync(db, db.CertificateVerificationLogs, l => l.CertificateId != null && certIds.Contains(l.CertificateId.Value), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Certificates, c => certIds.Contains(c.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CertificateTemplates, t => orgIds.Contains(t.OrganizationId), existingTables, cancellationToken);
 
             await DeleteWhereAsync(db, db.ExamChoiceAnswers, a =>
                 (a.FinalSubmissionId != null && finalSubIds.Contains(a.FinalSubmissionId.Value))
                 || (a.PreAssessmentId != null && preIds.Contains(a.PreAssessmentId.Value))
-                || (a.TrialAssessmentId != null && trialAssessmentIds.Contains(a.TrialAssessmentId.Value)), cancellationToken);
-            await DeleteWhereAsync(db, db.PulseAiReviews, r => orgIds.Contains(r.OrganizationId) || finalSubIds.Contains(r.SubmissionId) || preIds.Contains(r.SubmissionId), cancellationToken);
-            await DeleteWhereAsync(db, db.CourseFinalSubmissions, s => finalSubIds.Contains(s.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.CoursePreAssessments, p => preIds.Contains(p.Id), cancellationToken);
+                || (a.TrialAssessmentId != null && trialAssessmentIds.Contains(a.TrialAssessmentId.Value)), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.PulseAiReviews, r => orgIds.Contains(r.OrganizationId) || finalSubIds.Contains(r.SubmissionId) || preIds.Contains(r.SubmissionId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CourseFinalSubmissions, s => finalSubIds.Contains(s.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CoursePreAssessments, p => preIds.Contains(p.Id), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.ProctoringEvents, e => proctoringSessionIds.Contains(e.SessionId), cancellationToken);
-            await DeleteWhereAsync(db, db.ProctoringRecordings, r => proctoringSessionIds.Contains(r.SessionId), cancellationToken);
-            await DeleteWhereAsync(db, db.ProctoringSessions, s => proctoringSessionIds.Contains(s.Id), cancellationToken);
+            await DeleteWhereAsync(db, db.ProctoringEvents, e => proctoringSessionIds.Contains(e.SessionId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.ProctoringRecordings, r => proctoringSessionIds.Contains(r.SessionId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.ProctoringSessions, s => proctoringSessionIds.Contains(s.Id), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.TrialAssessmentDomains, d => trialAssessmentIds.Contains(d.TrialAssessmentId), cancellationToken);
-            await DeleteWhereAsync(db, db.TrialAssessments, t => trialAssessmentIds.Contains(t.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.PositionDiagnosticAttempts, p => orgIds.Contains(p.OrganizationId), cancellationToken);
-            await DeleteWhereAsync(db, db.TrialInvitations, i => orgIds.Contains(i.OrganizationId), cancellationToken);
-            await DeleteWhereAsync(db, db.TrialWorkspaces, t => orgIds.Contains(t.OrganizationId), cancellationToken);
+            await DeleteWhereAsync(db, db.TrialAssessmentDomains, d => trialAssessmentIds.Contains(d.TrialAssessmentId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TrialAssessments, t => trialAssessmentIds.Contains(t.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.PositionDiagnosticAttempts, p => orgIds.Contains(p.OrganizationId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TrialInvitations, i => orgIds.Contains(i.OrganizationId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TrialRegistrations, r => r.OrganizationId != null && orgIds.Contains(r.OrganizationId.Value), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TrialWorkspaces, t => orgIds.Contains(t.OrganizationId), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.AssessmentAnswers, a => attemptIds.Contains(a.AttemptId), cancellationToken);
-            await DeleteWhereAsync(db, db.AssessmentAttempts, a => attemptIds.Contains(a.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.AssessmentQuestions, q => assessmentIds.Contains(q.AssessmentId) || questionIds.Contains(q.QuestionId), cancellationToken);
-            await DeleteWhereAsync(db, db.Assessments, a => assessmentIds.Contains(a.Id), cancellationToken);
+            await DeleteWhereAsync(db, db.AssessmentAnswers, a => attemptIds.Contains(a.AttemptId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.AssessmentAttempts, a => attemptIds.Contains(a.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.AssessmentQuestions, q => assessmentIds.Contains(q.AssessmentId) || questionIds.Contains(q.QuestionId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Assessments, a => assessmentIds.Contains(a.Id), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.QuestionOptions, o => questionIds.Contains(o.QuestionId), cancellationToken);
-            await DeleteWhereAsync(db, db.Questions, q => questionIds.Contains(q.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.QuestionBanks, b => bankIds.Contains(b.Id), cancellationToken);
+            await DeleteWhereAsync(db, db.QuestionOptions, o => questionIds.Contains(o.QuestionId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Questions, q => questionIds.Contains(q.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.QuestionBanks, b => bankIds.Contains(b.Id), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.CompetencyEvaluationResults, r => taskEvalIds.Contains(r.TaskEvaluationId), cancellationToken);
-            await DeleteWhereAsync(db, db.TaskEvaluations, e => taskEvalIds.Contains(e.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.TaskSubmissionFiles, f => taskSubIds.Contains(f.SubmissionId), cancellationToken);
-            await DeleteWhereAsync(db, db.TaskSubmissions, s => taskSubIds.Contains(s.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.AssignedTaskTargets, t => taskAssignmentIds.Contains(t.TaskAssignmentId), cancellationToken);
-            await DeleteWhereAsync(db, db.TaskAssignments, a => taskAssignmentIds.Contains(a.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.PracticalTaskTargets, t => taskTemplateIds.Contains(t.TaskTemplateId), cancellationToken);
-            await DeleteWhereAsync(db, db.PracticalTaskTemplates, t => taskTemplateIds.Contains(t.Id), cancellationToken);
+            await DeleteWhereAsync(db, db.CompetencyEvaluationResults, r => taskEvalIds.Contains(r.TaskEvaluationId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TaskEvaluations, e => taskEvalIds.Contains(e.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TaskSubmissionFiles, f => taskSubIds.Contains(f.SubmissionId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TaskSubmissions, s => taskSubIds.Contains(s.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.AssignedTaskTargets, t => taskAssignmentIds.Contains(t.TaskAssignmentId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TaskAssignments, a => taskAssignmentIds.Contains(a.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.PracticalTaskTargets, t => taskTemplateIds.Contains(t.TaskTemplateId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.PracticalTaskTemplates, t => taskTemplateIds.Contains(t.Id), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.EmployeeCompetencyProfiles, p => empIds.Contains(p.EmployeeId), cancellationToken);
+            await DeleteWhereAsync(db, db.EmployeeCompetencyProfiles, p => empIds.Contains(p.EmployeeId), existingTables, cancellationToken);
             // Xóa tự tham chiếu supersedes_evidence_id trước khi xóa competency_evidences
             foreach (var ev in await db.CompetencyEvidences.Where(e => empIds.Contains(e.EmployeeId) && e.SupersedesEvidenceId != null).ToListAsync(cancellationToken))
             {
                 ev.SupersedesEvidenceId = null;
             }
             await db.SaveChangesAsync(cancellationToken);
-            await DeleteWhereAsync(db, db.CompetencyEvidences, e => empIds.Contains(e.EmployeeId), cancellationToken);
+            await DeleteWhereAsync(db, db.CompetencyEvidences, e => empIds.Contains(e.EmployeeId), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.CapabilityBaselineAnswers, a => empIds.Contains(a.EmployeeId), cancellationToken);
-            await DeleteWhereAsync(db, db.CapabilityBaselines, b => empIds.Contains(b.EmployeeId), cancellationToken);
+            await DeleteWhereAsync(db, db.CapabilityBaselineAnswers, a => empIds.Contains(a.EmployeeId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CapabilityBaselines, b => empIds.Contains(b.EmployeeId), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.LessonProgresses, p => enrollmentIds.Contains(p.EnrollmentId), cancellationToken);
-            await DeleteWhereAsync(db, db.Enrollments, e => enrollmentIds.Contains(e.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.TrainingBatchEmployees, e => batchIds.Contains(e.TrainingBatchId) || empIds.Contains(e.EmployeeId), cancellationToken);
-            await DeleteWhereAsync(db, db.TrainingBatches, b => batchIds.Contains(b.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.CourseAssignments, a => empIds.Contains(a.EmployeeId) || courseIds.Contains(a.CourseId), cancellationToken);
+            await DeleteWhereAsync(db, db.LessonProgresses, p => enrollmentIds.Contains(p.EnrollmentId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Enrollments, e => enrollmentIds.Contains(e.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TrainingBatchEmployees, e => batchIds.Contains(e.TrainingBatchId) || empIds.Contains(e.EmployeeId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.TrainingBatches, b => batchIds.Contains(b.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CourseAssignments, a => empIds.Contains(a.EmployeeId) || courseIds.Contains(a.CourseId), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.LearningMaterials, m => lessonIds.Contains(m.LessonId), cancellationToken);
-            await DeleteWhereAsync(db, db.LessonLearningOutcomes, o => lessonIds.Contains(o.LessonId), cancellationToken);
-            await DeleteWhereAsync(db, db.Lessons, l => lessonIds.Contains(l.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.CourseModules, m => moduleIds.Contains(m.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.CourseLearningOutcomes, o => courseIds.Contains(o.CourseId), cancellationToken);
-            await DeleteWhereAsync(db, db.CourseCompetencies, c => courseIds.Contains(c.CourseId), cancellationToken);
-            await DeleteWhereAsync(db, db.CoursePrerequisites, p => courseIds.Contains(p.CourseId) || courseIds.Contains(p.PrerequisiteCourseId), cancellationToken);
+            await DeleteWhereAsync(db, db.LearningMaterials, m => lessonIds.Contains(m.LessonId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.LessonLearningOutcomes, o => lessonIds.Contains(o.LessonId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Lessons, l => lessonIds.Contains(l.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CourseModules, m => moduleIds.Contains(m.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CourseLearningOutcomes, o => courseIds.Contains(o.CourseId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CourseCompetencies, c => courseIds.Contains(c.CourseId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CoursePrerequisites, p => courseIds.Contains(p.CourseId) || courseIds.Contains(p.PrerequisiteCourseId), existingTables, cancellationToken);
 
             foreach (var c in await db.Courses.Where(c => courseIds.Contains(c.Id) && c.SupersedesCourseId != null).ToListAsync(cancellationToken))
             {
                 c.SupersedesCourseId = null;
             }
             await db.SaveChangesAsync(cancellationToken);
-            await DeleteWhereAsync(db, db.Courses, c => courseIds.Contains(c.Id), cancellationToken);
+            await DeleteWhereAsync(db, db.Courses, c => courseIds.Contains(c.Id), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.CourseOrders, o => orgIds.Contains(o.OrganizationId), cancellationToken);
-            await DeleteWhereAsync(db, db.CapabilityCeilings, c => orgIds.Contains(c.OrganizationId), cancellationToken);
-            await DeleteWhereAsync(db, db.PositionRequirementItems, i => reqSetIds.Contains(i.RequirementSetId), cancellationToken);
-            await DeleteWhereAsync(db, db.PositionRequirementSets, s => reqSetIds.Contains(s.Id), cancellationToken);
+            await DeleteWhereAsync(db, db.CourseOrders, o => orgIds.Contains(o.OrganizationId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CapabilityCeilings, c => orgIds.Contains(c.OrganizationId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.PositionRequirementItems, i => reqSetIds.Contains(i.RequirementSetId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.PositionRequirementSets, s => reqSetIds.Contains(s.Id), existingTables, cancellationToken);
 
             // Gỡ liên kết trưởng phòng trước khi xóa nhân viên
             foreach (var d in await db.Departments.Where(d => deptIds.Contains(d.Id) && d.ManagerEmployeeId != null).ToListAsync(cancellationToken))
@@ -510,32 +549,36 @@ public static class DemoCaseStudySeeder
             }
             await db.SaveChangesAsync(cancellationToken);
 
-            await DeleteWhereAsync(db, db.Employees, e => empIds.Contains(e.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.MemberInvitations, i => orgIds.Contains(i.OrganizationId), cancellationToken);
-            await DeleteWhereAsync(db, db.Departments, d => deptIds.Contains(d.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.JobPositions, p => posIds.Contains(p.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.JobFamilies, f => orgIds.Contains(f.OrganizationId), cancellationToken);
-            await DeleteWhereAsync(db, db.JobGrades, g => orgIds.Contains(g.OrganizationId), cancellationToken);
+            await DeleteWhereAsync(db, db.Employees, e => empIds.Contains(e.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.MemberInvitations, i => orgIds.Contains(i.OrganizationId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Departments, d => deptIds.Contains(d.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.JobPositions, p => posIds.Contains(p.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.JobFamilies, f => orgIds.Contains(f.OrganizationId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.JobGrades, g => orgIds.Contains(g.OrganizationId), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.CompetencyLevelCriteria, c => competencyIds.Contains(c.CompetencyId), cancellationToken);
-            await DeleteWhereAsync(db, db.CompetencyFrameworkMappings, m => competencyIds.Contains(m.CompetencyId), cancellationToken);
-            await DeleteWhereAsync(db, db.Competencies, c => competencyIds.Contains(c.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.CompetencyCategories, c => categoryIds.Contains(c.Id), cancellationToken);
+            await DeleteWhereAsync(db, db.CompetencyLevelCriteria, c => competencyIds.Contains(c.CompetencyId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CompetencyFrameworkMappings, m => competencyIds.Contains(m.CompetencyId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Competencies, c => competencyIds.Contains(c.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.CompetencyCategories, c => categoryIds.Contains(c.Id), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.ScoringConfigItems, i => scoringConfigIds.Contains(i.ScoringConfigId), cancellationToken);
-            await DeleteWhereAsync(db, db.ScoringConfigs, c => scoringConfigIds.Contains(c.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.SystemSettings, s => s.OrganizationId != null && orgIds.Contains(s.OrganizationId.Value), cancellationToken);
-            await DeleteWhereAsync(db, db.Invoices, i => orgIds.Contains(i.OrganizationId), cancellationToken);
-            await DeleteWhereAsync(db, db.SubscriptionEntitlements, e => subscriptionIds.Contains(e.SubscriptionId), cancellationToken);
-            await DeleteWhereAsync(db, db.Subscriptions, s => orgIds.Contains(s.OrganizationId), cancellationToken);
+            await DeleteWhereAsync(db, db.ScoringConfigItems, i => scoringConfigIds.Contains(i.ScoringConfigId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.ScoringConfigs, c => scoringConfigIds.Contains(c.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.SystemSettings, s => s.OrganizationId != null && orgIds.Contains(s.OrganizationId.Value), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Invoices, i => orgIds.Contains(i.OrganizationId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.SubscriptionEntitlements, e => subscriptionIds.Contains(e.SubscriptionId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Subscriptions, s => orgIds.Contains(s.OrganizationId), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.RefreshTokens, t => userIds.Contains(t.UserId), cancellationToken);
-            await DeleteWhereAsync(db, db.PasswordResetTokens, t => userIds.Contains(t.UserId), cancellationToken);
-            await DeleteWhereAsync(db, db.UserRoles, ur => userIds.Contains(ur.UserId), cancellationToken);
-            await DeleteWhereAsync(db, db.FileObjects, f => (f.OrganizationId != null && orgIds.Contains(f.OrganizationId.Value)) || (f.UploadedByUserId != null && userIds.Contains(f.UploadedByUserId.Value)), cancellationToken);
+            await DeleteWhereAsync(db, db.Orders, o => userIds.Contains(o.UserId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.PurchaseDrafts, d => userIds.Contains(d.UserId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.IndividualTrialRedemptions, r => userIds.Contains(r.UserId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.LearnerProfiles, p => userIds.Contains(p.UserId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.RefreshTokens, t => userIds.Contains(t.UserId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.PasswordResetTokens, t => userIds.Contains(t.UserId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.UserRoles, ur => userIds.Contains(ur.UserId), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.FileObjects, f => (f.OrganizationId != null && orgIds.Contains(f.OrganizationId.Value)) || (f.UploadedByUserId != null && userIds.Contains(f.UploadedByUserId.Value)), existingTables, cancellationToken);
 
-            await DeleteWhereAsync(db, db.Users, u => userIds.Contains(u.Id), cancellationToken);
-            await DeleteWhereAsync(db, db.Organizations, o => orgIds.Contains(o.Id), cancellationToken);
+            await DeleteWhereAsync(db, db.Users, u => userIds.Contains(u.Id), existingTables, cancellationToken);
+            await DeleteWhereAsync(db, db.Organizations, o => orgIds.Contains(o.Id), existingTables, cancellationToken);
         }, cancellationToken);
     }
 
@@ -543,11 +586,21 @@ public static class DemoCaseStudySeeder
         AppDbContext db,
         DbSet<TEntity> set,
         System.Linq.Expressions.Expression<Func<TEntity, bool>> predicate,
+        HashSet<string>? existingTables,
         CancellationToken cancellationToken)
         where TEntity : class
     {
         if (db.Database.IsRelational())
         {
+            if (existingTables != null)
+            {
+                var tableName = db.Model.FindEntityType(typeof(TEntity))?.GetTableName();
+                if (!string.IsNullOrEmpty(tableName) && !existingTables.Contains(tableName))
+                {
+                    return;
+                }
+            }
+
             await set.Where(predicate).ExecuteDeleteAsync(cancellationToken);
             return;
         }
@@ -631,6 +684,7 @@ public static class DemoCaseStudySeeder
             MentorUserId = mentor.Id,
             MentorAssignedAt = now.AddDays(-20),
             RequestedAt = now.AddDays(-22),
+            TestDeadline = now.AddDays(30),
             ReportPublishedAt = now.AddDays(-18),
             Industry = "Dịch vụ văn phòng",
             Size = "100",
@@ -940,10 +994,23 @@ public static class DemoCaseStudySeeder
             });
         }
 
+        var trialSession = new ProctoringSession
+        {
+            EmployeeId = employee.Id,
+            CourseId = null,
+            Kind = Statuses.ProctoringKind.TrialAssessment,
+            Status = Statuses.ProctoringSession.Submitted,
+            StartedAt = submittedAt.AddMinutes(-20),
+            EndedAt = submittedAt,
+            DurationMs = 20 * 60_000L,
+        };
+        db.ProctoringSessions.Add(trialSession);
+
         var assessment = new TrialAssessment
         {
             OrganizationId = organizationId,
             EmployeeId = employee.Id,
+            ProctoringSessionId = trialSession.Id,
             EssayBasic = "Khảo sát đầu vào tự động qua bộ câu hỏi chuẩn 90 câu theo Thông tư 02/2025.",
             EssayIntermediate = string.Empty,
             EssayAdvanced = string.Empty,
@@ -1479,7 +1546,11 @@ public static class DemoCaseStudySeeder
 
         foreach (var code in PurchasedIntermediateCodes)
         {
-            var pc = platformCourses.First(c => CourseCodes.Canonical(c.Code).Equals(code, StringComparison.OrdinalIgnoreCase));
+            var pc = platformCourses
+                .Where(c => CourseCodes.Canonical(c.Code).Equals(code, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(c => c.Code.Equals(code, StringComparison.OrdinalIgnoreCase))
+                .ThenByDescending(c => c.VersionNo)
+                .First();
             db.CourseOrders.Add(new CourseOrder
             {
                 OrganizationId = organizationId,
