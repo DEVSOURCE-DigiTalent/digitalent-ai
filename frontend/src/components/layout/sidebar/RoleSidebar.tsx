@@ -8,6 +8,7 @@ import type { SidebarConfig } from '@/lib/sidebars/types';
 import { sidebarFor } from '@/lib/sidebars';
 import { OWNER_SIDEBAR } from '@/lib/sidebars/owner';
 import { MANAGER_SIDEBAR } from '@/lib/sidebars/manager';
+import { useResearchSettings } from '@/features/enterprise-research/research-api';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useDialogFocus } from '@/hooks/use-dialog-focus';
@@ -34,6 +35,8 @@ export function RoleSidebar({
 }: RoleSidebarProps) {
   useUiLanguage();
   const user = useCurrentUser((s) => s.user);
+  const research = useResearchSettings(portal.workspace === WORKSPACES.ENTERPRISE &&
+    Boolean(user?.roles.some((role) => role === ROLES.OWNER || role === ROLES.RND)));
   const { state, toggleCollapsed } = useSidebarState();
   const isRail = state === 'collapsed';
   const { pathname } = useLocation();
@@ -88,7 +91,7 @@ export function RoleSidebar({
         </Link>
       )}
       <SidebarNav
-        config={activeConfig}
+        config={research.data === true ? activeConfig : activeConfig.filter((section) => section.screenId !== 'RD-01')}
         isRail={isRail && !isMobileOpen}
         onItemClick={onMobileClose}
         workspace={portal.workspace}

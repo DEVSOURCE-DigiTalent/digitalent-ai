@@ -19,6 +19,7 @@ import {
   isReasonValid,
 } from '../../components/pulse-format';
 import { extractContracts } from './contracts';
+import { OrganizationCatalogVersionCard } from './OrganizationCatalogVersionCard';
 import {
   BookOpen,
   Users,
@@ -225,6 +226,8 @@ export function OrganizationDetailContent({ orgId }: OrganizationDetailContentPr
               </ul>
             )}
           </div>
+
+          <OrganizationCatalogVersionCard organizationId={orgId} />
 
           {/* Courses in use */}
           <div className="pa-org-detail-card">

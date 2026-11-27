@@ -78,6 +78,15 @@ public static class PlatformCatalogVersionReader
         var userIds = versions.Where(v => v.PublishedByUserId != null).Select(v => v.PublishedByUserId!.Value).Distinct().ToList();
         var emails = await context.Users.AsNoTracking().Where(u => userIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.Email);
         var numbers = await context.PlatformCatalogVersions.AsNoTracking().ToDictionaryAsync(v => v.Id, v => v.VersionNo);
+        var current = await context.PlatformCatalogVersions.AsNoTracking()
+            .Where(v => v.Status == Statuses.PlatformCatalogVersion.Current).Select(v => (int?)v.VersionNo).FirstOrDefaultAsync();
+        var inUse = new Dictionary<int, int>();
+        if (current is { } currentNo)
+        {
+            var applier = new PlatformCatalogApplier(context);
+            inUse = (await applier.VersionsAsync(await applier.OrganizationsAsync(), currentNo)).Values
+                .GroupBy(no => no).ToDictionary(g => g.Key, g => g.Count());
+        }
 
         return versions.Select(v =>
         {
@@ -95,6 +104,7 @@ public static class PlatformCatalogVersionReader
                 FrameworkCount = own.Select(c => c.FrameworkId).Distinct().Count(),
                 NewCount = own.Count(c => c.ChangeKind == PlatformCatalog.ChangeKind.New),
                 EditedCount = own.Count(c => c.ChangeKind == PlatformCatalog.ChangeKind.Edited),
+                OrganizationCount = inUse.GetValueOrDefault(v.VersionNo),
             };
         }).ToList();
     }

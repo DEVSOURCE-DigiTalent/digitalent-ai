@@ -1,6 +1,6 @@
 /**
  * Role & workspace model (UI/UX spec v2.1, §1, §2).
- * Roles: PLATFORM_ADMIN, MENTOR (grades employee course assignments and enterprise trial assessments), OWNER, MANAGER, EMPLOYEE.
+ * Roles: PLATFORM_ADMIN, MENTOR, OWNER, MANAGER, RND, EMPLOYEE.
  * LEARNER is retained only for Personal Workspace accounts.
  */
 export const ROLES = {
@@ -8,6 +8,7 @@ export const ROLES = {
   MENTOR: 'MENTOR',
   OWNER: 'OWNER',
   MANAGER: 'MANAGER',
+  RND: 'RND',
   EMPLOYEE: 'EMPLOYEE',
 } as const;
 
@@ -27,20 +28,22 @@ export const ROLE_LABELS: Record<Role, string> = {
   MENTOR: 'Mentor',
   OWNER: 'Chủ doanh nghiệp',
   MANAGER: 'Quản lý',
+  RND: 'R&D',
   EMPLOYEE: 'Nhân viên',
 };
 
-/** Role hierarchy order: PLATFORM_ADMIN > MENTOR > OWNER > MANAGER > EMPLOYEE */
+/** Role hierarchy order from highest to lowest. */
 export const ROLE_HIERARCHY: readonly Role[] = [
   ROLES.PLATFORM_ADMIN,
   ROLES.MENTOR,
   ROLES.OWNER,
   ROLES.MANAGER,
+  ROLES.RND,
   ROLES.EMPLOYEE,
 ];
 
 /**
- * Chuẩn hóa một mã vai trò về các role chuẩn: PLATFORM_ADMIN, MENTOR, OWNER, MANAGER, EMPLOYEE.
+ * Chuẩn hóa một mã vai trò về mã hệ thống.
  * Chấp nhận cả chữ thường/hoa và các mã định danh lịch sử (DEPARTMENT_MANAGER, HR_MANAGER, SYSTEM_ADMIN, TRAINER).
  */
 export function normalizeRoleCode(role: string): string {
@@ -69,7 +72,7 @@ export function normalizeRoleCode(role: string): string {
   }
 }
 
-/** Removes duplicates while ensuring canonical 4-role codes. */
+/** Normalizes role codes and removes duplicates. */
 export function normalizeRoles(roles: readonly string[]): string[] {
   if (!roles || !Array.isArray(roles)) return [];
   const normalized = roles.map(normalizeRoleCode).filter(Boolean);
@@ -93,7 +96,7 @@ export function primaryRole(user?: { roles: readonly string[] } | null): Role | 
 export function inferWorkspace(roles: readonly string[]): Workspace {
   if (roles.includes(ROLES.PLATFORM_ADMIN)) return WORKSPACES.PLATFORM;
   if (roles.includes(ROLES.MENTOR)) return WORKSPACES.MENTOR;
-  if (roles.some((role) => role === ROLES.OWNER || role === ROLES.MANAGER || role === ROLES.EMPLOYEE)) {
+  if (roles.some((role) => role === ROLES.OWNER || role === ROLES.MANAGER || role === ROLES.RND || role === ROLES.EMPLOYEE)) {
     return WORKSPACES.ENTERPRISE;
   }
   return WORKSPACES.PERSONAL;

@@ -1,12 +1,15 @@
+import { useCourseBuilderService } from './course-builder-service';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
-import { platformCatalogService, type BlockType, type CatalogCourseDetail, type CatalogModule } from '@/services/platform-catalog.service';
+import { type BlockType, type CatalogCourseDetail, type CatalogModule } from '@/services/platform-catalog.service';
 import { errorMessage } from '../components/pulse-format';
 import { BlockCard } from './BlockCard';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
 import { QuizEditor } from './QuizEditor';
+import { BlockAiNote, ModuleAiPanel } from './ModuleAiPanel';
+import { useModuleAi } from './use-module-ai';
 import { Layers, BookOpen, Trash2, ArrowRight, ArrowLeft, Plus, X, AlertTriangle } from 'lucide-react';
 
 const two = (n: number) => String(n).padStart(2, '0');
@@ -21,6 +24,7 @@ export function ModuleEditor({
   editable,
   edit,
   onNavigate,
+  internal = false,
 }: {
   course: CatalogCourseDetail;
   module: CatalogModule;
@@ -28,8 +32,11 @@ export function ModuleEditor({
   edit: CourseEdit;
   /** 'info', 'final' or a module index. */
   onNavigate: (target: 'info' | 'final' | number) => void;
+  internal?: boolean;
 }) {
   useUiLanguage();
+  const service = useCourseBuilderService();
+  const ai = useModuleAi(course, module, edit);
   const [title, setTitle] = useState(module.title);
   const [addAt, setAddAt] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,14 +53,14 @@ export function ModuleEditor({
       setTitle(module.title);
       return;
     }
-    edit((v, c) => platformCatalogService.updateModule(v, c, module.moduleId, { title: value, quizTitle: module.quizTitle })).catch((err) =>
+    edit((v, c) => service.updateModule(v, c, module.moduleId, { title: value, quizTitle: module.quizTitle })).catch((err) =>
       toast.error(errorMessage(err)),
     );
   };
 
   const insert = (type: BlockType, position: number) => {
     setAddAt(null);
-    edit((v, c) => platformCatalogService.addBlock(v, c, module.moduleId, type, position))
+    edit((v, c) => service.addBlock(v, c, module.moduleId, type, position))
       .then((detail) => {
         const added = detail.modules.find((m) => m.moduleId === module.moduleId)?.blocks[position];
         if (added) setEditingId(added.blockId);
@@ -63,7 +70,7 @@ export function ModuleEditor({
 
   const remove = () => {
     setIsDeleting(true);
-    edit((v, c) => platformCatalogService.removeModule(v, c, module.moduleId))
+    edit((v, c) => service.removeModule(v, c, module.moduleId))
       .then(() => {
         toast.success(`Đã xóa mô đun ${module.index + 1}.`);
         setConfirmDelete(false);
@@ -163,6 +170,9 @@ export function ModuleEditor({
         </div>
       </div>
 
+      {/* ✦ Trợ lý AI theo Thông tư 02 (admin và R&D dùng chung): kiểm tra, gợi ý; nhận xét nằm dưới từng trang */}
+      <ModuleAiPanel ai={ai} editable={editable} moduleId={module.moduleId} />
+
       {/* ✦ BẢNG KHUNG 2: Khối học liệu mô đun */}
       <div className="pa-cb-panel">
         <div className="pa-cb-panel-head">
@@ -246,6 +256,7 @@ export function ModuleEditor({
                     onToggle={() => setEditingId(editingId === block.blockId ? null : block.blockId)}
                     edit={edit}
                   />
+                  <BlockAiNote ai={ai} block={block} editable={editable} />
                 </div>
               ))}
               {addBar(module.blocks.length)}
@@ -254,8 +265,8 @@ export function ModuleEditor({
         </div>
       </div>
 
-      {/* ✦ BẢNG KHUNG 3: Ngân hàng câu hỏi trắc nghiệm ôn tập */}
-      <QuizEditor key={module.moduleId} module={module} editable={editable} edit={edit} />
+      {/* ✦ BẢNG KHUNG 3: Ngân hàng câu hỏi trắc nghiệm ôn tập (câu AI bắt lỗi có dải đỏ ngay dưới) */}
+      <QuizEditor key={module.moduleId} module={module} editable={editable} edit={edit} internal={internal} aiFlags={ai.questionFlags} />
 
       {/* ✦ THANH ĐIỀU HƯỚNG CHÂN TRANG */}
       <div className="pa-cb-action-footer">
@@ -323,7 +334,7 @@ export function ModuleEditor({
                     {translateUi('Xác nhận xóa mô đun')}
                   </h3>
                   <p style={{ margin: '3px 0 0', fontSize: 13, color: '#64748b' }}>
-                    {translateUi('Mô đun sẽ bị xóa hoàn toàn khỏi khóa học.')}
+                    {translateUi(internal ? 'Mô đun sẽ được xóa khỏi bản nháp của doanh nghiệp.' : 'Mô đun sẽ bị xóa hoàn toàn khỏi khóa học.')}
                   </p>
                 </div>
               </div>
@@ -421,7 +432,9 @@ export function ModuleEditor({
                 <AlertTriangle size={17} style={{ color: '#dc2626', flexShrink: 0, marginTop: 2 }} />
                 <span style={{ fontSize: 13, color: '#991b1b', lineHeight: 1.5 }}>
                   {translateUi(
-                    'Toàn bộ tài liệu, slide, video và câu hỏi ôn tập của mô đun này sẽ bị xóa vĩnh viễn và không thể phục hồi.',
+                    internal
+                      ? 'Bản đang áp dụng chỉ thay đổi sau khi bạn áp dụng bản nháp này.'
+                      : 'Toàn bộ tài liệu, slide, video và câu hỏi ôn tập của mô đun này sẽ bị xóa vĩnh viễn và không thể phục hồi.',
                   )}
                 </span>
               </div>

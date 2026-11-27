@@ -88,6 +88,7 @@ const SEEDS: MockAccountSeed[] = [
   enterprise('mock-owner', 'owner@digitalent.ai', 'Nguyễn Văn Chủ', ROLES.OWNER, ACME, PRO_PLAN, 'emp-03'),
   enterprise('mock-owner2', 'owner2@digitalent.ai', 'Trần Văn Chủ Nhỏ', ROLES.OWNER, SMALL_CO, PRO_PLAN),
   enterprise('mock-manager', 'manager@digitalent.ai', 'Phạm Thị Quản Lý', ROLES.MANAGER, ACME, PRO_PLAN, 'emp-02'),
+  enterprise('mock-rnd', 'rnd@digitalent.ai', 'Trần Nghiên Cứu', ROLES.RND, ACME, PRO_PLAN),
   enterprise('mock-employee', 'employee@digitalent.ai', 'Hoàng Văn Nhân Viên', ROLES.EMPLOYEE, ACME, PRO_PLAN, 'emp-01'),
   // Starter plan: no internal learning or advanced analytics, to see the "feature unavailable" screen.
   enterprise('mock-starter', 'starter@digitalent.ai', 'Đặng Văn Starter', ROLES.OWNER, STARTUP, STARTER_PLAN),

@@ -1156,4 +1156,46 @@ Chưa tải được dữ liệu.|Could not load the data.
 Mua kèm {code}|Bought with {code}
 🔒 Mua kèm Trung cấp ({price})|🔒 Buy with Intermediate ({price})
 Khóa Nâng cao được mua cùng khóa Trung cấp “{title}”.|The Advanced course is bought together with the Intermediate course “{title}”.
+Cập nhật khóa học|Course updates
+Bản DigiTalent mới công bố chỉ đến với nhân viên khi doanh nghiệp áp dụng.|A version DigiTalent publishes reaches your employees only once your company applies it.
+Đang tải bản cập nhật khóa học|Loading course updates
+Không tải được bản cập nhật khóa học.|Could not load the course updates.
+Bản mới v{version}|New version v{version}
+{count} khóa thay đổi so với bản công ty đang dùng (v{version})|{count} courses differ from the version your company uses (v{version})
+DigiTalent công bố ngày {date}|Published by DigiTalent on {date}
+Áp dụng v{version}|Apply v{version}
+Giữ bản hiện tại|Keep the current version
+Áp dụng xong: mọi người học lại các khóa này từ đầu theo nội dung mới, kể cả người đã đạt. Chứng nhận đã cấp vẫn được giữ.|Once applied, everyone learns these courses again from the start with the new content, including those who passed. Certificates already issued are kept.
+Công ty đang dùng bản mới nhất (v{version})|Your company uses the newest version (v{version})
+Chưa có bản khóa học nào được công bố|No course version has been published yet
+Khi DigiTalent công bố bản mới, bạn sẽ nhận thông báo và quyết định ở đây.|When DigiTalent publishes a new version, you get a notification and decide here.
+Chưa mua: áp dụng để khi mua có sẵn bản mới|Not bought: apply it so the new version is ready when you buy
+{count} người sẽ học lại từ đầu|{count} people will start again
+Khóa mới|New course
+Nội dung mới|New content
+Đã áp dụng v{version} cho công ty|Applied v{version} to the company
+Không áp dụng được bản cập nhật|Could not apply the update
+Áp dụng v{version} cho cả công ty?|Apply v{version} to the whole company?
+{count} khóa đổi sang nội dung mới; ai học các khóa này đều học lại từ đầu.|{count} courses switch to the new content; everyone learning them starts again.
+{count} người đang học dở mất tiến độ cũ; bài cuối khóa đang chờ chấm bị hủy.|{count} people mid-course lose their progress; course finals waiting for grading are cancelled.
+Không ai đang học dở các khóa này.|Nobody is mid-way through these courses.
+{count} người đã đạt phải học lại; mức từ các khóa này không còn tính, chứng nhận đã cấp vẫn giữ.|{count} people who passed learn them again; the level from these courses no longer counts, certificates already issued are kept.
+Chưa ai đạt các khóa này.|Nobody has passed these courses yet.
+Đang dùng bản doanh nghiệp|On the company version
+{count} khóa đang dùng bản doanh nghiệp sẽ đổi sang nội dung DigiTalent mới; bản doanh nghiệp được giữ làm bản nháp để R&D xem lại.|{count} courses on the company version switch to DigiTalent's new content; the company version is kept as a draft for R&D to review.
+Đã giữ v{version}. Bạn vẫn áp dụng bản mới được lúc khác.|Kept v{version}. You can still apply the new version later.
+Không lưu được quyết định|Could not save the decision
+Giữ v{version}, chưa áp dụng v{latest}?|Keep v{version} and not apply v{latest}?
+Nhân viên tiếp tục học bản đang dùng. Lý do được lưu lại để DigiTalent biết vì sao công ty chưa dùng bản mới.|Employees keep learning the current version. The reason is saved so DigiTalent knows why your company is not using the new one.
+VD: Bản mới đổi ví dụ không hợp ngành của công ty, chờ R&D xem lại.|E.g. The new examples do not fit our industry; waiting for R&D to review.
+Có bản khóa học mới v{version} từ DigiTalent|New course version v{version} from DigiTalent
+{count} khóa thay đổi. Áp dụng thì nhân viên học lại các khóa đó từ đầu.|{count} courses changed. Once applied, employees learn them again from the start.
+Xem và quyết định|Review and decide
+Công ty đang giữ v{version}, chưa áp dụng v{latest}|Your company keeps v{version} and has not applied v{latest}
+Đổi ý thì vẫn áp dụng bản mới được bất cứ lúc nào.|Changed your mind? You can apply the new version at any time.
+Xem lại|Review again
+Công ty đã có R&D: R&D xem và quyết định áp dụng hay giữ bản đang dùng. Bạn xem được, không cần thao tác.|Your company has R&D: R&D reviews and decides whether to apply it or keep the current version. You can view it; nothing to do.
+Tính năng R&D đang tắt nên chủ doanh nghiệp quyết định bản cập nhật này.|The R&D feature is off, so the business owner decides on this update.
+{count} khóa thay đổi. R&D của công ty đang xem và quyết định.|{count} courses changed. Your company's R&D is reviewing and deciding.
+Tùy chỉnh khóa học|Course customisation
 `.trim().split('\n').map(line => { const index=line.indexOf('|'); return [line.slice(0,index),line.slice(index+1)]; }));

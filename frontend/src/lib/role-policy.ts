@@ -2,18 +2,18 @@ import { ROLES, type Role } from './roles';
 
 /**
  * Who may give or take which enterprise role (spec v2.1 §1.4, §9 Q3, OW-13).
- * Enterprise has 3 roles: OWNER, MANAGER, EMPLOYEE.
+ * Enterprise roles are OWNER, MANAGER, RND and EMPLOYEE.
  * Only an OWNER manages members and roles.
  * An OWNER can grant OWNER to another member (with strong confirmation) and assign/unassign MANAGER.
  * Invariant: owner_count >= 1 (cannot demote/remove the sole owner).
  */
 
-export const ENTERPRISE_ROLES: Role[] = [ROLES.OWNER, ROLES.MANAGER, ROLES.EMPLOYEE];
+export const ENTERPRISE_ROLES: Role[] = [ROLES.OWNER, ROLES.MANAGER, ROLES.RND, ROLES.EMPLOYEE];
 
 /** Roles an actor may grant. Only OWNER can grant roles. */
 export function assignableRoles(actorRoles: readonly string[]): Role[] {
   if (actorRoles.includes(ROLES.OWNER)) {
-    return [ROLES.OWNER, ROLES.MANAGER, ROLES.EMPLOYEE];
+    return ENTERPRISE_ROLES;
   }
   return [];
 }
@@ -55,6 +55,12 @@ export const ROLE_DESCRIPTIONS: RoleDescription[] = [
       'Giao nhiệm vụ thực tế và đánh giá minh chứng của nhân viên trong nhóm',
       'Sử dụng các tính năng học tập và phát triển cá nhân của Nhân viên',
     ],
+  },
+  {
+    role: ROLES.RND,
+    name: 'R&D',
+    summary: 'Tùy chỉnh và áp dụng nội dung đào tạo trong phạm vi doanh nghiệp.',
+    can: ['Xem sáu khóa Cơ bản và khóa đã mua', 'Soạn và áp dụng mục tiêu học tập, hướng dẫn thực hành nội bộ'],
   },
   {
     role: ROLES.EMPLOYEE,

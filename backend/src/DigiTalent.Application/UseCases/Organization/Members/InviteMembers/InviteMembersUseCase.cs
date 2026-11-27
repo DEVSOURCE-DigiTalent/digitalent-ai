@@ -58,6 +58,8 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
         await _context.ExecuteInSerializableTransactionAsync(async () =>
         {
             var roleIds = await _context.Roles.ToDictionaryAsync(r => r.Code, r => r.Id);
+            var researchEnabled = input.Rows.Any(row => MemberRoles.ToRoleCode(row.Role) == Roles.Research)
+                && await Research.EnterpriseResearch.IsEnabledAsync(_context, organizationId);
             var allDepartments = await _context.Departments
                 .Where(d => d.OrganizationId == organizationId && d.Status == Statuses.MasterData.Active)
                 .ToListAsync();
@@ -110,6 +112,8 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
                         d.Name.Equals(row.DepartmentName?.Trim(), StringComparison.OrdinalIgnoreCase) ||
                         d.Code.Equals(row.DepartmentName?.Trim(), StringComparison.OrdinalIgnoreCase));
                 var reason = RejectIdentity(email, fullName, employeeCode, roleCode, canGrantRoles, takenEmails, takenCodes);
+                if (reason == null && roleCode == Roles.Research && (!researchEnabled || !roleIds.ContainsKey(Roles.Research)))
+                    reason = "Bật tính năng R&D trong cài đặt doanh nghiệp trước khi mời.";
                 if (reason == null)
                 {
                     reason = row.DepartmentId.HasValue && department == null ? "Phòng ban không hợp lệ."

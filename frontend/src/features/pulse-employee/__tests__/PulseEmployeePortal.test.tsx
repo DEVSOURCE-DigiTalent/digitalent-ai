@@ -256,7 +256,7 @@ describe('enterprise trial detection', () => {
 
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
-    expect((await screen.findAllByRole('link', { name: 'Học tiếp' })).length).toBeGreaterThan(0);
+    expect(await screen.findByRole('link', { name: /Xem bản đồ lộ trình chi tiết/ })).toHaveAttribute('href', PULSE_PATHS.path);
     expect(sidebarFor({ id: 'm', email: 'm@x.test', fullName: 'M', roles: [ROLES.MANAGER], permissions: [], enterpriseTrialStatus: null })).toBe(MANAGER_SIDEBAR);
   });
 });
@@ -417,7 +417,7 @@ describe('PulseTodayPage', () => {
     course({ courseId: 'c-a', code: 'A1-A', title: 'Quản trị dữ liệu nâng cao', tier: 3, zone: 'ABOVE_CEILING', slotStatus: 'ABOVE_CEILING', finalStatus: 'NOT_STARTED', preStatus: 'LOCKED', enrollmentId: null, progressPercent: 0 }),
   ];
 
-  it('shows the role, the reviewer and the roadmap as course names and levels only', async () => {
+  it('shows the position hero, domain radar progress and hides above-ceiling course codes', async () => {
     const courses = ladder();
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview({
       domains: [domain({ ceiling: 2, pathTop: 2, verified: 1 })],
@@ -428,27 +428,15 @@ describe('PulseTodayPage', () => {
 
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
-    const roleCard = await screen.findByRole('complementary', { name: 'Vị trí và người đánh giá' });
-    expect(within(roleCard).getByText('Kế toán')).toBeTruthy();
-    expect(within(roleCard).getByText('Trần Quản Lý')).toBeTruthy();
-
-    // Bảng lộ trình: tên khóa + cấp độ; đỉnh lộ trình bị trần phòng ban giới hạn, khóa vượt trần không hiện.
-    const plan = screen.getByRole('table');
-    expect(within(plan).getByText('A1-F')).toBeTruthy();
-    expect(within(plan).getByText('A1-I')).toBeTruthy();
-    expect(within(plan).getByText('Giới hạn khóa')).toBeTruthy();
-    expect(within(plan).getByText('Không có khóa trong lộ trình')).toBeTruthy();
-    expect(within(plan).queryByText('Đã đạt')).toBeNull();
-    expect(within(plan).queryByText('Đang học')).toBeNull();
-    expect(within(plan).queryByText(/%/)).toBeNull();
-
-    // Trạng thái, % đã học và đạt / chưa đạt nằm ở danh sách khóa của lĩnh vực.
-    expect(screen.getByText('Đã đạt')).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Nguyễn An');
+    expect(screen.getByText('Phòng Operations')).toBeTruthy();
+    expect(screen.getByText('Kế toán')).toBeTruthy();
+    expect(screen.getByText('Khai thác dữ liệu và thông tin')).toBeTruthy();
+    expect(screen.getByText('1/2 khóa đạt')).toBeTruthy();
+    expect(screen.getByText('50%')).toBeTruthy();
     expect(screen.getAllByText('Đang học').length).toBeGreaterThan(0);
-    expect(screen.getByText('40% đã học')).toBeTruthy();
     expect(screen.queryByText('A1-A')).toBeNull();
     expect(screen.queryByText('Ngoài trần')).toBeNull();
-    expect(screen.getByText(/Được công nhận qua bài đánh giá trước khi học/)).toBeTruthy();
   });
 
   it('shows the waiting exams by name, without stat cards, next steps or course codes', async () => {
@@ -465,18 +453,16 @@ describe('PulseTodayPage', () => {
     expect(screen.queryByText(/\bA[12]-F\b/)).toBeNull();
   });
 
-  it('expands and collapses a domain to show its courses', async () => {
+  it('renders the domain radar chart and compact progress cards linking to the path', async () => {
     vi.spyOn(pulseService, 'getOverview').mockResolvedValue(ok(overview()));
 
     renderAt(PULSE_PATHS.today, <PulseTodayPage />);
 
-    const toggle = await screen.findByRole('button', { name: /A1 · Khai thác dữ liệu và thông tin/ });
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText('40% đã học')).toBeTruthy();
-
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByText('40% đã học')).toBeNull();
+    expect(await screen.findByRole('img', { name: 'Biểu đồ năng lực số theo từng lĩnh vực' })).toBeTruthy();
+    expect(screen.getByText('Khai thác dữ liệu và thông tin')).toBeTruthy();
+    expect(screen.getByText('0/1 khóa đạt')).toBeTruthy();
+    expect(screen.getByText('Đang học')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Xem bản đồ lộ trình chi tiết/ })).toHaveAttribute('href', PULSE_PATHS.path);
   });
 
   it('explains a missing position instead of an empty path', async () => {

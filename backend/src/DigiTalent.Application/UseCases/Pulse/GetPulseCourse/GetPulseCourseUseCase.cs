@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Learning.Content;
+using DigiTalent.Application.UseCases.Organization.Research;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Pulse;
@@ -74,6 +75,9 @@ public class GetPulseCourseUseCase : IUseCase<GetPulseCourseUseCaseInput, GetPul
             Course = PulseMapping.Course(state),
             Description = state.Course.Description,
             Purpose = state.Course.Purpose,
+            EnterpriseContent = full
+                ? await EnterpriseResearch.GetAppliedAsync(_context, snapshot.Employee.OrganizationId, state.Course.Code)
+                : null,
             EstimatedMinutes = state.Course.EstimatedMinutes,
             VersionNo = state.Course.VersionNo,
             Domain = PulseMapping.Domain(state.Domain),

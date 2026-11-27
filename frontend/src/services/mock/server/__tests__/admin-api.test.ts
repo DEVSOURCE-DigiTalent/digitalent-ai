@@ -188,7 +188,7 @@ describe('roles and access', () => {
     asUser('owner');
     const roles = await call('get', '/roles');
 
-    expect(roles.map((r: { role: string }) => r.role)).toEqual(['OWNER', 'MANAGER', 'EMPLOYEE']);
+    expect(roles.map((r: { role: string }) => r.role)).toEqual(['OWNER', 'MANAGER', 'RND', 'EMPLOYEE']);
     expect(roles.find((r: { role: string }) => r.role === 'MANAGER')).toMatchObject({ memberCount: 3, assignable: true });
     expect(roles.find((r: { role: string }) => r.role === 'OWNER').assignable).toBe(true);
     expect(roles.find((r: { role: string }) => r.role === 'EMPLOYEE').assignable).toBe(true);

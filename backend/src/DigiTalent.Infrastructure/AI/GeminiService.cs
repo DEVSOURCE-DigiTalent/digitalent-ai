@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.BehaviorReports;
+using DigiTalent.Application.UseCases.Learning.ContentAi;
 using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Application.UseCases.TrialProgram;
 using Microsoft.Extensions.Configuration;
@@ -549,6 +550,211 @@ public sealed class GeminiService : IGeminiService
         return new BehaviorAiResult(Text(root, "level"), Text(root, "summary"), advice.Length == 0 ? null : advice, findings, model);
     }
 
+    public async Task<ModuleContentSuggestionOutput?> SuggestModuleContentAsync(
+        ModuleContentAiRequest request, CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured) return null;
+
+        // 4 pages and 10 questions (a whole review quiz) per call; the author asks again for more.
+        const int pageCount = 4;
+        const int questionCount = 10;
+        var prompt =
+            "Bạn là chuyên gia thiết kế khóa học năng lực số cho nhân viên doanh nghiệp vừa và nhỏ tại Việt Nam, "
+            + "bám đúng Khung năng lực số của Thông tư 02/2025/TT-BGDĐT.\n"
+            + $"Khóa {request.CourseCode} · miền \"{request.DomainName}\" · mức {request.LevelName}. Mô-đun: \"{request.ModuleTitle}\".\n\n"
+            + Requirements(request) + "\n"
+            + "NỘI DUNG MÔ-ĐUN ĐANG CÓ (không lặp lại, chỉ bổ sung chỗ còn thiếu):\n" + LessonsText(request) + "\n\n"
+            + "CÂU HỎI ÔN TẬP ĐANG CÓ:\n" + QuestionsText(request, withAnswers: false) + "\n\n"
+            + "Hãy soạn:\n"
+            + $"1) {pageCount} trang bài học mới, mỗi trang 120–200 từ, mỗi trang một ý khác nhau, đúng mức {request.LevelName} (không dạy nội dung của mức cao hơn), "
+            + "có ví dụ trong công việc văn phòng, kinh doanh, kế toán hoặc nhân sự; viết HTML đơn giản chỉ dùng <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>.\n"
+            + $"2) {questionCount} câu hỏi ôn tập trắc nghiệm: mỗi câu đúng 4 lựa chọn, chỉ 1 lựa chọn đúng, kèm giải thích ngắn; "
+            + "mỗi câu ghi outcomeId của yêu cầu mà nó kiểm tra; ưu tiên các yêu cầu nội dung hiện có chưa đáp ứng.\n"
+            + "Không ghi outcomeId hay số trang vào tiêu đề, nội dung trang, câu hỏi và lựa chọn (outcomeId chỉ ghi ở trường outcomeId).\n"
+            + "Trả JSON thuần (không markdown): {\"lessons\":[{\"title\":\"...\",\"html\":\"...\"}],"
+            + "\"questions\":[{\"text\":\"...\",\"options\":[{\"text\":\"...\",\"isCorrect\":true}],\"explanation\":\"...\",\"outcomeId\":\"1.1-b3-2\"}],"
+            + "\"note\":\"1–2 câu lưu ý cho người soạn\"}. Trả lời bằng tiếng Việt.";
+
+        try
+        {
+            var (text, usedModel) = await GenerateJsonAsync(prompt, cancellationToken);
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            var parsed = JsonSerializer.Deserialize<SuggestionResponse>(TrimCodeFences(text), JsonOptions);
+            if (parsed == null) return null;
+
+            return new ModuleContentSuggestionOutput
+            {
+                Lessons = (parsed.Lessons ?? new List<SuggestionLesson>())
+                    .Where(l => !string.IsNullOrWhiteSpace(l.Html))
+                    .Select(l => new SuggestedLessonDto { Title = l.Title?.Trim() ?? "", Html = l.Html!.Trim() })
+                    .ToList(),
+                // Keep only well-formed questions: 2–5 options, exactly one correct.
+                Questions = (parsed.Questions ?? new List<SuggestionQuestion>())
+                    .Where(q => !string.IsNullOrWhiteSpace(q.Text) && q.Options is { Count: >= 2 and <= 5 }
+                                && q.Options.All(o => !string.IsNullOrWhiteSpace(o.Text)) && q.Options.Count(o => o.IsCorrect) == 1)
+                    .Select(q => new SuggestedQuestionDto
+                    {
+                        Text = q.Text!.Trim(),
+                        Options = q.Options!.Select(o => new ModuleContentOptionInput { Text = o.Text!.Trim(), IsCorrect = o.IsCorrect }).ToList(),
+                        Explanation = q.Explanation?.Trim(),
+                        OutcomeId = q.OutcomeId?.Trim(),
+                    })
+                    .ToList(),
+                Note = parsed.Note?.Trim(),
+                Model = usedModel ?? _model,
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Gemini module content suggestion failed.");
+            return null;
+        }
+    }
+
+    public async Task<ModuleContentCheckOutput?> CheckModuleContentAsync(
+        ModuleContentAiRequest request, CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured) return null;
+
+        var prompt =
+            "Bạn là chuyên gia thẩm định học liệu năng lực số theo Thông tư 02/2025/TT-BGDĐT. "
+            + $"Kiểm tra nội dung mô-đun \"{request.ModuleTitle}\" (khóa {request.CourseCode}, miền \"{request.DomainName}\") "
+            + $"có đáp ứng yêu cầu mức {request.LevelName} hay không.\n\n"
+            + Requirements(request) + "\n"
+            + "NỘI DUNG BÀI HỌC:\n" + LessonsText(request) + "\n\n"
+            + "CÂU HỎI ÔN TẬP (đáp án đúng ghi trong ngoặc vuông):\n" + QuestionsText(request, withAnswers: true) + "\n\n"
+            + "Đánh giá TỪNG yêu cầu theo outcomeId: MET = nội dung dạy rõ và có ví dụ hoặc câu hỏi luyện tập; "
+            + "PARTIAL = có nhắc tới nhưng sơ sài; MISSING = không có. evidence: trích ngắn (≤ 20 từ) chỗ đáp ứng, hoặc nói vì sao thiếu.\n"
+            + "issues: kind là một trong SAI_KIEN_THUC, LAC_DE, VUOT_MUC (dạy nội dung của mức cao hơn), THIEU_VI_DU, KHO_HIEU.\n"
+            + "questionProblems: câu nào đáp án sai, có hơn 1 đáp án đúng, mơ hồ, hoặc không kiểm yêu cầu nào (number = số thứ tự câu).\n"
+            + "pages: đánh giá TỪNG trang bài học (number = số trang ở trên; bỏ qua trang ghi \"" + ContentAiRequests.EmptyPage + "\"): "
+            + "status OK (đúng và có ví dụ thực tế), WEAK (đúng nhưng sơ sài, chung chung, thiếu ví dụ), PROBLEM (sai kiến thức, lạc đề hoặc vượt mức); "
+            + "covers: các outcomeId trang đó đáp ứng; notes: 1–3 câu ngắn nêu cần sửa gì trên trang đó (trang OK thì để mảng rỗng).\n"
+            + "verdict: DAT khi mọi yêu cầu MET hoặc chỉ 1 PARTIAL và không có SAI_KIEN_THUC; CHUA_DAT khi từ một nửa số yêu cầu "
+            + "là MISSING hoặc có lỗi kiến thức nghiêm trọng; còn lại CAN_SUA.\n"
+            + "Chỉ dựa trên nội dung được đưa, không bịa. Trả JSON thuần (không markdown): "
+            + "{\"verdict\":\"CAN_SUA\",\"summary\":\"...\",\"outcomes\":[{\"id\":\"1.1-b3-1\",\"status\":\"MET\",\"evidence\":\"...\"}],"
+            + "\"issues\":[{\"kind\":\"THIEU_VI_DU\",\"detail\":\"...\"}],\"questionProblems\":[{\"number\":1,\"problem\":\"...\"}],"
+            + "\"pages\":[{\"number\":1,\"status\":\"WEAK\",\"covers\":[\"1.1-b1-1\"],\"notes\":[\"...\"]}],"
+            + "\"suggestions\":[\"...\"]}. Trả lời bằng tiếng Việt.";
+
+        try
+        {
+            var (text, usedModel) = await GenerateJsonAsync(prompt, cancellationToken);
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            var parsed = JsonSerializer.Deserialize<CheckResponse>(TrimCodeFences(text), JsonOptions);
+            if (parsed == null) return null;
+
+            return new ModuleContentCheckOutput
+            {
+                Verdict = parsed.Verdict?.Trim() ?? "",
+                Summary = parsed.Summary?.Trim() ?? "",
+                Outcomes = (parsed.Outcomes ?? new List<CheckOutcome>())
+                    .Select(o => new CheckedOutcomeDto { Id = o.Id?.Trim() ?? "", Status = o.Status?.Trim() ?? "", Evidence = o.Evidence?.Trim() })
+                    .ToList(),
+                Issues = (parsed.Issues ?? new List<CheckIssue>())
+                    .Where(i => !string.IsNullOrWhiteSpace(i.Detail))
+                    .Select(i => new ContentIssueDto { Kind = i.Kind?.Trim().ToUpperInvariant() ?? "", Detail = i.Detail!.Trim() })
+                    .ToList(),
+                QuestionProblems = (parsed.QuestionProblems ?? new List<CheckQuestionProblem>())
+                    .Select(p => new QuestionProblemDto { Number = p.Number, Problem = p.Problem?.Trim() ?? "" })
+                    .ToList(),
+                Pages = (parsed.Pages ?? new List<CheckPage>())
+                    .Select(p => new PageReviewDto
+                    {
+                        Number = p.Number,
+                        Status = p.Status?.Trim() ?? "",
+                        Covers = (p.Covers ?? new List<string>()).Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => c.Trim()).ToList(),
+                        Notes = p.Notes ?? new List<string>(),
+                    })
+                    .ToList(),
+                Suggestions = (parsed.Suggestions ?? new List<string>()).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).ToList(),
+                Model = usedModel ?? _model,
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Gemini module content check failed.");
+            return null;
+        }
+    }
+
+    public async Task<RewrittenPageOutput?> RewriteModulePageAsync(
+        ModuleContentAiRequest request, int pageNumber, IReadOnlyList<string> notes, CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured || pageNumber < 1 || pageNumber > request.Lessons.Count) return null;
+
+        var fixes = notes.Count > 0
+            ? string.Join("\n", notes.Select(n => "- " + n))
+            : "- Làm trang đầy đủ, cụ thể hơn và có ví dụ thực tế.";
+        var prompt =
+            "Bạn là chuyên gia thiết kế khóa học năng lực số cho nhân viên doanh nghiệp vừa và nhỏ tại Việt Nam, "
+            + "bám đúng Khung năng lực số của Thông tư 02/2025/TT-BGDĐT.\n"
+            + $"Khóa {request.CourseCode} · miền \"{request.DomainName}\" · mức {request.LevelName}. Mô-đun: \"{request.ModuleTitle}\".\n\n"
+            + Requirements(request) + "\n"
+            + "CÁC TRANG CỦA MÔ-ĐUN (để giữ mạch bài, không lặp nội dung của trang khác):\n" + LessonsText(request) + "\n\n"
+            + $"Hãy VIẾT LẠI TRANG {pageNumber}: giữ chủ đề chính của trang và sửa các điểm sau:\n{fixes}\n"
+            + $"Yêu cầu: đúng mức {request.LevelName} (không dạy nội dung của mức cao hơn); 150–280 từ; có ví dụ trong công việc văn phòng, "
+            + "kinh doanh, kế toán hoặc nhân sự; HTML đơn giản chỉ dùng <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>; không đánh số trang trong tiêu đề, không ghi outcomeId vào tiêu đề hay nội dung.\n"
+            + "Trả JSON thuần (không markdown): {\"title\":\"...\",\"html\":\"...\",\"covers\":[\"outcomeId\"],\"note\":\"1 câu: đã sửa gì\"}. "
+            + "Trả lời bằng tiếng Việt.";
+
+        try
+        {
+            var (text, usedModel) = await GenerateJsonAsync(prompt, cancellationToken);
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            var parsed = JsonSerializer.Deserialize<RewriteResponse>(TrimCodeFences(text), JsonOptions);
+            if (string.IsNullOrWhiteSpace(parsed?.Html)) return null;
+
+            return new RewrittenPageOutput
+            {
+                PageNumber = pageNumber,
+                Title = parsed.Title?.Trim() ?? "",
+                Html = parsed.Html.Trim(),
+                Covers = (parsed.Covers ?? new List<string>()).Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => c.Trim()).ToList(),
+                Note = parsed.Note?.Trim(),
+                Model = usedModel ?? _model,
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Gemini module page rewrite failed.");
+            return null;
+        }
+    }
+
+    /// <summary>The Circular's requirements of the module at the course level, each with its outcomeId.</summary>
+    private static string Requirements(ModuleContentAiRequest request)
+    {
+        var builder = new System.Text.StringBuilder("YÊU CẦU CỦA THÔNG TƯ 02/2025 (mỗi ý có outcomeId trong ngoặc vuông):\n");
+        foreach (var competency in request.Competencies)
+        {
+            builder.Append($"Năng lực {competency.Code} {competency.Name}: {competency.Description}\n");
+            foreach (var level in competency.ForSystemLevel(request.Level))
+            {
+                builder.Append($"- Bậc {level.Bac} ({level.Context})\n");
+                for (var i = 0; i < level.Outcomes.Count; i++)
+                {
+                    builder.Append($"  [{ContentAiRequests.OutcomeId(competency.Code, level.Bac, i)}] {level.Outcomes[i]}\n");
+                }
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    private static string LessonsText(ModuleContentAiRequest request) =>
+        request.Lessons.Count == 0
+            ? "(chưa có nội dung)"
+            : string.Join("\n\n", request.Lessons.Select((text, i) => $"Trang {i + 1}:\n{text}"));
+
+    private static string QuestionsText(ModuleContentAiRequest request, bool withAnswers) =>
+        request.Questions.Count == 0
+            ? "(chưa có câu hỏi)"
+            : string.Join("\n", request.Questions.Select((q, i) =>
+                $"{i + 1}. {q.Text} " + string.Join(" ", q.Options.Select((o, j) =>
+                    $"({(char)('A' + j)}) {o.Text}" + (withAnswers && o.IsCorrect ? " [ĐÚNG]" : "")))));
+
     /// <summary>Gọi generateContent (trả JSON), thử lại khi 429/503 và chuyển model dự phòng nếu model chính không khả dụng. Khóa gửi qua header.</summary>
     private async Task<(string? Text, string? Model)> GenerateJsonAsync(string prompt, CancellationToken cancellationToken)
     {
@@ -665,6 +871,79 @@ public sealed class GeminiService : IGeminiService
         [JsonPropertyName("tier")] public int Tier { get; set; }
         [JsonPropertyName("score")] public int Score { get; set; }
         [JsonPropertyName("feedback")] public string? Feedback { get; set; }
+    }
+
+    private sealed class SuggestionResponse
+    {
+        [JsonPropertyName("lessons")] public List<SuggestionLesson>? Lessons { get; set; }
+        [JsonPropertyName("questions")] public List<SuggestionQuestion>? Questions { get; set; }
+        [JsonPropertyName("note")] public string? Note { get; set; }
+    }
+
+    private sealed class SuggestionLesson
+    {
+        [JsonPropertyName("title")] public string? Title { get; set; }
+        [JsonPropertyName("html")] public string? Html { get; set; }
+    }
+
+    private sealed class SuggestionQuestion
+    {
+        [JsonPropertyName("text")] public string? Text { get; set; }
+        [JsonPropertyName("options")] public List<SuggestionOption>? Options { get; set; }
+        [JsonPropertyName("explanation")] public string? Explanation { get; set; }
+        [JsonPropertyName("outcomeId")] public string? OutcomeId { get; set; }
+    }
+
+    private sealed class SuggestionOption
+    {
+        [JsonPropertyName("text")] public string? Text { get; set; }
+        [JsonPropertyName("isCorrect")] public bool IsCorrect { get; set; }
+    }
+
+    private sealed class CheckResponse
+    {
+        [JsonPropertyName("verdict")] public string? Verdict { get; set; }
+        [JsonPropertyName("summary")] public string? Summary { get; set; }
+        [JsonPropertyName("outcomes")] public List<CheckOutcome>? Outcomes { get; set; }
+        [JsonPropertyName("issues")] public List<CheckIssue>? Issues { get; set; }
+        [JsonPropertyName("questionProblems")] public List<CheckQuestionProblem>? QuestionProblems { get; set; }
+        [JsonPropertyName("pages")] public List<CheckPage>? Pages { get; set; }
+        [JsonPropertyName("suggestions")] public List<string>? Suggestions { get; set; }
+    }
+
+    private sealed class CheckOutcome
+    {
+        [JsonPropertyName("id")] public string? Id { get; set; }
+        [JsonPropertyName("status")] public string? Status { get; set; }
+        [JsonPropertyName("evidence")] public string? Evidence { get; set; }
+    }
+
+    private sealed class CheckIssue
+    {
+        [JsonPropertyName("kind")] public string? Kind { get; set; }
+        [JsonPropertyName("detail")] public string? Detail { get; set; }
+    }
+
+    private sealed class CheckQuestionProblem
+    {
+        [JsonPropertyName("number")] public int Number { get; set; }
+        [JsonPropertyName("problem")] public string? Problem { get; set; }
+    }
+
+    private sealed class CheckPage
+    {
+        [JsonPropertyName("number")] public int Number { get; set; }
+        [JsonPropertyName("status")] public string? Status { get; set; }
+        [JsonPropertyName("covers")] public List<string>? Covers { get; set; }
+        [JsonPropertyName("notes")] public List<string>? Notes { get; set; }
+    }
+
+    private sealed class RewriteResponse
+    {
+        [JsonPropertyName("title")] public string? Title { get; set; }
+        [JsonPropertyName("html")] public string? Html { get; set; }
+        [JsonPropertyName("covers")] public List<string>? Covers { get; set; }
+        [JsonPropertyName("note")] public string? Note { get; set; }
     }
 
     private static string? ValidateEvidenceExcerpt(string? excerpt, string evidenceText)

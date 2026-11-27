@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Organization.Research;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,7 +27,7 @@ public class GetOrganizationUseCase : IUseCase<GetOrganizationInput, Organizatio
             ?? throw new NotFoundException("Organization not found.");
 
         var settings = await _context.SystemSettings.AsNoTracking()
-            .Where(s => s.OrganizationId == orgId)
+            .Where(s => s.OrganizationId == orgId && !s.Key.StartsWith(EnterpriseResearch.Prefix))
             .ToDictionaryAsync(s => s.Key, s => (object?)s.Value);
 
         return new OrganizationDto
@@ -56,6 +57,9 @@ public class UpdateOrgSettingsUseCase : IUseCase<UpdateOrgSettingsInput, UpdateO
     {
         var orgId = _currentUser.GetRequiredOrganizationId();
         var userId = _currentUser.UserId;
+
+        if (input.Settings.Keys.Any(key => key.StartsWith(EnterpriseResearch.Prefix, StringComparison.OrdinalIgnoreCase)))
+            throw new BadRequestException("Dùng cài đặt R&D để thay đổi tính năng này.");
 
         foreach (var (key, value) in input.Settings)
         {

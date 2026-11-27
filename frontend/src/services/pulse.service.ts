@@ -259,6 +259,8 @@ export interface PulseCourseModule {
 export type PulseCourseNextAction = 'PRE_ASSESSMENT' | 'PRE_REVIEW' | 'MODULE' | 'FINAL' | 'PREVIEW' | 'LOCKED' | 'DONE';
 
 export interface PulseCourseDetail {
+  /** Practice guidance of the company version R&D applied (its title and objective are the course's own). */
+  enterpriseContent?: { title: string; objective: string; practice: string } | null;
   course: PulseCourseSummary;
   description?: string | null;
   purpose?: string | null;

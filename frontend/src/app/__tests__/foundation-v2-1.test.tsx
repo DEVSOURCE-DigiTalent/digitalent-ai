@@ -65,7 +65,8 @@ describe('Foundation v2.1 Verification Suite (A1, A2, A3)', () => {
     expect(within(nav).getByText('Quản lý đội')).toBeInTheDocument();
     expect(within(nav).getByText('Các công cụ khác')).toBeInTheDocument();
     expect(within(nav).getByRole('link', { name: 'Tổng quan' })).toHaveAttribute('aria-current', 'page');
-    expect(within(nav).getByRole('link', { name: 'Minh chứng thực tế' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Kết quả bài làm' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Học tập của tôi' })).toBeInTheDocument();
     expect(within(nav).queryByText('Cá nhân')).not.toBeInTheDocument();
   });
 

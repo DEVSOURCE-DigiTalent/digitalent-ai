@@ -187,7 +187,8 @@ const OWNER = [
 export const PERSONAL_PERMISSIONS: string[] = [...new Set(EMPLOYEE)];
 
 const MATRIX: Record<Role, string[]> = {
-  [ROLES.OWNER]: OWNER,
+  [ROLES.OWNER]: [...OWNER, 'rnd.course.manage', 'rnd.configure'],
+  [ROLES.RND]: ['rnd.course.manage', 'account.view_own', 'account.update_own_profile', 'account.change_own_password'],
   [ROLES.MANAGER]: MANAGER,
   [ROLES.EMPLOYEE]: EMPLOYEE,
   // Platform Admin console (Pulse) — same keys as the backend default matrix

@@ -122,6 +122,7 @@ public static class DependencyInjection
 
         // Gemini AI evaluation
         services.AddHttpClient<IGeminiService, DigiTalent.Infrastructure.AI.GeminiService>();
+        services.AddSingleton<ITt02Framework, DigiTalent.Infrastructure.AI.Frameworks.Tt02Framework>();
 
         // Background Service: Auto-remind approaching deadlines
         services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.DeadlineReminderBackgroundService>();

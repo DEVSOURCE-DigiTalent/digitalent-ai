@@ -108,7 +108,7 @@ function renderModule() {
 }
 
 const answerAll = (ids: string[]) => {
-  for (const id of ids) fireEvent.click(screen.getByLabelText(`Phương án A của ${id}`));
+  for (const id of ids) fireEvent.click(screen.getByLabelText(new RegExp(`Phương án A của ${id}`)));
 };
 
 beforeEach(() => {
@@ -122,7 +122,7 @@ beforeEach(() => {
 });
 
 describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
-  it('changes the artwork with the lesson and preserves progress tracking in focus mode', async () => {
+  it('shows all continuous lesson artwork, tracks module view and toggles focus mode', async () => {
     vi.spyOn(pulseService, 'getModule').mockResolvedValue(ok(detail({
       course: { ...course, code: 'A1-F' }, viewed: false,
       slides: [
@@ -131,17 +131,16 @@ describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
       ],
     })));
     renderModule();
-    const image = await screen.findByRole('img');
-    const firstSource = image.getAttribute('src');
-    expect(firstSource).toContain('m1-i-m01.png');
-    expect(pulseService.markModuleViewed).not.toHaveBeenCalled();
+    const images = await screen.findAllByRole('img');
+    expect(images.map((img) => img.getAttribute('src'))).toEqual([
+      expect.stringContaining('m1-i-m01.png'),
+      expect.stringContaining('m1-f-m01-s02.png'),
+    ]);
+    await waitFor(() => expect(pulseService.markModuleViewed).toHaveBeenCalledWith('course-1', 'mod-1'));
     fireEvent.click(screen.getByRole('button', { name: 'Tập trung đọc' }));
     expect(screen.getByRole('button', { name: 'Hiện mục lục' }).getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: 'Trang tiếp theo' }));
-    expect(screen.getByRole('img').getAttribute('src')).toContain('m1-f-m01-s02.png');
-    expect(screen.getByRole('button', { name: /Trang 02:/ }).getAttribute('aria-current')).toBe('step');
-    await waitFor(() => expect(pulseService.markModuleViewed).toHaveBeenCalledWith('course-1', 'mod-1'));
-    expect(screen.getByRole('heading', { level: 2, name: 'Câu hỏi ôn tập mô-đun 01' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Bài kiểm tra \(2 câu\)/ }));
+    expect(screen.getByText('Câu hỏi kiểm tra mô-đun 01')).toBeTruthy();
   });
 
   it('sends the attempt number and, after a wrong attempt, points to the page to reopen instead of the answer', async () => {
@@ -159,21 +158,19 @@ describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
     const submit = vi.spyOn(pulseService, 'submitModuleQuiz').mockResolvedValue(ok(result));
 
     renderModule();
-    // The review questions open once the learner reaches the last page of the module.
-    fireEvent.click(await screen.findByRole('button', { name: /Đến trang \d+ để mở khóa/ }));
-    expect(await screen.findByText(/Nếu chưa đạt, bạn có thể xem lại trang bài giảng và làm lại với bộ câu hỏi mới/)).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: /Bắt đầu bài kiểm tra/ }));
+    expect(await screen.findByText(/Trả lời đúng từ \d+ câu \(80%\) để hoàn thành mô-đun/)).toBeTruthy();
     answerAll(['q1', 'q2']);
-    fireEvent.click(screen.getByRole('button', { name: 'Nộp bài ôn tập →' }));
+    fireEvent.click(screen.getByRole('button', { name: /Nộp bài kiểm tra \(2\/2 câu\)/ }));
 
     await waitFor(() =>
       expect(submit).toHaveBeenCalledWith('course-1', 'mod-1', [{ questionId: 'q1', optionId: 'q1-a' }, { questionId: 'q2', optionId: 'q2-a' }], 1),
     );
-    expect(await screen.findByRole('heading', { name: 'Xem lại nội dung trước lần làm thứ 2' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Xem lại nội dung cần củng cố' })).toBeTruthy();
     expect(screen.getByText(/Lần làm thứ 1 chưa đạt \(đúng 1\/2 câu\)/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Mở lại trang 02 →' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Xem lại phần này →' })).toBeTruthy();
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
-    expect(screen.queryByText(/Đã đạt câu hỏi ôn tập/)).toBeNull();
-    expect(screen.getByText('Xem lại trang trước khi làm lại')).toBeTruthy();
+    expect(screen.queryByText(/Hoàn thành xuất sắc bài kiểm tra/)).toBeNull();
   });
 
   it('records the page when the learner reopens it, then serves the next attempt with other questions', async () => {
@@ -184,27 +181,29 @@ describe('Câu hỏi ôn tập mô đun (§9.2)', () => {
     const submit = vi.spyOn(pulseService, 'submitModuleQuiz').mockResolvedValue(ok({ score: 2, total: 2, passed: true, wrong: [], review: null, modulePassed: true, nextModuleId: null, allModulesPassed: true }));
 
     renderModule();
-    fireEvent.click(await screen.findByRole('button', { name: 'Mở lại trang 02 →' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Bắt đầu bài kiểm tra/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Xem lại phần này →' }));
     await waitFor(() => expect(markPage).toHaveBeenCalledWith('course-1', 'mod-1', 'l-2'));
     expect(screen.getByText('Nội dung trang hai')).toBeTruthy();
 
+    fireEvent.click(await screen.findByRole('button', { name: /Bắt đầu bài kiểm tra/ }));
     expect(await screen.findByText('Câu hỏi q3')).toBeTruthy();
     expect(screen.queryByText('Câu hỏi q1')).toBeNull();
     answerAll(['q3', 'q4']);
-    fireEvent.click(screen.getByRole('button', { name: 'Nộp bài ôn tập →' }));
+    fireEvent.click(screen.getByRole('button', { name: /Nộp bài kiểm tra \(2\/2 câu\)/ }));
     await waitFor(() => expect(submit).toHaveBeenCalledWith('course-1', 'mod-1', expect.any(Array), 2));
   });
 
-  it('counts a page only when the learner navigates to it, not the page already on screen', async () => {
+  it('records a review page only when the learner opens it from the review panel', async () => {
     vi.spyOn(pulseService, 'getModule').mockResolvedValue(ok(reviewing('l-1', 0)));
     const markPage = vi.spyOn(pulseService, 'markPageViewed').mockResolvedValue(ok({ lessonId: 'l-1', viewedAt: '2026-10-15T08:05:00Z', review: review('l-1', 0, false) }));
 
     renderModule();
     expect(await screen.findByText('Nội dung trang một')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Trang tiếp theo' }));
     expect(markPage).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Trang trước' }));
+    fireEvent.click(screen.getByRole('button', { name: /Bắt đầu bài kiểm tra/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Xem lại phần này →' }));
     await waitFor(() => expect(markPage).toHaveBeenCalledWith('course-1', 'mod-1', 'l-1'));
     expect(markPage).toHaveBeenCalledTimes(1);
   });
