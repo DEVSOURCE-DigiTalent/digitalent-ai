@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
-import { ArrowRight, BookOpen, CheckCircle2, Eye, GraduationCap, Layers, Plus, Settings, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle2, Eye, GraduationCap, Layers, Lock, Plus, Settings, ShoppingCart, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Modal } from '@/components/shared/Modal';
@@ -7,6 +7,7 @@ import { CourseUpdateBanner } from '@/features/organization/components/CourseUpd
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { apiErrorMessage } from '@/lib/utils';
 import { LessonSlide } from '@/features/pulse-employee/components/LessonSlide';
+import { BUY_COURSES_PATH } from '@/features/trial-program/lib/buy-courses';
 import { CourseBuilderHeader, CourseBuilderLayout, CourseBuilderPanel, CourseCodeBadge, CourseLevelBadge, CourseOutlineItem } from '@/features/platform/builder/CourseBuilderLayout';
 import { CourseBuilderServiceContext } from '@/features/platform/builder/course-builder-service';
 import { FinalEditor } from '@/features/platform/builder/FinalEditor';
@@ -21,7 +22,7 @@ import '@/features/platform/pulse-admin-shell.css';
 import '@/features/platform/pulse-admin-polish.css';
 import '@/features/platform/pulse-admin-owner-look.css';
 import '@/features/pulse-employee/pulse-lesson.css';
-import { useResearchCourses, useResearchPreview, useResearchSettings, useSaveResearchCourse, type ResearchCourse } from './research-api';
+import { useResearchAccess, useResearchCourses, useResearchPreview, useSaveResearchCourse, type ResearchCourse } from './research-api';
 import { useResearchAuthoring } from './research-authoring';
 
 const smallButton = 'btn btn-outline btn-small inline-flex items-center gap-1.5';
@@ -40,16 +41,19 @@ function problemTarget(problem: string): Section | undefined {
 }
 
 export function ResearchCoursesPage() {
-  const settings = useResearchSettings();
-  const courses = useResearchCourses(settings.data === true);
+  const access = useResearchAccess();
+  const open = access.data?.canView === true;
+  const courses = useResearchCourses(open);
   const isOwner = useCurrentUser((state) => state.user?.roles.includes('OWNER') === true);
   const [params, setParams] = useSearchParams();
   // A course is picked by its code: applying the company version gives the course a new revision (a new id).
   const wanted = params.get('course');
   const selected = courses.data?.find((course) => course.code === wanted || course.courseId === wanted) ?? courses.data?.[0];
   const settingsLink = isOwner && <Link className={smallButton} to="/enterprise/settings"><Settings size={14} /> Cài đặt R&D</Link>;
-  const requesting = settings.isPending || (settings.data === true && courses.isPending);
-  const failed = settings.isError || (settings.data === true && courses.isError);
+  const requesting = access.isPending || (open && courses.isPending);
+  const failed = access.isError || (open && courses.isError);
+  // A company with R&D: the R&D accounts edit and apply, the owner only views.
+  const readOnly = open && access.data?.canEdit !== true;
 
   return (
     <div className="pulse-ui pa-console !min-h-0">
@@ -57,33 +61,51 @@ export function ResearchCoursesPage() {
       <CourseUpdateBanner />
       {requesting ? <Loading /> : failed ? (
         <p className="notice warning" role="alert">
-          Không tải được dữ liệu R&D. <button type="button" className={smallButton} onClick={() => void (settings.isError ? settings.refetch() : courses.refetch())}>Thử lại</button>
+          Không tải được dữ liệu R&D. <button type="button" className={smallButton} onClick={() => void (access.isError ? access.refetch() : courses.refetch())}>Thử lại</button>
         </p>
-      ) : !settings.data || !selected ? (
+      ) : !open ? (
+        <CourseBuilderPanel icon={<Lock size={18} aria-hidden="true" />} title="Tùy chỉnh khóa học">
+          <p>{access.data?.reason ?? 'Bạn chưa dùng được phần tùy chỉnh khóa học.'}</p>
+          {access.data?.purchased === false
+            ? isOwner
+              ? <Link className="btn btn-primary btn-small inline-flex items-center gap-1.5" to={BUY_COURSES_PATH}><ShoppingCart size={14} aria-hidden="true" /> Mua khóa học</Link>
+              : <p className="pa-hint">Nhờ chủ doanh nghiệp mua khóa học để mở phần này.</p>
+            : settingsLink}
+        </CourseBuilderPanel>
+      ) : !selected ? (
         <CourseBuilderPanel icon={<BookOpen size={18} aria-hidden="true" />} title="Tùy chỉnh khóa học">
-          <p>{settings.data ? 'Doanh nghiệp chưa có khóa học khả dụng.' : 'Tính năng R&D đang tắt. Chủ doanh nghiệp có thể bật trong cài đặt tổ chức.'}</p>
+          <p>Doanh nghiệp chưa có khóa học khả dụng.</p>
           {settingsLink}
         </CourseBuilderPanel>
       ) : (
-        <ResearchEditor
-          key={selected.code}
-          course={selected}
-          actions={<>
-            <select className="pa-cb-input max-w-full sm:max-w-[300px]" style={{ width: 'auto' }} aria-label="Chọn khóa học R&D" value={selected.code}
-              onChange={(event) => setParams({ course: event.target.value })}>
-              {courses.data?.map((course) => (
-                <option key={course.code} value={course.code}>{course.code} · {course.title}</option>
-              ))}
-            </select>
-            {settingsLink}
-          </>}
-        />
+        <>
+          {readOnly && (
+            <p className="notice" role="note" style={{ margin: '0 0 12px' }}>
+              Công ty đã có R&D ({access.data?.researchers} tài khoản): R&D sửa và áp dụng khóa học, bạn xem được nội dung.
+              Muốn tự sửa thì tắt R&D trong Cài đặt tổ chức.
+            </p>
+          )}
+          <ResearchEditor
+            key={selected.code}
+            course={selected}
+            readOnly={readOnly}
+            actions={<>
+              <select className="pa-cb-input max-w-full sm:max-w-[300px]" style={{ width: 'auto' }} aria-label="Chọn khóa học R&D" value={selected.code}
+                onChange={(event) => setParams({ course: event.target.value })}>
+                {courses.data?.map((course) => (
+                  <option key={course.code} value={course.code}>{course.code} · {course.title}</option>
+                ))}
+              </select>
+              {settingsLink}
+            </>}
+          />
+        </>
       )}
     </div>
   );
 }
 
-function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: ReactNode }) {
+function ResearchEditor({ course, actions, readOnly }: { course: ResearchCourse; actions: ReactNode; readOnly: boolean }) {
   const [params, setParams] = useSearchParams();
   const formId = useId();
   const [content, setContent] = useState(course.draft ?? course.applied ?? EMPTY);
@@ -181,12 +203,14 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
           {actions}
           <button type="button" className={smallButton} onClick={() => setPreviewIndex(typeof section === 'number' ? section : 0)}
             disabled={modules.length === 0}><Eye size={14} /> Xem thử như nhân viên</button>
-          {hasDraft && <button type="button" className={smallButton} disabled={busy || !builder} onClick={() => setEditorAction('discard')}>Bỏ bản nháp</button>}
-          {hasApplied && <button type="button" className={smallButton} disabled={busy || !builder} onClick={() => setEditorAction('unpublish')}>Gỡ bản doanh nghiệp</button>}
-          <button type="button" className="btn btn-primary btn-small inline-flex items-center gap-1.5" disabled={busy || !builder}
-            onClick={() => setEditorAction('apply')}>
-            <CheckCircle2 size={14} aria-hidden="true" /> Áp dụng cho doanh nghiệp
-          </button>
+          {!readOnly && <>
+            {hasDraft && <button type="button" className={smallButton} disabled={busy || !builder} onClick={() => setEditorAction('discard')}>Bỏ bản nháp</button>}
+            {hasApplied && <button type="button" className={smallButton} disabled={busy || !builder} onClick={() => setEditorAction('unpublish')}>Gỡ bản doanh nghiệp</button>}
+            <button type="button" className="btn btn-primary btn-small inline-flex items-center gap-1.5" disabled={busy || !builder}
+              onClick={() => setEditorAction('apply')}>
+              <CheckCircle2 size={14} aria-hidden="true" /> Áp dụng cho doanh nghiệp
+            </button>
+          </>}
         </>}
       />
 
@@ -205,7 +229,7 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
               : 'Nội dung khóa gốc'}
             active={section === index} onClick={() => go(index)} />
         ))}
-        {builder && <button type="button" className="pa-ol-add" disabled={busy} onClick={() => void runEditorAction('add')}>
+        {builder && !readOnly && <button type="button" className="pa-ol-add" disabled={busy} onClick={() => void runEditorAction('add')}>
           <Plus size={14} /> Thêm mô đun
         </button>}
         <div className="pa-ol-label">Cuối khóa</div>
@@ -217,10 +241,10 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
         {builder && (typeof section === 'number' || section === 'final') ? (
           <CourseBuilderServiceContext.Provider value={authoring.service}>
             {typeof section === 'number' && builder.modules[section] && <ModuleEditor
-              key={builder.modules[section].moduleId} course={builder} module={builder.modules[section]} editable internal
+              key={builder.modules[section].moduleId} course={builder} module={builder.modules[section]} editable={!readOnly} internal
               edit={(operation) => operation(builder.versionNo, builder.courseId)} onNavigate={go}
             />}
-            {section === 'final' && <FinalEditor key={JSON.stringify(builder.final)} course={builder} editable
+            {section === 'final' && <FinalEditor key={JSON.stringify(builder.final)} course={builder} editable={!readOnly}
               edit={(operation) => operation(builder.versionNo, builder.courseId)} internal
             />}
           </CourseBuilderServiceContext.Provider>
@@ -237,12 +261,12 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
               description="Không bắt buộc. Để trống thì nhân viên thấy tên và mục tiêu của khóa chuẩn.">
               <div>
                 <label className="pa-cb-field-label" htmlFor={`${formId}-title`}>Tên hiển thị nội bộ<span aria-hidden="true">{content.title.length}/200</span></label>
-                <input id={`${formId}-title`} className="pa-cb-input" value={content.title} maxLength={200} placeholder={course.title} disabled={save.isPending}
+                <input id={`${formId}-title`} className="pa-cb-input" value={content.title} maxLength={200} placeholder={course.title} disabled={save.isPending || readOnly}
                   onChange={(event) => setContent({ ...content, title: event.target.value })} />
               </div>
               <div>
                 <label className="pa-cb-field-label" htmlFor={`${formId}-objective`}>Mục tiêu học tập của doanh nghiệp<span aria-hidden="true">{content.objective.length}/2000</span></label>
-                <textarea id={`${formId}-objective`} className="pa-cb-textarea" rows={4} maxLength={2000} value={content.objective} disabled={save.isPending}
+                <textarea id={`${formId}-objective`} className="pa-cb-textarea" rows={4} maxLength={2000} value={content.objective} disabled={save.isPending || readOnly}
                   placeholder={course.description ?? undefined}
                   onChange={(event) => setContent({ ...content, objective: event.target.value })} />
               </div>
@@ -259,13 +283,13 @@ function ResearchEditor({ course, actions }: { course: ResearchCourse; actions: 
             <CourseBuilderPanel icon={<GraduationCap size={18} aria-hidden="true" />} title="Thực hành nội bộ"
               description="Không bắt buộc. Nhân viên thấy hướng dẫn này ở trang khóa học.">
               <label className="pa-cb-field-label" htmlFor={`${formId}-practice`}>Hướng dẫn thực hành nội bộ<span aria-hidden="true">{content.practice.length}/8000</span></label>
-              <textarea id={`${formId}-practice`} className="pa-cb-textarea" rows={7} maxLength={8000} value={content.practice} disabled={save.isPending}
+              <textarea id={`${formId}-practice`} className="pa-cb-textarea" rows={7} maxLength={8000} value={content.practice} disabled={save.isPending || readOnly}
                 onChange={(event) => setContent({ ...content, practice: event.target.value })} />
             </CourseBuilderPanel>
           )}
 
           <div className="pa-cb-action-footer flex-wrap">
-            <button type="submit" className={smallButton} disabled={save.isPending}>Lưu nháp</button>
+            {!readOnly && <button type="submit" className={smallButton} disabled={save.isPending}>Lưu nháp</button>}
             {section !== 'practice' && (
               <button type="button" className={smallButton}
                 onClick={() => go(section === 'info' && course.modules.length > 0 ? 0 : typeof section === 'number' && section + 1 < course.modules.length ? section + 1 : 'practice')}>

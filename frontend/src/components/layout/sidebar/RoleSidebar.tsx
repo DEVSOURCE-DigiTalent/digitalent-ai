@@ -91,7 +91,9 @@ export function RoleSidebar({
         </Link>
       )}
       <SidebarNav
-        config={research.data === true ? activeConfig : activeConfig.filter((section) => section.screenId !== 'RD-01')}
+        // The owner always customises courses (alone without R&D, view only once R&D is in charge); an R&D account
+        // only while R&D is switched on.
+        config={research.data === true || isOwner ? activeConfig : activeConfig.filter((section) => section.screenId !== 'RD-01')}
         isRail={isRail && !isMobileOpen}
         onItemClick={onMobileClose}
         workspace={portal.workspace}
