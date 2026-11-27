@@ -174,8 +174,14 @@ export function usePulseFinalReviews(enabledOrOptions: boolean | UsePulseFinalRe
   const skipAi = typeof enabledOrOptions === 'boolean' ? false : (enabledOrOptions.skipAi ?? false);
   return useQuery({
     ...learningContentQueryOptions,
-    queryKey: [...PULSE_KEYS.finalReviews(includeReviewed, organizationId, departmentId), skipAi ? 'no-ai' : 'with-ai'],
-    queryFn: () => pulseReviewService.getQueue(includeReviewed, organizationId, false, undefined, departmentId, undefined, skipAi).then((r) => r.data.data!),
+    queryKey: skipAi
+      ? [...PULSE_KEYS.finalReviews(includeReviewed, organizationId, departmentId), 'no-ai']
+      : PULSE_KEYS.finalReviews(includeReviewed, organizationId, departmentId),
+    queryFn: () =>
+      (skipAi
+        ? pulseReviewService.getQueue(includeReviewed, organizationId, false, undefined, departmentId, undefined, true)
+        : pulseReviewService.getQueue(includeReviewed, organizationId, false, undefined, departmentId)
+      ).then((r) => r.data.data!),
     enabled,
   });
 }
