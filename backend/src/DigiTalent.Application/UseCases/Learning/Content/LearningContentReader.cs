@@ -1,6 +1,8 @@
 using System.Text.Json;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Platform.Catalog;
+using DigiTalent.Application.UseCases.Platform.SignLanguageVideo;
+using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigiTalent.Application.UseCases.Learning.Content;
@@ -10,6 +12,8 @@ public sealed class LessonMediaDto
     public string Kind { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
     public string Alt { get; set; } = string.Empty;
+    /// <summary>VIDEO only: the published sign-language video (schema v3.13); null when the video has none.</summary>
+    public LessonSignVideoDto? SignLanguage { get; set; }
 }
 
 /// <summary>One authorized media/final projection shared by Owner, Employee and Manager.</summary>
@@ -24,10 +28,25 @@ public sealed class LearningContentReader(IApplicationDbContext context, IPlatfo
             .Where(m => m.AssetId.HasValue).ToList();
         var ids = references.Select(r => r.AssetId!.Value).Distinct().ToList();
         var assets = await context.PlatformAssets.AsNoTracking().Where(a => ids.Contains(a.Id)).ToDictionaryAsync(a => a.Id);
+        var videoIds = assets.Values.Where(a => a.Kind == PlatformCatalog.AssetKind.Video).Select(a => a.Id).ToList();
+        var signVideos = videoIds.Count == 0
+            ? new Dictionary<Guid, LessonSignVideoDto>()
+            : (await context.PlatformSignLanguageTracks.AsNoTracking()
+                    .Where(t => videoIds.Contains(t.SourceAssetId) && t.PublishedOutputAssetId != null && t.SignLanguage == SignLanguage.Code.Vsl)
+                    .Select(t => new { t.SourceAssetId, t.PublishedOutputAssetId, t.PublishedRenderMode, t.SignLanguage, t.Region })
+                    .ToListAsync())
+                .ToDictionary(t => t.SourceAssetId, t => new LessonSignVideoDto
+                {
+                    Url = urls.ContentPath(t.PublishedOutputAssetId!.Value),
+                    Mode = t.PublishedRenderMode ?? SignVideo.RenderMode.Overlay,
+                    SignLanguage = t.SignLanguage,
+                    Region = t.Region,
+                });
         return references.Where(r => assets.ContainsKey(r.AssetId!.Value)).GroupBy(r => r.Material.LessonId)
             .ToDictionary(g => g.Key, g => g.Select(r => new LessonMediaDto
             {
                 Kind = assets[r.AssetId!.Value].Kind, Url = urls.ContentPath(r.AssetId.Value), Alt = r.Material.Title,
+                SignLanguage = signVideos.GetValueOrDefault(r.AssetId.Value),
             }).ToList());
     }
 

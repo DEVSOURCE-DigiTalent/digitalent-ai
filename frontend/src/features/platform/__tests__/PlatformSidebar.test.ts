@@ -10,6 +10,7 @@ describe('Platform Admin navigation (Pulse)', () => {
       'Khung năng lực số',
       'Vị trí tham chiếu',
       'Phiên bản khóa học',
+      'Từ điển ký hiệu',
       'Tổ chức',
       'Đánh giá dùng thử',
       'Mentor',

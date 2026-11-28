@@ -14,6 +14,7 @@ export const PLATFORM_SCREENS: ScreenDef[] = [
   { id: 'PA-02', title: 'Khung năng lực số', path: '/platform/frameworks', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0', aliases: ['PLT-04'] },
   { id: 'PA-13', title: 'Vị trí tham chiếu', path: '/platform/reference-positions', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0' },
   { id: 'PA-03', title: 'Phiên bản khóa học', path: '/platform/versions', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0', aliases: ['PLT-05', 'PLT-06'] },
+  { id: 'PA-18', title: 'Từ điển ký hiệu', path: '/platform/sign-dictionary', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P1' },
   { id: 'PA-12', title: 'Khóa học trong phiên bản', path: '/platform/versions/:versionNo', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0' },
   { id: 'PA-04', title: 'Soạn khóa học', path: '/platform/versions/:versionNo/courses/:courseId', roles: ADMIN, permission: 'platform.catalog.read', priority: 'P0', aliases: ['PLT-06E'] },
   { id: 'PA-05', title: 'Tổ chức', path: '/platform/organizations', roles: ADMIN, permission: 'platform.organization.read', priority: 'P0', aliases: ['PLT-02'] },

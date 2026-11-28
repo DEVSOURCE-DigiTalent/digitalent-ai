@@ -25,7 +25,7 @@ public sealed partial class EnterpriseResearch
     public async Task<ResearchAuthoringVersion> GetAuthoringAsync(Guid courseId, PlatformCourseContentReader reader,
         IHtmlContentSanitizer sanitizer)
     {
-        var orgId = await RequireEnabledAsync();
+        var orgId = await RequireAccessAsync(write: false);
         var source = await AuthoringSourceAsync(orgId, courseId, reader);
         var state = await ReadAuthoringAsync(context, orgId, source.Code);
         if ((state.Draft ?? state.Applied) is { } saved)
@@ -44,7 +44,7 @@ public sealed partial class EnterpriseResearch
         ResearchAuthoringVersion? result = null;
         await context.ExecuteInSerializableTransactionAsync(async () =>
         {
-            var orgId = await RequireEnabledAsync();
+            var orgId = await RequireAccessAsync(write: true);
             var source = await AuthoringSourceAsync(orgId, courseId, reader);
             var state = await ReadAuthoringAsync(context, orgId, source.Code);
             if (state.Revision != input.Revision)
@@ -67,7 +67,7 @@ public sealed partial class EnterpriseResearch
     {
         await context.ExecuteInSerializableTransactionAsync(async () =>
         {
-            var orgId = await RequireEnabledAsync();
+            var orgId = await RequireAccessAsync(write: true);
             var origin = await SourceRowAsync(orgId, courseId);
             var state = await ReadAuthoringAsync(context, orgId, origin.Code);
             if (state.Revision != revision)
@@ -83,7 +83,7 @@ public sealed partial class EnterpriseResearch
     public async Task<PlatformAssetDto> UploadAuthoringAssetAsync(Guid courseId, UploadPlatformAssetUseCaseInput input,
         IUseCase<UploadPlatformAssetUseCaseInput, PlatformAssetDto> uploader, PlatformCourseContentReader reader)
     {
-        var orgId = await RequireEnabledAsync();
+        var orgId = await RequireAccessAsync(write: true);
         await AuthoringSourceAsync(orgId, courseId, reader);
         var asset = await uploader.ExecuteAsync(input);
         await WriteAsync(orgId, AssetPrefix + asset.AssetId, true);

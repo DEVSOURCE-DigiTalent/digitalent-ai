@@ -69,7 +69,10 @@ public class ExceptionHandlingMiddleware
         }
         catch (ConflictException ex)
         {
-            await WriteErrorAsync(context, StatusCodes.Status409Conflict, ex.Message);
+            var errors = ex.Code == null
+                ? null
+                : new List<ApiError> { new() { Field = ex.Field ?? string.Empty, Message = ex.Code } };
+            await WriteErrorAsync(context, StatusCodes.Status409Conflict, ex.Message, errors);
         }
         // Ghi đồng thời mà use case không tự xử lý (use case có thể bắt để thử lại, VD LoginUseCase) → 409 thay vì 500
         catch (DbUpdateConcurrencyException)

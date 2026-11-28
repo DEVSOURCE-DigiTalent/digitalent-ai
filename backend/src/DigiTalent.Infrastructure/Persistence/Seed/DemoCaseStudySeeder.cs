@@ -202,6 +202,80 @@ public static class DemoCaseStudySeeder
         return new DemoSeedResult(orgsSeeded, usersCreated, employeesCreated, Path.GetFullPath(csvOutputPath), mergedAccounts);
     }
 
+    /// <summary>
+    /// Sinh lại mật khẩu dễ đọc (DemoXXX-xxxx-xxxx) cho toàn bộ user @demo.nanglucso.pro.vn,
+    /// cập nhật hash trong DB và xuất lại demo-accounts.csv mà không xóa/seed lại dữ liệu nghiệp vụ.
+    /// </summary>
+    public static async Task<DemoSeedResult> ResetDemoPasswordsAsync(
+        AppDbContext db,
+        IPasswordHasher passwordHasher,
+        string csvOutputPath,
+        int trialOrgCount = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var demoUsers = await db.Users
+            .Where(u => u.Email.EndsWith(DemoEmailDomain))
+            .OrderBy(u => u.Email)
+            .ToListAsync(cancellationToken);
+
+        var newPasswords = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var user in demoUsers)
+        {
+            var password = GenerateStrongPassword();
+            user.PasswordHash = passwordHasher.Hash(password);
+            user.EmailVerifiedAt ??= now;
+            user.LastLoginAt ??= now.AddDays(-2);
+            newPasswords[user.Email] = password;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        var accounts = new List<DemoSeedAccountRecord>();
+        var platformAdmin = demoUsers.FirstOrDefault(u => u.Email.Equals(PlatformAdminEmail, StringComparison.OrdinalIgnoreCase));
+        if (platformAdmin != null)
+        {
+            accounts.Add(new DemoSeedAccountRecord(
+                "DigiTalent Platform", "PLATFORM", Roles.PlatformAdmin, platformAdmin.DisplayName,
+                "—", "—", "—", platformAdmin.Email, newPasswords[platformAdmin.Email], ExportToCsv: true));
+        }
+
+        var mentor = demoUsers.FirstOrDefault(u => u.Email.Equals(MentorEmail, StringComparison.OrdinalIgnoreCase));
+        if (mentor != null)
+        {
+            accounts.Add(new DemoSeedAccountRecord(
+                "DigiTalent Platform", "PLATFORM", Roles.Mentor, mentor.DisplayName,
+                "—", "—", "—", mentor.Email, newPasswords[mentor.Email], ExportToCsv: true));
+        }
+
+        var mainOrg = await db.Organizations.AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Code == MainOrgCode, cancellationToken);
+        if (mainOrg != null)
+        {
+            await CollectExistingAccountsForCsvAsync(db, mainOrg, MainOrgName, "main", isMainOrg: true, accounts, cancellationToken);
+        }
+
+        var orgsFound = mainOrg != null ? 1 : 0;
+        for (var i = 1; i <= trialOrgCount; i++)
+        {
+            var code = $"{DemoOrgPrefix}DN-{i:00}";
+            var org = await db.Organizations.AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Code == code, cancellationToken);
+            if (org == null) continue;
+
+            orgsFound++;
+            await CollectExistingAccountsForCsvAsync(db, org, $"Demo DN {i:00}", $"dn{i:00}", isMainOrg: false, accounts, cancellationToken);
+        }
+
+        var exported = accounts
+            .Where(a => a.ExportToCsv)
+            .Select(a => newPasswords.TryGetValue(a.Email, out var freshPwd) ? a with { Password = freshPwd } : a)
+            .ToList();
+
+        WriteCsv(csvOutputPath, exported);
+        return new DemoSeedResult(orgsFound, demoUsers.Count, 0, Path.GetFullPath(csvOutputPath), exported);
+    }
+
     private static Dictionary<string, string> LoadExistingCsvPasswords(string path)
     {
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -1613,6 +1687,11 @@ public static class DemoCaseStudySeeder
             .FirstOrDefaultAsync(u => u.Email == normalized);
         if (existing != null)
         {
+            if (existing.LastLoginAt == null)
+            {
+                existing.LastLoginAt = DateTimeOffset.UtcNow.AddDays(-2);
+                await db.SaveChangesAsync();
+            }
             return (existing, false, "(đã tồn tại — giữ nguyên mật khẩu cũ; chạy reset-seed-demo để cấp lại)");
         }
 
@@ -1625,6 +1704,7 @@ public static class DemoCaseStudySeeder
             DisplayName = displayName,
             PasswordHash = hasher.Hash(password),
             EmailVerifiedAt = now,
+            LastLoginAt = now.AddDays(-2),
             Status = Statuses.User.Active,
         };
         db.Users.Add(user);
@@ -1714,29 +1794,37 @@ public static class DemoCaseStudySeeder
         return $"{last} {mid} {first}";
     }
 
-    private static string GenerateStrongPassword()
+    public static string GenerateStrongPassword()
     {
+        // Dạng dễ đọc DemoXXX-xxxx-xxxx: không dùng l, I, 1, O, 0 và không dùng ký tự đặc biệt ngoài dấu gạch '-'.
         const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
         const string lower = "abcdefghijkmnopqrstuvwxyz";
         const string digits = "23456789";
-        const string symbols = "!@#$%*?";
-        const string all = upper + lower + digits + symbols;
+        const string upperDigits = upper + digits;
+        const string lowerDigits = lower + digits;
 
-        var chars = new char[14];
-        chars[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
-        chars[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
-        chars[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
-        chars[3] = symbols[RandomNumberGenerator.GetInt32(symbols.Length)];
-        for (var i = 4; i < chars.Length; i++)
+        var xxx = new[]
         {
-            chars[i] = all[RandomNumberGenerator.GetInt32(all.Length)];
-        }
-        for (var i = chars.Length - 1; i > 0; i--)
+            upper[RandomNumberGenerator.GetInt32(upper.Length)],
+            digits[RandomNumberGenerator.GetInt32(digits.Length)],
+            upperDigits[RandomNumberGenerator.GetInt32(upperDigits.Length)],
+        };
+        var part1 = new[]
         {
-            var j = RandomNumberGenerator.GetInt32(i + 1);
-            (chars[i], chars[j]) = (chars[j], chars[i]);
-        }
-        return new string(chars);
+            lower[RandomNumberGenerator.GetInt32(lower.Length)],
+            digits[RandomNumberGenerator.GetInt32(digits.Length)],
+            lowerDigits[RandomNumberGenerator.GetInt32(lowerDigits.Length)],
+            lowerDigits[RandomNumberGenerator.GetInt32(lowerDigits.Length)],
+        };
+        var part2 = new[]
+        {
+            lower[RandomNumberGenerator.GetInt32(lower.Length)],
+            lowerDigits[RandomNumberGenerator.GetInt32(lowerDigits.Length)],
+            digits[RandomNumberGenerator.GetInt32(digits.Length)],
+            lowerDigits[RandomNumberGenerator.GetInt32(lowerDigits.Length)],
+        };
+
+        return $"Demo{new string(xxx)}-{new string(part1)}-{new string(part2)}";
     }
 
     private static void WriteCsv(string path, IReadOnlyList<DemoSeedAccountRecord> rows)

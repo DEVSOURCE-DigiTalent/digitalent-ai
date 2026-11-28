@@ -56,6 +56,28 @@ public static class PlatformCatalog
         };
     }
 
+    /// <summary>platform_asset_captions (schema v3.11): captions of a video, for learners who are deaf or hard of hearing.</summary>
+    public static class Captions
+    {
+        /// <summary>platform_asset_captions.language — only Vietnamese for now.</summary>
+        public const string Vietnamese = "vi";
+
+        /// <summary>platform_asset_captions.source</summary>
+        public const string SourceAi = "AI";
+        public const string SourceManual = "MANUAL";
+
+        public const int MaxCues = 2000;
+        public const int MaxCueTextLength = 200;
+        /// <summary>Longest time one cue stays on screen.</summary>
+        public const int MaxCueDurationMs = 60_000;
+        /// <summary>Latest end time accepted (6 hours).</summary>
+        public const int MaxTimeMs = 6 * 60 * 60 * 1000;
+        /// <summary>A cue longer than this is split for reading (two lines of about 42 characters).</summary>
+        public const int ReadableCueLength = 84;
+        /// <summary>An AI job still PROCESSING after this is considered lost and may be started again.</summary>
+        public static readonly TimeSpan StaleAfter = TimeSpan.FromHours(1);
+    }
+
     /// <summary>Review questions of a module: a learner draws 2 per attempt, so 6 gives three different attempts.</summary>
     public const int MinQuestionsPerModule = 2;
     public const int RecommendedQuestionsPerModule = 6;

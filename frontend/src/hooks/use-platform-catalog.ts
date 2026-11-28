@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { platformCatalogService, type CatalogCourseDetail } from '@/services/platform-catalog.service';
+import { platformCatalogService, type AssetCaptions, type CatalogCourseDetail } from '@/services/platform-catalog.service';
 import { PLATFORM_ADMIN_KEY } from './use-platform-admin';
 import { ASSIGNMENTS_KEY } from './use-assignments';
 import { PULSE_KEYS } from './use-pulse';
@@ -18,6 +18,7 @@ export const catalogKeys = {
   version: (versionNo: number | undefined) => [...CATALOG, 'version', versionNo] as const,
   publishCheck: (versionNo: number | undefined) => [...CATALOG, 'publish-check', versionNo] as const,
   course: (versionNo: number | undefined, courseId: string | undefined) => [...CATALOG, 'course', versionNo, courseId] as const,
+  captions: (assetId: string | undefined) => [...CATALOG, 'captions', assetId] as const,
   organizationVersion: (organizationId: string | undefined, versionNo?: number) =>
     [...CATALOG, 'organization-version', organizationId, versionNo] as const,
 };
@@ -182,6 +183,35 @@ export function useCourseEdit(versionNo: number, courseId: string) {
     onSuccess: (detail) => {
       queryClient.setQueryData(catalogKeys.course(versionNo, courseId), detail);
       return refresh();
+    },
+  });
+}
+
+/**
+ * Captions of one video (schema v3.11). While the AI is working (PROCESSING) the query asks again every few seconds,
+ * so the builder shows the draft as soon as it is ready.
+ */
+export const useAssetCaptions = (assetId: string | undefined) =>
+  useQuery({
+    queryKey: catalogKeys.captions(assetId),
+    queryFn: () => platformCatalogService.getCaptions(assetId!),
+    enabled: Boolean(assetId),
+    refetchInterval: (query) => (query.state.data?.status === 'PROCESSING' ? 4000 : false),
+  });
+
+/** Generate / save / publish captions: the answer replaces the cached captions; publishing also refreshes learner pages and the publish check. */
+export function useCaptionAction(assetId: string) {
+  const queryClient = useQueryClient();
+  const refresh = useRefreshCatalog();
+  return useMutation({
+    mutationFn: (action: () => Promise<AssetCaptions>) => action(),
+    onSuccess: async (captions) => {
+      queryClient.setQueryData(catalogKeys.captions(assetId), captions);
+      await Promise.all([
+        refresh(),
+        queryClient.invalidateQueries({ queryKey: PULSE_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: ASSIGNMENTS_KEY }),
+      ]);
     },
   });
 }

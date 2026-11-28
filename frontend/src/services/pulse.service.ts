@@ -834,6 +834,7 @@ export const pulseReviewService = {
     refreshSubmissionId?: string,
     departmentId?: string,
     evidenceMetric?: PulseAiDetailEvidenceKey,
+    skipAi = false,
   ) => {
     const params: Record<string, string | boolean> = {};
     if (includeReviewed) params.includeReviewed = true;
@@ -842,6 +843,7 @@ export const pulseReviewService = {
     if (refreshAi) params.refreshAi = true;
     if (refreshSubmissionId) params.refreshSubmissionId = refreshSubmissionId;
     if (evidenceMetric) params.evidenceMetric = evidenceMetric;
+    if (skipAi) params.skipAi = true;
     return apiClient.get<ApiResponse<PulseFinalReviewQueue>>('/pulse/final-reviews', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });

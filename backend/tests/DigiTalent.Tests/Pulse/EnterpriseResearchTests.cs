@@ -41,19 +41,32 @@ public class EnterpriseResearchTests
         await Assert.ThrowsAsync<ForbiddenException>(() => new EnterpriseResearch(
             context, Caller(researcher, Guid.NewGuid()), catalog).ListAsync());
         await ownerApi.SetEnabledAsync(true);
+        // Customising stays locked until the company buys a course, the free Basic courses alone do not open it.
+        (await Assert.ThrowsAsync<ForbiddenException>(() => rndApi.ListAsync())).Message.Should().Be(EnterpriseResearch.PurchaseRequiredMessage);
+        (await Assert.ThrowsAsync<ForbiddenException>(() => ownerApi.ListAsync())).Message.Should().Be(EnterpriseResearch.PurchaseRequiredMessage);
+        var paid = await context.PlatformCourses.FirstAsync(course => course.Code == "M1-I");
+        context.CourseOrders.Add(new CourseOrder { OrganizationId = organizationId, CourseId = paid.Id, Amount = 100 });
+        await context.SaveChangesAsync();
 
         var all = await catalog.LoadAsync(organizationId);
         var basic = (await rndApi.ListAsync()).Where(course => course.Tier == 1).ToList();
         basic.Select(course => course.Code).Should().BeEquivalentTo(Enumerable.Range(1, 6).Select(index => $"M{index}-F"));
-        var paid = await context.PlatformCourses.FirstAsync(course => course.Code == "M1-I");
-        context.CourseOrders.Add(new CourseOrder { OrganizationId = organizationId, CourseId = paid.Id, Amount = 100 });
-        await context.SaveChangesAsync();
         var listed = await rndApi.ListAsync();
+        // A company with R&D: R&D edits and applies, the owner only views.
+        var ownerAccess = await ownerApi.GetAccessAsync();
+        ownerAccess.InCharge.Should().Be("RND");
+        ownerAccess.Researchers.Should().Be(1);
+        ownerAccess.CanView.Should().BeTrue();
+        ownerAccess.CanEdit.Should().BeFalse();
+        (await ownerApi.ListAsync()).Should().NotBeEmpty();
+        (await rndApi.GetAccessAsync()).CanEdit.Should().BeTrue();
         listed.Should().Contain(course => course.Code == "M1-I");
         var excluded = all.First(course => course.Tier > 1 && !listed.Any(item => item.CourseId == course.CourseId));
 
         var source = basic.Single(course => course.Code == "M2-F");
         var content = new ResearchCourseContent("Khóa học nội bộ", "Lập báo cáo theo mẫu công ty.", "Dùng dữ liệu đào tạo để thực hành.");
+        (await Assert.ThrowsAsync<ForbiddenException>(() => ownerApi.SaveAsync(basic[0].CourseId, content)))
+            .Message.Should().Be(EnterpriseResearch.ResearchInChargeMessage);
         await Assert.ThrowsAsync<NotFoundException>(() => rndApi.SaveAsync(excluded.CourseId, content));
         await Assert.ThrowsAsync<NotFoundException>(() => rndApi.PreviewAsync(excluded.CourseId, Mock.Of<IPlatformAssetUrlSigner>()));
         (await rndApi.PreviewAsync(source.CourseId, Mock.Of<IPlatformAssetUrlSigner>()))
@@ -74,9 +87,12 @@ public class EnterpriseResearchTests
         course.EnterpriseContent.Should().Be(content);
         course.Course.Title.Should().Be("Khóa học nội bộ");
 
+        // R&D switched off (the company no longer has R&D): the R&D accounts are locked out and the owner takes over.
         await ownerApi.SetEnabledAsync(false);
         await Assert.ThrowsAsync<ForbiddenException>(() =>
             rndApi.ApplyCompanyVersionAsync(applied.CourseId, new ResearchApplyInput(editor.Revision + 1, content), reader, Sanitizer));
+        (await ownerApi.GetAccessAsync()).Should().Match<ResearchAccess>(a => a.InCharge == "OWNER" && a.CanEdit);
+        await ownerApi.SaveAsync(applied.CourseId, content with { Title = "Owner tự sửa" });
         (await learner.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = applied.CourseId })).EnterpriseContent.Should().Be(content);
     }
 
@@ -89,7 +105,10 @@ public class EnterpriseResearchTests
         var organizationId = owner.OrganizationId!.Value;
         var reader = Reader(context);
         var research = new EnterpriseResearch(context, Caller(owner, organizationId), new PulseCatalogReader(context), world.Clock);
-        await research.SetEnabledAsync(true);
+        // A small company: R&D stays off and the owner customises the courses.
+        var bought = await context.PlatformCourses.FirstAsync(course => course.Code == "M1-I");
+        context.CourseOrders.Add(new CourseOrder { OrganizationId = organizationId, CourseId = bought.Id, Amount = 100 });
+        await context.SaveChangesAsync();
         var standard = (await research.ListAsync()).Single(course => course.Code == "M2-F");
         var completed = await context.Enrollments.AsNoTracking()
             .Where(e => e.CourseId == standard.CourseId && e.Status == Statuses.Enrollment.Completed).Select(e => e.Id).ToListAsync();
@@ -106,6 +125,12 @@ public class EnterpriseResearchTests
         {
             BlockId = Guid.NewGuid(), Type = PlatformCatalog.BlockType.Text,
             BodyHtml = "<h3>Mẫu báo cáo nội bộ</h3><p>Dùng mẫu BC-01 của công ty cho mọi báo cáo tháng.</p>",
+        });
+        // A page heading longer than the 250-character title column still applies.
+        modules[0].Blocks.Insert(1, new PlatformBlockDto
+        {
+            BlockId = Guid.NewGuid(), Type = PlatformCatalog.BlockType.Text,
+            BodyHtml = $"<h3>{new string('A', 300)}</h3><p>Trang có tiêu đề rất dài.</p>",
         });
         modules[0].Questions.Add(new PlatformQuestionDto
         {
@@ -147,6 +172,12 @@ public class EnterpriseResearchTests
                                    where assessment.ModuleId == firstModule.Id
                                    select question.Content).ToListAsync();
         quizQuestions.Should().Contain("Báo cáo tháng dùng mẫu nào?");
+        var titles = await (from lesson in context.Lessons.AsNoTracking()
+                            join module in context.CourseModules.AsNoTracking() on lesson.ModuleId equals module.Id
+                            where module.CourseId == revision.Id
+                            select lesson.Title).ToListAsync();
+        titles.Should().OnlyContain(title => title.Length > 0 && title.Length <= 250);
+        titles.Should().Contain(title => title.StartsWith("AAAA") && title.EndsWith("…"));
         (await context.Assessments.AnyAsync(a => a.CourseId == revision.Id && a.IsFinal)).Should().BeTrue();
 
         // Everyone learns it again from the start: the old pass no longer counts.
@@ -156,6 +187,19 @@ public class EnterpriseResearchTests
         var course = await learner.GetCourse.ExecuteAsync(new GetPulseCourseUseCaseInput { CourseId = revision.Id });
         course.Modules[0].Title.Should().Be("Báo cáo theo mẫu công ty");
         (await EnterpriseResearch.CompanyVersionCodesAsync(context, organizationId, ["M2-F"])).Should().Contain("M2-F");
+
+        // Work sent for the revision that was reset says why it is not taken (not "pass the modules first").
+        var stale = () => learner.SubmitQuiz.ExecuteAsync(new SubmitPulseModuleQuizUseCaseInput
+        {
+            CourseId = standard.CourseId, ModuleId = Guid.NewGuid(), Answers = [],
+        });
+        (await stale.Should().ThrowAsync<ConflictException>()).WithMessage(PulseCourseWorkspace.RelearnMessage);
+
+        // The competency survey keeps measuring with DigiTalent's standard revision, not R&D's.
+        var catalog = new PulseCatalogReader(context);
+        (await catalog.LoadAsync(organizationId)).Single(c => c.Code == "M2-F").CourseId.Should().Be(revision.Id);
+        (await catalog.LoadAsync(organizationId, excludeCourseIds: await EnterpriseResearch.CompanyRevisionIdsAsync(context, organizationId)))
+            .Single(c => c.Code == "M2-F").CourseId.Should().Be(standard.CourseId);
 
         // Removing it writes the standard content again; R&D keeps its version as a draft.
         var removed = await research.RemoveCompanyVersionAsync(revision.Id, applied.Revision, reader, Sanitizer);

@@ -1,5 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useCallback, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Bug, ImagePlus, MessageSquare, Star, X } from 'lucide-react';
 import '../feedback.css';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -174,7 +175,9 @@ export function FeedbackDialog({ type, onClose }: Props) {
 
   const isValid = title.trim().length >= MIN_TITLE && description.trim().length >= MIN_DESCRIPTION;
 
-  return (
+  // Rendered on <body>: a page wrapper with a transform would otherwise trap this "fixed" layer inside it
+  // (a grey band behind the page title and the dialog pushed under the top bar).
+  return createPortal(
     <div className="fb-scope fixed inset-0 z-[9995] flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div
@@ -306,6 +309,7 @@ export function FeedbackDialog({ type, onClose }: Props) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

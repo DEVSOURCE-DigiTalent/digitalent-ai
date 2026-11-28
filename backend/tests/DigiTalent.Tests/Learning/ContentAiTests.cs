@@ -1,8 +1,11 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Learning.ContentAi;
+using DigiTalent.Application.UseCases.Organization.Research;
 using DigiTalent.Infrastructure.AI.Frameworks;
 using DigiTalent.Infrastructure.Content;
+using DigiTalent.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -17,6 +20,9 @@ public class ContentAiTests
 {
     private readonly Tt02Framework _framework = new();
     private readonly HtmlContentSanitizer _sanitizer = new();
+
+    // DigiTalent staff (no organization) may always ask the AI.
+    private readonly ContentAiAccess _staff = new(Mock.Of<ICurrentUser>(), Mock.Of<IApplicationDbContext>());
 
     [Fact]
     public void The_framework_file_has_the_24_competencies_with_8_levels_each()
@@ -47,7 +53,7 @@ public class ContentAiTests
                 },
             });
 
-        var result = await new SuggestModuleContentUseCase(gemini.Object, _framework, _sanitizer).ExecuteAsync(new SuggestModuleContentUseCaseInput
+        var result = await new SuggestModuleContentUseCase(gemini.Object, _framework, _sanitizer, _staff).ExecuteAsync(new SuggestModuleContentUseCaseInput
         {
             CourseCode = "A5-I", // historical alias of M5-I
             ModuleIndex = 1,
@@ -84,7 +90,7 @@ public class ContentAiTests
                 QuestionProblems = { new QuestionProblemDto { Number = 1, Problem = "Hai đáp án đúng" }, new QuestionProblemDto { Number = 9, Problem = "Không có câu này" } },
             });
 
-        var result = await new CheckModuleContentUseCase(gemini.Object, _framework, _sanitizer).ExecuteAsync(new CheckModuleContentUseCaseInput
+        var result = await new CheckModuleContentUseCase(gemini.Object, _framework, _sanitizer, _staff).ExecuteAsync(new CheckModuleContentUseCaseInput
         {
             CourseCode = "M1-F",
             ModuleIndex = 0,
@@ -122,7 +128,7 @@ public class ContentAiTests
             ModuleIndex = 0,
             Lessons = { new() { Html = "<p>Trang có chữ</p>" }, new() { Html = "<p> </p>" } },
         };
-        var check = await new CheckModuleContentUseCase(gemini.Object, _framework, _sanitizer).ExecuteAsync(input);
+        var check = await new CheckModuleContentUseCase(gemini.Object, _framework, _sanitizer, _staff).ExecuteAsync(input);
         var page = check.Pages.Should().ContainSingle().Subject;
         page.Number.Should().Be(1);
         page.Status.Should().Be(PageReviewStatus.Problem);
@@ -133,7 +139,7 @@ public class ContentAiTests
         gemini.Setup(g => g.RewriteModulePageAsync(It.IsAny<ModuleContentAiRequest>(), It.IsAny<int>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
             .Callback<ModuleContentAiRequest, int, IReadOnlyList<string>, CancellationToken>((r, n, _, _) => { sent = r; pageSent = n; })
             .ReturnsAsync(new RewrittenPageOutput { Title = "Chọn kênh giao tiếp", Html = "<h3>Chọn kênh</h3><p>Ví dụ</p><img src=x onerror=alert(1)>", Covers = { "2.1-b1-2", "x" } });
-        var rewrite = new RewriteModulePageUseCase(gemini.Object, _framework, _sanitizer);
+        var rewrite = new RewriteModulePageUseCase(gemini.Object, _framework, _sanitizer, _staff);
         var rewritten = await rewrite.ExecuteAsync(new RewriteModulePageUseCaseInput
         {
             CourseCode = "M2-F", ModuleIndex = 0, Lessons = input.Lessons, PageNumber = 1, Notes = { "Sai cách chọn kênh." },
@@ -153,22 +159,66 @@ public class ContentAiTests
     {
         var offline = new Mock<IGeminiService>();
         offline.Setup(g => g.IsConfigured).Returns(false);
-        var noKey = () => new CheckModuleContentUseCase(offline.Object, _framework, _sanitizer)
+        var noKey = () => new CheckModuleContentUseCase(offline.Object, _framework, _sanitizer, _staff)
             .ExecuteAsync(new CheckModuleContentUseCaseInput { CourseCode = "M1-F", Lessons = { new() { Html = "<p>x</p>" } } });
         (await noKey.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("AI_NOT_CONFIGURED");
 
         var online = new Mock<IGeminiService>();
         online.Setup(g => g.IsConfigured).Returns(true);
-        var empty = () => new CheckModuleContentUseCase(online.Object, _framework, _sanitizer)
+        var empty = () => new CheckModuleContentUseCase(online.Object, _framework, _sanitizer, _staff)
             .ExecuteAsync(new CheckModuleContentUseCaseInput { CourseCode = "M1-F", Lessons = { new() { Html = "<p> </p>" } } });
         (await empty.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("NOTHING_TO_CHECK");
 
-        var custom = () => new SuggestModuleContentUseCase(online.Object, _framework, _sanitizer)
+        var custom = () => new SuggestModuleContentUseCase(online.Object, _framework, _sanitizer, _staff)
             .ExecuteAsync(new SuggestModuleContentUseCaseInput { CourseCode = "NOIBO-01" });
         (await custom.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("COURSE_NOT_STANDARD");
 
-        var noAnswer = () => new SuggestModuleContentUseCase(online.Object, _framework, _sanitizer)
+        var noAnswer = () => new SuggestModuleContentUseCase(online.Object, _framework, _sanitizer, _staff)
             .ExecuteAsync(new SuggestModuleContentUseCaseInput { CourseCode = "M6-A", ModuleIndex = 2 });
         (await noAnswer.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("AI_UNAVAILABLE");
+    }
+
+    [Fact]
+    public async Task Only_who_may_edit_the_company_courses_can_use_the_AI()
+    {
+        await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase($"content-ai-{Guid.NewGuid():N}").Options);
+        var orgId = Guid.NewGuid();
+        var ownerRole = new DigiTalent.Domain.Entities.Role { Code = "OWNER", Name = "Owner" };
+        var rndRole = new DigiTalent.Domain.Entities.Role { Code = "RND", Name = "R&D" };
+        var ownerUser = new DigiTalent.Domain.Entities.User { OrganizationId = orgId, Email = "o@x.vn", Status = "ACTIVE" };
+        var researcher = new DigiTalent.Domain.Entities.User { OrganizationId = orgId, Email = "r@x.vn", Status = "ACTIVE" };
+        db.AddRange(ownerRole, rndRole, ownerUser, researcher,
+            new DigiTalent.Domain.Entities.UserRole { UserId = ownerUser.Id, RoleId = ownerRole.Id },
+            new DigiTalent.Domain.Entities.UserRole { UserId = researcher.Id, RoleId = rndRole.Id });
+        await db.SaveChangesAsync();
+        var gemini = new Mock<IGeminiService>();
+        gemini.Setup(g => g.IsConfigured).Returns(true);
+        gemini.Setup(g => g.SuggestModuleContentAsync(It.IsAny<ModuleContentAiRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ModuleContentSuggestionOutput());
+        var input = new SuggestModuleContentUseCaseInput { CourseCode = "M1-F", Lessons = { new() { Html = "<p>x</p>" } } };
+        Func<Task> As(DigiTalent.Domain.Entities.User user)
+        {
+            var current = new Mock<ICurrentUser>();
+            current.SetupGet(u => u.OrganizationId).Returns(orgId);
+            current.SetupGet(u => u.UserId).Returns(user.Id);
+            return () => new SuggestModuleContentUseCase(gemini.Object, _framework, _sanitizer, new ContentAiAccess(current.Object, db)).ExecuteAsync(input);
+        }
+
+        // Nothing bought: locked for everyone, before any AI call.
+        (await As(ownerUser).Should().ThrowAsync<ForbiddenException>()).WithMessage(EnterpriseResearch.PurchaseRequiredMessage);
+        gemini.Verify(g => g.SuggestModuleContentAsync(It.IsAny<ModuleContentAiRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        db.CourseOrders.Add(new DigiTalent.Domain.Entities.CourseOrder { OrganizationId = orgId, CourseId = Guid.NewGuid(), Amount = 100 });
+        await db.SaveChangesAsync();
+
+        // A small company (R&D off): the owner edits, an R&D account cannot.
+        await As(ownerUser).Should().NotThrowAsync();
+        (await As(researcher).Should().ThrowAsync<ForbiddenException>()).WithMessage(EnterpriseResearch.ResearchOffMessage);
+
+        // A company with R&D: R&D edits, the owner only views.
+        db.SystemSettings.Add(new DigiTalent.Domain.Entities.SystemSetting { OrganizationId = orgId, Key = "rnd.enabled", Value = "true" });
+        await db.SaveChangesAsync();
+        await As(researcher).Should().NotThrowAsync();
+        (await As(ownerUser).Should().ThrowAsync<ForbiddenException>()).WithMessage(EnterpriseResearch.ResearchInChargeMessage);
     }
 }

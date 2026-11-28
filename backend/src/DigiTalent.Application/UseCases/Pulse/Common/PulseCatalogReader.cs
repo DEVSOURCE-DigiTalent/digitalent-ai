@@ -19,10 +19,32 @@ public class PulseCatalogReader
         _context = context;
     }
 
-    public async Task<List<PulseCourseRef>> LoadAsync(Guid organizationId, IReadOnlyCollection<string>? trialCourseCodes = null)
+    /// <param name="excludeCourseIds">Revisions to leave out (the company versions R&amp;D applied, for the survey).</param>
+    public async Task<List<PulseCourseRef>> LoadAsync(Guid organizationId, IReadOnlyCollection<string>? trialCourseCodes = null,
+        IReadOnlyCollection<Guid>? excludeCourseIds = null)
     {
+        var many = await LoadManyAsync(new[] { organizationId }, trialCourseCodes, excludeCourseIds);
+        return many.GetValueOrDefault(organizationId) ?? new List<PulseCourseRef>();
+    }
+
+    public async Task<Dictionary<Guid, List<PulseCourseRef>>> LoadManyAsync(
+        IReadOnlyCollection<Guid> organizationIds,
+        IReadOnlyCollection<string>? trialCourseCodes = null,
+        IReadOnlyCollection<Guid>? excludeCourseIds = null)
+    {
+        var orgIds = organizationIds.Distinct().ToList();
+        if (orgIds.Count == 0)
+        {
+            return new Dictionary<Guid, List<PulseCourseRef>>();
+        }
+
         var publishedCourses = _context.Courses.AsNoTracking()
-            .Where(course => course.OrganizationId == organizationId && course.Status == Statuses.Course.Published);
+            .Where(course => orgIds.Contains(course.OrganizationId) && course.Status == Statuses.Course.Published);
+        if (excludeCourseIds is { Count: > 0 })
+        {
+            var excluded = excludeCourseIds.ToList();
+            publishedCourses = publishedCourses.Where(course => !excluded.Contains(course.Id));
+        }
         if (trialCourseCodes != null)
         {
             var trialAliases = trialCourseCodes.SelectMany(CourseCodes.Aliases).Distinct().ToArray();
@@ -35,6 +57,7 @@ public class PulseCatalogReader
                 join competency in _context.Competencies.AsNoTracking() on teaching.CompetencyId equals competency.Id
                 select new
                 {
+                    course.OrganizationId,
                     course.Id,
                     course.Code,
                     course.Title,
@@ -47,33 +70,39 @@ public class PulseCatalogReader
                 })
             .ToListAsync();
 
-        var perCourse = rows
-            .GroupBy(r => r.Id)
-            .Select(g =>
-            {
-                var first = g.First();
-                var category = g.GroupBy(r => r.CategoryId).OrderByDescending(c => c.Count()).ThenBy(c => c.Key).First().Key;
-                return new PulseCourseRef
+        var result = orgIds.ToDictionary(id => id, _ => new List<PulseCourseRef>());
+        foreach (var byOrg in rows.GroupBy(r => r.OrganizationId))
+        {
+            var perCourse = byOrg
+                .GroupBy(r => r.Id)
+                .Select(g =>
                 {
-                    CourseId = first.Id,
-                    Code = first.Code,
-                    Title = first.Title,
-                    Description = first.Description,
-                    Purpose = first.Purpose,
-                    EstimatedMinutes = first.EstimatedDurationMinutes,
-                    VersionNo = first.VersionNo,
-                    CategoryId = category,
-                    Tier = Math.Clamp((int)g.Max(r => r.TargetLevel), 1, PulseRules.MaxLevel),
-                };
-            })
-            .Where(course => trialCourseCodes == null || course.Tier == 1)
-            .ToList();
+                    var first = g.First();
+                    var category = g.GroupBy(r => r.CategoryId).OrderByDescending(c => c.Count()).ThenBy(c => c.Key).First().Key;
+                    return new PulseCourseRef
+                    {
+                        CourseId = first.Id,
+                        Code = first.Code,
+                        Title = first.Title,
+                        Description = first.Description,
+                        Purpose = first.Purpose,
+                        EstimatedMinutes = first.EstimatedDurationMinutes,
+                        VersionNo = first.VersionNo,
+                        CategoryId = category,
+                        Tier = Math.Clamp((int)g.Max(r => r.TargetLevel), 1, PulseRules.MaxLevel),
+                    };
+                })
+                .Where(course => trialCourseCodes == null || course.Tier == 1)
+                .ToList();
 
-        return perCourse
-            .GroupBy(c => c.Code, StringComparer.OrdinalIgnoreCase)
-            .Select(g => g.OrderByDescending(c => c.VersionNo).First())
-            .GroupBy(c => (c.CategoryId, c.Tier))
-            .Select(g => g.OrderBy(c => c.Code, StringComparer.OrdinalIgnoreCase).First())
-            .ToList();
+            result[byOrg.Key] = perCourse
+                .GroupBy(c => c.Code, StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.OrderByDescending(c => c.VersionNo).First())
+                .GroupBy(c => (c.CategoryId, c.Tier))
+                .Select(g => g.OrderBy(c => c.Code, StringComparer.OrdinalIgnoreCase).First())
+                .ToList();
+        }
+
+        return result;
     }
 }

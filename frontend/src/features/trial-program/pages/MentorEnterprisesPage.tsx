@@ -52,7 +52,7 @@ function submissionHref(item: PulseFinalReviewItem): string {
 export function MentorEnterprisesPage() {
   const navigate = useNavigate();
   const { data, isLoading, error, refetch, isFetching } = useMentorEnterprises();
-  const { data: queueData } = usePulseFinalReviews({ includeReviewed: false });
+  const { data: queueData } = usePulseFinalReviews({ includeReviewed: false, skipAi: true });
 
   const [statusFilter, setStatusFilter] = useState<EnterpriseStatusFilter>('ALL');
   const [stageFilter, setStageFilter] = useState<EnterpriseStageFilter>('ALL');

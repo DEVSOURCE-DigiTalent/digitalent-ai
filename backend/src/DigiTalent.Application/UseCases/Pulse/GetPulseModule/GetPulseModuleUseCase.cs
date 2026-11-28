@@ -26,7 +26,7 @@ public class GetPulseModuleUseCase : IUseCase<GetPulseModuleUseCaseInput, GetPul
 
     public async Task<GetPulseModuleUseCaseOutput> ExecuteAsync(GetPulseModuleUseCaseInput input)
     {
-        var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
+        var (snapshot, state) = await _workspace.ResolveForAnswerAsync(input.CourseId);
         var module = PulseCourseWorkspace.FindModule(state, input.ModuleId);
         var sample = state.Access == PulseCourseAccess.Preview;
         if (sample && module.Index > 0)
