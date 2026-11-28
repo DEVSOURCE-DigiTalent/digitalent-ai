@@ -22,7 +22,16 @@ export interface ResearchCourse extends ResearchCourseVersion {
   description?: string;
   tier: number;
   modules: string[];
+  /** Modules or final edited and not applied yet (the information draft is `draft`). */
+  hasContentDraft?: boolean;
+  /** Editor revision, sent back when the course is applied with others. */
+  editorRevision?: number;
+  learnersInProgress?: number;
+  learnersFinished?: number;
 }
+
+/** Edited and not applied: content or information. */
+export const hasUnappliedDraft = (course: ResearchCourse) => Boolean(course.hasContentDraft || course.draft);
 
 const resource = '/enterprise/rnd';
 /**

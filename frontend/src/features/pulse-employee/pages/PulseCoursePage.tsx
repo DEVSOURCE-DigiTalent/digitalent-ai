@@ -19,6 +19,7 @@ import type { PulseCourseDetail } from '@/services/pulse.service';
 import { LoadError, PageSkeleton } from '../components/ui';
 import { pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
+import { contentSwitch, contentSwitchText } from '../lib/content-switch';
 import '@/features/platform/pulse-catalog.css';
 import '../pulse-skip-test.css';
 
@@ -60,6 +61,7 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
   const passed = modules.filter((m) => m.passed).length;
   const firstOpen = modules.find((m) => !m.passed);
   const approved = course.approved;
+  const switchInfo = contentSwitch(course.contentSwitchAt);
   const viaPre = course.approvedVia === 'PRE_ASSESSMENT';
   const preAssessmentPath = PULSE_PATHS.preAssessment(course.courseId);
   const formattedTitle = toSentenceCase(course.title);
@@ -89,6 +91,11 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
 
         <h1 className="pu-c-main-title">{formattedTitle}</h1>
       </header>
+
+      {/* New content was applied while this employee was half-way: the day they move to it unless they finish first. */}
+      {!approved && switchInfo && (
+        <p className={`pu-notice${switchInfo.urgent ? ' warning' : ''}`} role="status">{contentSwitchText(switchInfo, course.contentSwitchKeepsProgress)}</p>
+      )}
 
       {/* The company's R&D wrote the course itself; its practice guidance is the only thing shown apart. */}
       {detail.enterpriseContent?.practice && (

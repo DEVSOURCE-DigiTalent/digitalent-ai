@@ -3,6 +3,10 @@ import { ArrowRight, BookOpen, CheckCircle2, Eye, GraduationCap, Layers, Lock, P
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Modal } from '@/components/shared/Modal';
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from '@/features/onboarding/components/styles';
+import { ChangeSizeChoice } from '@/components/shared/ChangeSizeChoice';
+import { GraceDaysChoice } from '@/components/shared/GraceDaysChoice';
+import { DEFAULT_GRACE_DAYS, switchDay, type GraceDays } from '@/lib/grace-days';
 import { CourseUpdateBanner } from '@/features/organization/components/CourseUpdateBanner';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { apiErrorMessage } from '@/lib/utils';
@@ -22,7 +26,7 @@ import '@/features/platform/pulse-admin-shell.css';
 import '@/features/platform/pulse-admin-polish.css';
 import '@/features/platform/pulse-admin-owner-look.css';
 import '@/features/pulse-employee/pulse-lesson.css';
-import { useResearchAccess, useResearchCourses, useResearchPreview, useSaveResearchCourse, type ResearchCourse } from './research-api';
+import { hasUnappliedDraft, useResearchAccess, useResearchCourses, useResearchPreview, useSaveResearchCourse, type ResearchCourse } from './research-api';
 import { useResearchAuthoring } from './research-authoring';
 
 const smallButton = 'btn btn-outline btn-small inline-flex items-center gap-1.5';
@@ -54,6 +58,7 @@ export function ResearchCoursesPage() {
   const failed = access.isError || (open && courses.isError);
   // A company with R&D: the R&D accounts edit and apply, the owner only views.
   const readOnly = open && access.data?.canEdit !== true;
+  const drafts = (courses.data ?? []).filter(hasUnappliedDraft);
 
   return (
     <div className="pulse-ui pa-console !min-h-0">
@@ -85,15 +90,22 @@ export function ResearchCoursesPage() {
               Muốn tự sửa thì tắt R&D trong Cài đặt tổ chức.
             </p>
           )}
+          {!readOnly && drafts.length > 0 && (
+            <p className="notice" role="status" style={{ margin: '0 0 12px' }}>
+              Còn {drafts.length} khóa có bản nháp chưa áp dụng: {drafts.map((course) => course.code).join(', ')}. Nhân viên chỉ thấy
+              nội dung mới sau khi bấm Áp dụng cho doanh nghiệp; có thể áp dụng cùng lúc.
+            </p>
+          )}
           <ResearchEditor
             key={selected.code}
             course={selected}
+            courses={courses.data ?? []}
             readOnly={readOnly}
             actions={<>
               <select className="pa-cb-input max-w-full sm:max-w-[300px]" style={{ width: 'auto' }} aria-label="Chọn khóa học R&D" value={selected.code}
                 onChange={(event) => setParams({ course: event.target.value })}>
                 {courses.data?.map((course) => (
-                  <option key={course.code} value={course.code}>{course.code} · {course.title}</option>
+                  <option key={course.code} value={course.code}>{course.code} · {course.title}{hasUnappliedDraft(course) ? ' · Bản nháp' : ''}</option>
                 ))}
               </select>
               {settingsLink}
@@ -105,12 +117,23 @@ export function ResearchCoursesPage() {
   );
 }
 
-function ResearchEditor({ course, actions, readOnly }: { course: ResearchCourse; actions: ReactNode; readOnly: boolean }) {
+function ResearchEditor({ course, courses, actions, readOnly }: {
+  course: ResearchCourse; courses: ResearchCourse[]; actions: ReactNode; readOnly: boolean;
+}) {
   const [params, setParams] = useSearchParams();
   const formId = useId();
   const [content, setContent] = useState(course.draft ?? course.applied ?? EMPTY);
   const [previewIndex, setPreviewIndex] = useState<number>();
   const [editorAction, setEditorAction] = useState<EditorAction>();
+  const [graceDays, setGraceDays] = useState<GraceDays>(DEFAULT_GRACE_DAYS);
+  const [majorChange, setMajorChange] = useState(false);
+  // Every other edited course is applied together with this one.
+  const otherDrafts = courses.filter((other) => other.code !== course.code && hasUnappliedDraft(other));
+  const openEditorAction = (action: EditorAction) => {
+    setGraceDays(DEFAULT_GRACE_DAYS);
+    setMajorChange(false);
+    setEditorAction(action);
+  };
   const [busy, setBusy] = useState(false);
   const save = useSaveResearchCourse();
   const authoring = useResearchAuthoring(course.courseId);
@@ -148,16 +171,27 @@ function ResearchEditor({ course, actions, readOnly }: { course: ResearchCourse;
         const updated = await authoring.service.addModule(builder.versionNo, builder.courseId, `Mô đun ${two(modules.length + 1)}`);
         go(updated.modules.length - 1);
       } else if (action === 'apply') {
-        await authoring.apply(content);
-        toast.success('Đã áp dụng bản doanh nghiệp. Nhân viên học khóa này lại từ đầu theo nội dung mới.');
+        const others = otherDrafts;
+        if (others.length > 0) {
+          await authoring.applyMany(content, others.map((other) => ({ courseId: other.courseId, revision: other.editorRevision ?? 0 })),
+            graceDays, majorChange);
+        } else {
+          await authoring.apply(content, graceDays, majorChange);
+        }
+        const count = others.length + 1;
+        toast.success(graceDays > 0
+          ? `Đã áp dụng ${count} khóa. Người đang học có tới ${switchDay(graceDays)} để học xong bản cũ.`
+          : `Đã áp dụng ${count} khóa. Người đang học chuyển sang nội dung mới ngay.`);
       } else if (action === 'discard') {
         await authoring.discardDraft();
         setContent(course.applied ?? EMPTY);
         go('info');
         toast.success('Đã bỏ các thay đổi chưa áp dụng.');
       } else {
-        await authoring.removeApplied();
-        toast.success('Đã gỡ bản doanh nghiệp. Nhân viên học lại theo nội dung chuẩn.');
+        await authoring.removeApplied(graceDays, majorChange);
+        toast.success(graceDays > 0
+          ? `Đã gỡ bản doanh nghiệp. Người đang học có tới ${switchDay(graceDays)} để học xong bản này.`
+          : 'Đã gỡ bản doanh nghiệp. Người đang học chuyển sang nội dung chuẩn ngay.');
       }
       setEditorAction(undefined);
     } catch (error) {
@@ -205,9 +239,9 @@ function ResearchEditor({ course, actions, readOnly }: { course: ResearchCourse;
             disabled={modules.length === 0}><Eye size={14} /> Xem thử như nhân viên</button>
           {!readOnly && <>
             {hasDraft && <button type="button" className={smallButton} disabled={busy || !builder} onClick={() => setEditorAction('discard')}>Bỏ bản nháp</button>}
-            {hasApplied && <button type="button" className={smallButton} disabled={busy || !builder} onClick={() => setEditorAction('unpublish')}>Gỡ bản doanh nghiệp</button>}
+            {hasApplied && <button type="button" className={smallButton} disabled={busy || !builder} onClick={() => openEditorAction('unpublish')}>Gỡ bản doanh nghiệp</button>}
             <button type="button" className="btn btn-primary btn-small inline-flex items-center gap-1.5" disabled={busy || !builder}
-              onClick={() => setEditorAction('apply')}>
+              onClick={() => openEditorAction('apply')}>
               <CheckCircle2 size={14} aria-hidden="true" /> Áp dụng cho doanh nghiệp
             </button>
           </>}
@@ -314,25 +348,37 @@ function ResearchEditor({ course, actions, readOnly }: { course: ResearchCourse;
         </Modal>
       )}
       {editorAction && <EditorActionDialog action={editorAction} busy={busy} problems={problems} hasDraft={hasDraft} hasApplied={hasApplied}
+        graceDays={graceDays} onGraceDays={setGraceDays} majorChange={majorChange} onMajorChange={setMajorChange}
+        current={course} otherDrafts={otherDrafts}
         onCancel={() => !busy && setEditorAction(undefined)} onConfirm={() => void runEditorAction(editorAction)}
         onFix={(target) => { setEditorAction(undefined); go(target); }} />}
     </>
   );
 }
 
-function EditorActionDialog({ action, busy, problems, hasDraft, hasApplied, onCancel, onConfirm, onFix }: {
+function EditorActionDialog({ action, busy, problems, hasDraft, hasApplied, graceDays, onGraceDays, majorChange, onMajorChange,
+  current, otherDrafts, onCancel, onConfirm, onFix }: {
   action: EditorAction; busy: boolean; problems: string[]; hasDraft: boolean; hasApplied: boolean;
+  graceDays: GraceDays; onGraceDays: (days: GraceDays) => void; majorChange: boolean; onMajorChange: (major: boolean) => void;
+  current: ResearchCourse; otherDrafts: ResearchCourse[];
   onCancel: () => void; onConfirm: () => void; onFix: (target: Section) => void;
 }) {
   const blocked = action === 'apply' && problems.length > 0;
+  // Both are always chosen: the change size for people who finished (and the notification), the time for people learning.
+  const involved = action === 'apply' ? [current, ...otherDrafts] : [current];
+  const choices = <>
+    <ChangeSizeChoice major={majorChange} onChange={onMajorChange} disabled={busy} />
+    <GraceDaysChoice value={graceDays} onChange={onGraceDays} disabled={busy} major={majorChange} />
+  </>;
   const title = blocked ? 'Chưa áp dụng được'
     : action === 'apply' ? 'Áp dụng cho doanh nghiệp?' : action === 'discard' ? 'Bỏ bản nháp?' : 'Gỡ bản doanh nghiệp?';
   const what = hasDraft ? 'bản nháp đang soạn' : hasApplied ? 'bản doanh nghiệp đang dùng' : 'nội dung chuẩn';
   return (
     <Modal open onClose={onCancel} title={title}
       footer={<>
-        <button type="button" className={smallButton} disabled={busy} onClick={onCancel}>{blocked ? 'Đóng' : 'Hủy'}</button>
-        {!blocked && <button type="button" className="btn btn-primary btn-small" disabled={busy} onClick={onConfirm}>
+        {/* The dialog renders outside the page (portal), where the builder's .btn styles do not reach. */}
+        <button type="button" className={SECONDARY_BUTTON} disabled={busy} onClick={onCancel}>{blocked ? 'Đóng' : 'Hủy'}</button>
+        {!blocked && <button type="button" className={PRIMARY_BUTTON} disabled={busy} onClick={onConfirm}>
           {action === 'apply' ? 'Áp dụng' : action === 'discard' ? 'Bỏ bản nháp' : 'Gỡ bản doanh nghiệp'}
         </button>}
       </>}>
@@ -348,11 +394,17 @@ function EditorActionDialog({ action, busy, problems, hasDraft, hasApplied, onCa
           })}
         </ul>
       </> : action === 'apply' ? <>
-        <p>Nhân viên sẽ học, làm câu hỏi ôn tập, bài kiểm tra đầu vào và bài cuối khóa theo {what}, cùng tên, mục tiêu và hướng dẫn thực hành bạn đang nhập. Mentor chấm như cũ.</p>
-        <p className="mt-2">Ai đang học hoặc đã đạt khóa này đều học lại từ đầu; chứng nhận đã cấp vẫn được giữ.</p>
+        <p>Người bắt đầu học từ giờ sẽ học, làm câu hỏi ôn tập, bài kiểm tra đầu vào và bài cuối khóa theo {what}, cùng tên, mục tiêu và hướng dẫn thực hành bạn đang nhập. Mentor chấm như cũ.</p>
+        {otherDrafts.length > 0 && (
+          <p className="mt-3 text-sm">Áp dụng cùng lúc {involved.length} khóa đã sửa: {involved.map((item) => item.code).join(', ')}.</p>
+        )}
+        {choices}
       </> : action === 'discard'
         ? <p>Bỏ các thay đổi chưa áp dụng (nội dung và thông tin khóa học). Nhân viên không bị ảnh hưởng.</p>
-        : <p>Nhân viên quay về nội dung chuẩn của DigiTalent và học lại khóa từ đầu; chứng nhận đã cấp vẫn được giữ. Bản doanh nghiệp được giữ lại làm bản nháp để bạn sửa và áp dụng lại.</p>}
+        : <>
+          <p>Người bắt đầu học từ giờ học nội dung chuẩn của DigiTalent. Bản doanh nghiệp được giữ lại làm bản nháp để bạn sửa và áp dụng lại.</p>
+          {choices}
+        </>}
     </Modal>
   );
 }

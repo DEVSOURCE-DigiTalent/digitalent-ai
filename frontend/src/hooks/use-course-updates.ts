@@ -35,7 +35,8 @@ export function useApplyCourseUpdate() {
   const queryClient = useQueryClient();
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: (versionNo: number) => courseUpdateService.apply(versionNo),
+    mutationFn: ({ versionNo, graceDays, majorChange = false }: { versionNo: number; graceDays: number; majorChange?: boolean }) =>
+      courseUpdateService.apply(versionNo, graceDays, majorChange),
     onSuccess: (data) => {
       queryClient.setQueryData(COURSE_UPDATES_KEY, data);
       return refresh();

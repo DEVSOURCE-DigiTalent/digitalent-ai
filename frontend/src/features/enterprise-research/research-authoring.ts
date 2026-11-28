@@ -4,7 +4,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import apiClient from '@/services/api-client';
 import { type CatalogBlock, type CatalogCourseDetail, type CatalogModule, type CatalogQuestion, type PlatformAsset } from '@/services/platform-catalog.service';
 import type { CourseBuilderService } from '@/features/platform/builder/course-builder-service';
-import { researchKeys, type ResearchCourseContent } from './research-api';
+import { researchKeys, type ResearchCourse, type ResearchCourseContent } from './research-api';
 
 /** problems = what must be fixed before the content shown can be applied (empty = ready). */
 type State = { revision: number; course: CatalogCourseDetail; hasDraft: boolean; hasApplied: boolean; problems: string[] };
@@ -55,6 +55,9 @@ export function useResearchAuthoring(courseId: string) {
           const saved = await handler(state);
           await client.cancelQueries({ queryKey: key });
           client.setQueryData(key, saved);
+          // Keep the course list in step: its draft mark and revision are what a multi-course apply sends.
+          client.setQueryData<ResearchCourse[]>(researchKeys.courses(userId), (list) => list?.map((item) =>
+            item.courseId === courseId ? { ...item, hasContentDraft: saved.hasDraft, editorRevision: saved.revision } : item));
           return saved;
         } catch (error) {
           if ((error as { response?: { status?: number } })?.response?.status === 409) {
@@ -152,15 +155,33 @@ export function useResearchAuthoring(courseId: string) {
     };
     return {
       service,
-      /** Employees learn and take the tests on the draft (or the content in use) from now on. */
-      apply: (info: ResearchCourseContent) => publish(async (state) =>
-        (await apiClient.post<{ data: State }>(`${base}/apply`, { revision: state.revision, info })).data.data).then(async (saved) => {
+      /**
+       * New learners learn and take the tests on the draft (or the content in use) from now on; those half-way through
+       * get graceDays (0 = at once) to finish the old content.
+       */
+      apply: (info: ResearchCourseContent, graceDays: number, majorChange = false) => publish(async (state) =>
+        (await apiClient.post<{ data: State }>(`${base}/apply`, { revision: state.revision, info, graceDays, majorChange })).data.data).then(async (saved) => {
         await changed();
         return saved;
       }),
-      /** Employees go back to the standard content; the company version becomes the draft. */
-      removeApplied: () => publish(async (state) => (await apiClient.delete<{ data: State }>(`${base}/apply`, {
-        params: { revision: state.revision },
+      /**
+       * Applies this course together with other edited ones in one go (all or nothing); each employee gets one notification
+       * listing every course. `others` = the other courses' ids and editor revisions (from the course list).
+       */
+      applyMany: (info: ResearchCourseContent, others: { courseId: string; revision: number }[], graceDays: number, majorChange = false) =>
+        publish(async (state) => {
+          await apiClient.post('/enterprise/rnd/apply', {
+            courses: [{ courseId, revision: state.revision, info }, ...others], graceDays, majorChange,
+          });
+          // Each course got a new revision (a new id): the page picks it again by code once the list is reloaded.
+          return { ...state, revision: state.revision + 1, hasDraft: false, hasApplied: true, problems: [] };
+        }).then(async (saved) => {
+          await changed();
+          return saved;
+        }),
+      /** Employees go back to the standard content (after graceDays for those half-way); the company version becomes the draft. */
+      removeApplied: (graceDays: number, majorChange = false) => publish(async (state) => (await apiClient.delete<{ data: State }>(`${base}/apply`, {
+        params: { revision: state.revision, graceDays, majorChange },
       })).data.data).then(async (saved) => {
         await changed();
         return saved;
@@ -172,7 +193,7 @@ export function useResearchAuthoring(courseId: string) {
         return saved;
       }),
     };
-  }, [base, client, key, resource, userId]);
+  }, [base, client, courseId, key, resource, userId]);
 
   return { ...query, ...editor };
 }

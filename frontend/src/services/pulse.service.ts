@@ -138,6 +138,10 @@ export interface PulsePreAssessmentBrief {
 
 export interface PulseCourseSummary {
   courseId: string;
+  /** Set while the employee learns old content of a course that got new content: the day it switches (ISO). */
+  contentSwitchAt?: string | null;
+  /** Minor change: on that day the employee goes on with the new content and keeps the progress (major: starts again). */
+  contentSwitchKeepsProgress?: boolean;
   code: string;
   title: string;
   categoryId: string;

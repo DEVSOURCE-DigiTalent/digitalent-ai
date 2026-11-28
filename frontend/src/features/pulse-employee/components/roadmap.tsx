@@ -6,6 +6,7 @@ import { courseLabel, courseStatusText, courseTone, doneLabel, showsProgress } f
 import { capNote, levelName, pad2 } from '../lib/labels';
 import { isBeyond, meetsRequirement, remainingRequired, requirementSource, roadmapDomains, visibleCourses } from '../lib/requirement';
 import { PULSE_PATHS } from '../lib/paths';
+import { contentSwitch } from '../lib/content-switch';
 import { Bar, PuLink } from './ui';
 
 export function toSentenceCase(str: string): string {
@@ -202,6 +203,7 @@ function PlanCell({
   const isWaiting = course.slotStatus === 'PRE_REVIEW' || course.slotStatus === 'IN_REVIEW';
   const isPurchaseNeeded = course.slotStatus === 'PURCHASE_NEEDED';
   const isLocked = course.slotStatus === 'AFTER_PRIOR_LEVEL' || course.zone === 'ABOVE_CEILING';
+  const switchInfo = isDone ? null : contentSwitch(course.contentSwitchAt);
 
   const statusClass = isDone
     ? 'is-completed'
@@ -241,6 +243,11 @@ function PlanCell({
             <span className="pu-mcard-badge waiting" title="Chờ đánh giá bài kiểm tra">
               <Clock size={10} /> Chờ
             </span>
+          )}
+          {switchInfo && (
+            <span className="pu-mcard-badge attention"
+              title={translateUi(`Khóa chuyển sang nội dung mới ngày ${switchInfo.date}. Học xong trước hạn để giữ kết quả.`)}>
+              <Clock size={10} />{translateUi(` Đổi ${switchInfo.date}`)}</span>
           )}
           {isTarget && (
             <span className={`pu-mcard-badge ${requirementGap ? 'attention' : 'target'}`} title="Mức tối thiểu doanh nghiệp yêu cầu">
