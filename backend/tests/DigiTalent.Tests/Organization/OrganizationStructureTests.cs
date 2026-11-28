@@ -7,6 +7,7 @@ using DigiTalent.Application.UseCases.JobArchitecture.JobPositions;
 using DigiTalent.Application.UseCases.Organization.Access;
 using DigiTalent.Application.UseCases.Organization.Invitations;
 using DigiTalent.Application.UseCases.Organization.Members;
+using DigiTalent.Application.UseCases.Organization.Research;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
@@ -167,6 +168,70 @@ public class OrganizationStructureTests
         // The link works only once
         var reuse = () => f.Activate(token, "Again");
         await reuse.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task ResearchInvitation_LeavesTheAccountOutOfTheWorkforce_AndSwitchingResearchOffRevokesIt()
+    {
+        var f = await Fixture.CreateAsync();
+        var email = (string name) => $"{name}_{Guid.NewGuid():N}@test.local";
+        var unplacedBefore = (await f.ListMembers(new GetPagedMembersUseCaseInput { PageIndex = 1, PageSize = 100 })).Summary.WithoutPosition;
+
+        // R&D switched off: no R&D invitation.
+        var refused = await f.Invite(new InviteMemberRow { Email = email("rnd0"), FullName = "R&D", Role = MemberRoles.Research });
+        refused.Rejected.Should().ContainSingle().Which.Reason.Should().Contain("Bật tính năng R&D");
+
+        // R&D on: a department or position sent with the row is dropped, and the account gets no employee profile
+        // (before, it fell into the first department without a position and counted as "chưa có vị trí").
+        await f.SetResearchAsync(true);
+        var first = email("rnd1");
+        var invite = await f.Invite(new InviteMemberRow
+        {
+            Email = first, FullName = "Thảo Vy", Role = MemberRoles.Research,
+            DepartmentId = f.World.DepartmentA.Id, JobPositionId = f.World.DataAnalyst.Id,
+        });
+        var invitation = await f.Context.MemberInvitations.AsNoTracking().SingleAsync(i => i.Email == first);
+        invitation.DepartmentId.Should().BeNull();
+        invitation.JobPositionId.Should().BeNull();
+
+        var activated = await f.Activate(invite.Created.Single().Token!, null);
+        activated.EmployeeId.Should().BeNull();
+        (await f.Context.Employees.AnyAsync(e => e.UserId == activated.UserId)).Should().BeFalse();
+        var member = await f.GetMember(activated.UserId);
+        member.Roles.Should().Equal(MemberRoles.Research);
+        member.DepartmentId.Should().BeNull();
+        (await f.ListMembers(new GetPagedMembersUseCaseInput { PageIndex = 1, PageSize = 100 })).Summary.WithoutPosition
+            .Should().Be(unplacedBefore);
+
+        // An Owner invited without a department is not dropped into the first one either.
+        var coOwner = await f.Invite(new InviteMemberRow { Email = email("owner2"), FullName = "Đồng chủ", Role = MemberRoles.Owner });
+        (await f.Activate(coOwner.Created.Single().Token!, null)).EmployeeId.Should().BeNull();
+
+        // Switching R&D off revokes the open R&D invitations (an employee invitation stays).
+        var second = email("rnd2");
+        var pending = await f.Invite(
+            new InviteMemberRow { Email = second, FullName = "Quốc Bảo", Role = MemberRoles.Research },
+            new InviteMemberRow { Email = email("nv"), FullName = "Nhân viên", Role = MemberRoles.Employee,
+                DepartmentId = f.World.DepartmentA.Id, JobPositionId = f.World.DataAnalyst.Id });
+        pending.Created.Should().HaveCount(2);
+        (await f.ResearchAccessAsync()).PendingInvitations.Should().Be(1);
+        await f.SetResearchAsync(false);
+        var statuses = await f.Context.MemberInvitations.AsNoTracking()
+            .Where(i => pending.Created.Select(c => c.Email).Contains(i.Email)).ToDictionaryAsync(i => i.Email, i => i.Status);
+        statuses[second].Should().Be(Statuses.MemberInvitation.Revoked);
+        statuses.Values.Should().ContainSingle(status => status == Statuses.MemberInvitation.Pending);
+        var late = () => f.Activate(pending.Created.Single(c => c.Email == second).Token!, null);
+        await late.Should().ThrowAsync<NotFoundException>();
+
+        // An R&D invitation still open while R&D is off (switched off elsewhere) cannot open an account.
+        await f.SetResearchAsync(true);
+        var third = await f.Invite(new InviteMemberRow { Email = email("rnd3"), FullName = "R&D 3", Role = MemberRoles.Research });
+        var setting = await f.Context.SystemSettings.SingleAsync(s => s.OrganizationId == f.World.Organization.Id && s.Key == "rnd.enabled");
+        setting.Value = "false";
+        await f.Context.SaveChangesAsync();
+        var off = () => f.Activate(third.Created.Single().Token!, null);
+        (await off.Should().ThrowAsync<ConflictException>()).WithMessage(ActivateInvitationUseCase.ResearchOffMessage);
     }
 
     [Fact]
@@ -505,6 +570,12 @@ public class OrganizationStructureTests
 
         public Task<GetMemberByIdUseCaseOutput> GetMember(Guid id) =>
             new GetMemberByIdUseCase(Context, CurrentUser, Directory).ExecuteAsync(new GetMemberByIdUseCaseInput { Id = id });
+
+        private EnterpriseResearch Research() => new(Context, CurrentUser, new Application.UseCases.Pulse.PulseCatalogReader(Context));
+
+        public Task<bool> SetResearchAsync(bool enabled) => Research().SetEnabledAsync(enabled);
+
+        public Task<ResearchAccess> ResearchAccessAsync() => Research().GetAccessAsync();
 
         public Task<UpdateMemberUseCaseOutput> Update(UpdateMemberUseCaseInput input) =>
             new UpdateMemberUseCase(Context, CurrentUser, Permissions.Object, Audit.Object, Directory).ExecuteAsync(input);

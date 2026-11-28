@@ -49,10 +49,19 @@ public sealed partial class EnterpriseResearch(IApplicationDbContext context, IC
         return await IsEnabledAsync(context, orgId);
     }
 
+    /// <summary>Turning R&amp;D off also revokes the R&amp;D invitations not activated yet: they would open an account with nothing to do.</summary>
     public async Task<bool> SetEnabledAsync(bool enabled)
     {
         var orgId = await RequireRoleAsync(ownerOnly: true);
-        await context.ExecuteInSerializableTransactionAsync(() => WriteAsync(orgId, EnabledKey, enabled));
+        await context.ExecuteInSerializableTransactionAsync(async () =>
+        {
+            if (!enabled)
+            {
+                foreach (var invitation in await OpenResearchInvitations(context, orgId).ToListAsync())
+                    invitation.Status = Statuses.MemberInvitation.Revoked;
+            }
+            await WriteAsync(orgId, EnabledKey, enabled);
+        });
         return enabled;
     }
 
