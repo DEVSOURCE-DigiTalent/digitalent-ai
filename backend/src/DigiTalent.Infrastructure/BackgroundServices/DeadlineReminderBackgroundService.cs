@@ -143,7 +143,7 @@ public class DeadlineReminderBackgroundService : BackgroundService
                             _logger.LogWarning(ex, "[DeadlineReminderBackgroundService] Realtime noti failed for user {UserId}", emp.UserId.Value);
                         }
 
-                        if (!string.IsNullOrWhiteSpace(emp.WorkEmail))
+                        if (!string.IsNullOrWhiteSpace(emp.WorkEmail) && !DemoEmailGuard.IsDemoAddress(emp.WorkEmail))
                         {
                             var appUrl = urlResolver.GetFrontendBaseUrl();
                             var actionUrl = $"{appUrl}/enterprise/my-learning";

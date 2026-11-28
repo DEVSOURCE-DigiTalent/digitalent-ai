@@ -2,6 +2,7 @@ using DigiTalent.Application.Common.Authorization;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Organization.Members;
+using DigiTalent.Application.UseCases.Organization.Research;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Organization.Access;
 
 /// <summary>
-/// The 3 enterprise roles of the "Phân quyền" screen (OW-13): plain-language description, permission codes of the
+/// The enterprise roles of the "Phân quyền" screen (OW-13): plain-language description, permission codes of the
 /// underlying system role (read from role_permissions), active members holding it, and whether the caller may grant it.
 /// </summary>
 public class GetRolesUseCase : IUseCase<GetRolesUseCaseInput, GetRolesUseCaseOutput>
@@ -29,6 +30,7 @@ public class GetRolesUseCase : IUseCase<GetRolesUseCaseInput, GetRolesUseCaseOut
     {
         var organizationId = _currentUser.GetRequiredOrganizationId();
         var canGrantRoles = await _permissionService.HasAnyAsync(_currentUser.Roles, new[] { Permissions.UserRole.RoleAssignBusiness });
+        var canGrantResearch = canGrantRoles && await EnterpriseResearch.IsEnabledAsync(_context, organizationId);
 
         // System role codes of every active account of the organization
         var holders = await (
@@ -54,7 +56,7 @@ public class GetRolesUseCase : IUseCase<GetRolesUseCaseInput, GetRolesUseCaseOut
                 Can = description.Can.ToList(),
                 Permissions = permissions.OrderBy(code => code, StringComparer.Ordinal).ToList(),
                 MemberCount = holders.Where(h => roleCodes.Contains(h.Code)).Select(h => h.Id).Distinct().Count(),
-                Assignable = canGrantRoles,
+                Assignable = description.RoleCode == Roles.Research ? canGrantResearch : canGrantRoles,
             });
         }
 

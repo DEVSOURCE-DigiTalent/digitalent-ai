@@ -32,6 +32,12 @@ public sealed class EmailVerificationSender : IEmailVerificationSender
         string otp,
         CancellationToken cancellationToken = default)
     {
+        if (DemoEmailGuard.IsDemoAddress(toEmail))
+        {
+            _logger.LogInformation("[EmailVerificationSender] Skipped SMTP for demo address {Email}.", toEmail);
+            return null;
+        }
+
         var smtp = _options.Smtp;
         var isDev = _options.Security.IsDevelopment;
 

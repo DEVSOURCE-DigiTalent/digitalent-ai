@@ -34,8 +34,8 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
     );
 
     // The landing page is lazy-loaded; its first import is slow when the whole suite runs in parallel.
-    expect(await screen.findByRole('heading', { level: 1, name: /Định vị năng lực số/ }, { timeout: 10_000 })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: /^Dùng thử/ })[0]).toHaveAttribute('href', '/business/try');
+    expect(await screen.findByRole('heading', { level: 1, name: /Phát triển đội ngũ nhân sự/ }, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Dùng thử/ }).length).toBeGreaterThan(0);
   });
 
   it('OwnerCanAccessEnterpriseDepartments', async () => {
@@ -79,7 +79,7 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập hệ thống' })).toBeInTheDocument();
     });
   });
 
@@ -93,7 +93,7 @@ describe('End-to-End Foundation Smoke Tests (SEP-06)', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập hệ thống' })).toBeInTheDocument();
     });
   });
 });

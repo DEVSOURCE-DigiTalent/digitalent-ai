@@ -9,6 +9,42 @@ import { detectPromptCopy } from '@/lib/pulse-prompt-guard';
 export { detectPromptCopy };
 export const ESSAY_PASS_SCORE_PERCENT = 70;
 
+export function findCriterionEvidence(
+  essay: string,
+  excerpt: string | null | undefined,
+  reference: string,
+): { start: number; end: number; source: 'quote' | 'related' } | null {
+  if (excerpt) {
+    const start = essay.indexOf(excerpt);
+    if (start >= 0) return { start, end: start + excerpt.length, source: 'quote' };
+  }
+  // An explicit null means the latest analysis found no suitable passage.
+  if (excerpt !== undefined) return null;
+
+  const normalize = (value: string) =>
+    value.toLocaleLowerCase('vi').normalize('NFC').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  const words = normalize(reference).split(' ');
+  const phrases = new Set(words.slice(0, -2).map((_, idx) => words.slice(idx, idx + 3).join(' '))
+    .filter((phrase) => phrase.length >= 13));
+  let best: { start: number; end: number; source: 'related' } | null = null;
+  let bestScore = 0;
+
+  for (const match of essay.matchAll(/[^\r\n.!?;]+[.!?;]?/g)) {
+    const passage = match[0].trim();
+    const normalizedPassage = ` ${normalize(passage)} `;
+    let score = 0;
+    for (const phrase of phrases) {
+      if (normalizedPassage.includes(' ' + phrase + ' ')) score += phrase.length;
+    }
+    if (score > bestScore) {
+      const start = match.index + match[0].indexOf(passage);
+      best = { start, end: start + passage.length, source: 'related' };
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
 export interface EssayGuidanceSignal {
   tone: 'ok' | 'warn' | 'bad';
   label: string;

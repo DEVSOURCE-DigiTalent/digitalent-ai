@@ -27,6 +27,7 @@ import { organizationErrorMessage } from '@/lib/organization-errors';
 import { assignableRoles } from '@/lib/role-policy';
 import { isEnterpriseTrial } from '@/lib/navigation';
 import type { InviteResult, MemberRole } from '@/types/commerce';
+import { useResearchSettings } from '@/features/enterprise-research/research-api';
 import { roleLabel } from '../member-labels';
 import {
   departmentRoleError,
@@ -71,7 +72,9 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
   useUiLanguage();
   const user = useCurrentUser((s) => s.user)!;
   const invite = useInviteMembers();
-  const roles = assignableRoles(user.roles).filter((role) => role === 'EMPLOYEE' || role === 'MANAGER');
+  const research = useResearchSettings(open && user.roles.includes('OWNER'));
+  const roles = assignableRoles(user.roles).filter((role) =>
+    role === 'EMPLOYEE' || role === 'MANAGER' || (role === 'RND' && research.data === true));
   const departments = useDepartments({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
   const positions = useJobPositions({ pageSize: 100, status: 'ACTIVE' }).data?.items ?? [];
 
@@ -110,8 +113,9 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
     const email = draft.email.trim().toLowerCase();
     if (!draft.fullName.trim()) return setDraftError('Vui lòng nhập họ và tên.');
     if (!EMAIL_PATTERN.test(email)) return setDraftError('Địa chỉ email không hợp lệ.');
-    if (draft.role !== 'OWNER' && !draft.departmentId) return setDraftError('Vui lòng chọn phòng ban.');
-    if (!draft.jobPositionId) return setDraftError('Vui lòng chọn vị trí công việc.');
+    if (draft.role === 'RND' && research.data !== true) return setDraftError('Bật R&D trước khi mời thành viên.');
+    if (draft.role !== 'OWNER' && draft.role !== 'RND' && !draft.departmentId) return setDraftError('Vui lòng chọn phòng ban.');
+    if (draft.role !== 'RND' && !draft.jobPositionId) return setDraftError('Vui lòng chọn vị trí công việc.');
     if (queue.some((q) => q.email === email)) return setDraftError('Email này đã có trong danh sách chờ gửi.');
 
     const department = departments.find((item) => item.id === draft.departmentId);
@@ -756,7 +760,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
               </div>
 
               <div className="space-y-1">
-                <label htmlFor={`${base}-department`} className="text-xs font-semibold text-slate-700">{translateUi("Phòng ban ")}{draft.role !== 'OWNER' ? '*' : ''}
+                <label htmlFor={`${base}-department`} className="text-xs font-semibold text-slate-700">{translateUi("Phòng ban ")}{draft.role !== 'OWNER' && draft.role !== 'RND' ? '*' : ''}
                 </label>
                 <select
                   id={`${base}-department`}
@@ -774,7 +778,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
               </div>
 
               <div className="space-y-1">
-                <label htmlFor={`${base}-position`} className="text-xs font-semibold text-slate-700">{translateUi("Vị trí công việc ")}{'*'}
+                <label htmlFor={`${base}-position`} className="text-xs font-semibold text-slate-700">{translateUi("Vị trí công việc ")}{draft.role !== 'RND' ? '*' : ''}
                 </label>
                 <select
                   id={`${base}-position`}

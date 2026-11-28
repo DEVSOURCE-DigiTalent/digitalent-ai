@@ -15,9 +15,10 @@ import { WORKSPACES } from '@/lib/roles';
 import { PLATFORM_SCREENS } from '@/lib/screens/platform';
 import { PLATFORM_SIDEBAR } from '@/lib/sidebars/platform';
 import { MANAGER_SIDEBAR } from '@/lib/sidebars/manager';
+import { RND_SIDEBAR } from '@/lib/sidebars';
 import type { SidebarConfig } from '@/lib/sidebars/types';
 import { findEnterpriseScreen } from '@/lib/screens/enterprise';
-import { useDirectionalHeader } from './use-directional-header';
+import { useDirectionalHeader, useScrollState } from './use-directional-header';
 import './owner-header.css';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { useTrialLock } from '@/hooks/use-trial-lock';
@@ -28,26 +29,6 @@ interface TopbarProps {
   onOpenMobileNav?: () => void;
   isMobileNavOpen?: boolean;
   autoHide?: boolean;
-}
-
-function useScrollState() {
-  const [scrolled, setScrolled] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-
-  useEffect(() => {
-    const handler = () => {
-      const y = window.scrollY;
-      setScrolled(y > 10);
-      const winHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (winHeight > 0) {
-        setScrollProgress(Math.min(100, Math.max(0, (y / winHeight) * 100)));
-      }
-    };
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
-  }, []);
-
-  return { scrolled, scrollProgress };
 }
 
 function QuickCreateMenu() {
@@ -209,7 +190,7 @@ export function Topbar({ portal, sidebarConfig, onOpenMobileNav, isMobileNavOpen
             </button>
 
             {/* Opens the guide again (its last step points here: data-tour="help"). */}
-            {!isManager && <button
+            {!isManager && sidebarConfig !== RND_SIDEBAR && <button
               type="button"
               data-tour="help"
               onClick={() => {

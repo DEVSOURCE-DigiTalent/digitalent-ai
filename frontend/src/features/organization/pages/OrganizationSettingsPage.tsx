@@ -1,20 +1,37 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { Building2, Globe2, Timer, Save, LockKeyhole, RotateCcw } from 'lucide-react';
+import { Building2, FlaskConical, Globe2, Timer, Save, LockKeyhole, RotateCcw } from 'lucide-react';
 import { useOrganization, useUpdateOrganizationSettings } from '@/hooks/use-organization';
 import { ORGANIZATION_INDUSTRIES, ORGANIZATION_SIZES } from '@/lib/reference-positions';
 import { apiErrorMessage } from '@/lib/utils';
 import { AccountWorkspace } from '@/features/account/components/AccountWorkspace';
+import { Modal } from '@/components/shared/Modal';
+import { useResearchAccess, useResearchSettings, useSetResearchEnabled } from '@/features/enterprise-research/research-api';
 const TIMEZONES=[{value:'Asia/Ho_Chi_Minh',label:'Việt Nam (UTC+7)'},{value:'Asia/Bangkok',label:'Bangkok (UTC+7)'},{value:'Asia/Singapore',label:'Singapore (UTC+8)'},{value:'UTC',label:'UTC'}];
 const schema=z.object({name:z.string().trim().min(2,'Tên tổ chức cần ít nhất 2 ký tự'),industry:z.string().min(1,'Chọn ngành hoạt động'),size:z.string().min(1,'Chọn quy mô'),timezone:z.string().min(1,'Chọn múi giờ'),defaultAssignmentDays:z.coerce.number().int('Nhập số ngày nguyên').min(1,'Ít nhất 1 ngày').max(365,'Tối đa 365 ngày')});
 type FormValues=z.input<typeof schema>;
 export function OrganizationSettingsPage(){
   useUiLanguage();
   const {data,isLoading,isError,refetch}=useOrganization();const save=useUpdateOrganizationSettings();
+  const research = useResearchSettings();
+  const access = useResearchAccess();
+  const setResearch = useSetResearchEnabled();
+  // Switching R&D off while R&D accounts work: they lose access and the owner takes over, so ask first.
+  const [confirmOff, setConfirmOff] = useState(false);
+  const researchers = access.data?.researchers ?? 0;
+  const toggleResearch = async (enabled: boolean) => {
+    try {
+      await setResearch.mutateAsync(enabled);
+      setConfirmOff(false);
+      toast.success(enabled ? 'Đã bật R&D: tài khoản R&D sửa khóa học và quyết bản cập nhật.' : 'Đã tắt R&D: bạn tự sửa khóa học và quyết bản cập nhật.');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Không lưu được cài đặt R&D.'));
+    }
+  };
   const {register,handleSubmit,reset,watch,formState:{errors,isDirty}}=useForm<FormValues>({resolver:zodResolver(schema)});
   useEffect(()=>{if(data)reset({name:data.name,industry:data.industry,size:data.size,timezone:data.timezone,defaultAssignmentDays:data.defaultAssignmentDays});},[data,reset]);
   const onSubmit=handleSubmit(async values=>{try{const parsed=schema.parse(values);await save.mutateAsync(parsed);reset(parsed);toast.success(translateUi('Đã lưu cài đặt tổ chức.'));}catch(error){toast.error(apiErrorMessage(error,'Không lưu được cài đặt tổ chức.'));}});
@@ -22,6 +39,26 @@ export function OrganizationSettingsPage(){
   return <AccountWorkspace title={translateUi("Cài đặt tổ chức")} section="organization">
     {isLoading?<div className="aw-card aw-state" role="status">{translateUi("Đang tải cài đặt tổ chức…")}</div>:isError||!data?<div className="aw-alert aw-alert--error" role="alert">{translateUi("Không tải được cài đặt tổ chức. ")}<button onClick={()=>void refetch()}>{translateUi("Thử lại")}</button></div>:<>
       <section className="aw-org-banner"><span className="aw-org-mark"><Building2 size={30}/></span><div><span className="aw-eyebrow">{translateUi("TỔ CHỨC CỦA BẠN")}</span><h2>{data.name}</h2></div>{data.ownerName&&<div className="aw-org-owner"><span>{translateUi("Chủ doanh nghiệp")}</span><strong>{data.ownerName}</strong></div>}</section>
+      <section className="aw-card">
+        <div className="aw-section-title"><span className="aw-icon"><FlaskConical size={20} /></span><div>
+          <h2>R&D doanh nghiệp</h2>
+          <p>Bật khi công ty có bộ phận R&D: mời hoặc cấp vai trò R&D, tài khoản R&D sửa, áp dụng khóa học và quyết bản cập nhật, bạn chỉ xem. Công ty không có R&D thì để tắt: bạn tự làm. Đổi qua lại thì khóa đã áp dụng vẫn giữ cho nhân viên.</p>
+        </div></div>
+        {research.isError ? <button type="button" className="aw-secondary" onClick={() => void research.refetch()}>Tải lại cài đặt R&D</button> : (
+          <label className="inline-flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" role="switch" checked={research.data === true}
+              disabled={research.isPending || setResearch.isPending} onChange={(event) => { if (!event.target.checked && researchers > 0) setConfirmOff(true); else void toggleResearch(event.target.checked); }} />
+            Bật tính năng R&D
+          </label>
+        )}
+      </section>
+      <Modal open={confirmOff} onClose={() => !setResearch.isPending && setConfirmOff(false)} title="Tắt R&D?" size="sm"
+        footer={<>
+          <button type="button" className="aw-secondary" disabled={setResearch.isPending} onClick={() => setConfirmOff(false)}>Hủy</button>
+          <button type="button" className="aw-primary" disabled={setResearch.isPending} onClick={() => void toggleResearch(false)}>Tắt R&D</button>
+        </>}>
+        <p>{researchers} tài khoản R&D sẽ không sửa được khóa học nữa. Từ giờ bạn tự sửa, áp dụng khóa học và quyết bản cập nhật. Khóa R&D đã áp dụng vẫn giữ cho nhân viên.</p>
+      </Modal>
       <form onSubmit={onSubmit} noValidate className="aw-org-form">
         <section className="aw-card"><div className="aw-section-title"><span className="aw-icon"><Building2 size={20}/></span><div><h2>{translateUi("Thông tin doanh nghiệp")}</h2><p>{translateUi("Thông tin sử dụng trong không gian làm việc.")}</p></div></div>
           <div className="aw-org-fields"><label className="aw-field" htmlFor="org-name">{translateUi("Tên tổ chức")}<span className="aw-input-icon"><LockKeyhole size={15}/><input id="org-name" readOnly aria-invalid={!!errors.name} {...register('name')}/></span><small>{translateUi("Tên tổ chức đã được xác lập khi đăng ký.")}</small>{errors.name&&<span className="aw-field-error" role="alert">{translateUi(errors.name.message)}</span>}</label>

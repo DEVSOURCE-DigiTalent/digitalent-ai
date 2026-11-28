@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within, waitFor } from '@testing-library/rea
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import * as assignmentHooks from '@/hooks/use-assignments';
 import * as competencyHooks from '@/hooks/use-competencies';
+import * as courseUpdateHooks from '@/hooks/use-course-updates';
 import { OwnerCourseCatalogPage } from '../pages/OwnerCourseCatalogPage';
 import type { CourseListItem } from '@/services/assignment.service';
 
@@ -16,7 +17,8 @@ const courses = [
   { ...course('three-i', 'A3-I', 'Nội dung chuyên nghiệp'), level: 2, assignedCount: 5 },
 ];
 
-function renderCatalog(path = '/enterprise/courses', items = courses) {
+function renderCatalog(path = '/enterprise/courses', items = courses, updates?: unknown) {
+  vi.spyOn(courseUpdateHooks, 'useCourseUpdates').mockReturnValue({ data: updates } as never);
   vi.spyOn(competencyHooks, 'useCompetencyCategories').mockReturnValue({ data: [] } as never);
   vi.spyOn(assignmentHooks, 'useCourseCatalog').mockReturnValue({ data: { items }, isLoading: false, isError: false } as never);
   return render(
@@ -123,5 +125,23 @@ describe('OwnerCourseCatalogPage', () => {
 
     fireEvent.click(within(spotlight()).getByRole('button', { name: 'Bỏ M3-I khỏi giỏ' }));
     expect(screen.queryByRole('region', { name: 'Giỏ khóa học' })).toBeNull();
+  });
+
+  it('points to the course update page only while a newer DigiTalent version waits for the company', () => {
+    const { unmount } = renderCatalog('/enterprise/courses', courses, { status: 'UP_TO_DATE', latestVersionNo: 2, courses: [] });
+    expect(screen.queryByRole('link', { name: /Có bản khóa học mới/ })).toBeNull();
+    unmount();
+
+    renderCatalog('/enterprise/courses', courses, {
+      status: 'AVAILABLE', currentVersionNo: 1, latestVersionNo: 2,
+      courses: [{ courseId: 'p1', code: 'M1-F', title: 'Dữ liệu cơ bản', level: 1, kind: 'UPDATED', owned: true, learnersInProgress: 0, learnersPassed: 0 }],
+    });
+    expect(screen.getByRole('link', { name: /Có bản khóa học mới v2 từ DigiTalent/ })).toHaveAttribute('href', '/enterprise/courses/updates');
+  });
+
+  it('keeps a quiet way back to the update page after the company kept its version', () => {
+    renderCatalog('/enterprise/courses', courses, { status: 'KEPT', currentVersionNo: 1, latestVersionNo: 2, courses: [] });
+    expect(screen.queryByRole('link', { name: /Có bản khóa học mới/ })).toBeNull();
+    expect(screen.getByRole('link', { name: /Công ty đang giữ v1, chưa áp dụng v2/ })).toHaveAttribute('href', '/enterprise/courses/updates');
   });
 });

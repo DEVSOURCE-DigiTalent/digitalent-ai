@@ -18,9 +18,11 @@ public class GetMyFeedbacksUseCase : IUseCase<GetMyFeedbacksInput, PagedList<Fee
 
     public async Task<PagedList<FeedbackDto>> ExecuteAsync(GetMyFeedbacksInput input)
     {
-        var query = _context.UserFeedbacks.AsNoTracking()
-            .Where(f => f.UserId == _currentUser.UserId!.Value)
-            .OrderByDescending(f => f.CreatedAt);
+        var mine = _context.UserFeedbacks.AsNoTracking()
+            .Where(f => f.UserId == _currentUser.UserId!.Value);
+        if (!string.IsNullOrEmpty(input.Type)) mine = mine.Where(f => f.Type == input.Type);
+        if (!string.IsNullOrEmpty(input.Status)) mine = mine.Where(f => f.Status == input.Status);
+        var query = mine.OrderByDescending(f => f.CreatedAt);
 
         var totalItems = await query.CountAsync();
         var items = await query

@@ -11,6 +11,9 @@ public class GetPulseFinalReviewsUseCaseOutput
     public int FlaggedCount { get; set; }
     /// <summary>Bài đã hoàn tất thẩm định (APPROVED / NOT_YET) khi tải với includeReviewed = true.</summary>
     public int ReviewedCount { get; set; }
+    public int TotalCount { get; set; }
+    public int? Page { get; set; }
+    public int? PageSize { get; set; }
     public List<PulseCriterionDto> Criteria { get; set; } = new();
     public List<PulseFinalReviewItemDto> Items { get; set; } = new();
 }

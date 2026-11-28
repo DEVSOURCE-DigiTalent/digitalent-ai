@@ -59,6 +59,8 @@ public static class DependencyInjection
         services.AddScoped<SkillGapRunReader>();
         services.AddScoped<RecommendationWeightsProvider>();
         services.AddScoped<MemberDirectory>();
+        services.AddScoped<DigiTalent.Application.UseCases.Organization.Research.EnterpriseResearch>();
+        services.AddScoped<DigiTalent.Application.UseCases.Learning.ContentAi.ContentAiAccess>();
         services.AddScoped<WorkforceReader>();
         services.AddScoped<LatestSkillGapRuns>();
         services.AddScoped<AnalyzedEmployees>();
@@ -90,6 +92,10 @@ public static class DependencyInjection
         services.AddScoped<PulseReviewScope>();
         services.AddScoped<PulseProctoring>();
         services.AddScoped<PulseRecordingReader>();
+
+        // Báo cáo hành vi khi làm bài cuối khóa (trong OW-21): đọc trong phạm vi người gọi; phân tích AI chạy ở nền.
+        services.AddScoped<DigiTalent.Application.UseCases.BehaviorReports.BehaviorReportReader>();
+        services.AddScoped<DigiTalent.Application.UseCases.BehaviorReports.ProctoringBehaviorAnalyzer>();
 
         // 8. Trần nhà năng lực của doanh nghiệp / phòng ban (OW-05)
         services.AddScoped<CapabilityCeilingReader>();

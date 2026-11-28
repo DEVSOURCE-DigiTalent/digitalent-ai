@@ -19,6 +19,7 @@ import type { PulseCourseDetail } from '@/services/pulse.service';
 import { LoadError, PageSkeleton } from '../components/ui';
 import { pad2, pulseErrorMessage } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
+import '@/features/platform/pulse-catalog.css';
 import '../pulse-skip-test.css';
 
 /**
@@ -88,6 +89,16 @@ function CourseView({ detail }: { detail: PulseCourseDetail }) {
 
         <h1 className="pu-c-main-title">{formattedTitle}</h1>
       </header>
+
+      {/* The company's R&D wrote the course itself; its practice guidance is the only thing shown apart. */}
+      {detail.enterpriseContent?.practice && (
+        <section className="pu-c-summary-card" aria-label="Hướng dẫn thực hành tại doanh nghiệp">
+          <div className="min-w-0 space-y-2 p-4">
+            <h2 className="text-base font-bold">Hướng dẫn thực hành tại doanh nghiệp</h2>
+            <p className="whitespace-pre-wrap break-words text-sm">{detail.enterpriseContent.practice}</p>
+          </div>
+        </section>
+      )}
 
       {/* ── 2. Thẻ Tiến độ & Hành động Trọng tâm ───────────────────────── */}
       <section className="pu-c-summary-card" aria-label="Tiến độ và bước tiếp theo">

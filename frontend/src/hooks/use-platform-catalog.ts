@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { platformCatalogService, type AssetCaptions, type CatalogCourseDetail } from '@/services/platform-catalog.service';
 import { PLATFORM_ADMIN_KEY } from './use-platform-admin';
 import { ASSIGNMENTS_KEY } from './use-assignments';
@@ -19,6 +19,8 @@ export const catalogKeys = {
   publishCheck: (versionNo: number | undefined) => [...CATALOG, 'publish-check', versionNo] as const,
   course: (versionNo: number | undefined, courseId: string | undefined) => [...CATALOG, 'course', versionNo, courseId] as const,
   captions: (assetId: string | undefined) => [...CATALOG, 'captions', assetId] as const,
+  organizationVersion: (organizationId: string | undefined, versionNo?: number) =>
+    [...CATALOG, 'organization-version', organizationId, versionNo] as const,
 };
 
 /**
@@ -106,7 +108,8 @@ export function useDiscardDraft() {
 export function usePublishVersion(versionNo: number) {
   const refresh = useRefreshCatalog();
   const queryClient = useQueryClient();
-  return useMutation({ mutationFn: (note?: string) => platformCatalogService.publishVersion(versionNo, note), onSuccess: async () => {
+  return useMutation({ mutationFn: ({ note, applyToAll }: { note?: string; applyToAll: boolean }) =>
+    platformCatalogService.publishVersion(versionNo, note, applyToAll), onSuccess: async () => {
     await Promise.all([
       refresh(versionNo),
       queryClient.invalidateQueries({ queryKey: ASSIGNMENTS_KEY }),
@@ -114,6 +117,25 @@ export function usePublishVersion(versionNo: number) {
       queryClient.invalidateQueries({ queryKey: catalogKeys.course(versionNo, undefined).slice(0, 4) }),
     ]);
   } });
+}
+
+/** The catalog version an organization learns from and the changes a move to versionNo (default: newest) brings. */
+export const useOrganizationCatalogVersion = (organizationId: string | undefined, versionNo?: number) =>
+  useQuery({
+    queryKey: catalogKeys.organizationVersion(organizationId, versionNo),
+    queryFn: () => platformCatalogService.getOrganizationCatalogVersion(organizationId!, versionNo),
+    enabled: Boolean(organizationId),
+    placeholderData: keepPreviousData,
+  });
+
+/** Moves one organization to a published version; refreshes the console (versions in use, organization profile). */
+export function useApplyOrganizationCatalogVersion(organizationId: string) {
+  const refresh = useRefreshCatalog();
+  return useMutation({
+    mutationFn: (body: { versionNo: number; reason?: string }) =>
+      platformCatalogService.applyOrganizationCatalogVersion(organizationId, body),
+    onSuccess: () => refresh(),
+  });
 }
 
 export function useUpdatePrices(versionNo: number) {

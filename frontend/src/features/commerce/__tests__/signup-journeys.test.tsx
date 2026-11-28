@@ -460,6 +460,6 @@ describe('email verification & routes (AUTH-07, T20, T22)', () => {
 describe('payment details are not shown to the wrong visitor', () => {
   it('sends a signed-out visitor from checkout to login', async () => {
     renderApp('/checkout');
-    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Đăng nhập hệ thống' })).toBeInTheDocument());
   });
 });

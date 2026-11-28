@@ -4,7 +4,8 @@ namespace DigiTalent.Application.UseCases.Pulse;
 
 /// <summary>
 /// Điểm rủi ro gian lận của một phiên làm bài có giám sát, tổng hợp từ nhật ký giám sát (canonical v3.4): rời tab / cửa sổ,
-/// mất một nguồn ghi và các khoảng khuôn mặt bất thường do trình duyệt tự nhận diện (vắng mặt, nhiều người, nhìn ra ngoài).
+/// mất một nguồn ghi và các khoảng khuôn mặt bất thường do trình duyệt tự nhận diện (vắng mặt, nhiều người, nhìn ra ngoài);
+/// v3.10: sao chép / dán (dán dài nặng hơn), không thao tác lâu, màn hình phụ.
 /// Chỉ để người chấm biết nên xem đoạn nào trước — không tự đánh trượt bài.
 /// </summary>
 public static class PulseProctoringRisk
@@ -24,6 +25,8 @@ public static class PulseProctoringRisk
     /// <summary>Hai sự kiện cách nhau không quá khoảng này được gộp thành một điểm đáng ngờ.</summary>
     public const long MergeGapMs = 10_000;
     public const int MaxMoments = 20;
+    /// <summary>Dán từ chừng này ký tự trở lên là dán dài (một đoạn văn soạn sẵn): nặng như nhiều người trước camera.</summary>
+    public const int LargePasteChars = 200;
 
     /// <summary>
     /// Điểm của mỗi loại: mỗi lần + mỗi 10 giây kéo dài (tối đa 3 lần điểm gốc cho một lần), tổng một loại không quá Cap.
@@ -40,7 +43,14 @@ public static class PulseProctoringRisk
         [Statuses.ProctoringEvent.MicStopped] = new(5, 1, 15, Medium),
         [Statuses.ProctoringEvent.FocusLost] = new(3, 1, 15, Low),
         [Statuses.ProctoringEvent.LookingAway] = new(3, 1, 20, Low),
+        [Statuses.ProctoringEvent.Paste] = new(6, 0, 30, Medium),
+        [Statuses.ProctoringEvent.SecondScreen] = new(10, 0, 10, Medium),
+        [Statuses.ProctoringEvent.Copy] = new(3, 0, 12, Low),
+        [Statuses.ProctoringEvent.Idle] = new(2, 1, 15, Low),
     };
+
+    /// <summary>Một lần dán dài (≥ <see cref="LargePasteChars"/> ký tự).</summary>
+    private static readonly Weight LargePaste = new(15, 0, 30, High);
 
     /// <summary>Sự kiện bật lại nguồn ghi khép khoảng mất nguồn tương ứng.</summary>
     private static readonly Dictionary<string, string> ResumedBy = new()
@@ -70,6 +80,11 @@ public static class PulseProctoringRisk
                 continue;
             }
 
+            if (e.Kind == Statuses.ProctoringEvent.Paste && IsLargePaste(e.Detail))
+            {
+                weight = LargePaste;
+            }
+
             var duration = e.DurationMs ?? DurationUntilResumed(ordered, i, end);
             var points = weight.PerEvent + Math.Min(weight.PerEvent * 2, weight.PerTenSeconds * (int)(duration / 10_000));
             scored.Add(new Scored(e.Kind, e.OffsetMs, e.OffsetMs + Math.Max(1000, duration), points, weight.Severity));
@@ -97,6 +112,10 @@ public static class PulseProctoringRisk
             Moments = MomentsOf(scored),
         };
     }
+
+    /// <summary>Lần dán có từ <see cref="LargePasteChars"/> ký tự trở lên.</summary>
+    public static bool IsLargePaste(string? detail) =>
+        Statuses.ProctoringEventDetail.ParseClipboard(detail) is { Chars: >= LargePasteChars };
 
     private static long DurationUntilResumed(List<PulseProctoringEventDto> ordered, int index, long end)
     {

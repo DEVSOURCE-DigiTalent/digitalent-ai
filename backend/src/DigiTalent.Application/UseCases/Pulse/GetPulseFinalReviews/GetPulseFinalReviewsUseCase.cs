@@ -65,7 +65,7 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         Guid OrganizationId,
         string FullName,
         string DepartmentName,
-        string? PositionName,
+        Guid? JobPositionId,
         Guid CourseId,
         string Code,
         string Title);
@@ -98,45 +98,119 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                     employee.OrganizationId,
                     employee.FullName,
                     DepartmentName = department.Name,
-                    PositionName = _context.JobPositions.Where(p => p.Id == employee.JobPositionId).Select(p => p.Name).FirstOrDefault(),
+                    employee.JobPositionId,
                     CourseId = course.Id,
                     course.Code,
                     course.Title,
                 })
             .ToListAsync();
 
-        var preRows = await (
+        var preRows = input.IncludeReviewed
+            ? await (
                     from preAssessment in _context.CoursePreAssessments.AsNoTracking()
                     join employee in employees.AsNoTracking() on preAssessment.EmployeeId equals employee.Id
                     join course in _context.Courses.AsNoTracking() on preAssessment.CourseId equals course.Id
                     join department in _context.Departments.AsNoTracking() on employee.DepartmentId equals department.Id
                     where (input.OrganizationId == null || employee.OrganizationId == input.OrganizationId)
                           // Bài cũ chờ chấm đã bị thay bằng bài kiểm tra đầu vào tự chấm: không còn vào hàng chờ; bài đã chấm chỉ còn là lịch sử.
-                          && input.IncludeReviewed && preAssessment.Decision != null
+                          && preAssessment.Decision != null
                     select new PreAssessmentRow(
                         preAssessment,
                         employee.Id,
                         employee.OrganizationId,
                         employee.FullName,
                         department.Name,
-                        _context.JobPositions.Where(p => p.Id == employee.JobPositionId).Select(p => p.Name).FirstOrDefault(),
+                        employee.JobPositionId,
                         course.Id,
                         course.Code,
                         course.Title))
-                .ToListAsync();
+                .ToListAsync()
+            : new List<PreAssessmentRow>();
 
-        // Danh mục khóa theo tổ chức của người làm bài (mentor chấm cho nhiều doanh nghiệp) + fallback cho khóa cũ/lịch sử.
-        var organizationIds = rows.Select(r => r.OrganizationId).Concat(preRows.Select(r => r.OrganizationId)).Distinct().ToList();
-        var byCode = new Dictionary<(Guid, string), PulseCourseRef>();
-        foreach (var organizationId in organizationIds)
-        {
-            foreach (var course in await _catalog.LoadAsync(organizationId))
+        var now = _clock.GetUtcNow();
+        var finalGroups = rows
+            .GroupBy(r => r.Enrollment.Id)
+            .Select(group =>
             {
-                byCode[(organizationId, course.Code.ToUpperInvariant())] = course;
+                var submissions = group.Select(r => r.Submission).OrderBy(s => s.AttemptNo).ToList();
+                var first = group.First();
+                var status = PulseRules.FinalStatusOf(first.Enrollment, submissions, true, now);
+                return new
+                {
+                    First = first,
+                    Submissions = submissions,
+                    Status = status,
+                    SubmittedAt = submissions[^1].SubmittedAt,
+                };
+            })
+            .Where(g => statusOrder.Contains(g.Status))
+            .ToList();
+
+        var filteredPreRows = preRows
+            .Select(row =>
+            {
+                var preStatus = row.PreAssessment.Decision switch
+                {
+                    Statuses.FinalSubmissionDecision.Passed => PulseFinalStatus.Approved,
+                    Statuses.FinalSubmissionDecision.NotYet => PulsePreStatus.NotYet,
+                    _ => PulseFinalStatus.Pending,
+                };
+                return new { Row = row, Status = preStatus };
+            })
+            .Where(x => statusOrder.Contains(x.Status))
+            .ToList();
+
+        var pendingCount = finalGroups.Count(i => i.Status == PulseFinalStatus.Pending)
+                           + filteredPreRows.Count(i => i.Status == PulseFinalStatus.Pending);
+        var preAssessmentCount = filteredPreRows.Count(i => i.Status == PulseFinalStatus.Pending);
+        var retryCount = finalGroups.Count(i => i.Status is PulseFinalStatus.RetryWait or PulseFinalStatus.RetryReady)
+                         + filteredPreRows.Count(i => i.Status is PulseFinalStatus.RetryWait or PulseFinalStatus.RetryReady);
+        var deadlineMissedCount = finalGroups.Count(i => i.Status == PulseFinalStatus.DeadlineMissed);
+        var flaggedCount = finalGroups.Count(i => i.Status == PulseFinalStatus.Flagged);
+        var reviewedCount = finalGroups.Count(i => i.Status == PulseFinalStatus.Approved || i.Status == PulsePreStatus.NotYet)
+                            + filteredPreRows.Count(i => i.Status == PulseFinalStatus.Approved || i.Status == PulsePreStatus.NotYet);
+        var totalCount = finalGroups.Count + filteredPreRows.Count;
+
+        // Sắp xếp toàn bộ theo thứ tự ưu tiên trước khi phân trang (nếu có).
+        var orderedEntries = finalGroups
+            .Select(g => (IsFinal: true, g.Status, g.SubmittedAt, Final: (object?)g, Pre: (object?)null))
+            .Concat(filteredPreRows.Select(p => (IsFinal: false, p.Status, SubmittedAt: p.Row.PreAssessment.SubmittedAt, Final: (object?)null, Pre: (object?)p)))
+            .OrderBy(e => Array.IndexOf(statusOrder, e.Status))
+            .ThenBy(e => e.SubmittedAt)
+            .ToList();
+
+        var hasPaging = input.Page is > 0 && input.PageSize is > 0;
+        var pageSize = hasPaging ? Math.Clamp(input.PageSize!.Value, 1, 200) : (int?)null;
+        var pagedEntries = hasPaging
+            ? orderedEntries.Skip((input.Page!.Value - 1) * pageSize!.Value).Take(pageSize.Value).ToList()
+            : orderedEntries;
+
+        var activeFinalSubmissions = finalGroups
+            .Where(g => pagedEntries.Any(e => e.IsFinal && ReferenceEquals(e.Final, g)))
+            .ToList();
+        var activePreEntries = filteredPreRows
+            .Where(p => pagedEntries.Any(e => !e.IsFinal && ReferenceEquals(e.Pre, p)))
+            .ToList();
+
+        var organizationIds = activeFinalSubmissions.Select(g => g.First.OrganizationId)
+            .Concat(activePreEntries.Select(p => p.Row.OrganizationId))
+            .Distinct()
+            .ToList();
+
+        var catalogByOrg = await _catalog.LoadManyAsync(organizationIds);
+        var byCode = new Dictionary<(Guid, string), PulseCourseRef>();
+        foreach (var (orgId, courses) in catalogByOrg)
+        {
+            foreach (var course in courses)
+            {
+                byCode[(orgId, course.Code.ToUpperInvariant())] = course;
             }
         }
 
-        var courseIds = rows.Select(r => r.CourseId).Concat(preRows.Select(r => r.CourseId)).Distinct().ToList();
+        var courseIds = activeFinalSubmissions.Select(g => g.First.CourseId)
+            .Concat(activePreEntries.Select(p => p.Row.CourseId))
+            .Distinct()
+            .ToList();
         var courseMeta = courseIds.Count == 0
             ? new Dictionary<Guid, (Guid CategoryId, int Tier)>()
             : (await (
@@ -156,21 +230,38 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
             .Concat(courseMeta.Values.Select(c => c.CategoryId))
             .Distinct()
             .ToList();
-        var categoryNames = await _context.CompetencyCategories.AsNoTracking()
-            .Where(c => categoryIds.Contains(c.Id))
-            .ToDictionaryAsync(c => c.Id, c => PulseLearnerReader.DisplayName(c.Name));
-        var organizationNames = await _context.Organizations.AsNoTracking()
-            .Where(o => organizationIds.Contains(o.Id))
-            .ToDictionaryAsync(o => o.Id, o => o.Name);
+        var categoryNames = categoryIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _context.CompetencyCategories.AsNoTracking()
+                .Where(c => categoryIds.Contains(c.Id))
+                .ToDictionaryAsync(c => c.Id, c => PulseLearnerReader.DisplayName(c.Name));
+        var organizationNames = organizationIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _context.Organizations.AsNoTracking()
+                .Where(o => organizationIds.Contains(o.Id))
+                .ToDictionaryAsync(o => o.Id, o => o.Name);
 
-        var now = _clock.GetUtcNow();
-        var attemptDtos = await _final.MapByIdAsync(rows.Select(r => r.Submission).ToList(), forReviewer: true);
-        var preChoiceItems = await _paper.LoadItemsAsync(preRows
-            .Where(r => r.PreAssessment.ChoiceTotal != null)
-            .Select(r => r.PreAssessment.Id)
+        var jobPositionIds = activeFinalSubmissions.Select(g => g.First.JobPositionId)
+            .Concat(activePreEntries.Select(p => p.Row.JobPositionId))
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+        var jobPositionNames = jobPositionIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _context.JobPositions.AsNoTracking()
+                .Where(p => jobPositionIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, p => p.Name);
+
+        var attemptDtos = await _final.MapByIdAsync(
+            activeFinalSubmissions.SelectMany(g => g.Submissions).ToList(),
+            forReviewer: true);
+        var preChoiceItems = await _paper.LoadItemsAsync(activePreEntries
+            .Where(r => r.Row.PreAssessment.ChoiceTotal != null)
+            .Select(r => r.Row.PreAssessment.Id)
             .ToList());
-        var preReviewerIds = preRows
-            .Select(r => r.PreAssessment.ReviewedByUserId)
+        var preReviewerIds = activePreEntries
+            .Select(r => r.Row.PreAssessment.ReviewedByUserId)
             .Where(id => id.HasValue)
             .Select(id => id!.Value)
             .Distinct()
@@ -183,16 +274,10 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
         var items = new List<PulseFinalReviewItemDto>();
         var assignmentContent = await new DigiTalent.Application.UseCases.Learning.Content.LearningContentReader(_context)
             .FinalsAsync(courseIds);
-        foreach (var group in rows.GroupBy(r => r.Enrollment.Id))
+        foreach (var group in activeFinalSubmissions)
         {
-            var first = group.First();
-            var submissions = group.Select(r => r.Submission).OrderBy(s => s.AttemptNo).ToList();
-            var status = PulseRules.FinalStatusOf(first.Enrollment, submissions, true, now);
-            if (!statusOrder.Contains(status))
-            {
-                continue;
-            }
-
+            var first = group.First;
+            var submissions = group.Submissions;
             var last = submissions[^1];
             var catalogCourse = byCode.GetValueOrDefault((first.OrganizationId, first.Code.ToUpperInvariant()));
             var hasMeta = courseMeta.TryGetValue(first.CourseId, out var fallbackMeta);
@@ -206,13 +291,13 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 Kind = Statuses.ProctoringKind.Final,
                 Assignment = assignment,
                 SubmissionId = last.Id,
-                Status = status,
+                Status = group.Status,
                 EmployeeId = first.EmployeeId,
                 EmployeeName = first.FullName,
                 OrganizationId = first.OrganizationId,
                 OrganizationName = organizationNames.GetValueOrDefault(first.OrganizationId),
                 DepartmentName = first.DepartmentName,
-                PositionName = first.PositionName,
+                PositionName = first.JobPositionId is { } posId ? jobPositionNames.GetValueOrDefault(posId) : null,
                 CourseId = first.CourseId,
                 CourseCode = first.Code,
                 CourseTitle = first.Title,
@@ -226,20 +311,10 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
             });
         }
 
-        foreach (var row in preRows)
+        foreach (var entry in activePreEntries)
         {
+            var row = entry.Row;
             var preAssessment = row.PreAssessment;
-            var preStatus = preAssessment.Decision switch
-            {
-                Statuses.FinalSubmissionDecision.Passed => PulseFinalStatus.Approved,
-                Statuses.FinalSubmissionDecision.NotYet => PulsePreStatus.NotYet,
-                _ => PulseFinalStatus.Pending,
-            };
-            if (!statusOrder.Contains(preStatus))
-            {
-                continue;
-            }
-
             var catalogCourse = byCode.GetValueOrDefault((row.OrganizationId, row.Code.ToUpperInvariant()));
             var hasMeta = courseMeta.TryGetValue(row.CourseId, out var fallbackMeta);
             var categoryId = catalogCourse?.CategoryId ?? (hasMeta ? fallbackMeta.CategoryId : (Guid?)null);
@@ -251,13 +326,13 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                 Kind = Statuses.ProctoringKind.PreAssessment,
                 Assignment = assignment,
                 SubmissionId = preAssessment.Id,
-                Status = preStatus,
+                Status = entry.Status,
                 EmployeeId = row.EmployeeId,
                 EmployeeName = row.FullName,
                 OrganizationId = row.OrganizationId,
                 OrganizationName = organizationNames.GetValueOrDefault(row.OrganizationId),
                 DepartmentName = row.DepartmentName,
-                PositionName = row.PositionName,
+                PositionName = row.JobPositionId is { } prePosId ? jobPositionNames.GetValueOrDefault(prePosId) : null,
                 CourseId = row.CourseId,
                 CourseCode = row.Code,
                 CourseTitle = row.Title,
@@ -297,59 +372,141 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
             item.Recording = recordings.GetValueOrDefault(item.ProctoringSessionId!.Value);
         }
 
-        // AI evaluation: gọi Gemini song song cho tất cả bài PENDING (đánh giá bài + phát hiện gian lận)
-        var defaultCriteria = PulseRules.FinalCriteria.Select(c => c.Title).ToList();
-        var toEvaluate = items.Where(i => !managerView && i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0).ToList();
-        var courseText = await PulseCourseText.LoadAsync(_context, toEvaluate.Select(i => i.CourseId).Distinct().ToList());
-        // Stored reviews are read first; AI calls run in parallel without touching the DbContext and their results
-        // are stored once they are all back.
-        var stored = await PulseAiReviewStore.LoadAsync(_context, toEvaluate.Select(i => i.SubmissionId).ToList());
-        var reviewed = new System.Collections.Concurrent.ConcurrentBag<PulseAiReviewStore.Entry>();
-        var aiTasks = toEvaluate
-            .Select(async item =>
+        if (!input.SkipAi)
+        {
+            // AI evaluation: đọc cache pulse_ai_reviews trước; chỉ gọi Gemini trực tiếp khi refresh thủ công hoặc có đúng 1 bài chưa cache
+            // (tránh gọi đồng thời hàng chục request Gemini gây 429 / 504 khi mở hàng chờ nhiều tổ chức).
+            var toEvaluate = items.Where(i => !managerView && i.Status == PulseFinalStatus.Pending && i.Attempts.Count > 0).ToList();
+            if (toEvaluate.Count > 0)
             {
-                var evidence = item.Attempts[^1].EvidenceText ?? "";
-                var prompt = item.Assignment?.PromptHtml ?? "";
-                var rubric = item.Rubric is { Count: > 0 } ? item.Rubric : PulseRules.FinalCriteria;
-                var criteria = rubric.Select(r =>
-                    r.WeightPercent > 0
-                        ? $"{r.Title} ({r.WeightPercent}%{(r.IsRequired ? " - Gate bắt buộc" : "")})"
-                        : r.Title).ToList();
+                var stored = await PulseAiReviewStore.LoadAsync(_context, toEvaluate.Select(i => i.SubmissionId).ToList());
+                var needCourseText = input.RefreshAi || stored.Count > 0 || toEvaluate.Count == 1;
+                var courseText = needCourseText
+                    ? await PulseCourseText.LoadAsync(_context, toEvaluate.Select(i => i.CourseId).Distinct().ToList())
+                    : new Dictionary<Guid, string>();
 
-                // Lấy events giám sát để AI phân tích gian lận
-                List<ProctoringEventInfo>? events = null;
-                if (item.Recording?.Events is { Count: > 0 } evts)
+                var pendingCalls = new List<(PulseFinalReviewItemDto Item, string Evidence, string Prompt, List<string> Criteria, List<ProctoringEventInfo>? Events, string? CourseContent, IReadOnlyList<PulseCriterionDto> Rubric, int? DomainNumber, string InputHash, PulseAiHintDto? Saved)>();
+                var reviewed = new System.Collections.Concurrent.ConcurrentBag<PulseAiReviewStore.Entry>();
+
+                foreach (var item in toEvaluate)
                 {
-                    events = evts.Select(e => new ProctoringEventInfo(e.Kind, e.OffsetMs, e.DurationMs)).ToList();
+                    var evidence = item.Attempts[^1].EvidenceText ?? "";
+                    var prompt = item.Assignment?.PromptHtml ?? "";
+                    var rubric = item.Rubric is { Count: > 0 } ? item.Rubric : PulseRules.FinalCriteria;
+                    var criteria = rubric.Select(r =>
+                        r.WeightPercent > 0
+                            ? $"{r.Title} ({r.WeightPercent}%{(r.IsRequired ? " - Gate bắt buộc" : "")})"
+                            : r.Title).ToList();
+
+                    List<ProctoringEventInfo>? events = null;
+                    if (item.Recording?.Events is { Count: > 0 } evts)
+                    {
+                        events = evts.Select(e => new ProctoringEventInfo(e.Kind, e.OffsetMs, e.DurationMs)).ToList();
+                    }
+
+                    var courseContent = courseText.GetValueOrDefault(item.CourseId);
+                    var forceRefresh = input.RefreshAi && (input.RefreshSubmissionId == null || input.RefreshSubmissionId == item.SubmissionId);
+                    var inputHash = PulseAiReviewStore.InputHash(evidence, prompt, criteria, courseContent, item.DomainName, item.Tier, rubric, events);
+                    var saved = PulseAiReviewStore.Reuse(stored, item.Kind, item.SubmissionId, inputHash);
+                    var domainNumber = PulseEssayRubric.ResolveDomainNumber(null, item.DomainName);
+
+                    if (input.EvidenceMetric != null && input.RefreshSubmissionId is { } targetId && targetId != item.SubmissionId)
+                    {
+                        item.AiHint = saved ?? PulseRules.AiHint(evidence, prompt, rubric, domainNumber, item.Tier);
+                        continue;
+                    }
+
+                    if (!forceRefresh && saved != null)
+                    {
+                        item.AiHint = saved;
+                        continue;
+                    }
+
+                    pendingCalls.Add((item, evidence, prompt, criteria, events, courseContent, rubric, domainNumber, inputHash, saved));
                 }
 
-                var courseContent = courseText.GetValueOrDefault(item.CourseId);
-                var forceRefresh = input.RefreshAi && (input.RefreshSubmissionId == null || input.RefreshSubmissionId == item.SubmissionId);
-                var inputHash = PulseAiReviewStore.InputHash(evidence, prompt, criteria, courseContent, item.DomainName, item.Tier, rubric, events);
-
-                // Same submission, same inputs: the stored review is shown and the AI is not called again.
-                var saved = forceRefresh ? null : PulseAiReviewStore.Reuse(stored, item.Kind, item.SubmissionId, inputHash);
-                if (saved != null)
+                // Cho phép gọi live Gemini nếu mentor bấm làm mới (RefreshAi) hoặc chỉ có đúng 1 bài chưa cache;
+                // nếu có nhiều bài chưa cache cùng lúc -> trả fallback nhanh (< 1ms) để không làm chậm / 504 hàng chờ.
+                var allowLiveBatch = input.RefreshAi || pendingCalls.Count == 1;
+                if (!allowLiveBatch)
                 {
-                    item.AiHint = saved;
-                    return;
+                    foreach (var p in pendingCalls)
+                    {
+                        p.Item.AiHint = p.Saved ?? PulseRules.AiHint(p.Evidence, p.Prompt, p.Rubric, p.DomainNumber, p.Item.Tier);
+                    }
                 }
+                else
+                {
+                    var aiTasks = pendingCalls.Select(async p =>
+                    {
+                        var item = p.Item;
+                        if (input.RefreshAi && input.RefreshSubmissionId == item.SubmissionId &&
+                            input.EvidenceMetric is { } metric && p.Saved?.Detail is { } detail)
+                        {
+                            item.AiHint = p.Saved;
+                            var note = metric switch
+                            {
+                                "plagiarism" => detail.PlagiarismNote,
+                                "ai" => detail.AiGeneratedNote,
+                                "relevance" => detail.RelevanceNote,
+                                "depth" => detail.DepthNote,
+                                "clarity" => detail.ClarityNote,
+                                "verdict" => detail.Verdict,
+                                _ => null,
+                            };
+                            if (note == null || detail.Evidence?.ContainsKey(metric) == true) return;
 
-                var evaluated = await _gemini.EvaluateEvidenceAsync(
-                    evidence,
-                    prompt,
-                    criteria,
-                    events,
-                    courseContent,
-                    item.DomainName,
-                    item.Tier,
-                    rubric) with { ReviewedAt = _clock.GetUtcNow() };
-                item.AiHint = evaluated;
-                reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, inputHash, evaluated));
-            })
-            .ToList();
-        await Task.WhenAll(aiTasks);
-        await PulseAiReviewStore.SaveAsync(_context, reviewed.ToList());
+                            if (!_gemini.IsConfigured)
+                            {
+                                item.AiHint = p.Saved with { EvidenceLookupStatus = "NOT_CONFIGURED" };
+                                return;
+                            }
+
+                            var passage = await _gemini.FindEvidencePassageAsync(p.Evidence, metric, note);
+                            if (passage == null)
+                            {
+                                item.AiHint = p.Saved with { EvidenceLookupStatus = "UNAVAILABLE" };
+                                return;
+                            }
+
+                            var excerpts = detail.Evidence?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? new();
+                            excerpts[metric] = passage.Length == 0 ? null : passage;
+                            var enriched = p.Saved with { Detail = detail with { Evidence = excerpts } };
+                            item.AiHint = enriched;
+                            reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, p.InputHash, enriched));
+                            return;
+                        }
+
+                        using var timeoutCts = !input.RefreshAi
+                            ? new CancellationTokenSource(TimeSpan.FromMilliseconds(1200))
+                            : null;
+                        var ct = timeoutCts?.Token ?? CancellationToken.None;
+                        var evaluated = await _gemini.EvaluateEvidenceAsync(
+                            p.Evidence,
+                            p.Prompt,
+                            p.Criteria,
+                            p.Events,
+                            p.CourseContent,
+                            item.DomainName,
+                            item.Tier,
+                            p.Rubric,
+                            ct) with { ReviewedAt = _clock.GetUtcNow() };
+                        if (p.Saved != null &&
+                            (evaluated.Source != PulseAiReviewStore.AiSource || (p.Saved.Detail != null && evaluated.Detail == null)))
+                        {
+                            item.AiHint = p.Saved;
+                            return;
+                        }
+
+                        item.AiHint = evaluated;
+                        reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, p.InputHash, evaluated));
+                    }).ToList();
+
+                    await Task.WhenAll(aiTasks);
+                    await PulseAiReviewStore.SaveAsync(_context, reviewed.ToList());
+                }
+            }
+        }
 
         items = items
             .OrderBy(i => Array.IndexOf(statusOrder, i.Status))
@@ -358,12 +515,15 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
 
         return new GetPulseFinalReviewsUseCaseOutput
         {
-            PendingCount = items.Count(i => i.Status == PulseFinalStatus.Pending),
-            PreAssessmentCount = items.Count(i => i.Kind == Statuses.ProctoringKind.PreAssessment && i.Status == PulseFinalStatus.Pending),
-            RetryCount = items.Count(i => i.Status is PulseFinalStatus.RetryWait or PulseFinalStatus.RetryReady),
-            DeadlineMissedCount = items.Count(i => i.Status == PulseFinalStatus.DeadlineMissed),
-            FlaggedCount = items.Count(i => i.Status == PulseFinalStatus.Flagged),
-            ReviewedCount = items.Count(i => i.Status == PulseFinalStatus.Approved || i.Status == PulsePreStatus.NotYet),
+            PendingCount = pendingCount,
+            PreAssessmentCount = preAssessmentCount,
+            RetryCount = retryCount,
+            DeadlineMissedCount = deadlineMissedCount,
+            FlaggedCount = flaggedCount,
+            ReviewedCount = reviewedCount,
+            TotalCount = totalCount,
+            Page = hasPaging ? input.Page : null,
+            PageSize = pageSize,
             Criteria = PulseRules.FinalCriteria.ToList(),
             Items = items,
         };

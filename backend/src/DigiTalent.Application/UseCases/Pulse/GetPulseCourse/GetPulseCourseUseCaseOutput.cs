@@ -1,3 +1,5 @@
+using DigiTalent.Application.UseCases.Organization.Research;
+
 namespace DigiTalent.Application.UseCases.Pulse;
 
 public class GetPulseCourseUseCaseOutput
@@ -5,6 +7,7 @@ public class GetPulseCourseUseCaseOutput
     public PulseCourseSummaryDto Course { get; set; } = new();
     public string? Description { get; set; }
     public string? Purpose { get; set; }
+    public ResearchCourseContent? EnterpriseContent { get; set; }
     public int? EstimatedMinutes { get; set; }
     public int VersionNo { get; set; }
     public PulseDomainDto Domain { get; set; } = new();

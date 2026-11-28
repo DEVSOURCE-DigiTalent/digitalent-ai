@@ -6,6 +6,12 @@ namespace DigiTalent.Domain.Constants.Authorization;
 /// </summary>
 public static class Permissions
 {
+    public static class Research
+    {
+        public const string ManageCourses = "rnd.course.manage";
+        public const string Configure = "rnd.configure";
+    }
+
     public static class Account
     {
         public const string ViewOwn = "account.view_own";
@@ -101,6 +107,11 @@ public static class Permissions
         public const string ReadProgress = "learning_progress.read";
         public const string CompleteLesson = "lesson.complete";
         public const string SelfEnroll = "enrollment.self_enroll";
+        /// <summary>
+        /// Review a course version DigiTalent published: apply it to the organization or keep the current one.
+        /// OWNER and RND hold it; the company's R&amp;D decides when it has one, the owner otherwise.
+        /// </summary>
+        public const string ReviewCourseUpdate = "course_update.review";
     }
 
     public static class Assessment
@@ -214,6 +225,16 @@ public static class Permissions
     {
         public const string Manage = "trial.manage";
         public const string Review = "trial.review";
+    }
+
+    /// <summary>
+    /// Báo cáo hành vi khi làm bài cuối khóa (canonical v3.10, trong Khoảng trống năng lực OW-21): chủ doanh nghiệp xem dòng thời gian, bằng chứng
+    /// và bản ghi; yêu cầu AI phân tích lại.
+    /// </summary>
+    public static class BehaviorReport
+    {
+        public const string Read = "behavior_report.read";
+        public const string Analyze = "behavior_report.analyze";
     }
 
     public static class Feedback

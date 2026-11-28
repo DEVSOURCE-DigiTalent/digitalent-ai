@@ -39,6 +39,26 @@ public class PulseCourseWorkspace
         return (snapshot, state);
     }
 
+    public const string RelearnMessage =
+        "Khóa học vừa được cập nhật nội dung mới nên mọi người học lại từ đầu. Phần bạn đang làm trên bản cũ không được tính, tải lại trang để học bản mới.";
+
+    /// <summary>
+    /// <see cref="ResolveAsync"/> for a page that records work (a quiz, a test, a final, pages read). When the course got
+    /// new content (DigiTalent or the company's R&D applied it) while the employee was on the revision they ask about,
+    /// their enrollment was reset: say so instead of a misleading "pass the modules first".
+    /// </summary>
+    public async Task<(PulseLearnerSnapshot Snapshot, PulseCourseState Course)> ResolveForAnswerAsync(Guid courseId)
+    {
+        var (snapshot, state) = await ResolveAsync(courseId);
+        if (state.Course.CourseId != courseId && state.Enrollment?.CourseId != courseId
+            && await _context.Enrollments.AsNoTracking().AnyAsync(e => e.CourseId == courseId
+                && e.EmployeeId == snapshot.Employee.Id && e.Status == Statuses.Enrollment.Cancelled))
+        {
+            throw new ConflictException(RelearnMessage);
+        }
+        return (snapshot, state);
+    }
+
     public static PulseModuleInfo FindModule(PulseCourseState state, Guid moduleId) =>
         state.Modules.FirstOrDefault(m => m.ModuleId == moduleId)
         ?? throw new NotFoundException("Không tìm thấy mô đun trong khóa học này.");

@@ -5,8 +5,10 @@ import {
   pulseReviewService,
   pulseService,
   type PulseAnswer,
+  type PulseAiDetailEvidenceKey,
   type PulseCriterionEvaluationInput,
   type PulseDecision,
+  type PulseFinalReviewQueue,
   type PulseSupportAction,
 } from '../services/pulse.service';
 
@@ -161,6 +163,7 @@ export interface UsePulseFinalReviewsOptions {
   includeReviewed?: boolean;
   organizationId?: string;
   departmentId?: string;
+  skipAi?: boolean;
 }
 
 export function usePulseFinalReviews(enabledOrOptions: boolean | UsePulseFinalReviewsOptions = true) {
@@ -168,10 +171,17 @@ export function usePulseFinalReviews(enabledOrOptions: boolean | UsePulseFinalRe
   const includeReviewed = typeof enabledOrOptions === 'boolean' ? false : (enabledOrOptions.includeReviewed ?? false);
   const organizationId = typeof enabledOrOptions === 'boolean' ? undefined : enabledOrOptions.organizationId;
   const departmentId = typeof enabledOrOptions === 'boolean' ? undefined : enabledOrOptions.departmentId;
+  const skipAi = typeof enabledOrOptions === 'boolean' ? false : (enabledOrOptions.skipAi ?? false);
   return useQuery({
     ...learningContentQueryOptions,
-    queryKey: PULSE_KEYS.finalReviews(includeReviewed, organizationId, departmentId),
-    queryFn: () => pulseReviewService.getQueue(includeReviewed, organizationId, false, undefined, departmentId).then((r) => r.data.data!),
+    queryKey: skipAi
+      ? [...PULSE_KEYS.finalReviews(includeReviewed, organizationId, departmentId), 'no-ai']
+      : PULSE_KEYS.finalReviews(includeReviewed, organizationId, departmentId),
+    queryFn: () =>
+      (skipAi
+        ? pulseReviewService.getQueue(includeReviewed, organizationId, false, undefined, departmentId, undefined, true)
+        : pulseReviewService.getQueue(includeReviewed, organizationId, false, undefined, departmentId)
+      ).then((r) => r.data.data!),
     enabled,
   });
 }
@@ -183,16 +193,36 @@ export function useRefreshPulseFinalAi() {
       includeReviewed = true,
       organizationId,
       submissionId,
+      evidenceMetric,
     }: {
       includeReviewed?: boolean;
       organizationId?: string;
       submissionId?: string;
+      evidenceMetric?: PulseAiDetailEvidenceKey;
     }) =>
-      pulseReviewService
-        .getQueue(includeReviewed, organizationId, true, submissionId)
+      (evidenceMetric
+        ? pulseReviewService.getQueue(includeReviewed, organizationId, true, submissionId, undefined, evidenceMetric)
+        : pulseReviewService.getQueue(includeReviewed, organizationId, true, submissionId))
         .then((r) => r.data.data!),
-    onSuccess: (freshQueue, { includeReviewed = true, organizationId }) => {
-      qc.setQueryData(PULSE_KEYS.finalReviews(includeReviewed, organizationId), freshQueue);
+    onSuccess: (freshQueue, { includeReviewed = true, organizationId, submissionId }) => {
+      qc.setQueryData<PulseFinalReviewQueue>(PULSE_KEYS.finalReviews(includeReviewed, organizationId), (current) => {
+        if (!current || !submissionId) return freshQueue;
+        const freshItem = freshQueue.items.find((item) => item.submissionId === submissionId);
+        const freshHint = freshItem?.aiHint;
+        if (!freshItem || !freshHint) return current;
+
+        return {
+          ...current,
+          items: current.items.map((item) => {
+            if (item.submissionId !== submissionId || item.attemptNo !== freshItem.attemptNo) return item;
+            if ((item.aiHint?.source === 'GEMINI' || item.aiHint?.detail) &&
+                (freshHint.source === 'KEYWORD_FALLBACK' || (item.aiHint?.detail && !freshHint.detail))) {
+              return item;
+            }
+            return { ...item, aiHint: freshHint };
+          }),
+        };
+      });
     },
   });
 }

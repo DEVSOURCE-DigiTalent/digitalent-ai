@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.BehaviorReports;
 using DigiTalent.Application.UseCases.Learning.Content;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
@@ -13,7 +14,7 @@ namespace DigiTalent.Application.UseCases.Pulse;
 /// bộ màn hình, camera và micro. Chỉ khi đã qua mọi mô đun và bài đang mở (lần 1, hoặc lần 2 trong cửa sổ sau lần 1 chưa
 /// đạt). Phần trắc nghiệm được chấm ngay (<see cref="PulseExamPaper"/>) nhưng nhân viên chỉ thấy sau khi có quyết định.
 /// Lượt học chuyển READY_FOR_ASSESSMENT; người chấm (quản lý phòng ban, hoặc chủ doanh nghiệp khi nhân viên là quản lý)
-/// nhận thông báo.
+/// nhận thông báo. Báo cáo hành vi của phiên (canonical v3.10) được lưu cùng bài nộp và AI phân tích nhật ký ở nền sau đó.
 /// </summary>
 public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, SubmitPulseFinalUseCaseOutput>
 {
@@ -23,18 +24,25 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
     private readonly PulseCourseWorkspace _workspace;
     private readonly PulseProctoring _proctoring;
     private readonly PulseExamPaper _paper;
+    private readonly IBehaviorAnalysisQueue? _behaviorQueue;
 
-    public SubmitPulseFinalUseCase(IApplicationDbContext context, PulseCourseWorkspace workspace, PulseProctoring proctoring, PulseExamPaper paper)
+    public SubmitPulseFinalUseCase(
+        IApplicationDbContext context,
+        PulseCourseWorkspace workspace,
+        PulseProctoring proctoring,
+        PulseExamPaper paper,
+        IBehaviorAnalysisQueue? behaviorQueue = null)
     {
         _context = context;
         _workspace = workspace;
         _proctoring = proctoring;
         _paper = paper;
+        _behaviorQueue = behaviorQueue;
     }
 
     public async Task<SubmitPulseFinalUseCaseOutput> ExecuteAsync(SubmitPulseFinalUseCaseInput input)
     {
-        var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
+        var (snapshot, state) = await _workspace.ResolveForAnswerAsync(input.CourseId);
         PulseCourseWorkspace.EnsureCanWork(state);
         if (state.Enrollment == null || !state.AllModulesPassed)
         {
@@ -80,6 +88,9 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
             _context.ExamChoiceAnswers.Add(answer);
         }
 
+        var behaviorReport = await BehaviorReportStore.AddForFinalAsync(
+            _context, snapshot.Employee.OrganizationId, snapshot.Employee.Id, state.Enrollment.CourseId, session, submission);
+
         var enrollment = await _context.Enrollments.FirstAsync(e => e.Id == state.Enrollment.Id);
         enrollment.Status = Statuses.Enrollment.ReadyForAssessment;
         enrollment.StartedAt ??= now;
@@ -106,6 +117,8 @@ public class SubmitPulseFinalUseCase : IUseCase<SubmitPulseFinalUseCaseInput, Su
             // uq_course_final_submissions_enrollment_attempt: bấm "Nộp" hai lần cùng lúc
             throw new ConflictException("Bài cuối khóa đang được gửi, vui lòng tải lại trang.");
         }
+
+        _behaviorQueue?.Enqueue(behaviorReport.Id);
 
         return new SubmitPulseFinalUseCaseOutput
         {

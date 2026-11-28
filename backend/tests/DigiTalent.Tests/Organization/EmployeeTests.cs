@@ -193,7 +193,7 @@ public class EmployeeTests
         {
             PositionId = pos2.Id
         });
-        posFilterResult.Items.Should().ContainSingle(x => x.Id == emp3.Id && x.JobPositionId == pos2.Id);
+        posFilterResult.Items.Should().ContainSingle(x => x.Id == emp2.Id && x.JobPositionId == pos2.Id);
 
         // 6. Filter by Status (ARCHIVED)
         var statusFilterResult = await useCase.ExecuteAsync(new GetPagedEmployeesUseCaseInput

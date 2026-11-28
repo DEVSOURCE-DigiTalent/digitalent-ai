@@ -40,6 +40,12 @@ public static class RoleDescriptions
                 "Sử dụng các tính năng học tập và phát triển cá nhân của Nhân viên",
             }),
         new Description(
+            MemberRoles.Research,
+            Roles.Research,
+            "R&D",
+            "Tùy chỉnh và áp dụng nội dung đào tạo trong phạm vi doanh nghiệp.",
+            new[] { "Xem sáu khóa Cơ bản và khóa đã mua", "Soạn và áp dụng mục tiêu học tập, hướng dẫn thực hành nội bộ" }),
+        new Description(
             MemberRoles.Employee,
             Roles.Employee,
             "Nhân viên",

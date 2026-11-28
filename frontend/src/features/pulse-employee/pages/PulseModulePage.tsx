@@ -428,8 +428,7 @@ function ModuleView({ detail }: { detail: PulseModuleDetail }) {
                           moduleIndex={module.index}
                           index={sIdx}
                           count={slides.length}
-                          hideMedia={sIdx > 0}
-                          hideMediaNotice={moduleHasMedia}
+                          hideMediaNotice={moduleHasMedia || sIdx > 0}
                           partNumber={sIdx + 1}
                           partTitle={`Phần ${pad2(sIdx + 1)} · ${partLabel(s.title)}`}
                         />

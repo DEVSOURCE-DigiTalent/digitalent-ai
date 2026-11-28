@@ -39,7 +39,7 @@ export function MentorProfilePage() {
               Theo dõi các doanh nghiệp được phân công và khối lượng bài cuối cấp chờ chấm.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className="mw-profile-actions">
             <Link to="/mentor/enterprises" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <Building2 size={15} />
               Xem doanh nghiệp được giao
@@ -52,7 +52,7 @@ export function MentorProfilePage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 360px) 1fr', gap: 24, alignItems: 'start' }}>
+      <div className="mw-profile-grid">
         <div style={{ display: 'grid', gap: 20 }}>
           <div className="surface pad" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#fff' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px 0 20px', borderBottom: '1px solid #f1f5f9' }}>
@@ -125,7 +125,7 @@ export function MentorProfilePage() {
         </div>
 
         <div style={{ display: 'grid', gap: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+          <div className="mw-profile-stats">
             <div className="surface pad" style={{ borderRadius: 14, border: '1px solid #e2e8f0', background: '#fff', textAlign: 'center', padding: '18px 12px' }}>
               <Building2 size={22} style={{ color: '#4f46e5', margin: '0 auto 8px' }} />
               <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{enterprises?.totalEnterprises ?? 0}</div>

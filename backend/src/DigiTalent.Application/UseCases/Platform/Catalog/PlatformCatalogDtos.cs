@@ -15,6 +15,8 @@ public class PlatformCatalogVersionSummary
     public int FrameworkCount { get; set; }
     public int NewCount { get; set; }
     public int EditedCount { get; set; }
+    /// <summary>Organizations whose employees learn from this version (it was applied to them).</summary>
+    public int OrganizationCount { get; set; }
 }
 
 public class PlatformCatalogVersionsOutput
@@ -166,4 +168,48 @@ public class PlatformOptionDto
     public Guid OptionId { get; set; }
     public string Text { get; set; } = string.Empty;
     public bool IsCorrect { get; set; }
+}
+
+/// <summary>A course that changes when a version is applied to an organization.</summary>
+public class PlatformCatalogApplyChange
+{
+    public const string Updated = "UPDATED";
+    public const string Added = "ADDED";
+
+    public Guid CourseId { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public int Level { get; set; }
+    /// <summary>UPDATED (new content) or ADDED (a course the organization did not have yet).</summary>
+    public string Kind { get; set; } = string.Empty;
+}
+
+/// <summary>A published version an organization can be moved to.</summary>
+public class PlatformCatalogVersionOption
+{
+    public int VersionNo { get; set; }
+    /// <summary>CURRENT (the newest) or RETIRED.</summary>
+    public string Status { get; set; } = string.Empty;
+    public DateTimeOffset? PublishedAt { get; set; }
+    public string? ReleaseNote { get; set; }
+}
+
+/// <summary>The version an organization learns from, the versions it can move to and what a move changes.</summary>
+public class OrganizationCatalogVersionOutput
+{
+    public Guid OrganizationId { get; set; }
+    public string OrganizationName { get; set; } = string.Empty;
+    /// <summary>False when the organization has no standard courses yet (they are added when it registers).</summary>
+    public bool Provisioned { get; set; }
+    /// <summary>Version applied to the organization.</summary>
+    public int VersionNo { get; set; }
+    /// <summary>The newest published version (the one in use for new organizations).</summary>
+    public int LatestVersionNo { get; set; }
+    public List<PlatformCatalogVersionOption> Versions { get; set; } = new();
+    /// <summary>The version the changes below lead to (after an apply: the version just applied).</summary>
+    public int TargetVersionNo { get; set; }
+    public List<PlatformCatalogApplyChange> Changes { get; set; } = new();
+
+    /// <summary>Set when the organization chose to keep its version instead of the newest one (with its reason).</summary>
+    public DigiTalent.Application.UseCases.Learning.CourseUpdates.CourseUpdateKeptDto? Kept { get; set; }
 }

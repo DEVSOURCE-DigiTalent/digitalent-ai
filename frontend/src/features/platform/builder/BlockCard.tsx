@@ -1,10 +1,10 @@
+import { useCourseBuilderService } from './course-builder-service';
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
 import {
   assetUrl,
-  platformCatalogService,
   type BlockInput,
   type CatalogBlock,
   type CatalogCourseDetail,
@@ -32,15 +32,16 @@ interface BlockCardProps {
 /** One content block of a module: a preview card, opened in place to edit it. */
 export function BlockCard({ block, count, linkedQuestions, editable, editing, onToggle, edit, courseCode, moduleIndex }: BlockCardProps) {
   useUiLanguage();
+  const service = useCourseBuilderService();
   const normalizedType = ((block?.type || 'TEXT').toUpperCase() as keyof typeof BLOCK_TYPES);
   const type = BLOCK_TYPES[normalizedType] ?? BLOCK_TYPES.TEXT;
   const clickToEdit = editable && normalizedType === 'TEXT';
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const save = (body: BlockInput) => edit((v, c) => platformCatalogService.updateBlock(v, c, block.blockId, body));
+  const save = (body: BlockInput) => edit((v, c) => service.updateBlock(v, c, block.blockId, body));
   const move = (delta: number) =>
-    edit((v, c) => platformCatalogService.moveBlock(v, c, block.blockId, block.index + delta)).catch((err) => toast.error(errorMessage(err)));
+    edit((v, c) => service.moveBlock(v, c, block.blockId, block.index + delta)).catch((err) => toast.error(errorMessage(err)));
   const remove = () =>
-    edit((v, c) => platformCatalogService.removeBlock(v, c, block.blockId))
+    edit((v, c) => service.removeBlock(v, c, block.blockId))
       .then(() => toast.success('Đã xóa khối nội dung.'))
       .catch((err) => toast.error(errorMessage(err)));
 

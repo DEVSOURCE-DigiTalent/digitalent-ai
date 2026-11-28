@@ -32,6 +32,7 @@ const AuditLogPage = lazyPage(() => import('../../../features/organization/pages
 const OwnerCourseCatalogPage = lazyPage(() => import('../../../features/organization/pages/OwnerCourseCatalogPage'), 'OwnerCourseCatalogPage');
 const OwnerCourseDetailPage = lazyPage(() => import('../../../features/organization/pages/OwnerCourseDetailPage'), 'OwnerCourseDetailPage');
 const CourseCheckoutPage = lazyPage(() => import('../../../features/organization/pages/CourseCheckoutPage'), 'CourseCheckoutPage');
+const CourseUpdatesPage = lazyPage(() => import('../../../features/organization/pages/CourseUpdatesPage'), 'CourseUpdatesPage');
 const InternalCourseDetailPage = lazyPage(() => import('../../../features/courses/pages/InternalCourseDetailPage'), 'InternalCourseDetailPage');
 const OwnerCycleReportPage = lazyPage(() => import('../../../features/organization/pages/OwnerCycleReportPage'), 'OwnerCycleReportPage');
 const OwnerSetupBlueprintPage = lazyPage(() => import('../../../features/organization/pages/OwnerSetupBlueprintPage'), 'OwnerSetupBlueprintPage');
@@ -69,6 +70,7 @@ export const OWNER_PAGES: PageRegistry = {
   'OW-23': OwnerCourseCatalogPage,
   'OW-24': OwnerCourseDetailPage,
   'OW-CHECKOUT': CourseCheckoutPage,
+  'OW-COURSE-UPDATES': CourseUpdatesPage,
   'OW-28': CourseAssignmentPage,
   'OW-29': RecommendationReviewPage,
   'OW-30': TrainingMonitorPage,

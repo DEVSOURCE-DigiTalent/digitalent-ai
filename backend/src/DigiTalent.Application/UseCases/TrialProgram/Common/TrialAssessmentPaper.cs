@@ -40,7 +40,9 @@ public class TrialAssessmentPaper
     /// <summary>Các lĩnh vực có khóa chuẩn của doanh nghiệp, theo thứ tự của khung.</summary>
     public async Task<List<TrialDomainInfo>> LoadDomainsAsync(Guid organizationId)
     {
-        var courses = await _catalog.LoadAsync(organizationId);
+        // The survey measures against DigiTalent's standard, never the company version R&D applied.
+        var courses = await _catalog.LoadAsync(organizationId,
+            excludeCourseIds: await DigiTalent.Application.UseCases.Organization.Research.EnterpriseResearch.CompanyRevisionIdsAsync(_context, organizationId));
         return await DomainsOfAsync(courses, organizationId);
     }
 
@@ -48,7 +50,9 @@ public class TrialAssessmentPaper
     {
         await EnsureBenchmarkQuestionsAsync(organizationId);
 
-        var courses = await _catalog.LoadAsync(organizationId);
+        // The survey measures against DigiTalent's standard, never the company version R&D applied.
+        var courses = await _catalog.LoadAsync(organizationId,
+            excludeCourseIds: await DigiTalent.Application.UseCases.Organization.Research.EnterpriseResearch.CompanyRevisionIdsAsync(_context, organizationId));
         var domains = await DomainsOfAsync(courses, organizationId);
         var modules = await _modules.LoadModulesAsync(courses.Select(c => c.CourseId).ToList(), includeContent: false);
         var quizIds = modules.Values.SelectMany(m => m).Where(m => m.QuizAssessmentId.HasValue)
@@ -105,6 +109,28 @@ public class TrialAssessmentPaper
     /// <summary>Đảm bảo 54 câu hỏi chuẩn (6 lĩnh vực × 3 cấp × 3 câu) và các đáp án tồn tại trong cơ sở dữ liệu.</summary>
     public async Task EnsureBenchmarkQuestionsAsync(Guid organizationId)
     {
+        var benchmarkEntries = new List<(int Tier, PulseQuizQuestion Question)>();
+        for (var d = 1; d <= 6; d++)
+        {
+            var domain = new TrialDomainInfo(Guid.Empty, d, $"D{d}", $"Lĩnh vực {d}");
+            for (var tier = 1; tier <= PulseRules.MaxLevel; tier++)
+            {
+                foreach (var bq in GetBenchmarkQuestions(domain, tier))
+                {
+                    benchmarkEntries.Add((tier, bq));
+                }
+            }
+        }
+
+        var allIds = benchmarkEntries.Select(e => e.Question.QuestionId).Distinct().ToList();
+        var existingIds = (await _context.Questions.AsNoTracking()
+                .Where(q => allIds.Contains(q.Id))
+                .Select(q => q.Id)
+                .ToListAsync())
+            .ToHashSet();
+
+        if (existingIds.Count >= allIds.Count) return;
+
         var bank = await _context.QuestionBanks.FirstOrDefaultAsync(b => b.OrganizationId == organizationId)
                    ?? await _context.QuestionBanks.FirstOrDefaultAsync();
         var user = await _context.Users.FirstOrDefaultAsync();
@@ -127,46 +153,39 @@ public class TrialAssessmentPaper
         }
 
         var anyAdded = false;
-        for (var d = 1; d <= 6; d++)
+        foreach (var (tier, bq) in benchmarkEntries)
         {
-            for (var tier = 1; tier <= PulseRules.MaxLevel; tier++)
+            if (!existingIds.Add(bq.QuestionId)) continue;
+
+            var qEntity = new Question
             {
-                var bqs = GetBenchmarkQuestions(new TrialDomainInfo(Guid.Empty, d, $"D{d}", $"Lĩnh vực {d}"), tier);
-                foreach (var bq in bqs)
+                Id = bq.QuestionId,
+                BankId = bank.Id,
+                QuestionType = Statuses.QuestionType.MultipleChoice,
+                Difficulty = tier switch { 1 => "BASIC", 2 => "INTERMEDIATE", _ => "ADVANCED" },
+                Content = bq.Content,
+                Status = Statuses.Question.Approved,
+                CreatedByUserId = user.Id,
+                CreatedAt = now,
+                UpdatedAt = now,
+            };
+            _context.Questions.Add(qEntity);
+
+            for (var idx = 0; idx < bq.Options.Count; idx++)
+            {
+                var opt = bq.Options[idx];
+                _context.QuestionOptions.Add(new QuestionOption
                 {
-                    if (await _context.Questions.AnyAsync(q => q.Id == bq.QuestionId)) continue;
-
-                    var qEntity = new Question
-                    {
-                        Id = bq.QuestionId,
-                        BankId = bank.Id,
-                        QuestionType = Statuses.QuestionType.MultipleChoice,
-                        Difficulty = tier switch { 1 => "BASIC", 2 => "INTERMEDIATE", _ => "ADVANCED" },
-                        Content = bq.Content,
-                        Status = Statuses.Question.Approved,
-                        CreatedByUserId = user.Id,
-                        CreatedAt = now,
-                        UpdatedAt = now,
-                    };
-                    _context.Questions.Add(qEntity);
-
-                    for (var idx = 0; idx < bq.Options.Count; idx++)
-                    {
-                        var opt = bq.Options[idx];
-                        _context.QuestionOptions.Add(new QuestionOption
-                        {
-                            Id = opt.OptionId,
-                            QuestionId = bq.QuestionId,
-                            Content = opt.Content,
-                            IsCorrect = opt.IsCorrect,
-                            SortOrder = idx + 1,
-                            CreatedAt = now,
-                            UpdatedAt = now,
-                        });
-                    }
-                    anyAdded = true;
-                }
+                    Id = opt.OptionId,
+                    QuestionId = bq.QuestionId,
+                    Content = opt.Content,
+                    IsCorrect = opt.IsCorrect,
+                    SortOrder = idx + 1,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                });
             }
+            anyAdded = true;
         }
 
         if (anyAdded)

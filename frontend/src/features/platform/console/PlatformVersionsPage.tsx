@@ -1,5 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -79,7 +80,7 @@ export function PlatformVersionsPage() {
             )}
           </div>
           <p className="pa-ov-subtitle">
-            {translateUi('Sửa khóa học trong bản nháp, rồi công bố để áp dụng cho mọi tổ chức.')}
+            {translateUi('Sửa khóa học trong bản nháp rồi công bố. Mỗi doanh nghiệp tự duyệt bản mới; bản sửa lỗi gấp thì áp cho tất cả lúc công bố.')}
           </p>
         </div>
 
@@ -166,7 +167,7 @@ function VersionStatus({ version, compact = false }: { version: CatalogVersionSu
   }
   return (
     <span className="pa-ver-badge is-archived">
-      {translateUi("Đã thay thế")}
+      {translateUi("Bản cũ")}
     </span>
   );
 }
@@ -206,6 +207,9 @@ function VersionList({ versions, selected }: { versions: CatalogVersionsOutput; 
             {v.newCount} khóa mới, {v.editedCount} khóa đã sửa
           </div>
         )}
+        {v.status !== 'DRAFT' && (v.organizationCount ?? 0) > 0 && (
+          <div className="pa-ver-changes-tag">{translateUi(`Đang dùng ở ${v.organizationCount} doanh nghiệp`)}</div>
+        )}
         {v.releaseNote && (
           <div className="pa-ver-card-note" title={v.releaseNote}>
             “{v.releaseNote}”
@@ -225,13 +229,13 @@ function VersionList({ versions, selected }: { versions: CatalogVersionsOutput; 
       )}
       {current && (
         <div className="pa-ver-section">
-          <div className="pa-ver-section-label">Đang dùng</div>
+          <div className="pa-ver-section-label">{translateUi('Mới nhất')}</div>
           {renderCard(current)}
         </div>
       )}
       {archived.length > 0 && (
         <div className="pa-ver-section">
-          <div className="pa-ver-section-label">Đã thay thế ({archived.length})</div>
+          <div className="pa-ver-section-label">{translateUi(`Bản cũ (${archived.length})`)}</div>
           <div className="pa-ver-history-list">
             {archived.map(renderCard)}
           </div>
@@ -293,8 +297,8 @@ function VersionCourses({ detail, canManage }: { detail: CatalogVersionDetail; c
     version.status === 'DRAFT'
       ? `Sao chép từ v${version.basedOnVersionNo ?? '—'}. ${version.newCount} khóa mới, ${version.editedCount} khóa đã sửa.`
       : version.status === 'CURRENT'
-        ? 'Nội dung khóa học đang áp dụng cho mọi tổ chức.'
-        : 'Phiên bản lưu trữ lịch sử (chỉ xem).';
+        ? 'Bản mới nhất. Tổ chức đăng ký mới nhận bản này, tổ chức khác nhận khi được áp ở hồ sơ tổ chức.'
+        : 'Bản cũ (chỉ xem). Vẫn áp được cho một tổ chức ở hồ sơ tổ chức khi cần quay lại.';
 
   return (
     <>
@@ -651,6 +655,8 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
   const versions = useCatalogVersions();
   const navigate = useNavigate();
   const [note, setNote] = useState('');
+  // Off: organizations keep the version they learn from; the admin applies the new one per organization.
+  const [applyToAll, setApplyToAll] = useState(false);
   const closeButton = useRef<HTMLButtonElement>(null);
   const changed = detail.courses.filter((c) => c.changeKind !== 'UNCHANGED');
   const currentNo = versions.data?.currentVersionNo;
@@ -663,16 +669,23 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
   }, [onClose]);
 
   const onPublish = () =>
-    publish.mutate(note.trim() || undefined, {
+    publish.mutate({ note: note.trim() || undefined, applyToAll }, {
       onSuccess: () => {
-        toast.success(`Đã công bố v${versionNo}`, { description: 'Neo đã chuyển sang phiên bản mới.' });
+        toast.success(`Đã công bố v${versionNo}`, {
+          description: applyToAll
+            ? 'Mọi doanh nghiệp đã chuyển sang phiên bản mới.'
+            : 'Doanh nghiệp đã nhận thông báo và tự quyết định áp dụng hay giữ bản đang dùng.',
+        });
         onClose();
         navigate(`/platform/versions/${versionNo}`);
       },
       onError: (err) => toast.error(errorMessage(err)),
     });
 
-  return (
+  // Rendered on <body>: inside the console a transformed ancestor turns `position: fixed` into page-relative, so the
+  // dialog sat below the fold with its buttons cut off. The .pulse-ui wrapper keeps the console button styles.
+  return createPortal(
+    <div className="pulse-ui" style={{ minHeight: 0, background: 'transparent' }}>
     <div className="pa-overlay" onClick={onClose} style={{ display: 'grid', placeItems: 'center', background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(4px)', zIndex: 1000, position: 'fixed', inset: 0 }}>
       <div
         className="pa-dialog"
@@ -701,7 +714,11 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
 
         <div style={{ padding: '20px 24px', display: 'grid', gap: 18 }}>
           <div style={{ padding: '12px 16px', borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe', fontSize: 13, color: '#1e40af' }}>
-            Sau khi công bố, mốc neo ⚓ sẽ chuyển {currentNo ? translateUi(`từ v${currentNo} `) : ''}sang <strong>v{versionNo}</strong>. Các tổ chức doanh nghiệp sẽ ngay lập tức được truy cập danh mục khóa học mới.
+            Sau khi công bố, mốc neo ⚓ sẽ chuyển {currentNo ? translateUi(`từ v${currentNo} `) : ''}sang <strong>v{versionNo}</strong>.{' '}
+            {applyToAll
+              ? translateUi('Mọi doanh nghiệp chuyển sang bản này ngay, kể cả nơi đang dùng bản cũ hơn.')
+              : translateUi('Mỗi doanh nghiệp nhận thông báo và tự quyết định áp dụng hay giữ bản đang dùng. Doanh nghiệp đang dùng thử và doanh nghiệp đăng ký sau nhận bản này ngay.')}{' '}
+            {translateUi('Khi một doanh nghiệp áp dụng, nhân viên học lại các khóa thay đổi từ đầu, kể cả người đã đạt; chứng nhận đã cấp vẫn giữ.')}
           </div>
 
           <div>
@@ -710,12 +727,13 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
             </span>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
               {changed.map((c) => (
-                <li key={c.courseId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 13 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <li key={c.courseId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '8px 12px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 13 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                     <Pill tone={CHANGE_KIND[c.changeKind]?.tone}>{translateUi(CHANGE_KIND[c.changeKind]?.label)}</Pill>
-                    <span style={{ fontWeight: 600, color: '#0f172a' }}>{c.code}</span> · {translateUi(c.title)}
+                    <span style={{ fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>{c.code}</span>
+                    <span style={{ minWidth: 0 }}>· {translateUi(c.title)}</span>
                   </div>
-                  <small style={{ color: '#64748b' }}>
+                  <small style={{ color: '#64748b', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     {c.moduleCount} mô đun · {c.questionCount} câu hỏi
                   </small>
                 </li>
@@ -758,6 +776,18 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
             )}
           </div>
 
+          <label
+            style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: applyToAll ? '#fff7ed' : '#f8fafc', cursor: 'pointer', fontSize: 13 }}
+          >
+            <input type="checkbox" checked={applyToAll} onChange={(e) => setApplyToAll(e.target.checked)} style={{ marginTop: 2 }} />
+            <span>
+              <strong style={{ color: '#0f172a' }}>{translateUi('Áp ngay cho tất cả doanh nghiệp')}</strong>
+              <span style={{ display: 'block', color: '#64748b', marginTop: 2 }}>
+                {translateUi('Chỉ dùng cho bản sửa lỗi gấp, không chờ doanh nghiệp duyệt. Bỏ chọn thì mỗi doanh nghiệp tự duyệt; admin vẫn áp riêng được ở hồ sơ tổ chức.')}
+              </span>
+            </span>
+          </label>
+
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 6 }}>
               Ghi chú phát hành phiên bản
@@ -787,5 +817,7 @@ function PublishDialog({ detail, onClose }: { detail: CatalogVersionDetail; onCl
         </div>
       </div>
     </div>
+    </div>,
+    document.body,
   );
 }

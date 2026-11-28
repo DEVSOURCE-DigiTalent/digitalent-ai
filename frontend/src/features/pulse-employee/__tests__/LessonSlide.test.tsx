@@ -64,4 +64,15 @@ describe('Học liệu theo từng slide', () => {
     expect(container.querySelector('img, script, [onclick]')).toBeNull();
     expect(lessonSections('Nội dung không có heading')).toEqual([{ title: '', body: 'Nội dung không có heading\n' }]);
   });
+
+  it('renders an uploaded video player even when hideMedia is passed for non-first parts', () => {
+    const { container } = render(<LessonSlide courseCode="M1-F" moduleIndex={0} index={1} count={7} hideMedia slide={{
+      lessonId: 'video-page', title: 'Video bài giảng · Tìm kiếm thông tin bằng từ khóa', lessonType: 'VIDEO', contentBody: null,
+      media: [{ kind: 'VIDEO', url: 'platform/assets/v1/content?exp=1&sig=s', alt: 'Video bài giảng · Tìm kiếm thông tin bằng từ khóa' }],
+    }} />);
+    const video = container.querySelector('video');
+    expect(video).toBeTruthy();
+    expect(video?.getAttribute('src')).toContain('platform/assets/v1/content?exp=1&sig=s');
+    expect(screen.queryByText(/Đang hoàn thiện biên tập/)).toBeNull();
+  });
 });

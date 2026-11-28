@@ -27,6 +27,7 @@ import * as competencyHooks from '@/hooks/use-competencies';
 import * as jobHooks from '@/hooks/use-job-positions';
 import * as deptHooks from '@/hooks/use-departments';
 import * as analyticsHooks from '@/hooks/use-analytics';
+import * as workforceHooks from '@/hooks/use-workforce';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
 // Mock sonner
@@ -150,19 +151,29 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
   // MGR-03: TeamMemberDetailPage
   // ==========================================
   describe('MGR-03: TeamMemberDetailPage', () => {
-    it('shows member details and keeps competencies grouped and collapsed by domain', () => {
-      vi.spyOn(gapHooks, 'useSkillGapRuns').mockReturnValue({ data: { items: [{ runId: 'run-1' }] } } as any);
-      vi.spyOn(gapHooks, 'useSkillGapRun').mockReturnValue({
+    it('shows member details, competency development chart and learning progress', () => {
+      useCurrentUser.setState({
+        user: {
+          id: 'usr-mgr-01',
+          email: 'manager@digitalent.ai',
+          fullName: 'Trần Quản Lý',
+          roles: ['MANAGER'],
+          permissions: ['team.manage', 'task.read', 'task.create', 'task.evaluate', 'skill_gap.read', 'course_assignment.read'],
+        },
+        isAuthenticated: true,
+      });
+      vi.spyOn(workforceHooks, 'useWorkforceDevelopment').mockReturnValue({
         data: {
-          runId: 'run-1',
-          summary: { coveragePercent: 50, totalMet: 1, totalRequired: 2, totalGap: 1 },
-          items: [
-            { competencyId: 'c1', frameworkCode: '1.1', competencyName: 'Tìm dữ liệu', currentLevel: 1, requiredLevel: 3, gapSteps: 2 },
-            { competencyId: 'c2', frameworkCode: '1.2', competencyName: 'Đánh giá dữ liệu', currentLevel: 3, requiredLevel: 3, gapSteps: 0 },
+          employeeCount: 1,
+          domains: [
+            { code: 'TT02_D1', name: 'Khai thác dữ liệu và thông tin', baseline: 1, current: 2, target: 3 },
           ],
         },
+        isLoading: false,
+        isSuccess: true,
+        isError: false,
       } as any);
-      vi.spyOn(assignmentHooks, 'useAssignments').mockReturnValue({ data: { items: [] } } as any);
+      vi.spyOn(assignmentHooks, 'useAssignments').mockReturnValue({ data: { items: [], totalItems: 0, pageIndex: 1, totalPages: 1 }, isLoading: false, isSuccess: true } as any);
       vi.spyOn(empHooks, 'useEmployee').mockReturnValue({
         data: {
           id: 'emp-01',
@@ -184,15 +195,13 @@ describe('Tasks, Team & Evidence Flow (MGR-01..12)', () => {
         '/members/emp-01'
       );
 
-      expect(screen.getByText('Lê Văn An')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Lê Văn An' })).toBeInTheDocument();
       expect(screen.getByText('NV-001')).toBeInTheDocument();
       expect(screen.getByText('an.le@acme.com')).toBeInTheDocument();
       expect(screen.getByText('Khối Công nghệ')).toBeInTheDocument();
-      expect(screen.getByText('50%')).toBeInTheDocument();
-      const domain = screen.getByText('Khai thác dữ liệu và thông tin').closest('details');
-      expect(domain).not.toHaveAttribute('open');
-      expect(domain).toHaveTextContent('1 / 2');
-      expect(domain).toHaveTextContent('Thiếu 2 cấp');
+      expect(screen.getByRole('heading', { name: 'Năng lực qua sáu lĩnh vực' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /Xem chi tiết từng năng lực/ })).toHaveAttribute('href', '/enterprise/team/skill-gap?employeeId=emp-01');
+      expect(screen.getByRole('heading', { name: 'Tiến độ học tập' })).toBeInTheDocument();
     });
   });
 

@@ -8,6 +8,7 @@ import { platformCatalogService, type CatalogCourseDetail } from '@/services/pla
 import { Footer, LoadError, Loading } from '../components/pulse-ui';
 import { LEVEL_NAMES, errorMessage, formatMoney } from '../components/pulse-format';
 import type { CourseEdit } from '../builder/builder-types';
+import { CourseBuilderHeader, CourseBuilderLayout, CourseOutlineItem } from '../builder/CourseBuilderLayout';
 import { CourseInfoForm } from '../builder/CourseInfoForm';
 import { FinalEditor } from '../builder/FinalEditor';
 import { LearnerPreview } from '../builder/LearnerPreview';
@@ -18,16 +19,9 @@ import {
   Lock,
   Sparkles,
   SlidersHorizontal,
-  Layers,
   GraduationCap,
   Plus,
 } from 'lucide-react';
-
-const LEVEL_STYLES: Record<number, { bg: string; color: string; border: string }> = {
-  1: { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
-  2: { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
-  3: { bg: '#fefce8', color: '#ca8a04', border: '#fef08a' },
-};
 
 type Section = 'info' | 'final' | number;
 
@@ -93,45 +87,25 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
 
   const isDraft = course.versionStatus === 'DRAFT';
   const totalQuestions = course.modules.reduce((sum, m) => sum + m.questions.length, 0);
-  const levelStyle = LEVEL_STYLES[course.level] ?? { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' };
 
   return (
     <>
-      <header className="pa-ov-header">
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <h1 aria-label={course.title}>
-              {translateUi(course.title) || 'Khóa học mới'}
-            </h1>
-            <span
-              className="pa-ver-level-badge"
-              style={{
-                background: levelStyle.bg,
-                color: levelStyle.color,
-                border: `1px solid ${levelStyle.border}`,
-                padding: '3px 10px',
-                borderRadius: 6,
-                fontSize: 12,
-                fontWeight: 700,
-              }}
-            >
-              {translateUi(LEVEL_NAMES[course.level]) ?? course.levelName}
-            </span>
-            <span className="pa-rp-version-badge" style={{ fontFamily: 'monospace', fontWeight: 700 }}>
-              {course.code}
-            </span>
-            {isDraft ? (
-              <span className="pa-cb-version-draft-badge">
-                <Sparkles size={12} aria-hidden="true" />
-                <span>{translateUi(`Bản nháp v${course.versionNo}`)}</span>
-              </span>
-            ) : (
-              <span className="pa-cb-version-current-badge">
-                <span>{translateUi(`v${course.versionNo} (đang dùng)`)}</span>
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 4 }}>
+      <CourseBuilderHeader
+        title={course.title}
+        code={course.code}
+        level={course.level}
+        levelName={course.levelName}
+        status={isDraft ? (
+          <span className="pa-cb-version-draft-badge">
+            <Sparkles size={12} aria-hidden="true" />
+            <span>{translateUi(`Bản nháp v${course.versionNo}`)}</span>
+          </span>
+        ) : (
+          <span className="pa-cb-version-current-badge">
+            <span>{translateUi(`v${course.versionNo} (đang dùng)`)}</span>
+          </span>
+        )}
+        subtitle={<>
             <p className="pa-ov-subtitle" style={{ margin: 0 }}>
               {translateUi('Khung năng lực số')} · {translateUi(course.domainName)} · {course.modules.length} {translateUi('mô đun')} · {totalQuestions} {translateUi('câu hỏi ôn tập')}
             </p>
@@ -141,10 +115,8 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
                 <span>{courseEdit.isPending ? translateUi('Đang lưu thay đổi…') : translateUi('Khối và mô đun tự lưu')}</span>
               </div>
             )}
-          </div>
-        </div>
-
-        <div className="pa-ov-actions">
+        </>}
+        actions={<>
           <Link
             className="btn btn-outline btn-small inline-flex items-center gap-1.5"
             to={`/platform/versions/${course.versionNo}`}
@@ -161,55 +133,28 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
             <Eye size={14} />
             <span>{translateUi('Xem thử như nhân viên')}</span>
           </button>
-        </div>
-      </header>
+        </>}
+      />
 
       {!course.editable && <ReadOnlyBar course={course} />}
-      <div className="pa-builder">
-        <nav className="pa-outline" aria-label={translateUi("Cấu trúc khóa học")}>
-          <div className="pa-ol-header">
-            <div className="pa-ol-header-title">
-              <Layers size={13} aria-hidden="true" />
-              <span>{translateUi("Nội dung khóa học")}</span>
-            </div>
-            <span className="pa-ol-header-count">{course.modules.length} {translateUi("mô đun")}</span>
-          </div>
-
-          <button
-            type="button"
-            className="pa-ol-item"
-            aria-current={section === 'info' ? 'step' : undefined}
+      <CourseBuilderLayout moduleCount={course.modules.length} outline={<>
+          <CourseOutlineItem
+            icon={<SlidersHorizontal size={14} aria-hidden="true" />}
+            title={translateUi('Thông tin khóa học')}
+            detail={<>{translateUi(LEVEL_NAMES[course.level])} · {course.price ? formatMoney(course.price) : translateUi('Miễn phí')}</>}
+            active={section === 'info'}
             onClick={() => go('info')}
-          >
-            <b className="pa-ol-icon-box">
-              <SlidersHorizontal size={14} aria-hidden="true" />
-            </b>
-            <span className="pa-ol-text">
-              <strong>{translateUi("Thông tin khóa học")}</strong>
-              <small>
-                {translateUi(LEVEL_NAMES[course.level])} · {course.price ? formatMoney(course.price) : translateUi('Miễn phí')}
-              </small>
-            </span>
-          </button>
-
-          <div className="pa-ol-label">{translateUi("Mô đun")}</div>
-
+          />
+          <div className="pa-ol-label">{translateUi('Mô đun')}</div>
           {course.modules.map((m) => (
-            <button
+            <CourseOutlineItem
               key={m.moduleId}
-              type="button"
-              className="pa-ol-item"
-              aria-current={section === m.index ? 'step' : undefined}
+              number={two(m.index + 1)}
+              title={translateUi(m.title) || translateUi('Mô đun chưa đặt tên')}
+              detail={<>{m.blocks.length} {translateUi('khối')} · {m.questions.length} {translateUi('câu hỏi')}</>}
+              active={section === m.index}
               onClick={() => go(m.index)}
-            >
-              <b className="pa-ol-number-box">{two(m.index + 1)}</b>
-              <span className="pa-ol-text">
-                <strong>{translateUi(m.title) || translateUi('Mô đun chưa đặt tên')}</strong>
-                <small>
-                  {m.blocks.length} {translateUi('khối')} · {m.questions.length} {translateUi('câu hỏi')}
-                </small>
-              </span>
-            </button>
+            />
           ))}
 
           {editable && (
@@ -228,23 +173,15 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
             <small className="pa-hint pa-ol-pad">{translateUi("Chưa có mô đun nào.")}</small>
           )}
 
-          <div className="pa-ol-label">{translateUi("Cuối khóa")}</div>
-          <button
-            type="button"
-            className="pa-ol-item"
-            aria-current={section === 'final' ? 'step' : undefined}
+          <div className="pa-ol-label">{translateUi('Cuối khóa')}</div>
+          <CourseOutlineItem
+            icon={<GraduationCap size={14} aria-hidden="true" />}
+            title={translateUi(course.final.title)}
+            detail={translateUi('Quản lý phòng ban chấm')}
+            active={section === 'final'}
             onClick={() => go('final')}
-          >
-            <b className="pa-ol-icon-box">
-              <GraduationCap size={14} aria-hidden="true" />
-            </b>
-            <span className="pa-ol-text">
-              <strong>{translateUi(course.final.title)}</strong>
-              <small>{translateUi("Quản lý phòng ban chấm")}</small>
-            </span>
-          </button>
-        </nav>
-        <div className="pa-canvas">
+          />
+      </>}>
           {section === 'info' && (
             <CourseInfoForm
               key={`${course.title}|${course.domainId}|${course.level}|${course.price}|${course.salesStatus}|${course.code}|${course.outcome}`}
@@ -266,8 +203,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
             />
           )}
           {section === 'final' && <FinalEditor key={JSON.stringify(course.final)} course={course} editable={editable} edit={edit} />}
-        </div>
-      </div>
+      </CourseBuilderLayout>
       {preview && <LearnerPreview course={course} moduleIndex={typeof section === 'number' ? section : 0} onClose={() => setPreview(false)} />}
     </>
   );

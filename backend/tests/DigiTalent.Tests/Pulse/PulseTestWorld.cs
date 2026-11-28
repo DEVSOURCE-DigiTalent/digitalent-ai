@@ -28,6 +28,14 @@ internal sealed class ManualClock : TimeProvider
     public void Advance(TimeSpan by) => Now = Now.Add(by);
 }
 
+/// <summary>Hàng đợi phân tích hành vi giả: chỉ ghi lại các báo cáo được đưa vào.</summary>
+internal sealed class RecordingBehaviorQueue : IBehaviorAnalysisQueue
+{
+    public List<Guid> Queued { get; } = new();
+
+    public void Enqueue(Guid reportId) => Queued.Add(reportId);
+}
+
 /// <summary>Kho tệp trong bộ nhớ: ghi hình bài làm được tải lên từng mẩu và ghép vào cuối tệp.</summary>
 internal sealed class MemoryFileStorage : IFileStorageService
 {
@@ -74,6 +82,8 @@ internal sealed class PulseTestWorld : IDisposable
     public required AppDbContext Context { get; init; }
     public ManualClock Clock { get; } = new();
     public MemoryFileStorage Storage { get; } = new();
+    /// <summary>Hàng đợi phân tích hành vi: test đọc các báo cáo đã được đưa vào hàng sau khi nộp bài.</summary>
+    public RecordingBehaviorQueue BehaviorQueue { get; } = new();
 
     public static async Task<PulseTestWorld> CreateAsync()
     {
@@ -98,6 +108,13 @@ internal sealed class PulseTestWorld : IDisposable
     /// <summary>Use case Pulse dựng như DI, đăng nhập bằng <paramref name="email"/> với vai trò <paramref name="role"/>.</summary>
     public async Task<UseCases> AsAsync(string email, string role = Roles.Employee, Guid? departmentOverride = null)
     {
+        var current = await CurrentUserAsync(email, role, departmentOverride);
+        return Build(current);
+    }
+
+    /// <summary>Người dùng đang đăng nhập (như CurrentUser từ JWT) với vai trò <paramref name="role"/>.</summary>
+    public async Task<Mock<ICurrentUser>> CurrentUserAsync(string email, string role = Roles.Employee, Guid? departmentOverride = null)
+    {
         var user = await UserAsync(email);
         var employee = await Context.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.UserId == user.Id);
         var current = new Mock<ICurrentUser>();
@@ -113,7 +130,11 @@ internal sealed class PulseTestWorld : IDisposable
         current.Setup(c => c.IsAdmin).Returns(role == Roles.Owner);
         current.Setup(c => c.IsDepartmentManager).Returns(role == Roles.Manager);
         current.Setup(c => c.Roles).Returns(new List<string> { role });
+        return current;
+    }
 
+    private UseCases Build(Mock<ICurrentUser> current)
+    {
         var me = new MyEmployeeContext(Context, current.Object);
         var modules = new PulseModuleReader(Context);
         var catalog = new PulseCatalogReader(Context);
@@ -149,7 +170,7 @@ internal sealed class PulseTestWorld : IDisposable
             new RecordPulseProctoringEventsUseCase(Context, proctoring),
             new GetPulseRecordingContentUseCase(Context, Storage, signer),
             new GetPulseFinalUseCase(workspace, final, policy),
-            new SubmitPulseFinalUseCase(Context, workspace, proctoring, paper),
+            new SubmitPulseFinalUseCase(Context, workspace, proctoring, paper, BehaviorQueue),
             new GetPulsePracticeUseCase(learner),
             new GetPulseOutcomesUseCase(learner, outcomes),
             new GetPulseOutcomeUseCase(learner, outcomes),

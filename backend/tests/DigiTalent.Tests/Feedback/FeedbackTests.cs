@@ -117,6 +117,33 @@ public class FeedbackTests
     }
 
     [Fact]
+    public async Task Mine_FiltersByTypeAndStatusOnTheServer_SoPagesCountTheRightItems()
+    {
+        await using var context = NewContext();
+        var me = Guid.NewGuid();
+        var create = new CreateFeedbackUseCase(context, UserOf(me, Guid.NewGuid()));
+        foreach (var type in new[] { "FEEDBACK", "FEEDBACK", "FEEDBACK", "BUG" })
+        {
+            var input = Valid();
+            input.Type = type;
+            await create.ExecuteAsync(input);
+        }
+        var bug = await context.UserFeedbacks.SingleAsync(f => f.Type == "BUG");
+        bug.Status = "RESOLVED";
+        await context.SaveChangesAsync();
+        var mine = new GetMyFeedbacksUseCase(context, UserOf(me));
+
+        var page = await mine.ExecuteAsync(new GetMyFeedbacksInput { Type = "FEEDBACK", PageSize = 2 });
+        page.Items.Should().HaveCount(2).And.OnlyContain(f => f.Type == "FEEDBACK");
+        page.TotalItems.Should().Be(3);
+        page.TotalPages.Should().Be(2);
+        (await mine.ExecuteAsync(new GetMyFeedbacksInput { Type = "BUG", Status = "RESOLVED" })).TotalItems.Should().Be(1);
+        (await mine.ExecuteAsync(new GetMyFeedbacksInput { Type = "BUG", Status = "OPEN" })).TotalItems.Should().Be(0);
+        new GetMyFeedbacksValidator().TestValidate(new GetMyFeedbacksInput { Type = "SPAM" }).IsValid.Should().BeFalse();
+        new GetMyFeedbacksValidator().TestValidate(new GetMyFeedbacksInput { Status = "DONE" }).IsValid.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task UpdateStatus_RecordsTheResolver_AndReopeningClearsIt()
     {
         await using var context = NewContext();

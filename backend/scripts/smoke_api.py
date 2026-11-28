@@ -72,29 +72,34 @@ def main():
     )
     dll = ROOT / "src/DigiTalent.Api/bin/Release/net8.0/DigiTalent.Api.dll"
     with tempfile.TemporaryFile(mode="w+t") as log:
-        process = subprocess.Popen(["dotnet", str(dll)], cwd=ROOT, env=env, stdout=log, stderr=log)
+        process = subprocess.Popen(["dotnet", str(dll)], cwd=dll.parent, env=env, stdout=log, stderr=log)
         try:
             wait_for_health(process)
-            admin = login("admin@digitalent.ai", password)
-            hr = login("hr@digitalent.ai", password)
+            login("admin@digitalent.ai", password)
+            owner = login("owner@digitalent.ai", password)
             employee = login("employee@digitalent.ai", password)
 
             suffix = uuid4().hex[:8].upper()
+            families = require_status("/api/v1/job-families", 200, token=owner)["data"]["items"]
+            office_family = next((item for item in families if item.get("code") == "OFFICE"), families[0])
+            require_status(f"/api/v1/job-families/{office_family['id']}", 409, "DELETE", token=owner)
+
             family = require_status(
                 "/api/v1/job-families", 200, "POST",
-                {"code": f"SMK-F-{suffix}", "name": "Smoke Family"}, admin,
+                {"code": f"SMK-F-{suffix}", "name": "Smoke Family"}, owner,
             )["data"]
-            require_status(
-                "/api/v1/job-positions", 200, "POST",
-                {"code": f"SMK-P-{suffix}", "name": "Smoke Position", "jobFamilyId": family["id"]}, admin,
-            )
-            require_status(f"/api/v1/job-families/{family['id']}", 409, "DELETE", token=admin)
+            require_status(f"/api/v1/job-families/{family['id']}", 200, "DELETE", token=owner)
 
+            employees = require_status("/api/v1/employees?pageSize=20", 200, token=owner)["data"]["items"]
+            candidate = next(
+                (item for item in employees if item.get("employeeCode") == "EMP-0002"),
+                employees[0],
+            )
             department = require_status(
                 "/api/v1/departments", 200, "POST",
-                {"code": f"SMK-D-{suffix}", "name": "Smoke Department"}, hr,
+                {"code": f"SMK-D-{suffix}", "name": "Smoke Department", "managerEmployeeId": candidate["id"]}, owner,
             )["data"]
-            require_status(f"/api/v1/departments/{department['id']}", 200, "DELETE", token=hr)
+            require_status(f"/api/v1/departments/{department['id']}", 409, "DELETE", token=owner)
             require_status(
                 "/api/v1/departments", 403, "POST",
                 {"code": f"DENY-{suffix}", "name": "Not Allowed"}, employee,

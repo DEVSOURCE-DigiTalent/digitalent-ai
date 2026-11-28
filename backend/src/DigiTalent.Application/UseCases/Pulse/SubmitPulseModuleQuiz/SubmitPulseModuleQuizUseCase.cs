@@ -28,7 +28,7 @@ public class SubmitPulseModuleQuizUseCase : IUseCase<SubmitPulseModuleQuizUseCas
 
     public async Task<SubmitPulseModuleQuizUseCaseOutput> ExecuteAsync(SubmitPulseModuleQuizUseCaseInput input)
     {
-        var (snapshot, state) = await _workspace.ResolveAsync(input.CourseId);
+        var (snapshot, state) = await _workspace.ResolveForAnswerAsync(input.CourseId);
         var module = PulseCourseWorkspace.FindModule(state, input.ModuleId);
         var assessmentId = module.QuizAssessmentId
             ?? throw new BadRequestException("Mô đun này không có câu hỏi ôn tập.", "moduleId", "NO_QUIZ");

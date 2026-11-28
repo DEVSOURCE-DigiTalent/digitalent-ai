@@ -456,16 +456,73 @@ public static class Statuses
         /// <summary>Trình duyệt không chạy được nhận diện khuôn mặt (không tải được mô hình…): phiên không có lớp thị giác.</summary>
         public const string FaceCheckOff = "FACE_CHECK_OFF";
 
+        // Thao tác bàn phím, chuột và màn hình (canonical v3.10). Chỉ ghi số ký tự, không ghi nội dung đã sao chép / dán.
+        /// <summary>Sao chép (hoặc cắt) chữ trên trang bài làm. Detail = "{nơi}:{số ký tự}" (<see cref="ProctoringEventDetail"/>).</summary>
+        public const string Copy = "COPY";
+        /// <summary>Dán chữ vào trang bài làm. Detail = "{nơi}:{số ký tự}".</summary>
+        public const string Paste = "PASTE";
+        /// <summary>Không gõ phím, không di chuột trên trang bài làm đang mở trong một khoảng dài (DurationMs).</summary>
+        public const string Idle = "IDLE";
+        /// <summary>Máy nối thêm màn hình (trình duyệt báo màn hình mở rộng) — chỉ một màn hình được chia sẻ.</summary>
+        public const string SecondScreen = "SECOND_SCREEN";
+
         public static readonly string[] All =
         {
             Started, TabHidden, FocusLost, ShareStopped, ShareResumed, CameraStopped, CameraResumed, MicStopped, MicResumed, Submitted,
             FaceMissing, MultipleFaces, LookingAway, FaceCheckOn, FaceCheckOff,
+            Copy, Paste, Idle, SecondScreen,
         };
 
-        /// <summary>Sự kiện người chấm cần xem (rời bài làm, mất một nguồn ghi hoặc khuôn mặt bất thường).</summary>
+        /// <summary>Sự kiện người chấm cần xem (rời bài làm, mất một nguồn ghi, khuôn mặt bất thường, sao chép / dán, màn hình phụ).</summary>
         public static readonly string[] Flagged =
         {
             TabHidden, FocusLost, ShareStopped, CameraStopped, MicStopped, FaceMissing, MultipleFaces, LookingAway,
+            Copy, Paste, SecondScreen,
         };
+    }
+
+    /// <summary>
+    /// Ghi chú của sự kiện sao chép / dán: "{nơi}:{số ký tự}", nơi = ESSAY (ô tự luận) | QUESTION (đề, câu hỏi) | PAGE (chỗ khác).
+    /// </summary>
+    public static class ProctoringEventDetail
+    {
+        public const string Essay = "ESSAY";
+        public const string Question = "QUESTION";
+        public const string Page = "PAGE";
+
+        public static readonly string[] Places = { Essay, Question, Page };
+
+        /// <summary>Nơi và số ký tự của một ghi chú sao chép / dán; null khi ghi chú không đúng dạng.</summary>
+        public static (string Place, int Chars)? ParseClipboard(string? detail)
+        {
+            if (string.IsNullOrWhiteSpace(detail)) return null;
+            var parts = detail.Split(':');
+            return parts.Length == 2 && Places.Contains(parts[0]) && int.TryParse(parts[1], out var chars) && chars >= 0
+                ? (parts[0], chars)
+                : null;
+        }
+    }
+
+    /// <summary>proctoring_behavior_reports.status (canonical v3.10).</summary>
+    public static class BehaviorReport
+    {
+        /// <summary>Đã lưu phần tổng hợp từ nhật ký, đang chờ AI phân tích.</summary>
+        public const string Pending = "PENDING";
+        /// <summary>AI đã phân tích xong.</summary>
+        public const string Ready = "READY";
+        /// <summary>AI không phân tích được (ErrorCode); báo cáo vẫn có phần tổng hợp từ nhật ký.</summary>
+        public const string Failed = "FAILED";
+
+        public static readonly string[] All = { Pending, Ready, Failed };
+    }
+
+    /// <summary>Mức rủi ro: proctoring_behavior_reports.risk_level / ai_level.</summary>
+    public static class RiskLevel
+    {
+        public const string Low = "LOW";
+        public const string Medium = "MEDIUM";
+        public const string High = "HIGH";
+
+        public static readonly string[] All = { Low, Medium, High };
     }
 }

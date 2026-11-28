@@ -1,7 +1,8 @@
+import { useCourseBuilderService } from './course-builder-service';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { platformCatalogService, type CatalogCourseDetail } from '@/services/platform-catalog.service';
+import { type CatalogCourseDetail } from '@/services/platform-catalog.service';
 import { errorMessage } from '../components/pulse-format';
 import type { CourseEdit } from './builder-types';
 import { RichTextEditor } from './RichTextEditor';
@@ -10,8 +11,11 @@ import { GraduationCap, FileText, CheckSquare, Plus, CheckCircle2, X } from 'luc
 const MAX_CRITERIA = 10;
 
 /** The course-final assignment: title, brief (rich text) and the criteria the department manager grades. */
-export function FinalEditor({ course, editable, edit }: { course: CatalogCourseDetail; editable: boolean; edit: CourseEdit }) {
+export function FinalEditor({ course, editable, edit, internal = false }: {
+  course: CatalogCourseDetail; editable: boolean; edit: CourseEdit; internal?: boolean;
+}) {
   useUiLanguage();
+  const service = useCourseBuilderService();
   const initial = { title: course.final.title, promptHtml: course.final.promptHtml, criteria: course.final.criteria };
   const [form, setForm] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -24,7 +28,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
   const save = () => {
     setSaving(true);
     edit((v, c) =>
-      platformCatalogService.updateFinal(v, c, {
+      service.updateFinal(v, c, {
         title: form.title.trim(),
         promptHtml: form.promptHtml,
         criteria: form.criteria.map((c) => c.trim()).filter(Boolean),
@@ -48,7 +52,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Bài thực hành nhân viên nộp sau khi học hết các mô đun.')}
+              {translateUi(internal ? 'Bài thực hành dành cho nhân viên doanh nghiệp.' : 'Bài thực hành nhân viên nộp sau khi học hết các mô đun.')}
             </div>
           </div>
           <span
@@ -62,7 +66,7 @@ export function FinalEditor({ course, editable, edit }: { course: CatalogCourseD
               border: '1px solid var(--pa-accent-border, #efc69b)',
             }}
           >
-            {translateUi('Quản lý phòng ban chấm · Tối đa 2 lần nộp')}
+            {translateUi(internal ? 'Thực hành nội bộ' : 'Quản lý phòng ban chấm · Tối đa 2 lần nộp')}
           </span>
         </div>
 

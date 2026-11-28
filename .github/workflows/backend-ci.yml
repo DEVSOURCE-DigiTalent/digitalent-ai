@@ -1,12 +1,13 @@
 name: Backend CI
 
 on:
+  workflow_call:
   pull_request:
     paths:
       - 'backend/**'
       - 'docker/**'
   push:
-    branches: [develop, main]
+    branches: [main]
     paths:
       - 'backend/**'
       - 'docker/**'

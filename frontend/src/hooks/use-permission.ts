@@ -99,6 +99,8 @@ export const PERMISSIONS = {
   COURSE_ASSIGNMENT_CANCEL: 'course_assignment.cancel',
   LEARNING_PROGRESS_READ: 'learning_progress.read',
   LESSON_COMPLETE: 'lesson.complete',
+  // Course versions published by DigiTalent: apply to the organization or keep the current one (OWNER, later R&D)
+  COURSE_UPDATE_REVIEW: 'course_update.review',
 
   // Assessment & Question Bank (6.10)
   QUESTION_BANK_READ: 'question_bank.read',
@@ -207,4 +209,8 @@ export const PERMISSIONS = {
   // Dùng thử doanh nghiệp: chủ doanh nghiệp mời nhân viên và gửi yêu cầu chấm; mentor chấm bài
   TRIAL_MANAGE: 'trial.manage',
   TRIAL_REVIEW: 'trial.review',
+
+  // Báo cáo hành vi khi làm bài cuối khóa (trong Khoảng trống năng lực OW-21)
+  BEHAVIOR_REPORT_READ: 'behavior_report.read',
+  BEHAVIOR_REPORT_ANALYZE: 'behavior_report.analyze',
 } as const;

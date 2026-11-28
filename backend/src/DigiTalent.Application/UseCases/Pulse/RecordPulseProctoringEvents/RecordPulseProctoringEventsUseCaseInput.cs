@@ -10,7 +10,8 @@ public class PulseProctoringEventInput
 {
     /// <summary>
     /// TAB_HIDDEN | FOCUS_LOST | SHARE_STOPPED | SHARE_RESUMED | CAMERA_STOPPED | CAMERA_RESUMED | MIC_STOPPED | MIC_RESUMED
-    /// | FACE_MISSING | MULTIPLE_FACES | LOOKING_AWAY | FACE_CHECK_ON | FACE_CHECK_OFF.
+    /// | FACE_MISSING | MULTIPLE_FACES | LOOKING_AWAY | FACE_CHECK_ON | FACE_CHECK_OFF
+    /// | COPY | PASTE (Detail "ESSAY|QUESTION|PAGE:{số ký tự}") | IDLE | SECOND_SCREEN.
     /// </summary>
     public string Kind { get; set; } = string.Empty;
 

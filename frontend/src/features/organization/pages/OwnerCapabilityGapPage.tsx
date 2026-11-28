@@ -3,8 +3,13 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BrainCircuit, ChevronDown, Database, Lightbulb, MessagesSquare, PenTool, Search, ShieldCheck, TrendingDown, X } from 'lucide-react';
 import { useCapabilityProgress } from '@/hooks/use-skill-gaps';
+import { useBehaviorOverview } from '@/hooks/use-behavior-reports';
+import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { LoadingProgress } from '@/components/shared/LoadingState';
+import type { BehaviorEmployee } from '@/services/behavior-report.service';
 import type { CapabilityProgress, CapabilityProgressEmployee } from '@/services/intelligence.service';
+import { BehaviorBadge, BehaviorOverviewCard } from '@/features/behavior-reports/components/BehaviorOverviewCard';
+import { PersonBehaviorPanel } from '@/features/behavior-reports/components/PersonBehaviorPanel';
 import { OwnerFilterSelect } from '../components/OwnerFilterSelect';
 import { positionKey, scopeView, type ScopeDomain, type ScopeView } from '../lib/capability-progress';
 import { DomainLineChart } from '@/features/trial-program/components/DomainLineChart';
@@ -15,6 +20,9 @@ import './owner-capability-progress.css';
  * the required level the company (or one position) meets now versus at the survey, the shape per domain, the
  * positions side by side, and who moved most / needs help. The data is loaded once; a position is a client-side scope
  * (positions are shared by every department; each person is compared with the level of the position they hold).
+ * Exam behavior sits beside the levels (canonical v3.10): a "Hành vi khi thi" strip for the scope, a badge on each
+ * person with a final to look at, and a person panel that puts their level per domain next to their course finals and
+ * replays one (video, timeline, AI evidence).
  */
 const DOMAIN_ICONS = [Database, MessagesSquare, PenTool, ShieldCheck, Lightbulb, BrainCircuit];
 const DOMAIN_SHORT = ['Dữ liệu', 'Giao tiếp', 'Sáng tạo', 'An toàn', 'Giải quyết vấn đề', 'Trí tuệ nhân tạo'];
@@ -37,6 +45,22 @@ export function OwnerCapabilityGapPage() {
   const data = progress.data;
   const view = useMemo(() => (data ? scopeView(data, scope || undefined) : null), [data, scope]);
   const position = data?.positions.find((p) => positionKey(p.positionId) === scope);
+  const { can } = usePermission();
+  const behavior = useBehaviorOverview(can(PERMISSIONS.BEHAVIOR_REPORT_READ));
+  const behaviorOf = useMemo(() => new Map((behavior.data?.employees ?? []).map((e) => [e.employeeId, e])), [behavior.data]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [openReport, setOpenReport] = useState<string | undefined>();
+  const open = (employeeId: string, reportId?: string) => { setOpenReport(reportId); setOpenId(employeeId); };
+  const scopedPeople = useMemo(
+    () => (data ? (scope ? data.people.filter((p) => positionKey(p.positionId) === scope) : data.people) : []),
+    [data, scope]);
+  const scopedBehavior = useMemo(() => {
+    const ids = new Set(scopedPeople.map((p) => p.employeeId));
+    return (behavior.data?.employees ?? []).filter((e) => ids.has(e.employeeId));
+  }, [behavior.data, scopedPeople]);
+  const peopleById = useMemo(() => new Map((data?.people ?? []).map((p) => [p.employeeId, p])), [data]);
+  const openPerson = openId ? data?.people.find((p) => p.employeeId === openId) : undefined;
+  const openBehavior = openId ? behaviorOf.get(openId) : undefined;
 
   return (
     <div className="cp-page">
@@ -67,11 +91,14 @@ export function OwnerCapabilityGapPage() {
           <button type="button" onClick={() => void progress.refetch()}>{translateUi('Thử lại')}</button>
         </div>
       ) : view.assessed === 0 ? (
-        <div className="cp-card cp-empty">
-          <TrendingDown size={26} aria-hidden="true" />
-          <strong>{translateUi(position && view.employees === 0 ? 'Chưa có nhân viên ở vị trí này' : 'Chưa có kết quả khảo sát để so sánh')}</strong>
-          {position && <button type="button" className="cp-link" onClick={() => setScope('')}>{translateUi('Xem toàn công ty')}</button>}
-        </div>
+        <>
+          <div className="cp-card cp-empty">
+            <TrendingDown size={26} aria-hidden="true" />
+            <strong>{translateUi(position && view.employees === 0 ? 'Chưa có nhân viên ở vị trí này' : 'Chưa có kết quả khảo sát để so sánh')}</strong>
+            {position && <button type="button" className="cp-link" onClick={() => setScope('')}>{translateUi('Xem toàn công ty')}</button>}
+          </div>
+          {scopedBehavior.length > 0 && <BehaviorOverviewCard employees={scopedBehavior} people={peopleById} onOpen={open} />}
+        </>
       ) : (
         <>
           <div className="cp-top">
@@ -81,15 +108,26 @@ export function OwnerCapabilityGapPage() {
             </div>
             <DomainResults domains={view.domains} />
           </div>
+          {scopedBehavior.length > 0 && <BehaviorOverviewCard employees={scopedBehavior} people={peopleById} onOpen={open} />}
           <div className="cp-main">
             <DomainRadar domains={view.domains} />
             <div className="cp-main__side">
               <PositionDumbbells data={data} selected={scope} onPick={setScope} />
-              <NeedsCard view={view} />
+              <NeedsCard view={view} behaviorOf={behaviorOf} onOpen={open} />
             </div>
           </div>
-          <AllPeople people={scope ? data.people.filter((p) => positionKey(p.positionId) === scope) : data.people} />
+          <AllPeople people={scopedPeople} behaviorOf={behaviorOf} onOpen={open} />
         </>
+      )}
+      {openId && (openPerson || openBehavior) && (
+        <PersonBehaviorPanel
+          key={`${openId}-${openReport ?? ''}`}
+          person={openPerson}
+          behavior={openBehavior}
+          name={openPerson?.name ?? openBehavior?.reports[0]?.employeeName ?? ''}
+          initialReportId={openReport}
+          onClose={() => setOpenId(null)}
+        />
       )}
     </div>
   );
@@ -348,25 +386,36 @@ function PositionDumbbells({ data, selected, onPick }: { data: CapabilityProgres
 const topGap = (person: CapabilityProgressEmployee) => domainsBelow(person)
   .sort((a, b) => (b.required - b.now!) - (a.required - a.now!))[0];
 
+type PeopleProps = { behaviorOf: ReadonlyMap<string, BehaviorEmployee>; onOpen: (employeeId: string) => void };
+
 /** Who still lacks most, beside the positions: name, position, the most urgent domain and how many domains are below. */
-function NeedsCard({ view }: { view: ScopeView }) {
+function NeedsCard({ view, behaviorOf, onOpen }: { view: ScopeView } & PeopleProps) {
   useUiLanguage();
+  const shortOf = (person: CapabilityProgressEmployee) => `${domainsBelow(person).length}/${comparedDomains(person).length}`;
+  // When everyone listed lacks the same share, say it once above the list instead of the same pill on every row.
+  const shared = view.needs.length > 1 && view.needs.every((person) => shortOf(person) === shortOf(view.needs[0])) ? shortOf(view.needs[0]) : null;
   return (
     <section className="cp-card cp-hl cp-needs" data-tone="need" aria-label={translateUi('Cần hỗ trợ')}>
-      <h2>{translateUi('Cần hỗ trợ')}</h2>
+      <div className="cp-needs__head">
+        <h2>{translateUi('Cần hỗ trợ')}</h2>
+        {shared && <small>{translateUi(`${view.needs.length} người · đều chưa đạt ${shared} lĩnh vực`)}</small>}
+      </div>
       {view.needs.length === 0 ? <p className="cp-muted">{translateUi('Mọi người đã đạt mức cần đạt.')}</p> : (
         <ul>{view.needs.map((person) => {
           const gap = topGap(person);
           return (
             <li key={person.employeeId}>
-              <Link to={`/enterprise/skill-gap/${person.employeeId}`} className="cp-hl__row">
+              <button type="button" className="cp-hl__row" onClick={() => onOpen(person.employeeId)}>
                 <span className="cp-avatar" data-tone="need" aria-hidden="true">{initials(person.name)}</span>
                 <span className="cp-hl__who">
                   <strong>{person.name}<small>{person.positionName ?? person.departmentName}</small></strong>
                   {gap && <span className="cp-hl__note" data-domain={gap.number}>{translateUi(shortName(gap.number, gap.name))}: {translateUi(LEVELS[gap.now!])} → {translateUi(`cần ${LEVELS[gap.required]}`)}</span>}
                 </span>
-                <span className="cp-pill" data-tone="need">{translateUi(`Chưa đạt ${domainsBelow(person).length}/${comparedDomains(person).length} lĩnh vực`)}</span>
-              </Link>
+                <span className="cp-hl__tags">
+                  {!shared && <span className="cp-pill" data-tone="need">{translateUi(`Chưa đạt ${shortOf(person)} lĩnh vực`)}</span>}
+                  <BehaviorBadge employee={behaviorOf.get(person.employeeId)} />
+                </span>
+              </button>
             </li>
           );
         })}</ul>
@@ -376,7 +425,7 @@ function NeedsCard({ view }: { view: ScopeView }) {
 }
 
 /** Everyone, behind one button: the owner looks at the charts first. */
-function AllPeople({ people }: { people: CapabilityProgressEmployee[] }) {
+function AllPeople({ people, behaviorOf, onOpen }: { people: CapabilityProgressEmployee[] } & PeopleProps) {
   useUiLanguage();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -403,11 +452,11 @@ function AllPeople({ people }: { people: CapabilityProgressEmployee[] }) {
               const improved = domainsImproved(person).length;
               return (
                 <li key={person.employeeId}>
-                  <Link to={`/enterprise/skill-gap/${person.employeeId}`} className="cp-person">
+                  <button type="button" className="cp-person" onClick={() => onOpen(person.employeeId)}>
                     <span className="cp-avatar" aria-hidden="true">{initials(person.name)}</span>
                     <span className="cp-person__who">
                       <strong>{person.name}</strong>
-                      <small>{[person.positionName, person.departmentName].filter(Boolean).join(' · ')}</small>
+                      <small>{[...new Set([person.positionName, person.departmentName].filter(Boolean))].join(' · ')}</small>
                     </span>
                     <span className="cp-person__gaps">
                       {!person.assessed ? <span className="cp-chip" data-state="none">{translateUi('Chưa có kết quả khảo sát')}</span>
@@ -418,9 +467,12 @@ function AllPeople({ people }: { people: CapabilityProgressEmployee[] }) {
                           </span>
                         ))}
                     </span>
-                    {improved > 0 && <span className="cp-pill" data-tone="up">{translateUi(`Lên mức ở ${improved} lĩnh vực`)}</span>}
+                    <span className="cp-person__tags">
+                      {improved > 0 && <span className="cp-pill" data-tone="up">{translateUi(`Lên mức ở ${improved} lĩnh vực`)}</span>}
+                      <BehaviorBadge employee={behaviorOf.get(person.employeeId)} />
+                    </span>
                     <ArrowRight className="cp-person__go" size={16} aria-hidden="true" />
-                  </Link>
+                  </button>
                 </li>
               );
             })}

@@ -44,6 +44,12 @@ public sealed class SmtpTrialEmailSender : ITrialEmailSender
 
     private async Task SendCoreAsync(string email, string kind, string token, string? code, CancellationToken ct)
     {
+        if (DemoEmailGuard.IsDemoAddress(email))
+        {
+            _logger.LogInformation("[SmtpTrialEmailSender] Skipped SMTP for demo address {Email}.", email);
+            return;
+        }
+
         if (!IsReady)
         {
             throw new InvalidOperationException("SMTP settings are not configured for trial emails.");

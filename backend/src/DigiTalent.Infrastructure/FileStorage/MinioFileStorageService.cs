@@ -485,6 +485,25 @@ public sealed class MinioFileStorageService : IFileStorageService, IDirectFileSt
     private static string SanitizeKey(string path) =>
         path.Replace('\\', '/').Replace("..", "").Trim('/');
 
-    private static string SanitizeDispositionFileName(string fileName) =>
-        Path.GetFileName(fileName).Replace("\"", "").Replace("\r", "").Replace("\n", "");
+    private static string SanitizeDispositionFileName(string fileName)
+    {
+        var name = Path.GetFileName(fileName)
+            .Replace("\"", "")
+            .Replace("\r", "")
+            .Replace("\n", "")
+            .Replace('đ', 'd')
+            .Replace('Đ', 'D')
+            .Normalize(System.Text.NormalizationForm.FormD);
+
+        var ascii = new System.Text.StringBuilder(name.Length);
+        foreach (var ch in name)
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch) == System.Globalization.UnicodeCategory.NonSpacingMark)
+                continue;
+            ascii.Append(ch >= 0x20 && ch <= 0x7E ? ch : '_');
+        }
+
+        var result = ascii.ToString().Trim();
+        return string.IsNullOrEmpty(result) ? "file" : result;
+    }
 }

@@ -10,8 +10,19 @@ public static class RolePermissions
 {
     public static readonly IReadOnlyDictionary<string, string[]> Defaults = new Dictionary<string, string[]>
     {
+        [Roles.Research] = new[]
+        {
+            Permissions.Research.ManageCourses,
+            // R&D decides on the course versions DigiTalent publishes (the owner only when the company has no R&D).
+            Permissions.Learning.ReviewCourseUpdate,
+            Permissions.Account.ViewOwn,
+            Permissions.Account.UpdateOwnProfile,
+            Permissions.Account.ChangeOwnPassword,
+        },
         [Roles.Owner] = new[]
         {
+            Permissions.Research.ManageCourses,
+            Permissions.Research.Configure,
             Permissions.Account.ViewOwn,
             Permissions.Account.UpdateOwnProfile,
             Permissions.Account.ChangeOwnPassword,
@@ -56,6 +67,8 @@ public static class RolePermissions
             Permissions.Learning.ReadAssignment,
             Permissions.Learning.CancelAssignment,
             Permissions.Learning.ReadProgress,
+            // Course versions published by DigiTalent reach the organization only when it applies them.
+            Permissions.Learning.ReviewCourseUpdate,
             // Internal organization content, explicitly approved for OWNER.
             Permissions.Learning.Create,
             Permissions.Learning.Update,
@@ -120,6 +133,10 @@ public static class RolePermissions
 
             Permissions.Assistant.Chat,
             Permissions.Trial.Manage,
+
+            // Báo cáo hành vi khi làm bài cuối khóa (trong Khoảng trống năng lực OW-21).
+            Permissions.BehaviorReport.Read,
+            Permissions.BehaviorReport.Analyze,
 
             Permissions.Feedback.Create,
             Permissions.Feedback.ReadOwn,

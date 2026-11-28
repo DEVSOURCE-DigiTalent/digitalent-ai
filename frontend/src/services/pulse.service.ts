@@ -75,7 +75,12 @@ export type PulseProctoringEventKind =
   | 'MULTIPLE_FACES'
   | 'LOOKING_AWAY'
   | 'FACE_CHECK_ON'
-  | 'FACE_CHECK_OFF';
+  | 'FACE_CHECK_OFF'
+  // Thao tác trên trang bài làm (canonical v3.10). COPY / PASTE: detail = "ESSAY|QUESTION|PAGE:{số ký tự}".
+  | 'COPY'
+  | 'PASTE'
+  | 'IDLE'
+  | 'SECOND_SCREEN';
 
 export interface PulsePerson {
   employeeId: string;
@@ -254,6 +259,8 @@ export interface PulseCourseModule {
 export type PulseCourseNextAction = 'PRE_ASSESSMENT' | 'PRE_REVIEW' | 'MODULE' | 'FINAL' | 'PREVIEW' | 'LOCKED' | 'DONE';
 
 export interface PulseCourseDetail {
+  /** Practice guidance of the company version R&D applied (its title and objective are the course's own). */
+  enterpriseContent?: { title: string; objective: string; practice: string } | null;
   course: PulseCourseSummary;
   description?: string | null;
   purpose?: string | null;
@@ -610,6 +617,8 @@ export type PulseReviewStatus = 'PENDING' | 'RETRY_WAIT' | 'RETRY_READY' | 'DEAD
 export interface PulseAiHint {
   checks: boolean[];
   criterionNotes?: string[] | null;
+  criterionEvidence?: (string | null)[] | null;
+  evidenceLookupStatus?: 'NOT_CONFIGURED' | 'UNAVAILABLE' | null;
   source?: 'GEMINI' | 'KEYWORD_FALLBACK';
   model?: string | null;
   /** When the AI made this review (ISO). Stored reviews keep their time, so reopening the queue does not change it. */
@@ -642,7 +651,10 @@ export interface PulseAiFraudItem {
   note: string;
 }
 
+export type PulseAiDetailEvidenceKey = 'plagiarism' | 'ai' | 'relevance' | 'depth' | 'clarity' | 'verdict';
+
 export interface PulseAiDetail {
+  evidence?: Partial<Record<PulseAiDetailEvidenceKey, string | null>> | null;
   plagiarismScore: number;
   plagiarismNote: string;
   aiGeneratedScore: number;
@@ -821,6 +833,8 @@ export const pulseReviewService = {
     refreshAi = false,
     refreshSubmissionId?: string,
     departmentId?: string,
+    evidenceMetric?: PulseAiDetailEvidenceKey,
+    skipAi = false,
   ) => {
     const params: Record<string, string | boolean> = {};
     if (includeReviewed) params.includeReviewed = true;
@@ -828,6 +842,8 @@ export const pulseReviewService = {
     if (departmentId) params.departmentId = departmentId;
     if (refreshAi) params.refreshAi = true;
     if (refreshSubmissionId) params.refreshSubmissionId = refreshSubmissionId;
+    if (evidenceMetric) params.evidenceMetric = evidenceMetric;
+    if (skipAi) params.skipAi = true;
     return apiClient.get<ApiResponse<PulseFinalReviewQueue>>('/pulse/final-reviews', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });

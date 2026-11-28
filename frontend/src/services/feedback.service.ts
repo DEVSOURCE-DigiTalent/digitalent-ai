@@ -36,7 +36,8 @@ export const feedbackService = {
   create: (data: CreateFeedbackInput) =>
     apiClient.post<ApiResponse<{ id: string }>>('/feedbacks', data).then((r) => r.data),
 
-  getMine: (params?: { pageIndex?: number; pageSize?: number }) =>
+  /** type and status are filtered on the server, so the pages count only what the user sees. */
+  getMine: (params?: { type?: 'FEEDBACK' | 'BUG' | 'SUGGESTION'; status?: string; pageIndex?: number; pageSize?: number }) =>
     apiClient
       .get<ApiResponse<PagedList<FeedbackItem>>>('/feedbacks/mine', { params })
       .then((r) => r.data),

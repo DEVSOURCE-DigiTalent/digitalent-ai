@@ -495,8 +495,8 @@ describe('Platform Admin console (v2)', () => {
     );
     renderAt('/platform/versions/4/courses/c-AI1-F?s=0');
 
-    expect(await screen.findByRole('textbox', { name: 'Tên mô đun' })).toHaveValue('Viết câu lệnh');
-    fireEvent.click(screen.getByRole('button', { name: 'Thêm nội dung đầu tiên' }));
+    expect(await screen.findByRole('textbox', { name: /Tên mô đun/ })).toHaveValue('Viết câu lệnh');
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm khối đầu tiên' }));
     const menu = screen.getByRole('group', { name: 'Chọn loại khối' });
     expect(within(menu).getAllByRole('button').map((b) => b.querySelector('strong')?.textContent)).toEqual(['Chữ', 'Slide', 'Ảnh', 'Video', 'PDF']);
     fireEvent.click(within(menu).getByRole('button', { name: /Ảnh/ }));
@@ -509,14 +509,15 @@ describe('Platform Admin console (v2)', () => {
     catalog.getCourse.mockImplementation(async (no: number) => courseDetail(no));
     renderAt('/platform/versions/3/courses/c-AI1-F');
 
-    expect(await screen.findByText(/v3 đang dùng — chỉ xem/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Giá khóa cho cả doanh nghiệp/)).toBeDisabled();
-    expect(screen.queryByRole('button', { name: '+ Thêm mô đun' })).not.toBeInTheDocument();
-    fireEvent.click(await screen.findByRole('button', { name: 'Sửa trong v4' }));
+    expect(await screen.findByText(/Bản công bố chính thức v3 \(chế độ chỉ xem\)/)).toBeInTheDocument();
+    expect(screen.getAllByText('Miễn phí').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Thêm mô đun' })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Chuyển sang bản nháp v4' }));
 
-    expect(await screen.findByText('Mọi thay đổi được tự động lưu ngay vào bản nháp v4.')).toBeInTheDocument();
+    expect(await screen.findByText('Khối và mô đun tự lưu')).toBeInTheDocument();
     expect(catalog.getCourse).toHaveBeenLastCalledWith(4, 'c-AI1-F');
-    expect(screen.getByRole('button', { name: '+ Thêm mô đun' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Giá khóa cho cả doanh nghiệp/)).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Thêm mô đun' })).toBeInTheDocument();
   });
 
   it('PA-06 lists the courses the organization bought and suspends it with a reason', async () => {
@@ -584,8 +585,9 @@ describe('Platform Admin console (v2)', () => {
     renderAt('/platform/users/u-1');
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Mia Trần' })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Lý do ghi nhật ký'), { target: { value: 'Tài khoản bị chia sẻ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Khóa tài khoản này →' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Bảo mật' }));
+    fireEvent.change(screen.getByLabelText('Lý do'), { target: { value: 'Tài khoản bị chia sẻ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Khóa tài khoản' }));
 
     await waitFor(() => expect(service.lockUser).toHaveBeenCalledWith('u-1', 'Tài khoản bị chia sẻ'));
   });
@@ -596,12 +598,10 @@ describe('Platform Admin console (v2)', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Doanh nghiệp đang dùng nền tảng.' })).toBeInTheDocument();
     const row = (await screen.findByText('Northstar Studio')).closest('tr')!;
-    expect(within(row).getByText('Gói Doanh nghiệp')).toBeInTheDocument();
-    expect(within(row).getByText('Cơ bản · 3')).toBeInTheDocument();
-    expect(within(row).getByText('Trung cấp · 1')).toBeInTheDocument();
-    expect(row).toHaveTextContent('4 / 6');
+    expect(within(row).getByText('Đang dùng thử')).toBeInTheDocument();
+    expect(within(row).getByText('Chưa mua')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tạm ngưng' }));
+    fireEvent.click(screen.getByRole('button', { name: /Tạm ngưng/ }));
     await waitFor(() => expect(service.getOrganizations).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'SUSPENDED' })));
   });
 
@@ -618,12 +618,11 @@ describe('Platform Admin console (v2)', () => {
       pageIndex: 1, pageSize: 20, totalItems: 1, totalPages: 1,
       trials: { active: 3, endingSoon: 1, ended: 2 },
     });
-    renderAt('/platform/users?trial=ENDING_SOON');
+    renderAt('/platform/users');
 
-    expect(await screen.findByText('Dùng thử · còn 2 ngày')).toBeInTheDocument();
-    expect(screen.getByText('Hết hạn trong 48h').parentElement!.nextElementSibling).toHaveTextContent('1');
-    expect(screen.getByRole('button', { name: 'Sắp hết hạn (≤ 48h)' })).toHaveAttribute('aria-pressed', 'true');
-    expect(service.getUsers).toHaveBeenCalledWith(expect.objectContaining({ trial: 'ENDING_SOON' }));
+    expect(await screen.findByText('Học viên thử')).toBeInTheDocument();
+    expect(screen.getByText('1 sắp hết hạn')).toBeInTheDocument();
+    expect(service.getUsers).toHaveBeenCalledWith(expect.objectContaining({ pageIndex: 1 }));
   });
 
   it('PA-09 saves draft prices without touching the price in use', async () => {

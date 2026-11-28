@@ -122,6 +122,7 @@ public static class DependencyInjection
 
         // Gemini AI evaluation
         services.AddHttpClient<IGeminiService, DigiTalent.Infrastructure.AI.GeminiService>();
+        services.AddSingleton<ITt02Framework, DigiTalent.Infrastructure.AI.Frameworks.Tt02Framework>();
 
         // Phụ đề video bằng AI (Gemini Files API): video tới 500 MB nên không đặt timeout chung cho HttpClient —
         // mỗi bước tự giới hạn thời gian. Việc chạy nền, mỗi lần một video (docs/specs/2026-11-24-ai-video-captions.md).
@@ -146,6 +147,12 @@ public static class DependencyInjection
 
         // Background Service: Auto-remind approaching deadlines
         services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.DeadlineReminderBackgroundService>();
+
+        // Báo cáo hành vi khi làm bài cuối khóa: AI phân tích nhật ký giám sát ở nền sau khi nộp bài (canonical v3.10).
+        services.AddSingleton<DigiTalent.Infrastructure.BackgroundServices.BehaviorAnalysisQueue>();
+        services.AddSingleton<IBehaviorAnalysisQueue>(provider =>
+            provider.GetRequiredService<DigiTalent.Infrastructure.BackgroundServices.BehaviorAnalysisQueue>());
+        services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.BehaviorAnalysisBackgroundService>();
 
         return services;
     }

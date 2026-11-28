@@ -3,6 +3,7 @@ import { OWNER_PAGES } from './owner';
 import { MANAGER_PAGES } from './manager';
 import { EMPLOYEE_PAGES } from './employee';
 import { WORK_PAGES } from './work';
+import { lazyPage } from '../lazy-page';
 
 export * from './owner';
 export * from './manager';
@@ -15,4 +16,5 @@ export const ENTERPRISE_PAGES: PageRegistry = {
   ...WORK_PAGES,
   ...MANAGER_PAGES,
   ...EMPLOYEE_PAGES,
+  'RD-01': lazyPage(() => import('@/features/enterprise-research/ResearchCoursesPage'), 'ResearchCoursesPage'),
 };

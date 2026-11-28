@@ -2,6 +2,7 @@ import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AccountProfilePage } from '../pages/AccountProfilePage';
 import { SecuritySettingsPage } from '../pages/SecuritySettingsPage';
 import { OrganizationSettingsPage } from '@/features/organization/pages/OrganizationSettingsPage';
@@ -10,7 +11,7 @@ vi.mock('@/hooks/use-current-user',()=>({useCurrentUser:(selector:(s:{user:{id:s
 vi.mock('@/hooks/use-platform',()=>({useUserProfile:()=>({data:state.profile,isLoading:false,isError:false}),useUpdateUserProfile:()=>({mutateAsync:state.profileSave,isPending:false}),useChangePassword:()=>({mutateAsync:state.passwordSave,isPending:false}),useLoginHistory:()=>({data:state.sessions,isLoading:false,isError:false,isFetching:false,refetch:vi.fn()})}));
 vi.mock('@/hooks/use-organization',()=>({useOrganization:()=>({data:state.org,isLoading:false,isError:false,refetch:vi.fn()}),useUpdateOrganizationSettings:()=>({mutateAsync:state.orgSave,isPending:false})}));
 afterEach(()=>{cleanup();vi.clearAllMocks();state.roles=['OWNER'];state.sessions=[];});
-const mount=(node:React.ReactNode,path:string)=>render(<MemoryRouter initialEntries={[path]}>{node}</MemoryRouter>);
+const mount=(node:React.ReactNode,path:string)=>{const client=new QueryClient({defaultOptions:{queries:{retry:false}}});return render(<QueryClientProvider client={client}><MemoryRouter initialEntries={[path]}>{node}</MemoryRouter></QueryClientProvider>);};
 describe('owner account workspace',()=>{
   it('saves trimmed profile fields and keeps the login email read-only',async()=>{
     mount(<AccountProfilePage/>,'/enterprise/account');

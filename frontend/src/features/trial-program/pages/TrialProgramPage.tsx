@@ -140,7 +140,9 @@ function TrialProgramView({ program }: { program: TrialProgram }) {
   const { can } = usePermission();
   const canSetExpectation = can(PERMISSIONS.POSITION_REQUIREMENT_MANAGE);
   // Positions with their own levels (OW-05 tab 2): what the results are compared with; the others use the suggestion.
-  const levelsSet = ceilings.data ? { set: ceilings.data.positions.filter((p) => p.isCustomized).length, total: ceilings.data.positions.length } : undefined;
+  const levelsSet = Array.isArray(ceilings.data?.positions)
+    ? { set: ceilings.data.positions.filter((p) => p.isCustomized).length, total: ceilings.data.positions.length }
+    : undefined;
 
   useEffect(() => {
     if (searchParams.get('resume') == null) return;

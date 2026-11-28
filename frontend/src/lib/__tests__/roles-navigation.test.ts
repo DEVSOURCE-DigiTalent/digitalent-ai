@@ -25,6 +25,7 @@ describe('workspace', () => {
     expect(inferWorkspace(['MENTOR'])).toBe('mentor');
     expect(inferWorkspace(['LEARNER'])).toBe('personal');
     expect(inferWorkspace(['EMPLOYEE'])).toBe('enterprise');
+    expect(inferWorkspace(['RND'])).toBe('enterprise');
     expect(inferWorkspace([])).toBe('personal');
   });
 
@@ -45,6 +46,7 @@ describe('getHomePath', () => {
     [[], '/personal/dashboard'],
     [['OWNER'], '/enterprise/dashboard'],
     [['MANAGER'], '/enterprise/team'],
+    [['RND'], '/enterprise/rnd/courses'],
     [['EMPLOYEE'], '/enterprise/me'],
     [['LEARNER'], '/personal/dashboard'],
   ])('sends %j to %s', (roles, expected) => {

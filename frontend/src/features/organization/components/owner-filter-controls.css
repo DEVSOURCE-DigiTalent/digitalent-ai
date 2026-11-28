@@ -15,6 +15,59 @@ html[data-theme='dark'] .owner-filter-toolbar,
 html[data-theme='dark'] .owner-filter-table>div:first-child{background:linear-gradient(110deg,#172c34,#1a3038)!important;border-color:#37515a!important}
 
 /* The dropdown is portalled to the body, so both surfaces carry the variant. */
+:is(.owner-filter-select, .owner-filter-select__menu)[data-variant='mentor'] {
+  font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+  border-color: #dce0f2;
+  background: #fff;
+  color: #334155;
+}
+.owner-filter-select[data-variant='mentor'] {
+  min-width: 0;
+  max-width: 100%;
+  height: 40px;
+  padding: 0 13px;
+  gap: 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 4px #3730a305;
+}
+.owner-filter-select[data-variant='mentor'] > svg { color: #6366f1; }
+.owner-filter-select[data-variant='mentor']:hover {
+  border-color: #a5b4fc;
+  box-shadow: 0 3px 10px #4f46e510;
+}
+.owner-filter-select[data-variant='mentor']:is(.is-open, :focus-visible) {
+  border-color: #818cf8;
+  outline: 0;
+  box-shadow: 0 0 0 3px #6366f11f;
+}
+.owner-filter-select__menu[data-variant='mentor'] {
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px #312e8126, 0 3px 8px #312e810a;
+}
+.owner-filter-select__menu[data-variant='mentor'] [role='option'] {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+.owner-filter-select__menu[data-variant='mentor'] [role='option']:is(:hover, .is-active) {
+  background: #f5f5ff;
+  color: #4338ca;
+}
+.owner-filter-select__menu[data-variant='mentor'] [role='option'].is-selected {
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 600;
+}
+.owner-filter-select__menu[data-variant='mentor'] [role='option']:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: -2px;
+}
+
 :is(.owner-filter-select, .owner-filter-select__menu)[data-variant='manager'] {
   --select-surface: #fff;
   --select-text: #102e40;

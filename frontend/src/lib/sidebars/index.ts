@@ -5,6 +5,13 @@ import { OWNER_SIDEBAR } from './owner';
 import { MANAGER_SIDEBAR } from './manager';
 import { EMPLOYEE_SIDEBAR } from './employee';
 import { PLATFORM_SIDEBAR } from './platform';
+import { BookOpen, RefreshCw } from 'lucide-react';
+
+export const RND_SIDEBAR: SidebarConfig = [
+  { label: 'R&D doanh nghiệp' },
+  { label: 'Tùy chỉnh khóa học', screenId: 'RD-01', icon: BookOpen, trial: 'open' },
+  { label: 'Cập nhật khóa học', screenId: 'OW-COURSE-UPDATES', icon: RefreshCw, trial: 'open' },
+];
 
 export * from './types';
 export * from './owner';
@@ -32,6 +39,7 @@ export function sidebarFor(user?: SessionUser | null): SidebarConfig {
   if (role === ROLES.MANAGER || user.roles.includes(ROLES.MANAGER)) {
     return MANAGER_SIDEBAR;
   }
+  if (role === ROLES.RND) return RND_SIDEBAR;
 
   return EMPLOYEE_SIDEBAR;
 }
