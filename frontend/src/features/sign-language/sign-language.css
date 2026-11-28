@@ -1,0 +1,19 @@
+/* The 3D signing avatar frame (SignAvatarView), shared by the sign dictionary and the learner lesson page. */
+.sl-avatar { position: relative; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 14px; background: radial-gradient(circle at 50% 30%, #f4f7fc 0%, #e3e9f3 70%); }
+.sl-avatar canvas { display: block; width: 100%; height: 100%; }
+.sl-avatar-note { position: absolute; inset: auto 12px 12px; margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, .9); color: #475569; font-size: 12.5px; text-align: center; }
+
+/* A long wait of the sign-language tools (ProgressMeter): label + percent, bar, detail + time left. */
+.sl-progress { display: grid; gap: 6px; min-width: 0; padding: 10px 12px; border: 1px solid var(--pa-accent-border, #a9d9d0); border-radius: 12px; background: var(--pa-accent-soft, #e3f3ef); color: #0f4f53; font-size: 13px; }
+.sl-progress-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sl-progress-label { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.sl-progress-pct { font-variant-numeric: tabular-nums; }
+.sl-progress .sl-progress-stop { min-height: 28px; padding: 2px 10px; }
+.sl-progress-bar { height: 6px; overflow: hidden; border-radius: 999px; background: rgba(21, 108, 112, .15); }
+.sl-progress-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--pa-accent, #156c70); transition: width .3s ease-out; }
+.sl-progress-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; margin: 0; color: #2f6a6c; font-size: 12px; font-variant-numeric: tabular-nums; }
+.sl-progress-detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sl-progress-eta { margin-left: auto; white-space: nowrap; }
+.sl-avatar-bar { display: block; height: 4px; margin-top: 6px; overflow: hidden; border-radius: 999px; background: rgba(21, 108, 112, .15); }
+.sl-avatar-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--pa-accent, #156c70); transition: width .3s ease-out; }
+@media (prefers-reduced-motion: reduce) { .sl-progress-bar > span { transition: none; } }
