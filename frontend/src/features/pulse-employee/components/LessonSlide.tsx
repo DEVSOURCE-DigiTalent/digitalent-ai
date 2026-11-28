@@ -18,6 +18,7 @@ import type { PulseSlide } from '@/services/pulse.service';
 import { lessonSections, type LessonSection } from '../lib/lesson-sections';
 import { LESSON_TYPE_LABELS, pad2 } from '../lib/labels';
 import { RichText } from './RichText';
+import { LessonVideo } from './LessonVideo';
 import { lessonMediaUrl } from '@/types/learning-content';
 import {
   detectSectionKind,
@@ -307,14 +308,7 @@ export function LessonSlide({
       {!hideMedia && (
         activeVideoUrl ? (
           <section className="pu-single-media-hero" aria-label="Video bài giảng">
-            <div className="pu-video-player-container">
-              <video
-                controls
-                preload="metadata"
-                src={activeVideoUrl}
-                className="pu-active-video-element"
-              />
-            </div>
+            <LessonVideo src={activeVideoUrl} signVideo={videos[0]?.signLanguage} title={slide.title} />
           </section>
         ) : pictures.length > 0 ? (
           <section className="pu-single-media-hero" aria-label="Slide minh họa">
