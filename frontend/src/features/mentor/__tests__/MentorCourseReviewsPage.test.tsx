@@ -623,9 +623,13 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     expect(within(banner).getByRole('heading', { name: 'Nhân viên Trắc Nghiệm Yếu' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Công nhận đạt' })).toBeDisabled();
 
-    // Guidance enforces NOT_YET when choice fails
+    // AI guidance fills the feedback while the reviewer still chooses the outcome.
     fireEvent.click(screen.getByRole('button', { name: /Chèn gợi ý vào nhận xét/i }));
-    expect(screen.getByRole('button', { name: 'Chưa đạt' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Công nhận đạt' })).toBeDisabled();
+    const notYet = screen.getByRole('button', { name: 'Chưa đạt' });
+    expect(notYet).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(notYet);
+    expect(notYet).toHaveAttribute('aria-pressed', 'true');
 
     // Stepper "Bài tiếp" switches directly to second item
     fireEvent.click(screen.getByRole('button', { name: 'Bài tiếp' }));
