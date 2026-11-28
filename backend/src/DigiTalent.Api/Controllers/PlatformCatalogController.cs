@@ -426,6 +426,38 @@ public class PlatformCatalogController : ControllerBase
         return Ok(ApiResponse<PlatformAssetDto>.Ok(result, "File uploaded."));
     }
 
+    // ----- Transcript of a lesson video (schema v3.11, docs/specs/2026-11-24-ai-video-captions.md) -------------
+    // The input of its sign-language video (what is said and when); not shown to learners.
+
+    // GET api/v1/platform/assets/{id}/captions — the transcript and the state of the AI job
+    [HttpGet("assets/{id:guid}/captions")]
+    [HasPermission(Permissions.Platform.CatalogRead)]
+    public async Task<ActionResult<ApiResponse<PlatformAssetCaptionsDto>>> GetAssetCaptions(
+        Guid id,
+        [FromServices] IUseCase<GetPlatformAssetCaptionsUseCaseInput, PlatformAssetCaptionsDto> useCase) =>
+        Ok(ApiResponse<PlatformAssetCaptionsDto>.Ok(await useCase.ExecuteAsync(new GetPlatformAssetCaptionsUseCaseInput { AssetId = id })));
+
+    // POST api/v1/platform/assets/{id}/captions/generate — 202: the AI works in the background, ask GET until READY / FAILED
+    [HttpPost("assets/{id:guid}/captions/generate")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformAssetCaptionsDto>>> GenerateAssetCaptions(
+        Guid id,
+        [FromServices] IUseCase<GeneratePlatformAssetCaptionsUseCaseInput, PlatformAssetCaptionsDto> useCase) =>
+        Accepted(ApiResponse<PlatformAssetCaptionsDto>.Ok(
+            await useCase.ExecuteAsync(new GeneratePlatformAssetCaptionsUseCaseInput { AssetId = id }), "Caption job started."));
+
+    // PUT api/v1/platform/assets/{id}/captions — body { cues: [{ startMs, endMs, text }] }: saves the transcript
+    [HttpPut("assets/{id:guid}/captions")]
+    [HasPermission(Permissions.Platform.CatalogManage)]
+    public async Task<ActionResult<ApiResponse<PlatformAssetCaptionsDto>>> SaveAssetCaptions(
+        Guid id,
+        [FromBody] SavePlatformAssetCaptionsUseCaseInput input,
+        [FromServices] IUseCase<SavePlatformAssetCaptionsUseCaseInput, PlatformAssetCaptionsDto> useCase)
+    {
+        input.AssetId = id;
+        return Ok(ApiResponse<PlatformAssetCaptionsDto>.Ok(await useCase.ExecuteAsync(input), "Captions saved."));
+    }
+
     // GET api/v1/platform/assets/{id}/content?exp=&sig= — signed link (no permission check: <img>/<video> send no token)
     [HttpGet("assets/{id:guid}/content")]
     public async Task<IActionResult> GetAssetContent(

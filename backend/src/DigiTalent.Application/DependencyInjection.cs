@@ -99,6 +99,8 @@ public static class DependencyInjection
         services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformCatalogEditor>();
         services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformCourseContentReader>();
         services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformPublishChecker>();
+        // Phụ đề video bằng AI: một việc chạy nền cho mỗi video (Infrastructure: CaptionWorker)
+        services.AddScoped<DigiTalent.Application.UseCases.Platform.Catalog.PlatformCaptionProcessor>();
 
         // 10. Chatbot trợ lý AI: các tool chỉ đọc theo phạm vi quyền của người hỏi
         services.AddScoped<DigiTalent.Application.UseCases.Assistant.AssistantDataReader>();
