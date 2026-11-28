@@ -330,4 +330,65 @@ public class DemoCaseStudySeederTests : IDisposable
             visibleCodes.Should().ContainSingle().Which.Should().Be(DemoCaseStudySeeder.MainOrgCode);
         }
     }
+
+    [Fact]
+    public async Task SeedAsync_WithTrialProspect_SeedsTrialOwnerWithoutPurchasesAndWithPublishedSurvey_AndIsIdempotent()
+    {
+        var dbName = $"demo-trial-prospect-{Guid.NewGuid():N}";
+        await using var provider = BuildServiceProvider(dbName);
+        var csvPath = CreateTempCsvPath();
+
+        using var scope = provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+
+        var first = await DemoCaseStudySeeder.SeedAsync(
+            db, hasher, csvPath, trialOrgCount: 0, includeTrialProspect: true);
+
+        first.OrganizationsSeeded.Should().Be(2); // DEMO-MAIN + DEMO-TRIAL
+        var trialOrg = await db.Organizations.AsNoTracking()
+            .SingleAsync(o => o.Code == DemoCaseStudySeeder.TrialProspectOrgCode);
+        trialOrg.Name.Should().Be(DemoCaseStudySeeder.TrialProspectOrgName);
+
+        // Chưa mua khóa học nào và chưa có Subscription trả phí
+        (await db.CourseOrders.CountAsync(o => o.OrganizationId == trialOrg.Id)).Should().Be(0);
+        (await db.Subscriptions.CountAsync(s => s.OrganizationId == trialOrg.Id)).Should().Be(0);
+
+        // TrialWorkspace đang hoạt động (chưa convert), đã công bố kết quả khảo sát (REPORTED)
+        var workspace = await db.TrialWorkspaces.AsNoTracking()
+            .SingleAsync(t => t.OrganizationId == trialOrg.Id);
+        workspace.ConvertedAt.Should().BeNull();
+        workspace.RequestedAt.Should().NotBeNull();
+        workspace.ReportPublishedAt.Should().NotBeNull();
+        workspace.EndsAt.Should().BeAfter(DateTimeOffset.UtcNow);
+        workspace.MentorUserId.Should().BeNull();
+
+        // Owner có mặt trong CSV và xác thực được mật khẩu
+        var owner = await db.Users.AsNoTracking()
+            .SingleAsync(u => u.Email == DemoCaseStudySeeder.TrialProspectOwnerEmail);
+        owner.OrganizationId.Should().Be(trialOrg.Id);
+        owner.LastLoginAt.Should().NotBeNull();
+        var exportedOwner = first.ExportedAccounts.Single(a => a.Email == DemoCaseStudySeeder.TrialProspectOwnerEmail);
+        hasher.Verify(exportedOwner.Password, owner.PasswordHash).Should().BeTrue();
+
+        // Nhân viên đã làm khảo sát 90 câu và có SkillGapRun ban đầu
+        var assessments = await db.TrialAssessments.AsNoTracking()
+            .Where(a => a.OrganizationId == trialOrg.Id)
+            .ToListAsync();
+        assessments.Should().HaveCount(12);
+        assessments.Should().OnlyContain(a => a.ChoiceTotal == 90 && a.ChoiceScore > 0);
+        var domainCount = await db.TrialAssessmentDomains.AsNoTracking()
+            .CountAsync(d => assessments.Select(a => a.Id).Contains(d.TrialAssessmentId));
+        domainCount.Should().Be(72);
+
+        var gapRuns = await db.SkillGapRuns.AsNoTracking()
+            .CountAsync(r => db.Employees.Any(e => e.Id == r.EmployeeId && e.OrganizationId == trialOrg.Id));
+        gapRuns.Should().Be(12);
+
+        // Idempotent khi chạy lại
+        var second = await DemoCaseStudySeeder.SeedAsync(
+            db, hasher, csvPath, trialOrgCount: 0, includeTrialProspect: true);
+        second.OrganizationsSeeded.Should().Be(0);
+        second.UsersCreated.Should().Be(0);
+    }
 }

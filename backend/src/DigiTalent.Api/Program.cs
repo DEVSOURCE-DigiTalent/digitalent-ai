@@ -93,14 +93,15 @@ if (isSeedDemo || isResetSeedDemo || isResetDemoPasswords)
 
     if (isResetDemoPasswords)
     {
-        var pwdResult = await DemoCaseStudySeeder.ResetDemoPasswordsAsync(db, hasher, csvPath, trialOrgs);
+        var pwdResult = await DemoCaseStudySeeder.ResetDemoPasswordsAsync(
+            db, hasher, csvPath, trialOrgs, includeTrialProspect: !mainOnly);
         Console.WriteLine($"[demo-seed] Đã đặt lại mật khẩu cho {pwdResult.UsersCreated} tài khoản demo ({pwdResult.OrganizationsSeeded} tổ chức), csv={pwdResult.CsvPath} ({pwdResult.ExportedAccounts.Count} dòng).");
         return;
     }
 
     var result = isResetSeedDemo
-        ? await DemoCaseStudySeeder.ResetAndReseedAsync(db, hasher, csvPath, trialOrgs, Console.WriteLine)
-        : await DemoCaseStudySeeder.SeedAsync(db, hasher, csvPath, trialOrgs);
+        ? await DemoCaseStudySeeder.ResetAndReseedAsync(db, hasher, csvPath, trialOrgs, Console.WriteLine, includeTrialProspect: !mainOnly)
+        : await DemoCaseStudySeeder.SeedAsync(db, hasher, csvPath, trialOrgs, includeTrialProspect: !mainOnly);
 
     Console.WriteLine($"[demo-seed] Hoàn tất: organizationsSeeded={result.OrganizationsSeeded}, usersCreated={result.UsersCreated}, employeesCreated={result.EmployeesCreated}, csv={result.CsvPath} ({result.ExportedAccounts.Count} dòng).");
     return;
