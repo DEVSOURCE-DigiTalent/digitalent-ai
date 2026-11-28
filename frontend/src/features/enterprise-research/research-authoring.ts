@@ -138,7 +138,12 @@ export function useResearchAuthoring(courseId: string) {
         const { items, index } = nested(course, (m) => m.questions, questionMatches(id));
         items.splice(index, 1);
       }),
-      updateFinal: (_v, _c, input) => modify((course) => { course.final = input; }),
+      updateFinal: (_v, _c, { title, promptHtml, criteria, criterionWeights }) => modify((course) => {
+        course.final = {
+          title, promptHtml,
+          criteria: criterionWeights ? criteria.map((criterion, index) => `${criterion} (${criterionWeights[index]}%)`) : criteria,
+        };
+      }),
       uploadAsset: async (file, onProgress) => {
         const body = new FormData();
         body.append('file', file);

@@ -618,6 +618,9 @@ export interface PulseAiHint {
   checks: boolean[];
   criterionNotes?: string[] | null;
   criterionEvidence?: (string | null)[] | null;
+  annotations?: PulseEssayAnnotation[] | null;
+  criterionScores?: (number | null)[] | null;
+  analysisStatus?: 'NOT_CONFIGURED' | 'UNAVAILABLE' | 'INVALID_RESPONSE' | 'SCORES_MISSING' | 'PROMPT_COPY' | null;
   evidenceLookupStatus?: 'NOT_CONFIGURED' | 'UNAVAILABLE' | null;
   source?: 'GEMINI' | 'KEYWORD_FALLBACK';
   model?: string | null;
@@ -631,6 +634,7 @@ export interface PulseAiHint {
 export type PulseCriterionEvaluationStatus = 'PASS' | 'PARTIAL' | 'FAIL';
 
 export interface PulseCriterionEvaluationInput {
+  scorePercent?: number;
   number: string;
   title: string;
   status: PulseCriterionEvaluationStatus;
@@ -652,6 +656,16 @@ export interface PulseAiFraudItem {
 }
 
 export type PulseAiDetailEvidenceKey = 'plagiarism' | 'ai' | 'relevance' | 'depth' | 'clarity' | 'verdict';
+
+export interface PulseEssayAnnotation {
+  metric: PulseAiDetailEvidenceKey | null;
+  criterionIndex: number | null;
+  kind: 'strength' | 'improve' | 'observation' | 'missing';
+  start: number | null;
+  end: number | null;
+  note: string;
+  action: string | null;
+}
 
 export interface PulseAiDetail {
   evidence?: Partial<Record<PulseAiDetailEvidenceKey, string | null>> | null;

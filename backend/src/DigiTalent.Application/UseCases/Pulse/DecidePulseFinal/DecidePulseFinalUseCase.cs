@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Learning.Content;
 using DigiTalent.Application.UseCases.Me;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
@@ -69,6 +70,16 @@ public class DecidePulseFinalUseCase : IUseCase<DecidePulseFinalUseCaseInput, De
         }
 
         PulseExamPaper.EnsureCanPass(input.Decision, submission.ChoiceScore, submission.ChoiceTotal);
+        if (input.CriterionEvaluations is { } evaluations && evaluations.Any(c => c.ScorePercent.HasValue))
+        {
+            var finals = await new LearningContentReader(_context).FinalsAsync(new[] { enrollment.CourseId });
+            var expectedWeights = PulseEssayRubric.ReadStatedWeights(finals.GetValueOrDefault(enrollment.CourseId)?.Criteria);
+            if (expectedWeights != null && !evaluations.Select(c => (c.Title.Trim(), c.WeightPercent))
+                    .SequenceEqual(expectedWeights.Select(c => (c.Title, (int?)c.Weight))))
+            {
+                throw new ConflictException("Trọng số của bài chấm đã thay đổi. Làm mới danh sách trước khi lưu quyết định.");
+            }
+        }
         var rubricMetrics = PulseEssayRubric.ComputeAuditMetrics(input.CriterionEvaluations);
         if (input.Decision == Statuses.FinalSubmissionDecision.Passed && rubricMetrics.GateFailed)
         {
@@ -186,6 +197,7 @@ public class DecidePulseFinalUseCase : IUseCase<DecidePulseFinalUseCaseInput, De
                 Status = (c.Status ?? string.Empty).Trim(),
                 Note = string.IsNullOrWhiteSpace(c.Note) ? null : c.Note.Trim(),
                 c.WeightPercent,
+                c.ScorePercent,
                 c.IsRequired,
             }).ToList()
             : null;

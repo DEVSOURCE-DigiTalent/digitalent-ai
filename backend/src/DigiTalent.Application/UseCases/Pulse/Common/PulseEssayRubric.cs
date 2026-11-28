@@ -123,22 +123,32 @@ public static partial class PulseEssayRubric
     [GeneratedRegex(@"^(?<title>.*?)\s*\((?<weight>\d{1,3})\s*%\)$")]
     private static partial Regex StatedWeight();
 
+    public static bool HasStatedWeight(string? criterion) =>
+        StatedWeight().IsMatch((criterion ?? string.Empty).Trim());
+
+    public static List<(string Title, int Weight)>? ReadStatedWeights(IReadOnlyList<string>? criteria)
+    {
+        if (criteria is not { Count: > 0 }) return null;
+        var matches = criteria.Select(c => StatedWeight().Match((c ?? string.Empty).Trim())).ToList();
+        if (matches.Any(m => !m.Success)) return null;
+        var weighted = matches.Select(m => (
+            Title: m.Groups["title"].Value.Trim(),
+            Weight: int.Parse(m.Groups["weight"].Value, CultureInfo.InvariantCulture))).ToList();
+        return weighted.All(c => c.Weight > 0) && weighted.Sum(c => c.Weight) == 100 ? weighted : null;
+    }
+
     /// <summary>
     /// Tên và trọng số của các tiêu chí tùy chỉnh: dùng trọng số ghi trong tên (bỏ phần ghi khỏi tên) khi mọi tiêu chí đều
-    /// ghi và tổng đúng 100%; ngược lại giữ nguyên tên và chia đều 100%.
+    /// ghi và tổng đúng 100%; ngược lại bỏ phần ghi và chia đều 100%.
     /// </summary>
     private static List<(string Title, int Weight)> CustomWeights(IReadOnlyList<string> criteria)
     {
-        var stated = criteria.Select(c => StatedWeight().Match(c)).ToList();
-        var weights = stated.Select(m => m.Success ? int.Parse(m.Groups["weight"].Value, CultureInfo.InvariantCulture) : 0).ToList();
-        if (stated.All(m => m.Success) && weights.All(w => w > 0) && weights.Sum() == 100)
-        {
-            return stated.Select((m, i) => (m.Groups["title"].Value.Trim(), weights[i])).ToList();
-        }
-
+        if (ReadStatedWeights(criteria) is { } weighted) return weighted;
         var baseWeight = 100 / criteria.Count;
         var remainder = 100 % criteria.Count;
-        return criteria.Select((title, i) => (title, baseWeight + (i == criteria.Count - 1 ? remainder : 0))).ToList();
+        return criteria.Select((title, i) =>
+            (StatedWeight().Replace(title, "${title}").Trim(),
+                baseWeight + (i < remainder ? 1 : 0))).ToList();
     }
 
     /// <summary>
@@ -153,27 +163,6 @@ public static partial class PulseEssayRubric
         IReadOnlyList<string>? customCriteria = null,
         string? courseCode = null)
     {
-        if (customCriteria is { Count: > 0 } && !IsDefaultFinalCriteria(customCriteria))
-        {
-            var cleaned = customCriteria
-                .Select(c => (c ?? string.Empty).Trim())
-                .Where(c => c.Length > 0)
-                .ToList();
-            if (cleaned.Count > 0)
-            {
-                return CustomWeights(cleaned)
-                    .Select((criterion, idx) => new PulseCriterionDto(
-                        (idx + 1).ToString("D2", CultureInfo.InvariantCulture),
-                        criterion.Title,
-                        "Tiêu chí đánh giá thực hành riêng của khóa học.")
-                    {
-                        WeightPercent = criterion.Weight,
-                        IsRequired = false,
-                    })
-                    .ToList();
-            }
-        }
-
         var resolvedDomain = ResolveDomainNumber(domainNumber, domainName, courseCode);
         var clampedTier = tier.HasValue ? Math.Clamp(tier.Value, 1, PulseRules.MaxLevel) : 2;
         var (tierSourceHint, tierProcessHint, tierConclusionHint) = clampedTier switch
@@ -194,7 +183,7 @@ public static partial class PulseEssayRubric
 
         var (gateTitle, gateDescription, _) = GateDefinition(resolvedDomain, clampedTier);
 
-        return new List<PulseCriterionDto>
+        var standard = new List<PulseCriterionDto>
         {
             new("01", "Nguồn & bối cảnh công việc thực tế", tierSourceHint)
             {
@@ -217,6 +206,22 @@ public static partial class PulseEssayRubric
                 IsRequired = true,
             },
         };
+
+        if (IsDefaultFinalCriteria(customCriteria)) return standard;
+        var cleaned = customCriteria!.Select(c => (c ?? string.Empty).Trim()).Where(c => c.Length > 0).ToList();
+        var weighted = CustomWeights(cleaned);
+        if (weighted.Select(c => c.Title).SequenceEqual(standard.Select(c => c.Title), StringComparer.Ordinal))
+        {
+            return standard.Select((c, i) => c with { WeightPercent = weighted[i].Weight }).ToList();
+        }
+
+        return weighted.Select((criterion, idx) => new PulseCriterionDto(
+            (idx + 1).ToString("D2", CultureInfo.InvariantCulture),
+            criterion.Title,
+            "Tiêu chí đánh giá thực hành riêng của khóa học.")
+        {
+            WeightPercent = criterion.Weight,
+        }).ToList();
     }
 
     public static string[] GateKeywordsForDomain(int domainNumber) =>
@@ -282,7 +287,8 @@ public static partial class PulseEssayRubric
         foreach (var item in evaluations)
         {
             var status = (item.Status ?? string.Empty).Trim().ToUpperInvariant();
-            if (item.IsRequired == true && status == "FAIL")
+            if (item.IsRequired == true &&
+                (item.ScorePercent is { } score ? score < EssayPassPercent : status == "FAIL"))
             {
                 gateFailed = true;
             }
@@ -294,12 +300,14 @@ public static partial class PulseEssayRubric
             }
 
             totalWeight += weight;
-            earned += status switch
-            {
-                "PASS" => weight,
-                "PARTIAL" => weight * 0.5m,
-                _ => 0m,
-            };
+            earned += item.ScorePercent is { } scorePercentForCriterion
+                ? weight * scorePercentForCriterion / 100m
+                : status switch
+                {
+                    "PASS" => weight,
+                    "PARTIAL" => weight * 0.5m,
+                    _ => 0m,
+                };
         }
 
         var scorePercent = totalWeight > 0m

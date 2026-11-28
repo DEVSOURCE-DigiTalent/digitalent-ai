@@ -206,6 +206,7 @@ export interface CatalogCourseDetail {
   price: number;
   salesStatus: CatalogSalesStatus;
   final: { title: string; promptHtml: string; criteria: string[] };
+  finalRubric?: { title: string; weightPercent: number; isRequired: boolean }[] | null;
   modules: CatalogModule[];
 }
 
@@ -308,7 +309,13 @@ export const platformCatalogService = {
   updateCourse: (versionNo: number, courseId: string, body: CourseInfoInput) =>
     unwrap<CatalogCourseDetail>(apiClient.put(course(versionNo, courseId), body)),
   removeCourse: (versionNo: number, courseId: string) => unwrap<CatalogVersionDetail>(apiClient.delete(course(versionNo, courseId))),
-  updateFinal: (versionNo: number, courseId: string, body: { title: string; promptHtml: string; criteria: string[] }) =>
+  updateFinal: (versionNo: number, courseId: string, body: {
+    title: string;
+    promptHtml: string;
+    criteria: string[];
+    criterionWeights?: number[];
+    expectedCriterionWeights?: number[];
+  }) =>
     unwrap<CatalogCourseDetail>(apiClient.put(`${course(versionNo, courseId)}/final`, body)),
 
   addModule: (versionNo: number, courseId: string, title: string) =>

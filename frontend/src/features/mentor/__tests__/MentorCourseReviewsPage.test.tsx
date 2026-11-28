@@ -105,6 +105,95 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     vi.restoreAllMocks();
   });
 
+  it('shows multiple AI annotations, switches the active passage, and labels missing evidence', async () => {
+    const base = makeItem({});
+    const essay = base.attempts[0].evidenceText!;
+    const first = 'báo cáo doanh thu Q3';
+    const second = 'phát hiện 3 dòng trùng lặp';
+    const item = makeItem({
+      aiHint: { source: 'GEMINI', summary: '', checks: [], annotations: [
+        { metric: 'depth', criterionIndex: null, kind: 'strength', start: essay.indexOf(first),
+          end: essay.indexOf(first) + first.length, note: 'Có nguồn dữ liệu cụ thể.', action: null },
+        { metric: 'depth', criterionIndex: null, kind: 'improve', start: essay.indexOf(second),
+          end: essay.indexOf(second) + second.length, note: 'Cần ghi quy tắc nhận diện dòng trùng.', action: null },
+        { metric: 'depth', criterionIndex: null, kind: 'missing', start: null, end: null,
+          note: 'Thiếu bảng đối chiếu.', action: 'Bổ sung bảng trước và sau khi làm sạch.' },
+      ] },
+    });
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue({
+      data: { data: {
+        pendingCount: 1, preAssessmentCount: 0, retryCount: 0, deadlineMissedCount: 0,
+        flaggedCount: 0, reviewedCount: 0, criteria: [], items: [item],
+      } },
+    } as Awaited<ReturnType<typeof pulseReviewService.getQueue>>);
+    renderWorkbenchRoutes();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Xem 3 chú thích AI' }));
+    expect(screen.getByText(first, { selector: 'mark' })).toHaveAttribute('data-active', 'true');
+    expect(screen.getByText(second, { selector: 'mark' })).toHaveAttribute('data-active', 'false');
+    fireEvent.click(screen.getByRole('button', { name: 'Chú thích tiếp theo' }));
+    expect(screen.getByText(second, { selector: 'mark' })).toHaveAttribute('data-active', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Chú thích tiếp theo' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Thiếu bảng đối chiếu.');
+    expect(screen.getByRole('status')).toHaveTextContent('Bổ sung bảng trước và sau khi làm sạch.');
+    expect(screen.getByText(second, { selector: 'mark' })).toHaveAttribute('data-active', 'false');
+  });
+
+  it('merges the AI ruler marker into the Mentor slider only while both scores match', async () => {
+    const title = 'Kiểm chứng nguồn';
+    const item = makeItem({
+      rubric: [{ number: '01', title, description: '', weightPercent: 100, isRequired: false }],
+      aiHint: { source: 'GEMINI', checks: [true], summary: '', criterionScores: [75] },
+    });
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue({
+      data: { data: {
+        pendingCount: 1, preAssessmentCount: 0, retryCount: 0, deadlineMissedCount: 0,
+        flaggedCount: 0, reviewedCount: 0, criteria: [], items: [item],
+      } },
+    } as Awaited<ReturnType<typeof pulseReviewService.getQueue>>);
+
+    renderWorkbenchRoutes();
+
+    const slider = await screen.findByRole('slider', { name: `Điểm Mentor cho ${title}` });
+    const ruler = slider.parentElement;
+    expect(ruler?.querySelector('.mw-rubric-ai-marker')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: `Dùng điểm AI gợi ý 75% cho ${title}` }));
+    expect(slider).toHaveValue('75');
+    expect(screen.getByRole('button', { name: `Điểm Mentor khớp gợi ý AI 75% cho ${title}` })).toBeDisabled();
+    expect(ruler?.querySelector('.mw-rubric-ai-marker')).not.toBeInTheDocument();
+
+    fireEvent.change(slider, { target: { value: '60' } });
+    expect(slider).toHaveValue('60');
+    expect(ruler?.querySelector('.mw-rubric-ai-marker')).toBeInTheDocument();
+  });
+
+  it('hides course codes in the Mentor list, course heading, and assignment heading', async () => {
+    const item = makeItem({
+      courseCode: 'M1-F',
+      courseTitle: 'M1-F · Tìm kiếm và lưu trữ thông tin cơ bản',
+      assignment: {
+        title: 'Bài cuối khóa (M1-F)',
+        promptHtml: '<p>Trình bày nguồn dữ liệu.</p>',
+        criteria: ['Nêu rõ tệp nguồn'],
+      },
+    });
+    vi.spyOn(pulseReviewService, 'getQueue').mockResolvedValue({
+      data: { data: {
+        pendingCount: 1, preAssessmentCount: 0, retryCount: 0, deadlineMissedCount: 0,
+        flaggedCount: 0, reviewedCount: 0, criteria: [], items: [item],
+      } },
+    } as Awaited<ReturnType<typeof pulseReviewService.getQueue>>);
+
+    renderWorkbenchRoutes();
+
+    const courseName = 'Tìm kiếm và lưu trữ thông tin cơ bản';
+    const list = await screen.findByRole('list', { name: 'Danh sách bài nộp' });
+    expect(within(list).getByText(courseName)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: courseName })).toBeInTheDocument();
+    expect(screen.getByText('Đề bài thực hành yêu cầu: Bài cuối khóa')).toBeInTheDocument();
+    expect(screen.queryByText(/M1-F/i)).not.toBeInTheDocument();
+  });
+
   it('includes PRE_ASSESSMENT, sorts priority PENDING -> FLAGGED -> APPROVED in queue rail, and auto-selects top item', async () => {
     const queue: PulseFinalReviewQueue = {
       pendingCount: 1,
@@ -534,9 +623,13 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     expect(within(banner).getByRole('heading', { name: 'Nhân viên Trắc Nghiệm Yếu' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Công nhận đạt' })).toBeDisabled();
 
-    // Guidance enforces NOT_YET when choice fails
+    // AI guidance fills the feedback while the reviewer still chooses the outcome.
     fireEvent.click(screen.getByRole('button', { name: /Chèn gợi ý vào nhận xét/i }));
-    expect(screen.getByRole('button', { name: 'Chưa đạt' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Công nhận đạt' })).toBeDisabled();
+    const notYet = screen.getByRole('button', { name: 'Chưa đạt' });
+    expect(notYet).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(notYet);
+    expect(notYet).toHaveAttribute('aria-pressed', 'true');
 
     // Stepper "Bài tiếp" switches directly to second item
     fireEvent.click(screen.getByRole('button', { name: 'Bài tiếp' }));
@@ -673,7 +766,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
               'Chưa đưa công thức kiểm tra trùng.',
               'Chưa nêu người chịu trách nhiệm tiếp theo.',
             ],
-            criterionEvidence: ['báo cáo doanh thu Q3 xuất từ hệ thống CRM công ty', null],
+            criterionEvidence: ['báo cáo doanh thu Q3\n xuất từ hệ thống CRM công ty', null],
             summary: 'Bài nêu đúng nguồn CRM nhưng thiếu công thức kiểm tra và bước tiếp theo.',
             detail: {
               evidence: { ai: null },
@@ -723,10 +816,10 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tìm trong bài làm: Nguồn có thể truy vết' }));
     expect(screen.getByRole('tab', { name: /Tự luận/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('báo cáo doanh thu Q3 xuất từ hệ thống CRM công ty', { selector: 'mark' })).toBeInTheDocument();
-    expect(screen.getByText(/Đã nêu báo cáo Q3 từ CRM\./)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Đã nêu báo cáo Q3 từ CRM.');
     fireEvent.click(screen.getByRole('button', { name: 'Hành động có thể kiểm tra' }));
     fireEvent.click(screen.getByRole('button', { name: 'Tìm trong bài làm: Hành động có thể kiểm tra' }));
-    expect(screen.getByText('Chưa tìm thấy đoạn phù hợp trong bài làm')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Không có đoạn trích trực tiếp.');
     expect(screen.queryByText('báo cáo doanh thu Q3 xuất từ hệ thống CRM công ty', { selector: 'mark' })).not.toBeInTheDocument();
 
     fireEvent.click(within(aiSection).getByText(/Chi tiết 5 chỉ số phân tích bài nộp/));
@@ -764,7 +857,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
 
     fireEvent.click(within(aiSection).getByRole('button', { name: 'Xem dẫn chứng: Dấu hiệu văn bản tự động' }));
     expect(depth).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('status')).toHaveTextContent('Chưa tìm thấy đoạn phù hợp trong bài làm');
+    expect(screen.getByRole('status')).toHaveTextContent('Không có đoạn trích trực tiếp.');
     expect(screen.queryByText('phát hiện 3 dòng trùng lặp cần làm sạch', { selector: 'mark' })).not.toBeInTheDocument();
     fireEvent.click(depth);
     expect(screen.getByText('phát hiện 3 dòng trùng lặp cần làm sạch', { selector: 'mark' })).toBeInTheDocument();
@@ -786,23 +879,30 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     });
 
     // Rate each rubric criterion individually
-    fireEvent.click(screen.getByRole('button', { name: 'Đạt (tiêu chí 01)' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Một phần (tiêu chí 02)' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Chưa đạt (tiêu chí 03)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chấm 100% cho Nguồn có thể truy vết' }));
+    fireEvent.change(screen.getByRole('slider', { name: 'Điểm Mentor cho Hành động có thể kiểm tra' }), {
+      target: { value: '50' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Chấm 0% cho Kết luận có căn cứ' }));
 
-    expect(screen.getByText('50% · 1/3 đạt')).toBeInTheDocument();
+    expect(screen.getByText('50')).toBeInTheDocument();
+    expect(screen.getByText('3/3 tiêu chí đã chấm')).toBeInTheDocument();
 
     // Quick chip on criterion 02 & manual note on criterion 03
+    const rubric = screen.getByLabelText('Bảng chấm chi tiết theo tiêu chí');
+    const noteButtons = within(rubric).getAllByRole('button', { name: 'Ghi chú' });
+    fireEvent.click(noteButtons[1]!);
+    fireEvent.click(noteButtons[2]!);
     fireEvent.click(screen.getByRole('button', { name: '+ Đúng hướng nhưng thiếu số liệu' }));
     const crit3NoteInput = screen.getByLabelText('Ghi chú tiêu chí 03') as HTMLInputElement;
     fireEvent.change(crit3NoteInput, { target: { value: 'Cần nêu thời hạn xử lý dữ liệu.' } });
 
     const reasonInput = screen.getByLabelText(/Nhận xét gửi nhân viên/i) as HTMLTextAreaElement;
     expect(reasonInput.value).toContain('Đánh giá tự luận (50% · 1/3 tiêu chí đạt):');
-    expect(reasonInput.value).toContain('Tiêu chí 02 (Hành động có thể kiểm tra): Đạt một phần. Đúng hướng nhưng thiếu số liệu');
-    expect(reasonInput.value).toContain('Tiêu chí 03 (Kết luận có căn cứ): Chưa đạt. Cần nêu thời hạn xử lý dữ liệu.');
+    expect(reasonInput.value).toContain('Tiêu chí 02 (Hành động có thể kiểm tra): 50%. Đúng hướng nhưng thiếu số liệu');
+    expect(reasonInput.value).toContain('Tiêu chí 03 (Kết luận có căn cứ): 0%. Cần nêu thời hạn xử lý dữ liệu.');
 
-    // Auto-recommended NOT_YET selected -> save sends itemized criterionEvaluations
+    fireEvent.click(screen.getByRole('button', { name: 'Chưa đạt' }));
     fireEvent.click(screen.getByRole('button', { name: 'Lưu quyết định' }));
 
     await waitFor(() => {
@@ -811,17 +911,19 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
         'NOT_YET',
         reasonInput.value.trim(),
         [
-          { number: '01', title: 'Nguồn có thể truy vết', status: 'PASS', note: null },
+          { number: '01', title: 'Nguồn có thể truy vết', status: 'PASS', scorePercent: 100, note: null },
           {
             number: '02',
             title: 'Hành động có thể kiểm tra',
             status: 'PARTIAL',
+            scorePercent: 50,
             note: 'Đúng hướng nhưng thiếu số liệu',
           },
           {
             number: '03',
             title: 'Kết luận có căn cứ',
             status: 'FAIL',
+            scorePercent: 0,
             note: 'Cần nêu thời hạn xử lý dữ liệu.',
           },
         ],
@@ -1019,10 +1121,11 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
 
     renderWorkbenchRoutes('/mentor/course-reviews');
 
-    expect(await screen.findByText('Ngưỡng đạt: từ 70% · Không rớt tiêu chí bắt buộc')).toBeInTheDocument();
+    expect(await screen.findByText('Mốc đề xuất 70/100')).toBeInTheDocument();
+    expect(screen.getByText('0/4 tiêu chí đã chấm')).toBeInTheDocument();
     expect(screen.getByText(/Cảnh báo sao chép đề bài:/)).toBeInTheDocument();
-    expect(screen.getByText('40%')).toBeInTheDocument();
-    expect(screen.getAllByText('20%')).toHaveLength(3);
+    expect(screen.getByText('Trọng số 40%')).toBeInTheDocument();
+    expect(screen.getAllByText('Trọng số 20%')).toHaveLength(3);
     expect(screen.getByText('Bắt buộc')).toBeInTheDocument();
 
     // Open criteria modal -> synced to activeItem.rubric with weights & gate
@@ -1035,20 +1138,24 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
 
     // Failing Gate criterion 04 blocks Công nhận đạt and shows alert
-    fireEvent.click(screen.getByRole('button', { name: 'Chưa đạt (tiêu chí 04)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chấm 0% cho Truy xuất nguồn chéo & chuẩn hóa dữ liệu nhiều nguồn' }));
     expect(screen.getByRole('button', { name: 'Công nhận đạt' })).toBeDisabled();
     expect(
-      screen.getByText('Tiêu chí bắt buộc đang chọn Chưa đạt nên chưa thể công nhận đạt.'),
+      screen.getByText('Tiêu chí bắt buộc dưới 70% nên chưa thể công nhận đạt.'),
     ).toBeInTheDocument();
 
     // Passing Gate + partial score 80% re-enables Công nhận đạt & submits weighted payload
-    fireEvent.click(screen.getByRole('button', { name: 'Đạt (tiêu chí 01)' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Đạt (tiêu chí 02)' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Chưa đạt (tiêu chí 03)' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Đạt (tiêu chí 04)' }));
+    fireEvent.change(screen.getByRole('slider', { name: 'Điểm Mentor cho Nguồn & bối cảnh công việc thực tế' }), {
+      target: { value: '100' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Chấm 100% cho Quy trình thực hiện & kiểm chứng' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chấm 0% cho Kết luận & bước tiếp theo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chấm 100% cho Truy xuất nguồn chéo & chuẩn hóa dữ liệu nhiều nguồn' }));
 
-    expect(screen.getByText('80% · 3/4 đạt')).toBeInTheDocument();
+    expect(screen.getByText('80')).toBeInTheDocument();
+    expect(screen.getByText('4/4 tiêu chí đã chấm')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Công nhận đạt' })).not.toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Công nhận đạt' }));
     expect(screen.getByRole('button', { name: 'Công nhận đạt' })).toHaveAttribute('aria-pressed', 'true');
 
     const reasonInput = screen.getByLabelText(/Nhận xét gửi nhân viên/i) as HTMLTextAreaElement;
@@ -1064,6 +1171,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
             number: '01',
             title: 'Nguồn & bối cảnh công việc thực tế',
             status: 'PASS',
+            scorePercent: 100,
             note: null,
             weightPercent: 20,
             isRequired: false,
@@ -1072,6 +1180,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
             number: '02',
             title: 'Quy trình thực hiện & kiểm chứng',
             status: 'PASS',
+            scorePercent: 100,
             note: null,
             weightPercent: 20,
             isRequired: false,
@@ -1080,6 +1189,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
             number: '03',
             title: 'Kết luận & bước tiếp theo',
             status: 'FAIL',
+            scorePercent: 0,
             note: null,
             weightPercent: 20,
             isRequired: false,
@@ -1088,6 +1198,7 @@ describe('MentorReviewWorkbench Split View (Phương án 1)', () => {
             number: '04',
             title: 'Truy xuất nguồn chéo & chuẩn hóa dữ liệu nhiều nguồn',
             status: 'PASS',
+            scorePercent: 100,
             note: null,
             weightPercent: 40,
             isRequired: true,

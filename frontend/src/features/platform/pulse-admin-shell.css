@@ -7660,6 +7660,61 @@ dialog.pa-cmd-dialog::backdrop {
   box-shadow: 0 0 0 3px rgba(184, 92, 36, 0.15);
 }
 
+.pulse-ui.pa-console .pa-cb-weight-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-bottom: 12px;
+}
+
+.pulse-ui.pa-console .pa-cb-weight-summary p {
+  width: 100%;
+  margin: 0;
+  color: #475569;
+  font-size: 12px;
+}
+
+.pulse-ui.pa-console .pa-cb-weight-total {
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: #fff7ed;
+  color: #92400e;
+  font-size: 12px;
+}
+
+.pulse-ui.pa-console .pa-cb-weight-total[data-valid='true'] {
+  background: #ecfdf5;
+  color: #166044;
+}
+
+.pulse-ui.pa-console .pa-cb-criterion-weight {
+  display: flex;
+  align-items: center;
+  flex: 0 0 78px;
+  gap: 5px;
+  height: 40px;
+  padding: 0 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #475569;
+}
+
+.pulse-ui.pa-console .pa-cb-criterion-weight:focus-within {
+  outline: 2px solid var(--pa-accent, #b85c24);
+  outline-offset: 1px;
+}
+
+.pulse-ui.pa-console .pa-cb-criterion-weight input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ───────────── Notice box & Module actions ───────────── */
 .pulse-ui.pa-console .pa-cb-notice-box {
   padding: 12px 16px;

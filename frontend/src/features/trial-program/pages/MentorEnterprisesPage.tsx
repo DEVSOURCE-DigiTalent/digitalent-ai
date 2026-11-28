@@ -17,10 +17,9 @@ import {
 import { useMentorEnterprises, usePulseFinalReviews } from '@/hooks/use-pulse';
 import type { MentorEnterpriseItem, PulseFinalReviewItem } from '@/services/pulse.service';
 import { getAvatarColor, initials } from '@/features/platform/components/pulse-format';
-import { levelName } from '@/features/pulse-employee/lib/labels';
 import { PaginationBar } from '@/features/trial-program/components/PaginationBar';
 import { OwnerFilterSelect } from '@/features/organization/components/OwnerFilterSelect';
-import { formatShortOrgCode } from '@/features/trial-program/lib/mentor-ai-guidance';
+import { formatMentorCourseLabel, formatShortOrgCode } from '@/features/trial-program/lib/mentor-ai-guidance';
 import { formatDateTime } from '@/lib/utils';
 import '@/features/trial-program/mentor-workspace.css';
 
@@ -272,7 +271,7 @@ export function MentorEnterprisesPage() {
                   </div>
 
                   <div className="mw-urgent-course">
-                    {item.courseCode} · {item.courseTitle} ({levelName(item.tier)})
+                    {formatMentorCourseLabel(item.courseTitle) || formatMentorCourseLabel(item.domainName)}
                   </div>
 
                   <div className="mw-urgent-card-foot">

@@ -27,6 +27,9 @@ public class DecidePulseFinalUseCaseValidator : AbstractValidator<DecidePulseFin
                     .Must(s => s is "PASS" or "PARTIAL" or "FAIL")
                     .WithMessage("Trạng thái tiêu chí phải là PASS, PARTIAL hoặc FAIL.");
                 item.RuleFor(c => c.Note).MaximumLength(500);
+                item.RuleFor(c => c.ScorePercent).InclusiveBetween(0, 100)
+                    .When(c => c.ScorePercent.HasValue)
+                    .WithMessage("Điểm tiêu chí phải từ 0 đến 100%.");
                 item.RuleFor(c => c.WeightPercent)
                     .InclusiveBetween(0, 100)
                     .When(c => c.WeightPercent.HasValue)

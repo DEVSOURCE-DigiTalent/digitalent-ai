@@ -182,6 +182,13 @@ export function useCourseEdit(versionNo: number, courseId: string) {
     mutationFn: (edit: (versionNo: number, courseId: string) => Promise<CatalogCourseDetail>) => edit(versionNo, courseId),
     onSuccess: (detail) => {
       queryClient.setQueryData(catalogKeys.course(versionNo, courseId), detail);
+      if (detail.versionStatus === 'CURRENT') {
+        return Promise.all([
+          refresh(),
+          queryClient.invalidateQueries({ queryKey: PULSE_KEYS.all }),
+          queryClient.invalidateQueries({ queryKey: ASSIGNMENTS_KEY }),
+        ]);
+      }
       return refresh();
     },
   });

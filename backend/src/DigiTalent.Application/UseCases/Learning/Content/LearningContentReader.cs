@@ -108,18 +108,27 @@ public sealed class LearningContentReader(IApplicationDbContext context, IPlatfo
         {
             var orgCourses = await context.Courses.AsNoTracking()
                 .Where(c => missingIds.Contains(c.Id))
-                .Select(c => new { c.Id, c.Code })
+                .Select(c => new { c.Id, c.Code, c.OrganizationId })
                 .ToListAsync();
 
+            var currentVersion = await context.PlatformCatalogVersions.AsNoTracking()
+                .Where(v => v.Status == Statuses.PlatformCatalogVersion.Current)
+                .Select(v => (int?)v.VersionNo).SingleOrDefaultAsync();
+            var applied = currentVersion is { } current
+                ? await new PlatformCatalogApplier(context).VersionsAsync(
+                    orgCourses.Select(c => c.OrganizationId).Distinct().ToList(), current)
+                : new Dictionary<Guid, int>();
+            var versionNos = applied.Values.Distinct().ToList();
             var catalogRows = await (
                     from version in context.PlatformCatalogVersions.AsNoTracking()
                     join catalogCourse in context.PlatformCatalogCourses.AsNoTracking() on version.Id equals catalogCourse.VersionId
                     join platformCourse in context.PlatformCourses.AsNoTracking() on catalogCourse.CourseId equals platformCourse.Id
                     join domain in context.PlatformFrameworkDomains.AsNoTracking() on catalogCourse.DomainId equals domain.Id
-                    where version.Status == Domain.Constants.Statuses.PlatformCatalogVersion.Current
+                    where versionNos.Contains(version.VersionNo) && version.Status != Statuses.PlatformCatalogVersion.Draft
                     select new
                     {
                         Code = platformCourse.Code,
+                        version.VersionNo,
                         catalogCourse.FinalTitle,
                         catalogCourse.FinalPrompt,
                         catalogCourse.FinalCriteria,
@@ -128,7 +137,7 @@ public sealed class LearningContentReader(IApplicationDbContext context, IPlatfo
                     })
                 .ToListAsync();
 
-            var catalogByKey = new Dictionary<string, PlatformCourseFinalDto>(StringComparer.OrdinalIgnoreCase);
+            var catalogByKey = new Dictionary<(int VersionNo, string Code), PlatformCourseFinalDto>();
             foreach (var row in catalogRows)
             {
                 var criteria = PlatformCourseContentReader.Criteria(row.FinalCriteria);
@@ -145,7 +154,7 @@ public sealed class LearningContentReader(IApplicationDbContext context, IPlatfo
                 };
                 foreach (var alias in CodeAliases(row.Code))
                 {
-                    catalogByKey.TryAdd(alias, dto);
+                    catalogByKey.TryAdd((row.VersionNo, alias), dto);
                 }
             }
 
@@ -154,7 +163,8 @@ public sealed class LearningContentReader(IApplicationDbContext context, IPlatfo
                 PlatformCourseFinalDto? matched = null;
                 foreach (var alias in CodeAliases(oc.Code))
                 {
-                    if (catalogByKey.TryGetValue(alias, out matched)) break;
+                    if (applied.TryGetValue(oc.OrganizationId, out var versionNo)
+                        && catalogByKey.TryGetValue((versionNo, alias), out matched)) break;
                 }
 
                 if (matched != null)

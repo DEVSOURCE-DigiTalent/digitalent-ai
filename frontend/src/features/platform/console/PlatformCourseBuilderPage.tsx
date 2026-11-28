@@ -52,7 +52,9 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
   useUiLanguage();
   const [params, setParams] = useSearchParams();
   const { can } = usePermission();
-  const editable = course.editable && can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
+  const canManageCatalog = can(PERMISSIONS.PLATFORM_CATALOG_MANAGE);
+  const editable = course.editable && canManageCatalog;
+  const editCurrentWeights = course.versionStatus === 'CURRENT' && canManageCatalog && Boolean(course.finalRubric);
   const courseEdit = useCourseEdit(course.versionNo, course.courseId);
   const edit: CourseEdit = (fn) => courseEdit.mutateAsync(fn);
   const [preview, setPreview] = useState(false);
@@ -136,7 +138,7 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
         </>}
       />
 
-      {!course.editable && <ReadOnlyBar course={course} />}
+      {!course.editable && <ReadOnlyBar course={course} editWeightsHere={section === 'final' && editCurrentWeights} />}
       <CourseBuilderLayout moduleCount={course.modules.length} outline={<>
           <CourseOutlineItem
             icon={<SlidersHorizontal size={14} aria-hidden="true" />}
@@ -202,15 +204,18 @@ function Builder({ course }: { course: CatalogCourseDetail }) {
               onNavigate={go}
             />
           )}
-          {section === 'final' && <FinalEditor key={JSON.stringify(course.final)} course={course} editable={editable} edit={edit} />}
+          {section === 'final' && (
+            <FinalEditor key={JSON.stringify(course.final)} course={course} editable={editable} edit={edit}
+              showWeights editCurrentWeights={editCurrentWeights} />
+          )}
       </CourseBuilderLayout>
       {preview && <LearnerPreview course={course} moduleIndex={typeof section === 'number' ? section : 0} onClose={() => setPreview(false)} />}
     </>
   );
 }
 
-/** A published version cannot change: point to the draft (or create it) to edit the same course there. */
-function ReadOnlyBar({ course }: { course: CatalogCourseDetail }) {
+/** Content edits go through the draft. The current final supports direct weight edits. */
+function ReadOnlyBar({ course, editWeightsHere }: { course: CatalogCourseDetail; editWeightsHere: boolean }) {
   useUiLanguage();
   const navigate = useNavigate();
   const versions = useCatalogVersions();
@@ -238,7 +243,9 @@ function ReadOnlyBar({ course }: { course: CatalogCourseDetail }) {
       <div className="pa-cb-status-left">
         <Lock size={15} className="pa-cb-status-icon text-slate-500" aria-hidden="true" />
         <span className="pa-cb-status-text">
-          {isCurrent
+          {editWeightsHere
+            ? `Có thể chỉnh trọng số ngay trên v${course.versionNo}. Để sửa nội dung đề hoặc tên tiêu chí, mở bản nháp.`
+            : isCurrent
             ? `Bản công bố chính thức v${course.versionNo} (chế độ chỉ xem). Để chỉnh sửa nội dung, vui lòng chuyển sang bản nháp${draftNo !== null ? ` v${draftNo}` : ''}.`
             : `Bản lưu trữ lịch sử v${course.versionNo} (chế độ chỉ xem). Để chỉnh sửa nội dung, vui lòng thao tác trên bản nháp${draftNo !== null ? ` v${draftNo}` : ''}.`}
         </span>

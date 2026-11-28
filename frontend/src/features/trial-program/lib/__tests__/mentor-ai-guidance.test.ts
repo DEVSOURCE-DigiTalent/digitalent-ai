@@ -136,6 +136,18 @@ describe('detectPromptCopy', () => {
 });
 
 describe('computeRubricStats (Option 1 weighted rubric & gate)', () => {
+  it('uses slider scores and checks required criteria separately from the weighted total', () => {
+    const rows = makeWeightedRows(['PASS', 'PASS', 'PASS', 'PARTIAL']).map((row, index) => ({
+      ...row,
+      scorePercent: index === 3 ? 65 : 90,
+    }));
+    expect(computeRubricStats(rows, true)).toMatchObject({
+      scorePercent: 80,
+      gateFailed: true,
+      recommendedDecision: 'NOT_YET',
+    });
+  });
+
   it('passes at 80% when non-gate criterion 03 fails while gate passes (>= 70%)', () => {
     const stats = computeRubricStats(makeWeightedRows(['PASS', 'PASS', 'FAIL', 'PASS']), true);
     expect(stats.scorePercent).toBe(80);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  ClipboardCheck,
   FileText,
   Filter,
   GraduationCap,
@@ -60,11 +61,12 @@ import {
   compileRubricFeedback,
   computeRubricStats,
   ESSAY_PASS_SCORE_PERCENT,
+  essayAnnotationRanges,
+  formatMentorCourseLabel,
   findCriterionEvidence,
   resolveEffectiveCriteria,
   RUBRIC_QUICK_NOTES,
   type RubricCriterionEvaluation,
-  type RubricStatus,
 } from '@/features/trial-program/lib/mentor-ai-guidance';
 import { apiErrorMessage, formatDateTime } from '@/lib/utils';
 import '@/features/pulse-employee/pulse-exam.css';
@@ -95,6 +97,12 @@ interface WorkbenchLocationState {
 }
 
 const MIN_REASON_LENGTH = 10;
+const ESSAY_ANNOTATION_LABELS = {
+  strength: 'Điểm làm tốt',
+  improve: 'Cần chỉnh sửa',
+  observation: 'Quan sát',
+  missing: 'Cần đối chiếu',
+};
 
 const STATUS_PRIORITY: Record<PulseReviewStatus, number> = {
   PENDING: 0,
@@ -905,7 +913,7 @@ export function MentorReviewWorkbench({
                       value={selectedDomain}
                       options={[
                         { value: 'ALL', label: `Mọi lĩnh vực (${domains.length})` },
-                        ...domains.map((domain) => ({ value: domain, label: domain })),
+                        ...domains.map((domain) => ({ value: domain, label: formatMentorCourseLabel(domain) || 'Lĩnh vực' })),
                       ]}
                       menuMinWidth={220}
                       onChange={(value) => {
@@ -1052,6 +1060,7 @@ export function MentorReviewWorkbench({
                     const roleParts = [item.positionName, item.departmentName].filter(Boolean);
                     const roleLabel = roleParts.length > 0 ? roleParts.join(' · ') : 'Chưa phân vị trí';
                     const tierLabel = item.tier ? levelName(item.tier) : 'Chưa phân cấp';
+                    const domainLabel = formatMentorCourseLabel(item.domainName);
 
                     return (
                       <li key={`${item.kind}-${item.submissionId}`} style={{ width: '100%' }}>
@@ -1095,12 +1104,12 @@ export function MentorReviewWorkbench({
                           </div>
 
                           <div className="mw-rail-course">
-                            {item.courseCode} · {item.courseTitle}
+                            {formatMentorCourseLabel(item.courseTitle) || domainLabel}
                           </div>
 
                           <div className="mw-rail-foot">
                             <span>
-                              {item.domainName ? `${item.domainName} · ` : ''}
+                              {domainLabel ? `${domainLabel} · ` : ''}
                               {tierLabel}
                             </span>
                             <span>
@@ -1289,12 +1298,6 @@ interface MentorReviewDetailPaneProps {
   onFinishedAllPending: () => void;
 }
 
-const RUBRIC_BUTTONS: { status: RubricStatus; label: string }[] = [
-  { status: 'PASS', label: 'Đạt' },
-  { status: 'PARTIAL', label: 'Một phần' },
-  { status: 'FAIL', label: 'Chưa đạt' },
-];
-
 function MentorReviewDetailPane({
   activeItem,
   criteriaList,
@@ -1320,7 +1323,6 @@ function MentorReviewDetailPane({
   const [reasonTouchedByUser, setReasonTouchedByUser] = useState(() =>
     Boolean(latestAttempt?.decisionReason),
   );
-  const [decisionTouchedByUser, setDecisionTouchedByUser] = useState(false);
   const [supportAction, setSupportAction] = useState<PulseSupportAction | ''>('');
   const [supportNote, setSupportNote] = useState('');
 
@@ -1328,27 +1330,26 @@ function MentorReviewDetailPane({
     () => resolveEffectiveCriteria(activeItem, criteriaList),
     [activeItem, criteriaList],
   );
-  const [rubricRows, setRubricRows] = useState<RubricCriterionEvaluation[]>(() =>
-    effectiveCriteria.map((c) => ({
-      number: c.number,
-      title: c.title,
-      description: c.description,
-      weightPercent: c.weightPercent,
-      isRequired: c.isRequired,
-      status: null,
-      note: '',
-    })),
-  );
+  const [rubricDraft, setRubricRows] = useState<RubricCriterionEvaluation[]>([]);
+  const rubricRows = useMemo(() => effectiveCriteria.map((criterion) => {
+    const draft = rubricDraft.find((row) => row.number === criterion.number && row.title === criterion.title);
+    return {
+      ...criterion,
+      status: draft?.status ?? null,
+      scorePercent: draft?.scorePercent,
+      note: draft?.note ?? '',
+    };
+  }), [effectiveCriteria, rubricDraft]);
   const [expandedNoteKeys, setExpandedNoteKeys] = useState<Record<string, boolean>>({});
   const [expandedCriterion, setExpandedCriterion] = useState<number | null>(null);
   const [selectedEvidence, setSelectedEvidence] = useState<
-    { criterion: number } | { metric: PulseAiDetailEvidenceKey; label: string; note: string } | null
+    { criterion: number } | { metric: PulseAiDetailEvidenceKey; label: string; note: string } | { all: true } | null
   >(null);
+  const [annotationIndex, setAnnotationIndex] = useState<number | null>(null);
   const [aiEvidenceLookupFinished, setAiEvidenceLookupFinished] = useState(false);
   const aiRefreshInFlight = useRef(false);
   const passageRef = useRef<HTMLElement>(null);
   const evidenceNoticeRef = useRef<HTMLDivElement>(null);
-  const evidenceBodyRef = useRef<HTMLDivElement>(null);
 
   const essayReport = useMemo(
     () => buildEssayGuidance(activeItem, criteriaList),
@@ -1356,42 +1357,49 @@ function MentorReviewDetailPane({
   );
 
   const earlierAttempts = activeItem.attempts.slice(0, -1);
-  const essayContent = latestAttempt?.evidenceText || 'Nhân viên chưa nhập nội dung bài làm.';
+  const essay = latestAttempt?.evidenceText ?? '';
+  const essayContent = essay || 'Nhân viên chưa nhập nội dung bài làm.';
   const selectedCriterion = selectedEvidence && 'criterion' in selectedEvidence ? selectedEvidence.criterion : null;
   const selectedMetric = selectedEvidence && 'metric' in selectedEvidence ? selectedEvidence : null;
-  const criterion = selectedCriterion === null ? null : essayReport.criteriaStatus[selectedCriterion];
-  const evidenceLabel = selectedMetric?.label ?? criterion?.title;
+  const showAllAnnotations = selectedEvidence != null && 'all' in selectedEvidence;
+  const annotations = activeItem.aiHint?.annotations;
+  const selectedAnnotations = useMemo(() => annotations?.filter((annotation) => showAllAnnotations
+    || (selectedMetric != null && annotation.metric === selectedMetric.metric)
+    || (selectedCriterion !== null && annotation.criterionIndex === selectedCriterion)) ?? [],
+  [annotations, selectedCriterion, selectedMetric, showAllAnnotations]);
+  const firstAnchor = selectedAnnotations.findIndex((annotation) => annotation.start != null);
+  const activeAnnotationIndex = Math.min(annotationIndex ?? Math.max(0, firstAnchor), Math.max(0, selectedAnnotations.length - 1));
+  const activeAnnotation = selectedAnnotations[activeAnnotationIndex];
+  const ranges = useMemo(
+    () => essayAnnotationRanges(essay, selectedAnnotations, activeAnnotationIndex),
+    [essay, selectedAnnotations, activeAnnotationIndex],
+  );
   const aiEvidence = activeItem.aiHint?.detail?.evidence;
   const metricExcerpt = selectedMetric ? aiEvidence?.[selectedMetric.metric] : undefined;
   const criterionEvidence = activeItem.aiHint?.criterionEvidence;
-  const criterionExcerpt = selectedCriterion === null ? undefined : criterionEvidence?.[selectedCriterion];
-  const selectedExcerpt = selectedMetric ? metricExcerpt : criterionExcerpt;
+  const criterionPassages = useMemo(
+    () => essayReport.isPromptCopy
+      ? []
+      : criterionEvidence?.map((excerpt) => findCriterionEvidence(essay, excerpt)) ?? [],
+    [criterionEvidence, essay, essayReport.isPromptCopy],
+  );
+  const metricPassage = useMemo(
+    () => findCriterionEvidence(essay, metricExcerpt),
+    [essay, metricExcerpt],
+  );
+  const passage = selectedAnnotations.length ? null
+    : selectedCriterion === null ? metricPassage : criterionPassages[selectedCriterion];
+  const evidenceNote = selectedMetric?.note
+    ?? (selectedCriterion === null ? undefined : essayReport.criteriaStatus[selectedCriterion]?.aiNote);
+  const evidenceLabel = (showAllAnnotations ? 'Chú thích AI trên bài làm' : selectedMetric?.label)
+    ?? (selectedCriterion === null ? undefined : rubricRows[selectedCriterion]?.title);
+  const selectedExcerpt = selectedCriterion === null ? metricExcerpt : criterionEvidence?.[selectedCriterion];
   const isLookingUpEvidence = Boolean(selectedEvidence && selectedExcerpt === undefined && refreshAiMutation.isPending);
-  const passage = useMemo(() => {
-    const essay = latestAttempt?.evidenceText ?? '';
-    if (selectedMetric) {
-      return findCriterionEvidence(essay, metricExcerpt, selectedMetric.note);
-    }
-    if (!criterion || selectedCriterion === null || essayReport.isPromptCopy) return null;
-    return findCriterionEvidence(
-      essay,
-      criterionExcerpt,
-      [criterion.title, criterion.description, criterion.aiNote].filter(Boolean).join('. '),
-    );
-  }, [criterionExcerpt, criterion, essayReport.isPromptCopy, latestAttempt?.evidenceText, metricExcerpt, selectedCriterion, selectedMetric]);
 
   useEffect(() => {
     if (activeEvidenceTab !== 'ESSAY' || !selectedEvidence) return;
-    const target = passageRef.current ?? evidenceNoticeRef.current;
-    const body = evidenceBodyRef.current;
-    if (!target) return;
-    if (body && body.scrollHeight > body.clientHeight && getComputedStyle(body).overflowY === 'auto') {
-      const targetOffset = target.getBoundingClientRect().top - body.getBoundingClientRect().top;
-      body.scrollTop += targetOffset - (body.clientHeight - target.offsetHeight) / 2;
-    } else {
-      target.scrollIntoView?.({ block: 'center', inline: 'nearest' });
-    }
-  }, [activeEvidenceTab, passage, selectedEvidence]);
+    (passageRef.current ?? evidenceNoticeRef.current)?.scrollIntoView?.({ block: 'center', inline: 'nearest' });
+  }, [activeEvidenceTab, passage, selectedEvidence, activeAnnotationIndex, ranges]);
 
   const submittedAtText = latestAttempt?.submittedAt ? formatDateTime(latestAttempt.submittedAt) : 'Chưa có';
   const isPending = activeItem.status === 'PENDING';
@@ -1411,6 +1419,9 @@ function MentorReviewDetailPane({
 
   const badge = STATUS_BADGE[activeItem.status] ?? STATUS_BADGE.PENDING;
   const tierLabel = activeItem.tier ? levelName(activeItem.tier) : 'Chưa phân cấp';
+  const courseLabel = formatMentorCourseLabel(activeItem.courseTitle);
+  const domainLabel = formatMentorCourseLabel(activeItem.domainName);
+  const assignmentTitle = formatMentorCourseLabel(activeItem.assignment?.title);
   const assignmentCriteria = activeItem.assignment?.criteria ?? [];
   const avatarTone = getAvatarColor(activeItem.employeeName);
 
@@ -1429,33 +1440,16 @@ function MentorReviewDetailPane({
   );
   const hasRatedAnyCriterion = rubricStats.ratedCount > 0;
 
-  const handleRubricStatusChange = (index: number, nextStatus: RubricStatus) => {
-    const targetRow = rubricRows[index];
-    if (!targetRow) return;
-    const toggledStatus = targetRow.status === nextStatus ? null : nextStatus;
+  const handleRubricScoreChange = (index: number, scorePercent: number | undefined) => {
+    const status: RubricCriterionEvaluation['status'] = scorePercent === undefined ? null
+      : scorePercent >= ESSAY_PASS_SCORE_PERCENT ? 'PASS'
+        : scorePercent > 0 ? 'PARTIAL' : 'FAIL';
     const nextRows = rubricRows.map((row, idx) =>
-      idx === index ? { ...row, status: toggledStatus } : row,
+      idx === index ? { ...row, status, scorePercent } : row,
     );
     setRubricRows(nextRows);
-
-    if (toggledStatus === 'PARTIAL' || toggledStatus === 'FAIL') {
-      setExpandedNoteKeys((prev) => ({ ...prev, [targetRow.number]: true }));
-    }
-
-    const nextStats = computeRubricStats(nextRows, choice ? choice.passed : null);
-    let nextDecision = decision;
-    if (!decisionTouchedByUser) {
-      if (choiceFails) {
-        nextDecision = 'NOT_YET';
-        setDecision('NOT_YET');
-      } else if (nextStats.recommendedDecision) {
-        nextDecision = nextStats.recommendedDecision;
-        setDecision(nextStats.recommendedDecision);
-      }
-    }
-
-    if (!reasonTouchedByUser && nextStats.ratedCount > 0) {
-      setReason(compileRubricFeedback({ rows: nextRows, decision: nextDecision, choice }));
+    if (!reasonTouchedByUser) {
+      setReason(compileRubricFeedback({ rows: nextRows, decision, choice }));
     }
   };
 
@@ -1470,17 +1464,13 @@ function MentorReviewDetailPane({
   };
 
   const handleMarkAllPass = () => {
-    const nextRows = rubricRows.map((row) => ({ ...row, status: 'PASS' as const }));
+    const nextRows = rubricRows.map((row) => ({ ...row, status: 'PASS' as const, scorePercent: 100 }));
     setRubricRows(nextRows);
-    const nextDecision: PulseDecision = choiceFails ? 'NOT_YET' : 'PASSED';
-    if (!decisionTouchedByUser) {
-      setDecision(nextDecision);
-    }
     if (!reasonTouchedByUser) {
       setReason(
         compileRubricFeedback({
           rows: nextRows,
-          decision: !decisionTouchedByUser ? nextDecision : decision,
+          decision,
           choice,
         }),
       );
@@ -1507,10 +1497,21 @@ function MentorReviewDetailPane({
         evidenceMetric,
       });
       const freshHint = freshQueue.items.find((item) => item.submissionId === activeItem.submissionId)?.aiHint;
-      if (!forEvidence && freshHint?.source === 'GEMINI' && freshHint.reviewedAt !== activeItem.aiHint?.reviewedAt) {
+      if (forEvidence) return;
+      if (freshHint?.analysisStatus === 'NOT_CONFIGURED') {
+        toast.error('Backend chưa nhận được khóa Gemini. Kiểm tra cấu hình của tiến trình backend.');
+      } else if (freshHint?.analysisStatus === 'UNAVAILABLE') {
+        toast.error('Gemini chưa trả kết quả. Phân tích đã lưu vẫn được giữ nếu có.');
+      } else if (freshHint?.analysisStatus === 'INVALID_RESPONSE') {
+        toast.error('Phản hồi Gemini chưa khớp bộ tiêu chí của đề. Phân tích đã lưu vẫn được giữ nếu có.');
+      } else if (freshHint?.analysisStatus === 'PROMPT_COPY') {
+        toast.warning('Bài làm trùng nội dung đề nên hệ thống không đưa điểm AI gợi ý. Mentor vẫn có thể chấm.');
+      } else if (freshHint?.analysisStatus === 'SCORES_MISSING') {
+        toast.warning('Đã cập nhật nhận xét AI. Gemini chưa trả điểm hợp lệ cho từng tiêu chí.');
+      } else if (freshHint?.source === 'GEMINI' && freshHint.reviewedAt !== activeItem.aiHint?.reviewedAt) {
         toast.success('Đã cập nhật phân tích mới cho bài nộp này.');
-      } else if (!forEvidence) {
-        toast.error('Chưa nhận được phân tích mới. Hãy thử lại.');
+      } else {
+        toast.error('Backend chưa trả phân tích mới cho bài nộp này.');
       }
     } catch (err) {
       if (!forEvidence) toast.error(apiErrorMessage(err, 'Không làm mới được phân tích. Thử lại sau.'));
@@ -1521,17 +1522,23 @@ function MentorReviewDetailPane({
   };
 
   const showAiEvidence = (metric: PulseAiDetailEvidenceKey, label: string, note: string) => {
+    setAnnotationIndex(null);
+    setAiEvidenceLookupFinished(false);
     setSelectedEvidence({ metric, label, note });
     setActiveEvidenceTab('ESSAY');
-    if (isPending && latestAttempt?.evidenceText?.trim() && aiEvidence?.[metric] === undefined) {
+    if (isPending && latestAttempt?.evidenceText?.trim() && aiEvidence?.[metric] === undefined
+      && !annotations?.some((annotation) => annotation.metric === metric)) {
       void handleRefreshAi(true, metric);
     }
   };
 
   const showCriterionEvidence = (index: number) => {
+    setAnnotationIndex(null);
+    setAiEvidenceLookupFinished(false);
     setSelectedEvidence({ criterion: index });
     setActiveEvidenceTab('ESSAY');
-    if (!essayReport.isPromptCopy && isPending && latestAttempt?.evidenceText?.trim() && criterionEvidence?.[index] === undefined) {
+    if (isPending && !essayReport.isPromptCopy && essay.trim() && criterionEvidence?.[index] === undefined
+      && !annotations?.some((annotation) => annotation.criterionIndex === index)) {
       void handleRefreshAi(true);
     }
   };
@@ -1539,11 +1546,6 @@ function MentorReviewDetailPane({
   const handleApplyAiDraft = () => {
     setReason(essayReport.draftFeedback);
     setReasonTouchedByUser(true);
-    if (choiceFails || rubricStats.gateFailed) {
-      setDecision('NOT_YET');
-    } else if (!decision && essayReport.suggestedDecision) {
-      setDecision(essayReport.suggestedDecision);
-    }
     toast.success('Đã chèn gợi ý vào khung nhận xét. Kiểm tra lại trước khi lưu.');
   };
 
@@ -1560,6 +1562,10 @@ function MentorReviewDetailPane({
       toast.warning('Tiêu chí bắt buộc chưa đạt nên không thể công nhận đạt.');
       return;
     }
+    if (hasRatedAnyCriterion && !rubricStats.allRated) {
+      toast.warning('Chấm đủ các tiêu chí tự luận trước khi lưu bảng điểm.');
+      return;
+    }
     if (reason.trim().length < MIN_REASON_LENGTH) {
       toast.warning(`Nhập nhận xét ít nhất ${MIN_REASON_LENGTH} ký tự.`);
       return;
@@ -1572,6 +1578,7 @@ function MentorReviewDetailPane({
             number: r.number,
             title: r.title,
             status: r.status!,
+            scorePercent: r.scorePercent,
             note: r.note.trim() || null,
             ...(r.weightPercent !== undefined ? { weightPercent: r.weightPercent } : {}),
             ...(r.isRequired !== undefined ? { isRequired: r.isRequired } : {}),
@@ -1778,16 +1785,16 @@ function MentorReviewDetailPane({
             </button>
           </div>
 
-          <div ref={evidenceBodyRef} className="mw-ev-body" role="tabpanel">
+          <div className="mw-ev-body" role="tabpanel">
             {activeEvidenceTab === 'ESSAY' && (
               <>
                 <div className="mw-course-meta-strip">
                   <div>
                     <h3>
-                      {activeItem.courseCode} · {activeItem.courseTitle}
+                      {courseLabel || domainLabel}
                     </h3>
                     <div className="mw-course-meta-sub">
-                      {activeItem.domainName || 'Chưa gắn lĩnh vực'} · {tierLabel}
+                      {domainLabel || 'Chưa gắn lĩnh vực'} · {tierLabel}
                     </div>
                   </div>
                 </div>
@@ -1797,7 +1804,7 @@ function MentorReviewDetailPane({
                     <FileText size={15} aria-hidden="true" />
                     <span className="mw-prompt-label">
                       Đề bài thực hành yêu cầu
-                      {activeItem.assignment?.title ? `: ${activeItem.assignment.title}` : ''}
+                      {assignmentTitle ? `: ${assignmentTitle}` : ''}
                     </span>
                     <ChevronDown size={14} className="mw-disclosure-chevron" aria-hidden="true" />
                   </summary>
@@ -1810,7 +1817,7 @@ function MentorReviewDetailPane({
                     ) : (
                       <p style={{ margin: 0 }}>
                         Mô tả một nhiệm vụ thực tế của vị trí {activeItem.positionName || 'hiện tại'} thuộc lĩnh vực{' '}
-                        {(activeItem.domainName || activeItem.courseTitle).toLowerCase()} ({tierLabel.toLowerCase()}): nêu rõ
+                        {(domainLabel || courseLabel).toLowerCase()} ({tierLabel.toLowerCase()}): nêu rõ
                         nguồn dữ liệu, hành động hoặc phép tính người khác kiểm tra lại được, kết luận và bước tiếp theo.
                       </p>
                     )}
@@ -1863,6 +1870,16 @@ function MentorReviewDetailPane({
                       {essayReport.wordCount} từ · {essayReport.charCount} ký tự
                     </span>
                   </div>
+                  {!!annotations?.length && (
+                    <button type="button" className="mw-essay-annotation-trigger" aria-pressed={showAllAnnotations}
+                      onClick={() => {
+                        setAnnotationIndex(null);
+                        setSelectedEvidence(showAllAnnotations ? null : { all: true });
+                      }}>
+                      <Sparkles size={14} aria-hidden="true" />
+                      Xem {annotations.length} chú thích AI
+                    </button>
+                  )}
                   {essayReport.isPromptCopy && (
                     <div className="mw-prompt-copy-alert" role="alert">
                       <AlertCircle size={15} aria-hidden="true" />
@@ -1872,30 +1889,92 @@ function MentorReviewDetailPane({
                     </div>
                   )}
                   {evidenceLabel && (
-                    <div ref={evidenceNoticeRef} className="mw-evidence-notice">
+                    <div ref={evidenceNoticeRef} className={`mw-evidence-notice${activeAnnotation ? ' has-annotation' : ''}`}>
                       <div role="status">
                         <strong>{evidenceLabel}</strong>
+                        {activeAnnotation ? (
+                          <>
+                            <span className="mw-essay-annotation-kind" data-kind={activeAnnotation.kind}>
+                              {ESSAY_ANNOTATION_LABELS[activeAnnotation.kind]}
+                              {activeAnnotation.start == null && ' · Nhận xét toàn bài'}
+                            </span>
+                            <span className="mw-evidence-comment">{activeAnnotation.note}</span>
+                            {activeAnnotation.action && (
+                              <span className="mw-essay-annotation-action"><strong>Gợi ý sửa</strong> {activeAnnotation.action}</span>
+                            )}
+                          </>
+                        ) : <>
                         <span>
                           {isLookingUpEvidence
                             ? 'AI đang tìm đoạn liên quan trong bài làm…'
-                            : passage?.source === 'quote'
-                            ? 'Đoạn trích từ bài làm'
                             : passage
-                              ? 'Đoạn có cụm từ liên quan, cần đối chiếu'
-                              : selectedExcerpt === undefined && aiEvidenceLookupFinished
-                                ? activeItem.aiHint?.evidenceLookupStatus === 'NOT_CONFIGURED'
-                                  ? 'Backend hiện chưa có cấu hình Gemini để tìm dẫn chứng.'
-                                  : 'Chưa nhận được dẫn chứng từ AI. Bấm lại để thử lại.'
-                                : 'Chưa tìm thấy đoạn phù hợp trong bài làm'}
+                              ? 'Đoạn trích từ bài làm'
+                              : !essay.trim()
+                                ? 'Bài nộp chưa có nội dung tự luận để đối chiếu.'
+                                : selectedExcerpt === undefined && aiEvidenceLookupFinished
+                                  ? activeItem.aiHint?.evidenceLookupStatus === 'NOT_CONFIGURED'
+                                    ? 'Backend hiện chưa có cấu hình Gemini để tìm dẫn chứng.'
+                                    : 'Chưa nhận được dẫn chứng từ AI. Bấm lại để thử lại.'
+                                  : 'Không có đoạn trích trực tiếp. Đối chiếu nhận xét với toàn bộ bài làm bên dưới.'}
                         </span>
+                        {evidenceNote && <span className="mw-evidence-comment">{evidenceNote}</span>}
+                        </>}
                       </div>
-                      <button type="button" onClick={() => setSelectedEvidence(null)} aria-label="Bỏ đối chiếu bài làm">
-                        <X size={15} aria-hidden="true" />
-                      </button>
+                      <div className="mw-essay-annotation-controls">
+                        {isPending && !annotations?.length && !essayReport.isPromptCopy && !!essay.trim() && (
+                          <button type="button"
+                            className="mw-essay-annotation-refresh"
+                            disabled={refreshAiMutation.isPending}
+                            onClick={() => void handleRefreshAi()}>
+                            <Sparkles size={13} aria-hidden="true" />
+                            {refreshAiMutation.isPending ? 'Đang phân tích…' : 'Phân tích theo đoạn'}
+                          </button>
+                        )}
+                        {selectedAnnotations.length > 1 && (
+                          <div className="mw-essay-annotation-pager">
+                            <button type="button" aria-label="Chú thích trước" disabled={activeAnnotationIndex <= 0}
+                              onClick={() => setAnnotationIndex(activeAnnotationIndex - 1)}>
+                              <ChevronLeft size={15} aria-hidden="true" />
+                            </button>
+                            <span>{activeAnnotationIndex + 1}/{selectedAnnotations.length}</span>
+                            <button type="button" aria-label="Chú thích tiếp theo"
+                              disabled={activeAnnotationIndex >= selectedAnnotations.length - 1}
+                              onClick={() => setAnnotationIndex(activeAnnotationIndex + 1)}>
+                              <ChevronRight size={15} aria-hidden="true" />
+                            </button>
+                          </div>
+                        )}
+                        <button type="button" onClick={() => setSelectedEvidence(null)} aria-label="Bỏ đối chiếu bài làm">
+                          <X size={15} aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
                   )}
                   <div className="mw-essay-paper">
-                    {passage ? (
+                    {ranges.length > 0 ? (
+                      <>
+                        {ranges.map((range, index) => (
+                          <Fragment key={range.index}>
+                            {essay.slice(ranges[index - 1]?.end ?? 0, range.start)}
+                            <mark
+                              ref={range.index === activeAnnotationIndex ? passageRef : undefined}
+                              className="mw-essay-highlight mw-essay-annotation-mark"
+                              data-kind={range.kind} data-active={range.index === activeAnnotationIndex}
+                              title={selectedAnnotations[range.index].note}
+                              tabIndex={0}
+                              onClick={() => setAnnotationIndex(range.index)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setAnnotationIndex(range.index);
+                                }
+                              }}
+                            >{essay.slice(range.start, range.end)}</mark>
+                          </Fragment>
+                        ))}
+                        {essay.slice(ranges[ranges.length - 1].end)}
+                      </>
+                    ) : passage ? (
                       <>
                         {essayContent.slice(0, passage.start)}
                         <mark ref={passageRef} className="mw-essay-highlight">{essayContent.slice(passage.start, passage.end)}</mark>
@@ -2322,16 +2401,12 @@ function MentorReviewDetailPane({
                 {/* Detailed Per-Criterion Essay Rubric */}
                 <div className="mw-rubric-box" aria-label="Bảng chấm chi tiết theo tiêu chí">
                   <div className="mw-rubric-head">
-                    <div>
-                      <h3>Chấm chi tiết tự luận</h3>
-                      <p>Mở tiêu chí để xem gợi ý. Chọn mức đạt để chấm điểm.</p>
-                    </div>
-                    <div className="mw-rubric-head-actions">
-                      <span className={`mw-rubric-score-pill${hasRatedAnyCriterion ? ' is-active' : ''}`}>
-                        {hasRatedAnyCriterion
-                          ? `${rubricStats.scorePercent}% · ${rubricStats.passCount}/${rubricStats.total} đạt`
-                          : `${rubricStats.total} tiêu chí`}
-                      </span>
+                    <span className="mw-rubric-head-icon"><ClipboardCheck size={17} aria-hidden="true" /></span>
+                    <h3>Chấm chi tiết tự luận</h3>
+                  </div>
+                  <div className="mw-rubric-summary">
+                    <div className="mw-rubric-summary-top">
+                      <span>Điểm tự luận{hasRatedAnyCriterion && !rubricStats.allRated ? ' tạm tính' : ''}</span>
                       <button
                         type="button"
                         className="mw-rubric-all-btn"
@@ -2340,16 +2415,41 @@ function MentorReviewDetailPane({
                         Đạt hết
                       </button>
                     </div>
-                  </div>
-                  {(rubricStats.hasWeights || rubricStats.hasRequiredCriterion) && (
-                    <div className="mw-rubric-threshold-note">
-                      Ngưỡng đạt: từ {ESSAY_PASS_SCORE_PERCENT}% · Không rớt tiêu chí bắt buộc
+                    <div className="mw-rubric-summary-value">
+                      <div aria-live="polite"><strong>{hasRatedAnyCriterion ? rubricStats.scorePercent : '—'}</strong> <span>/ 100</span></div>
+                      <span>{rubricStats.ratedCount}/{rubricStats.total} tiêu chí đã chấm</span>
                     </div>
+                    <div className="mw-rubric-total-track" aria-hidden="true">
+                      <span style={{ width: `${hasRatedAnyCriterion ? rubricStats.scorePercent : 0}%` }} />
+                      <i style={{ left: `${ESSAY_PASS_SCORE_PERCENT}%` }} />
+                    </div>
+                    <div className="mw-rubric-summary-caption">
+                      <span>Mốc đề xuất {ESSAY_PASS_SCORE_PERCENT}/100</span>
+                      {rubricStats.allRated && (
+                        <strong className={rubricStats.recommendedDecision === 'PASSED' ? 'is-pass' : 'is-review'}>
+                          {rubricStats.recommendedDecision === 'PASSED' ? 'Đề xuất công nhận đạt' : 'Đề xuất chưa đạt'}
+                        </strong>
+                      )}
+                    </div>
+                    {rubricStats.hasRequiredCriterion && (
+                      <div className="mw-rubric-gate-caption">Tiêu chí bắt buộc cần từ {ESSAY_PASS_SCORE_PERCENT}%</div>
+                    )}
+                  </div>
+                  {activeItem.aiHint?.analysisStatus === 'PROMPT_COPY' && (
+                    <p className="mw-rubric-crit-desc">AI không gợi ý điểm vì nội dung bài trùng với đề. Mentor vẫn có thể tự chấm.</p>
+                  )}
+                  {essayReport.mode === 'GEMINI' && !essayReport.isPromptCopy
+                    && activeItem.aiHint?.analysisStatus !== 'PROMPT_COPY'
+                    && !activeItem.aiHint?.criterionScores?.some((score) => score != null) && (
+                    <p className="mw-rubric-crit-desc">Chọn Phân tích lại để lấy điểm AI theo từng tiêu chí.</p>
                   )}
 
                   <div className="mw-rubric-list">
                     {rubricRows.map((row, idx) => {
                       const aiCrit = essayReport.criteriaStatus[idx];
+                      const aiScore = essayReport.mode === 'GEMINI' && !essayReport.isPromptCopy
+                        ? activeItem.aiHint?.criterionScores?.[idx] : null;
+                      const matchesAi = aiScore != null && row.scorePercent === aiScore;
                       const showNoteBox = expandedNoteKeys[row.number] ?? Boolean(row.note);
                       const rowStateClass =
                         row.status === 'PASS'
@@ -2371,7 +2471,7 @@ function MentorReviewDetailPane({
                                 {String(row.number || idx + 1).padStart(2, '0')}
                               </span>
                               {row.weightPercent != null && (
-                                <span className="mw-rubric-weight-tag">{row.weightPercent}%</span>
+                                <span className="mw-rubric-weight-tag">Trọng số {row.weightPercent}%</span>
                               )}
                               {row.isRequired && (
                                 <span className="mw-rubric-gate-tag">Bắt buộc</span>
@@ -2396,7 +2496,10 @@ function MentorReviewDetailPane({
                             type="button"
                             className="mw-rubric-criterion-link"
                             aria-expanded={expandedCriterion === idx}
-                            onClick={() => setExpandedCriterion(expandedCriterion === idx ? null : idx)}
+                            onClick={() => {
+                              setExpandedCriterion(expandedCriterion === idx ? null : idx);
+                              if (selectedCriterion !== null && selectedCriterion !== idx) setSelectedEvidence(null);
+                            }}
                           >
                             <span>{row.title}</span>
                             <ChevronDown size={14} className="mw-disclosure-chevron" aria-hidden="true" />
@@ -2418,7 +2521,7 @@ function MentorReviewDetailPane({
                                 >
                                   <strong>
                                     {essayReport.mode === 'GEMINI'
-                                      ? `Gợi ý: ${
+                                      ? aiScore != null ? `AI gợi ý ${aiScore}%` : `Gợi ý: ${
                                           aiCrit.met === true
                                             ? 'Đạt'
                                             : aiCrit.met === false
@@ -2443,28 +2546,52 @@ function MentorReviewDetailPane({
                             </div>
                           )}
 
-                          <div className="mw-rubric-btns" role="group" aria-label={`Mức đạt tiêu chí ${row.title}`}>
-                            {RUBRIC_BUTTONS.map((btnOpt) => {
-                              const active = row.status === btnOpt.status;
-                              const toneCls =
-                                btnOpt.status === 'PASS'
-                                  ? 'is-pass'
-                                  : btnOpt.status === 'PARTIAL'
-                                    ? 'is-partial'
-                                    : 'is-fail';
-                              return (
-                                <button
-                                  key={btnOpt.status}
-                                  type="button"
-                                  aria-pressed={active}
-                                  aria-label={`${btnOpt.label} (tiêu chí ${String(row.number || idx + 1).padStart(2, '0')})`}
-                                  className={`mw-rubric-seg-btn ${toneCls}${active ? ' selected' : ''}`}
-                                  onClick={() => handleRubricStatusChange(idx, btnOpt.status)}
-                                >
-                                  {btnOpt.label}
+                          <div className="mw-rubric-scale">
+                            <div className="mw-rubric-scale-labels">
+                              <span className="mw-rubric-mentor-score">
+                                <span>Điểm Mentor</span>
+                                <strong>{row.scorePercent === undefined ? 'Chưa chấm' : `${row.scorePercent}%`}</strong>
+                              </span>
+                              {aiScore != null && (
+                                <button type="button" className="mw-rubric-ai-score"
+                                  disabled={matchesAi}
+                                  onClick={() => handleRubricScoreChange(idx, aiScore)}
+                                  title={matchesAi ? 'Điểm Mentor đang khớp với gợi ý AI' : 'Dùng điểm AI gợi ý'}
+                                  aria-label={matchesAi
+                                    ? `Điểm Mentor khớp gợi ý AI ${aiScore}% cho ${row.title}`
+                                    : `Dùng điểm AI gợi ý ${aiScore}% cho ${row.title}`}>
+                                  {matchesAi ? <Check size={13} aria-hidden="true" /> : <Sparkles size={13} aria-hidden="true" />}
+                                  <span>AI {aiScore}%</span>
                                 </button>
-                              );
-                            })}
+                              )}
+                            </div>
+                            <div className={`mw-rubric-scale-track${matchesAi ? ' is-ai-match' : ''}${row.scorePercent === undefined ? ' is-unrated' : ''}`}
+                              style={{ '--mentor-score': `${row.scorePercent ?? 0}%` } as CSSProperties}>
+                              <div className="mw-rubric-scale-fill" aria-hidden="true" />
+                              <input
+                                type="range"
+                                min={0}
+                                max={100}
+                                step={1}
+                                value={row.scorePercent ?? 0}
+                                aria-label={`Điểm Mentor cho ${row.title}`}
+                                aria-valuetext={row.scorePercent === undefined ? 'Chưa chấm' : `${row.scorePercent}%`}
+                                onChange={(event) => handleRubricScoreChange(idx, event.currentTarget.valueAsNumber)}
+                              />
+                              {aiScore != null && !matchesAi && (
+                                <span className="mw-rubric-ai-marker" aria-hidden="true" style={{ left: `${aiScore}%` }} />
+                              )}
+                            </div>
+                            <div className="mw-rubric-scale-labels mw-rubric-scale-ends">
+                              <button type="button" onClick={() => handleRubricScoreChange(idx, 0)}
+                                aria-label={`Chấm 0% cho ${row.title}`}>0%</button>
+                              {row.scorePercent !== undefined && (
+                                <button type="button" onClick={() => handleRubricScoreChange(idx, undefined)}
+                                  aria-label={`Xóa điểm của ${row.title}`}>Xóa điểm</button>
+                              )}
+                              <button type="button" onClick={() => handleRubricScoreChange(idx, 100)}
+                                aria-label={`Chấm 100% cho ${row.title}`}>100%</button>
+                            </div>
                           </div>
 
                           {showNoteBox && (
@@ -2541,7 +2668,7 @@ function MentorReviewDetailPane({
 
                 {rubricStats.gateFailed && (
                   <div className="mw-gate-block-banner" role="alert">
-                    Tiêu chí bắt buộc đang chọn Chưa đạt nên chưa thể công nhận đạt.
+                    Tiêu chí bắt buộc dưới {ESSAY_PASS_SCORE_PERCENT}% nên chưa thể công nhận đạt.
                   </div>
                 )}
 
@@ -2577,7 +2704,6 @@ function MentorReviewDetailPane({
                     className={`mw-decide-choice-btn pass${decision === 'PASSED' ? ' selected' : ''}`}
                     onClick={() => {
                       setDecision('PASSED');
-                      setDecisionTouchedByUser(true);
                     }}
                   >
                     <CheckCircle2 size={15} aria-hidden="true" />
@@ -2590,7 +2716,6 @@ function MentorReviewDetailPane({
                     className={`mw-decide-choice-btn fail${decision === 'NOT_YET' ? ' selected' : ''}`}
                     onClick={() => {
                       setDecision('NOT_YET');
-                      setDecisionTouchedByUser(true);
                     }}
                   >
                     <AlertCircle size={15} aria-hidden="true" />
@@ -2624,7 +2749,6 @@ function MentorReviewDetailPane({
                               setReason(tmpl.text);
                               setReasonTouchedByUser(true);
                               setDecision(tmpl.decision);
-                              setDecisionTouchedByUser(true);
                             }}
                           >
                             {tmpl.label}

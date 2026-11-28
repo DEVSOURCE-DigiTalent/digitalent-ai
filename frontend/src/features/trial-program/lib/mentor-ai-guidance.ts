@@ -2,6 +2,7 @@ import type {
   PulseChoiceResult,
   PulseCriterion,
   PulseDecision,
+  PulseEssayAnnotation,
   PulseFinalReviewItem,
 } from '@/services/pulse.service';
 import { detectPromptCopy } from '@/lib/pulse-prompt-guard';
@@ -12,37 +13,30 @@ export const ESSAY_PASS_SCORE_PERCENT = 70;
 export function findCriterionEvidence(
   essay: string,
   excerpt: string | null | undefined,
-  reference: string,
-): { start: number; end: number; source: 'quote' | 'related' } | null {
-  if (excerpt) {
-    const start = essay.indexOf(excerpt);
-    if (start >= 0) return { start, end: start + excerpt.length, source: 'quote' };
-  }
-  // An explicit null means the latest analysis found no suitable passage.
-  if (excerpt !== undefined) return null;
+): { start: number; end: number } | null {
+  const quote = excerpt?.trim();
+  if (!quote) return null;
 
-  const normalize = (value: string) =>
-    value.toLocaleLowerCase('vi').normalize('NFC').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
-  const words = normalize(reference).split(' ');
-  const phrases = new Set(words.slice(0, -2).map((_, idx) => words.slice(idx, idx + 3).join(' '))
-    .filter((phrase) => phrase.length >= 13));
-  let best: { start: number; end: number; source: 'related' } | null = null;
-  let bestScore = 0;
+  const start = essay.indexOf(quote);
+  if (start >= 0) return { start, end: start + quote.length };
 
-  for (const match of essay.matchAll(/[^\r\n.!?;]+[.!?;]?/g)) {
-    const passage = match[0].trim();
-    const normalizedPassage = ` ${normalize(passage)} `;
-    let score = 0;
-    for (const phrase of phrases) {
-      if (normalizedPassage.includes(' ' + phrase + ' ')) score += phrase.length;
-    }
-    if (score > bestScore) {
-      const start = match.index + match[0].indexOf(passage);
-      best = { start, end: start + passage.length, source: 'related' };
-      bestScore = score;
-    }
+  const pattern = quote.split(/\s+/).map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+  const match = new RegExp(pattern, 'u').exec(essay);
+  return match ? { start: match.index, end: match.index + match[0].length } : null;
+}
+
+export function essayAnnotationRanges(essay: string, annotations: PulseEssayAnnotation[], active: number | null) {
+  const ranges = annotations.flatMap((annotation, index) => {
+    const { start, end } = annotation;
+    return start !== null && end !== null && Number.isInteger(start) && Number.isInteger(end)
+      && start >= 0 && end > start && end <= essay.length ? [{ start, end, index, kind: annotation.kind }] : [];
+  });
+  const prioritized = ranges.find((range) => range.index === active);
+  const visible = prioritized ? [prioritized] : [];
+  for (const range of ranges) {
+    if (visible.every((other) => range.end <= other.start || range.start >= other.end)) visible.push(range);
   }
-  return best;
+  return visible.sort((a, b) => a.start - b.start);
 }
 
 export interface EssayGuidanceSignal {
@@ -86,6 +80,7 @@ export interface RubricCriterionEvaluation {
   weightPercent?: number;
   isRequired?: boolean;
   status: RubricStatus | null;
+  scorePercent?: number;
   note: string;
 }
 
@@ -141,6 +136,14 @@ export function formatShortOrgCode(code: string): string {
     return `TRIAL-${trialMatch[1]!.slice(0, 6).toUpperCase()}`;
   }
   return code;
+}
+
+export function formatMentorCourseLabel(title?: string | null): string {
+  const label = title?.trim() ?? '';
+  const withoutCode = label.replace(/\(\s*M\d+\s*[-–—]\s*[FIA]\s*\)|\bM\d+\s*[-–—]\s*[FIA]\b/gi, '');
+  return withoutCode === label
+    ? label
+    : withoutCode.replace(/^[\s·:–—-]+|[\s·:–—-]+$/g, '').replace(/ {2,}/g, ' ');
 }
 
 export function countEssayStats(text: string): {
@@ -220,24 +223,19 @@ export function computeRubricStats(
   const failCount = rows.filter((r) => r.status === 'FAIL').length;
   const hasWeights = rows.some((r) => (r.weightPercent ?? 0) > 0);
   const hasRequiredCriterion = rows.some((r) => Boolean(r.isRequired));
-  const gateFailed = rows.some((r) => Boolean(r.isRequired) && r.status === 'FAIL');
+  const gateFailed = rows.some((r) => Boolean(r.isRequired) && (
+    r.scorePercent !== undefined ? r.scorePercent < ESSAY_PASS_SCORE_PERCENT : r.status === 'FAIL'
+  ));
 
-  let scorePercent = 0;
-  if (hasWeights) {
-    let totalWeight = 0;
-    let earnedWeight = 0;
-    for (const r of rows) {
-      const w = Math.max(0, r.weightPercent ?? 0);
-      if (w <= 0) continue;
-      totalWeight += w;
-      if (r.status === 'PASS') earnedWeight += w;
-      else if (r.status === 'PARTIAL') earnedWeight += w * 0.5;
-    }
-    scorePercent = totalWeight > 0 ? Math.round((earnedWeight / totalWeight) * 100) : 0;
-  } else {
-    const points = passCount * 1 + partialCount * 0.5;
-    scorePercent = total > 0 ? Math.round((points / total) * 100) : 0;
+  let totalWeight = 0;
+  let earned = 0;
+  for (const row of rows) {
+    const weight = hasWeights ? Math.max(0, row.weightPercent ?? 0) : 1;
+    const score = row.scorePercent ?? (row.status === 'PASS' ? 100 : row.status === 'PARTIAL' ? 50 : 0);
+    totalWeight += weight;
+    earned += weight * score;
   }
+  const scorePercent = totalWeight > 0 ? Math.round(earned / totalWeight) : 0;
 
   const allRated = total > 0 && rated.length === total;
 
@@ -245,7 +243,7 @@ export function computeRubricStats(
   if (choicePassed === false || gateFailed) {
     recommendedDecision = 'NOT_YET';
   } else if (allRated) {
-    if (hasWeights || hasRequiredCriterion) {
+    if (hasWeights || hasRequiredCriterion || rows.some((r) => r.scorePercent !== undefined)) {
       recommendedDecision =
         !gateFailed && scorePercent >= ESSAY_PASS_SCORE_PERCENT ? 'PASSED' : 'NOT_YET';
     } else {
@@ -285,7 +283,7 @@ export function compileRubricFeedback(params: {
 
   for (const row of rows) {
     if (!row.status) continue;
-    const statusLabel = STATUS_LABEL_VI[row.status];
+    const statusLabel = row.scorePercent === undefined ? STATUS_LABEL_VI[row.status] : `${row.scorePercent}%`;
     const trimmedNote = row.note.trim();
     lines.push(
       trimmedNote
@@ -299,8 +297,8 @@ export function compileRubricFeedback(params: {
       `Phần trắc nghiệm đúng ${choice.score}/${choice.total} câu (cần từ ${choice.passMark} câu) nên chưa đủ điều kiện công nhận.`,
     );
   } else if (stats.gateFailed) {
-    lines.push('Chưa đạt tiêu chí bắt buộc (Gate) nên chưa đủ điều kiện công nhận.');
-  } else if (stats.hasWeights && stats.allRated && stats.scorePercent < ESSAY_PASS_SCORE_PERCENT) {
+    lines.push('Điểm tiêu chí bắt buộc chưa đạt ngưỡng nên chưa đủ điều kiện công nhận.');
+  } else if (decision !== 'PASSED' && stats.hasWeights && stats.allRated && stats.scorePercent < ESSAY_PASS_SCORE_PERCENT) {
     lines.push(
       `Tổng điểm trọng số đạt ${stats.scorePercent}% (cần tối thiểu ${ESSAY_PASS_SCORE_PERCENT}%). Cần bổ sung dẫn chứng trước khi nộp lại.`,
     );
