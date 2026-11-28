@@ -32,9 +32,14 @@ import { roleLabel } from '../member-labels';
 import {
   departmentRoleError,
   downloadEmployeeTemplate,
+  IMPORT_ROLE_ERROR,
+  isResearchRole,
   parseSmartEmployeeCsv,
+  RESEARCH_OFF_IMPORT,
   type ParsedEmployeeRow,
 } from '../utils/employee-import-helper';
+
+const RESEARCH_PLACEMENT = 'R&D · không thuộc phòng ban';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -125,7 +130,10 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
     if (roleError) return setDraftError(roleError);
 
     setDraftError(undefined);
-    setQueue((curr) => [...curr, { ...draft, email, key: email, positionName: positionLabel(draft.jobPositionId) }]);
+    const placement = isResearchRole(draft.role)
+      ? { departmentId: '', jobPositionId: '', positionName: undefined }
+      : { positionName: positionLabel(draft.jobPositionId) };
+    setQueue((curr) => [...curr, { ...draft, email, key: email, ...placement }]);
     setDraft({
       ...EMPTY_DRAFT,
       departmentId: draft.departmentId,
@@ -141,7 +149,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
         ? (await (await import('read-excel-file/browser')).readSheet(file))
             .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
         : await file.text();
-      const parsed = parseSmartEmployeeCsv(text, departments, positions);
+      const parsed = parseSmartEmployeeCsv(text, departments, positions, { researchEnabled: research.data === true });
       setPreviewRows(parsed.rows);
       setParseIssues(parsed.issues);
       setPastedText('');
@@ -152,7 +160,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
 
   const handleParseText = () => {
     if (!pastedText.trim()) return;
-    const parsed = parseSmartEmployeeCsv(pastedText, departments, positions);
+    const parsed = parseSmartEmployeeCsv(pastedText, departments, positions, { researchEnabled: research.data === true });
     setPreviewRows(parsed.rows);
     setParseIssues(parsed.issues);
   };
@@ -178,14 +186,24 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
           updated.positionName = positionLabel(updates.jobPositionId) ?? updates.jobPositionId.replace(/^new:/, '');
         }
 
+        // R&D is not placed: no department, no position.
+        const researchRow = isResearchRole(updated.role);
+        if (researchRow) {
+          Object.assign(updated, { departmentId: '', departmentName: '', jobPositionId: '', positionName: '' });
+        }
+
         // Cập nhật trạng thái hợp lệ
         const errors: string[] = [];
         if (!updated.fullName.trim()) errors.push('Thiếu họ tên');
         if (!EMAIL_PATTERN.test(updated.email.trim().toLowerCase())) errors.push('Email không hợp lệ');
-        if (!updated.departmentId) errors.push('Chưa chọn phòng ban');
-        if (!updated.jobPositionId) errors.push('Chưa chọn vị trí');
-        else if (!positionOptions.some((option) => option.value === updated.jobPositionId)) errors.push(NOT_STANDARD_POSITION);
-        if (!updates.role && row.errors.some((error) => error.startsWith('Vai trò'))) errors.push('Vai trò phải là Nhân viên hoặc Trưởng phòng.');
+        if (researchRow) {
+          if (research.data !== true) errors.push(RESEARCH_OFF_IMPORT);
+        } else {
+          if (!updated.departmentId) errors.push('Chưa chọn phòng ban');
+          if (!updated.jobPositionId) errors.push('Chưa chọn vị trí');
+          else if (!positionOptions.some((option) => option.value === updated.jobPositionId)) errors.push(NOT_STANDARD_POSITION);
+          if (!updates.role && row.errors.some((error) => error.startsWith('Vai trò'))) errors.push(IMPORT_ROLE_ERROR);
+        }
         updated.isValid = errors.length === 0;
         updated.errors = errors;
 
@@ -205,7 +223,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
 
     setPreviewRows((curr) =>
       curr.map((row) => {
-        if (row.departmentId) return row; // Giữ nguyên dòng đã có phòng ban
+        if (row.departmentId || isResearchRole(row.role)) return row; // Giữ nguyên dòng đã có phòng ban; R&D không thuộc phòng ban
         return {
           ...row,
           departmentId: matchedDept.id,
@@ -246,7 +264,12 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
     setSubmitError(undefined);
     try {
       const outcome = await invite.mutateAsync(
-        queue.map(({ key: _key, ...person }) => ({
+        queue.map(({ key: _key, ...person }) => isResearchRole(person.role) ? {
+          fullName: person.fullName,
+          email: person.email,
+          employeeCode: person.employeeCode?.trim() || undefined,
+          role: person.role,
+        } : ({
           ...person,
           employeeCode: person.employeeCode?.trim() || undefined,
           departmentId: person.departmentId?.startsWith('new:') ? undefined : person.departmentId || undefined,
@@ -601,6 +624,9 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                                 className="w-16 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#304bdf] focus:bg-white px-1 py-0.5 outline-none rounded font-mono"
                               />
                             </td>
+                            {isResearchRole(row.role) ? (
+                              <td colSpan={2} className="py-2 px-3 text-[11px] text-slate-500">{translateUi(RESEARCH_PLACEMENT)}</td>
+                            ) : (<>
                             <td className="py-2 px-3">
                               <select
                                 value={row.departmentId}
@@ -639,6 +665,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                                 ))}
                               </select>
                             </td>
+                            </>)}
                             <td className="py-2 px-3">
                               <select
                                 value={row.role}
@@ -647,6 +674,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                               >
                                 <option value="EMPLOYEE">{translateUi("Nhân viên")}</option>
                                 <option value="MANAGER">{translateUi('Trưởng phòng')}</option>
+                                {(research.data === true || row.role === 'RND') && <option value="RND">R&amp;D</option>}
                                 <option value="OWNER">{translateUi("Chủ sở hữu")}</option>
                               </select>
                             </td>
@@ -748,7 +776,12 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                 <select
                   id={`${base}-role`}
                   value={draft.role}
-                  onChange={(e) => setDraftField('role', e.target.value as MemberRole)}
+                  onChange={(e) => {
+                    const role = e.target.value as MemberRole;
+                    setDraft((current) => isResearchRole(role)
+                      ? { ...current, role, departmentId: '', jobPositionId: '' }
+                      : { ...current, role });
+                  }}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-[#304bdf] focus:ring-2 focus:ring-[#304bdf]/20"
                 >
                   {roles.map((r) => (
@@ -759,6 +792,11 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                 </select>
               </div>
 
+              {isResearchRole(draft.role) ? (
+                <p className="sm:col-span-2 self-end rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+                  {translateUi('R&D soạn và áp dụng khóa học cho công ty, không thuộc phòng ban hay vị trí và không tính vào đội ngũ học.')}
+                </p>
+              ) : (<>
               <div className="space-y-1">
                 <label htmlFor={`${base}-department`} className="text-xs font-semibold text-slate-700">{translateUi("Phòng ban ")}{draft.role !== 'OWNER' && draft.role !== 'RND' ? '*' : ''}
                 </label>
@@ -792,6 +830,7 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
                   ))}
                 </select>
               </div>
+              </>)}
             </div>
 
             {draft.role === 'OWNER' && (
@@ -834,8 +873,10 @@ export function InviteMembersModal({ open, onClose, defaultDepartmentId }: Invit
 
             <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
               {queue.map((person) => {
-                const deptName = departments.find((d) => d.id === person.departmentId)?.name || 'Chưa xếp phòng ban';
-                const posName = person.positionName || positionLabel(person.jobPositionId);
+                const research = isResearchRole(person.role);
+                const deptName = research ? RESEARCH_PLACEMENT
+                  : departments.find((d) => d.id === person.departmentId)?.name || 'Chưa xếp phòng ban';
+                const posName = research ? undefined : person.positionName || positionLabel(person.jobPositionId);
 
                 return (
                   <div

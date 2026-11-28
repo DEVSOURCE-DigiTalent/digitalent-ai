@@ -31,7 +31,20 @@ const ROLE_ALIASES: Record<string, MemberRole> = {
   'nhân viên': 'EMPLOYEE',
   'nhan vien': 'EMPLOYEE',
   'học viên': 'EMPLOYEE',
+  'r&d': 'RND',
+  'r & d': 'RND',
+  rnd: 'RND',
+  'nghiên cứu & phát triển': 'RND',
+  'nghiên cứu và phát triển': 'RND',
 };
+
+export const IMPORT_ROLE_ERROR = 'Vai trò phải là Nhân viên, Trưởng phòng hoặc R&D.';
+export const RESEARCH_OFF_IMPORT = 'Bật R&D trong Cài đặt doanh nghiệp trước khi mời R&D.';
+
+/** R&D builds the company's courses and is not a learner: no department, position or manager. */
+export function isResearchRole(role: string): boolean {
+  return role === 'RND';
+}
 
 export const EMPLOYEE_IMPORT_COLUMNS = ['Họ tên', 'Email', 'Phòng ban', 'Vị trí', 'Vai trò'] as const;
 
@@ -106,6 +119,7 @@ export function parseSmartEmployeeCsv(
   text: string,
   departments: { id: string; name: string; code?: string }[],
   positions: { id: string; name: string; code?: string; departmentId?: string }[],
+  options: { researchEnabled?: boolean } = {},
 ): { rows: ParsedEmployeeRow[]; issues: string[] } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length === 0) {
@@ -214,14 +228,20 @@ export function parseSmartEmployeeCsv(
 
     // Khớp Vai trò
     const importedRole = parseEmployeeImportRole(roleRaw);
-    const role: MemberRole = importedRole === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
-    if (importedRole !== 'EMPLOYEE' && importedRole !== 'MANAGER') errors.push('Vai trò phải là Nhân viên hoặc Trưởng phòng.');
-    if (!posRaw) errors.push('Chưa có thông tin vị trí.');
-    else if (!matchedPos && !standardCode) errors.push(NOT_STANDARD_POSITION);
+    const research = importedRole === 'RND';
+    const role: MemberRole = research ? 'RND' : importedRole === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
+    if (research) {
+      // R&D: the department and position columns are not used.
+      if (!options.researchEnabled) errors.push(RESEARCH_OFF_IMPORT);
+    } else {
+      if (importedRole !== 'EMPLOYEE' && importedRole !== 'MANAGER') errors.push(IMPORT_ROLE_ERROR);
+      if (!posRaw) errors.push('Chưa có thông tin vị trí.');
+      else if (!matchedPos && !standardCode) errors.push(NOT_STANDARD_POSITION);
 
-    // Không bắt buộc phải có sẵn phòng ban trong hệ thống — file có gì sẽ tự động tạo phòng ban đó
-    if (!matchedDept && !deptRaw) {
-      errors.push('Chưa có thông tin phòng ban');
+      // Không bắt buộc phải có sẵn phòng ban trong hệ thống — file có gì sẽ tự động tạo phòng ban đó
+      if (!matchedDept && !deptRaw) {
+        errors.push('Chưa có thông tin phòng ban');
+      }
     }
 
     rows.push({
@@ -229,10 +249,10 @@ export function parseSmartEmployeeCsv(
       fullName,
       email,
       employeeCode,
-      departmentId: matchedDept ? matchedDept.id : (deptRaw ? `new:${deptRaw}` : ''),
-      departmentName: matchedDept ? matchedDept.name : deptRaw,
-      jobPositionId: matchedPos ? matchedPos.id : (posRaw ? `new:${standardName}` : ''),
-      positionName: matchedPos ? matchedPos.name : standardName,
+      departmentId: research ? '' : matchedDept ? matchedDept.id : (deptRaw ? `new:${deptRaw}` : ''),
+      departmentName: research ? '' : matchedDept ? matchedDept.name : deptRaw,
+      jobPositionId: research ? '' : matchedPos ? matchedPos.id : (posRaw ? `new:${standardName}` : ''),
+      positionName: research ? '' : matchedPos ? matchedPos.name : standardName,
       role,
       isValid: errors.length === 0,
       errors,
