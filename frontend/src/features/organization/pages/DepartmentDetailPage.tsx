@@ -1,6 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useLocation, useParams, Link } from 'react-router-dom';
+import { backTarget } from '@/lib/back-target';
 import { ArrowLeft, Building2, Edit2, Mail, Send, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { StatusBadge, getStatusVariant, Tabs, DataTable, type Column } from '@/components/shared';
@@ -20,6 +21,7 @@ import './department-detail.css';
 export function DepartmentDetailPage() {
   useUiLanguage();
   const { id } = useParams<{ id: string }>();
+  const back = backTarget(useLocation().state, { path: '/enterprise/departments', label: 'Danh sách phòng ban' });
   const { can } = usePermission();
   const canManage = can(PERMISSIONS.DEPARTMENT_CREATE_UPDATE);
 
@@ -176,10 +178,10 @@ export function DepartmentDetailPage() {
   return (
     <div className="department-detail-page -m-4 min-h-screen space-y-6 px-5 py-7 md:-m-6 md:px-7 xl:px-10">
       <Link
-        to="/enterprise/departments"
+        to={back.path}
         className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" />{translateUi("Danh sách phòng ban")}</Link>
+        <ArrowLeft className="size-4" aria-hidden="true" />{translateUi(back.label)}</Link>
 
       <header className="department-detail-heading">
         <div>

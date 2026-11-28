@@ -35,16 +35,28 @@ function toListItem(member: MemberView) {
 }
 
 route('GET', '/members', ({ org, query }) => {
-  const rows = listMembers(org())
+  const members = listMembers(org());
+  // Same rule as MemberRules.HasNoPosition: an active person with an employee profile and no position.
+  const hasNoPosition = (m: (typeof members)[number]) =>
+    m.kind === 'member' && m.status === 'ACTIVE' && Boolean(m.employeeId) && !m.jobPositionId;
+  const rows = members
     .filter((m) => (!query.status || m.status === query.status)
       && (!query.role || m.roles.includes(query.role))
       && (!query.departmentId || m.departmentId === query.departmentId)
       && (!query.jobPositionId || m.jobPositionId === query.jobPositionId)
       && (!query.jobGrade || m.jobGrade === query.jobGrade)
+      && (query.noPosition !== 'true' || hasNoPosition(m))
       && (matchesSearch(m.fullName, query.search) || matchesSearch(m.email, query.search) || matchesSearch(m.employeeCode, query.search)))
     .sort((a, b) => Number(a.status === 'PENDING') - Number(b.status === 'PENDING') || a.fullName.localeCompare(b.fullName, 'vi'))
     .map(toListItem);
-  return paginate(rows, pageRequest(query));
+  const summary = {
+    total: members.length,
+    active: members.filter((m) => m.status === 'ACTIVE').length,
+    pending: members.filter((m) => m.status === 'PENDING').length,
+    inactive: members.filter((m) => m.status === 'INACTIVE').length,
+    withoutPosition: members.filter(hasNoPosition).length,
+  };
+  return { ...paginate(rows, pageRequest(query)), summary };
 }, { permission: P.USER_READ });
 
 

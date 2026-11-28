@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { TrialProgramPage } from '../pages/TrialProgramPage';
 
 const submit = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
@@ -21,7 +22,11 @@ vi.mock('@/hooks/use-capability-ceilings', () => ({
 vi.mock('@/hooks/use-permission', async (original) => ({ ...(await original<typeof import('@/hooks/use-permission')>()), usePermission: () => ({ can: () => true }) }));
 vi.mock('@/hooks/use-job-positions', () => ({ useJobPositions: () => ({}) }));
 vi.mock('../components/OwnerSurveyAction', () => ({ OwnerSurveyAction: () => null }));
-afterEach(() => { cleanup(); program.current = null; });
+// The survey is open only to an organization on the trial.
+beforeEach(() => {
+  useCurrentUser.setState({ user: { id: 'owner-1', email: 'owner@example.test', fullName: 'Chủ', roles: ['OWNER'], permissions: [], workspace: 'enterprise', enterpriseTrialStatus: 'trial_active' }, isAuthenticated: true });
+});
+afterEach(() => { cleanup(); program.current = null; sessionStorage.clear(); useCurrentUser.setState({ user: null, isAuthenticated: false }); });
 
 /** List → popup "Kết quả sẽ so với mức nào?" (keep the system suggestion) → deadline. */
 function goToDeadline() {

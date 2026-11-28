@@ -1,5 +1,6 @@
 import { useTrialLock } from '@/hooks/use-trial-lock';
 import { boughtWithCode, leavingWith } from '@/features/courses/course-bundle';
+import { backState } from '@/lib/back-target';
 import { courseCodeKey } from '@/features/courses/course-code';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -405,7 +406,7 @@ export function CapabilityCeilingMatrix() {
             <div className="cx-empty">
               <Users size={22} aria-hidden="true" />
               <p>{translateUi('Doanh nghiệp đã ngừng dùng cả 5 vị trí chuẩn.')}</p>
-              {!trialLock.limited && <Link to="/enterprise/positions" className="cx-link">{translateUi('Đến Vị trí công việc')}<ArrowRight size={14} aria-hidden="true" /></Link>}
+              {!trialLock.limited && <Link to="/enterprise/positions" state={backState('/enterprise/setup?tab=positions', 'Khung năng lực số')} className="cx-link">{translateUi('Đến Vị trí công việc')}<ArrowRight size={14} aria-hidden="true" /></Link>}
             </div>
           ) : position && (
             <div className="cx-dpanel" data-tone={toneOf.get(position.code)}>

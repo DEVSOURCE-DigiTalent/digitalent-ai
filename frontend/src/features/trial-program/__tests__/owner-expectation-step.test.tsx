@@ -36,7 +36,7 @@ vi.mock('@/hooks/use-job-positions', () => ({ useJobPositions: () => ({}) }));
 vi.mock('../components/OwnerSurveyAction', () => ({ OwnerSurveyAction: () => null }));
 
 beforeEach(() => {
-  useCurrentUser.setState({ user: { id: 'owner-1', email: 'owner@example.test', fullName: 'Chủ', roles: ['OWNER'], permissions: [], workspace: 'enterprise' }, isAuthenticated: true });
+  useCurrentUser.setState({ user: { id: 'owner-1', email: 'owner@example.test', fullName: 'Chủ', roles: ['OWNER'], permissions: [], workspace: 'enterprise', enterpriseTrialStatus: 'trial_active' }, isAuthenticated: true });
 });
 afterEach(() => {
   cleanup();

@@ -112,11 +112,11 @@ export interface TodoItem {
 export function todoItems(input: { pendingInvites: number; people: CapabilityProgressEmployee[]; courses: WheelCourse[] }): TodoItem[] {
   const items: TodoItem[] = [];
   if (input.pendingInvites > 0) {
-    items.push({ key: 'invites', count: input.pendingInvites, label: `${input.pendingInvites} lời mời chưa kích hoạt`, to: '/enterprise/members' });
+    items.push({ key: 'invites', count: input.pendingInvites, label: `${input.pendingInvites} lời mời chưa kích hoạt`, to: '/enterprise/members?status=PENDING' });
   }
   const noPosition = input.people.filter((person) => !person.positionId).length;
   if (noPosition > 0) {
-    items.push({ key: 'positions', count: noPosition, label: `${noPosition} người chưa có vị trí`, to: '/enterprise/members' });
+    items.push({ key: 'positions', count: noPosition, label: `${noPosition} người chưa có vị trí`, to: '/enterprise/members?position=none' });
   }
   const notOwned = new Map(input.courses.filter((course) => !course.owned).map((course) => [`${course.domain}-${course.level}`, course]));
   const needed = new Map<string, WheelCourse>();

@@ -63,7 +63,22 @@ export interface MemberListParams {
   departmentId?: string;
   jobPositionId?: string;
   jobGrade?: string;
+  /** Only active people with an employee profile and no position (no required level yet). */
+  noPosition?: boolean;
 }
+
+/** Counts of the whole organization, whatever the filters (OW-02 "Cần xử lý"). */
+export interface MemberSummary {
+  total: number;
+  active: number;
+  pending: number;
+  inactive: number;
+  /** Active people with an employee profile and no position. */
+  withoutPosition: number;
+}
+
+/** A page of the member list; `summary` is missing from older backends. */
+export type MemberPage = PagedList<MemberListItem> & { summary?: MemberSummary };
 
 export interface InviteRowInput {
   email: string;
@@ -109,7 +124,7 @@ export interface RoleSummary {
 
 /** Members, invitations and roles of the organization (spec ADM-02 to ADM-05). */
 export const memberService = {
-  getList: (params?: MemberListParams) => apiClient.get<ApiResponse<PagedList<MemberListItem>>>('/members', { params }),
+  getList: (params?: MemberListParams) => apiClient.get<ApiResponse<MemberPage>>('/members', { params }),
   getById: (id: string) => apiClient.get<ApiResponse<MemberDetail>>(`/members/${id}`),
   invite: (rows: InviteRowInput[]) => apiClient.post<ApiResponse<InviteResult>>('/members/invitations', { rows }),
   resendInvitation: (id: string) => apiClient.post<ApiResponse<ResendInvitationResult>>(`/members/${id}/resend-invitation`),
