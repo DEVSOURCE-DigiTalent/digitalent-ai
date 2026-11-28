@@ -403,6 +403,9 @@ public sealed record PulseAiHintDto(IReadOnlyList<bool> Checks, string Summary)
 {
     public IReadOnlyList<string>? CriterionNotes { get; init; }
     public IReadOnlyList<string?>? CriterionEvidence { get; init; }
+    public IReadOnlyList<int?>? CriterionScores { get; init; }
+    public IReadOnlyList<PulseEssayAnnotationDto>? Annotations { get; init; }
+    public string? AnalysisStatus { get; init; }
     public string? EvidenceLookupStatus { get; init; }
     public string Source { get; init; } = "KEYWORD_FALLBACK";
     public string? Model { get; init; }
@@ -411,6 +414,9 @@ public sealed record PulseAiHintDto(IReadOnlyList<bool> Checks, string Summary)
     public PulseAiDetailDto? Detail { get; init; }
     public PulseAiFraudDto? Fraud { get; init; }
 }
+
+public sealed record PulseEssayAnnotationDto(string? Metric, int? CriterionIndex, string Kind,
+    int? Start, int? End, string Note, string? Action);
 
 public sealed record PulseAiFraudDto
 {

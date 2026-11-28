@@ -209,6 +209,7 @@ public class PulseCriterionEvaluationInput
     public string Status { get; set; } = string.Empty;
     public string? Note { get; set; }
     public int? WeightPercent { get; set; }
+    public int? ScorePercent { get; set; }
     public bool? IsRequired { get; set; }
 }
 

@@ -88,6 +88,14 @@ public class MentorReviewEnhancementTests
             ```json
             {
               "checks": [true, false, true],
+              "criterion_scores": [82, 45, 101],
+              "annotations": [
+                { "metric": "depth", "kind": "strength", "passage": 1, "quote": "báo cáo doanh thu Q3 từ CRM", "note": "Có nguồn cụ thể." },
+                { "metric": "depth", "kind": "missing", "note": "Thiếu số liệu đối chiếu.", "action": "Thêm kết quả trước và sau." },
+                { "metric": "depth", "kind": "improve", "passage": 999, "note": "Đoạn không tồn tại." },
+                { "criterion": 2, "kind": "observation", "passage": 1, "note": "Có lịch kiểm tra định kỳ." }
+              ],
+              "criterion_evidence": ["báo cáo doanh thu Q3\n từ CRM", null, "đoạn không có trong bài làm"],
               "criterion_notes": [
                 "Đã nêu tệp CRM doanh thu Q3.",
                 "Chưa đưa công thức kiểm tra cụ thể.",
@@ -143,6 +151,14 @@ public class MentorReviewEnhancementTests
         result.Source.Should().Be("GEMINI");
         result.Model.Should().Be("gemini-backup-test");
         result.Checks.Should().Equal(true, false, true);
+        result.CriterionScores.Should().Equal(new int?[] { 82, 45, null });
+        result.Annotations.Should().HaveCount(3);
+        result.Annotations![0].Start.Should().Be("Tôi lấy ".Length);
+        result.Annotations[0].End.Should().Be("Tôi lấy báo cáo doanh thu Q3 từ CRM".Length);
+        result.Annotations[1].Start.Should().BeNull();
+        result.Annotations[1].Action.Should().Be("Thêm kết quả trước và sau.");
+        result.Annotations[2].CriterionIndex.Should().Be(1);
+        result.CriterionEvidence.Should().Equal(new string?[] { "báo cáo doanh thu Q3 từ CRM", null, null });
         result.CriterionNotes.Should().Equal(
             "Đã nêu tệp CRM doanh thu Q3.",
             "Chưa đưa công thức kiểm tra cụ thể.",
@@ -194,6 +210,7 @@ public class MentorReviewEnhancementTests
                 new[] { "Tiêu chí 1", "Tiêu chí 2", "Tiêu chí 3" });
 
             hint.Source.Should().Be("KEYWORD_FALLBACK");
+            hint.AnalysisStatus.Should().Be("NOT_CONFIGURED");
             hint.Model.Should().BeNull();
             hint.Detail.Should().BeNull();
         }
@@ -392,6 +409,19 @@ public class MentorReviewEnhancementTests
     }
 
     [Fact]
+    public void PulseEssayRubric_UsesNumericScoresAndChecksRequiredCriteriaSeparately()
+    {
+        var metrics = PulseEssayRubric.ComputeAuditMetrics(new[]
+        {
+            new PulseCriterionEvaluationInput { WeightPercent = 60, ScorePercent = 90, Status = "PASS" },
+            new PulseCriterionEvaluationInput { WeightPercent = 40, ScorePercent = 65, Status = "PARTIAL", IsRequired = true },
+        });
+
+        metrics.WeightedScorePercent.Should().Be(80);
+        metrics.GateFailed.Should().BeTrue();
+    }
+
+    [Fact]
     public void PulseEssayRubric_UsesWeightsStatedInCustomCriteria_WhenTheyAddUpTo100()
     {
         var stated = PulseEssayRubric.Build(1, "Khai thác dữ liệu", 1, new[]
@@ -412,10 +442,14 @@ public class MentorReviewEnhancementTests
     {
         var incomplete = PulseEssayRubric.Build(1, "Khai thác dữ liệu", 1, new[] { "Nội dung (60%)", "Trình bày" }, "M1-F");
         incomplete.Select(c => c.WeightPercent).Should().Equal(50, 50);
-        incomplete[0].Title.Should().Be("Nội dung (60%)");
+        incomplete[0].Title.Should().Be("Nội dung");
 
         var wrongTotal = PulseEssayRubric.Build(1, "Khai thác dữ liệu", 1, new[] { "Nội dung (60%)", "Trình bày (30%)" }, "M1-F");
         wrongTotal.Select(c => c.WeightPercent).Should().Equal(50, 50);
+
+        var sixCriteria = PulseEssayRubric.Build(1, "Khai thác dữ liệu", 1,
+            Enumerable.Range(1, 6).Select(i => $"Tiêu chí {i}").ToArray(), "M1-F");
+        sixCriteria.Select(c => c.WeightPercent).Should().Equal(17, 17, 17, 17, 16, 16);
     }
 
     [Fact]
@@ -484,6 +518,28 @@ public class MentorReviewEnhancementTests
         });
         (await gateFailPass.Should().ThrowAsync<DigiTalent.Application.Common.Exceptions.BadRequestException>())
             .Which.Errors.Single().Code.Should().Be("RUBRIC_GATE_FAILED");
+
+        var organizationId = await world.Context.Courses.Where(c => c.Id == course.CourseId)
+            .Select(c => c.OrganizationId).SingleAsync();
+        world.Context.PracticalTaskTemplates.Add(new DigiTalent.Domain.Entities.PracticalTaskTemplate
+        {
+            OrganizationId = organizationId, RelatedCourseId = course.CourseId, Status = "ACTIVE",
+            CreatedAt = world.Clock.GetUtcNow().AddDays(1),
+            GeneralMarkingCriteria = """{"track":"general","criteria":["Nguồn (60%)","Quy trình (40%)"]}""",
+        });
+        await world.Context.SaveChangesAsync();
+        var staleWeights = () => manager.Decide.ExecuteAsync(new DecidePulseFinalUseCaseInput
+        {
+            SubmissionId = submitted.SubmissionId,
+            Decision = Statuses.FinalSubmissionDecision.Passed,
+            Reason = "Bảng điểm được mở trước khi đổi trọng số.",
+            CriterionEvaluations = new()
+            {
+                new() { Number = "01", Title = "Nguồn", Status = "PASS", WeightPercent = 50, ScorePercent = 100 },
+                new() { Number = "02", Title = "Quy trình", Status = "PASS", WeightPercent = 50, ScorePercent = 100 },
+            },
+        });
+        await staleWeights.Should().ThrowAsync<DigiTalent.Application.Common.Exceptions.ConflictException>();
     }
 
     [Fact]
@@ -527,6 +583,8 @@ public class MentorReviewEnhancementTests
             3,
             rubric);
         evaluated.Checks.Should().Equal(false, false, false, false);
+        evaluated.AnalysisStatus.Should().Be("PROMPT_COPY");
+        evaluated.CriterionScores.Should().BeNull();
         evaluated.Detail!.PlagiarismScore.Should().BeGreaterThanOrEqualTo(90);
         evaluated.Detail.RelevanceScore.Should().BeLessThanOrEqualTo(20);
     }

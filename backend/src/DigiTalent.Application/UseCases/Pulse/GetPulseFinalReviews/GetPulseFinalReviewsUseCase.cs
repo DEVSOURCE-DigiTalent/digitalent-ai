@@ -491,13 +491,16 @@ public class GetPulseFinalReviewsUseCase : IUseCase<GetPulseFinalReviewsUseCaseI
                             item.Tier,
                             p.Rubric,
                             ct) with { ReviewedAt = _clock.GetUtcNow() };
-                        if (p.Saved != null &&
-                            (evaluated.Source != PulseAiReviewStore.AiSource || (p.Saved.Detail != null && evaluated.Detail == null)))
+                        if (p.Saved != null && evaluated.Source != PulseAiReviewStore.AiSource)
                         {
-                            item.AiHint = p.Saved;
+                            item.AiHint = p.Saved with { AnalysisStatus = evaluated.AnalysisStatus ?? "UNAVAILABLE" };
                             return;
                         }
 
+                        if (evaluated.Detail == null && p.Saved?.Detail is { } previousDetail)
+                        {
+                            evaluated = evaluated with { Detail = previousDetail };
+                        }
                         item.AiHint = evaluated;
                         reviewed.Add(new PulseAiReviewStore.Entry(item.OrganizationId, item.Kind, item.SubmissionId, p.InputHash, evaluated));
                     }).ToList();
