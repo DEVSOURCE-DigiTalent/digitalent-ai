@@ -49,6 +49,9 @@ public static class DemoCaseStudySeeder
     public const string DemoOrgPrefix = "DEMO-";
     public const string MainOrgCode = "DEMO-MAIN";
     public const string MainOrgName = "Công ty Demo Dịch vụ Văn phòng";
+    public const string TrialProspectOrgCode = "DEMO-TRIAL";
+    public const string TrialProspectOrgName = "Công ty Demo Dùng thử";
+    public const string TrialProspectOwnerEmail = "owner.trial" + DemoEmailDomain;
     public const string DemoEmailDomain = DemoEmailGuard.DemoDomainSuffix; // @demo.nanglucso.pro.vn
     public const string PlatformAdminEmail = "platform-admin" + DemoEmailDomain;
     public const string MentorEmail = "mentor" + DemoEmailDomain;
@@ -141,7 +144,8 @@ public static class DemoCaseStudySeeder
         IPasswordHasher passwordHasher,
         string csvOutputPath,
         int trialOrgCount = 10,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool includeTrialProspect = false)
     {
         if (trialOrgCount < 0) throw new ArgumentOutOfRangeException(nameof(trialOrgCount));
 
@@ -191,6 +195,16 @@ public static class DemoCaseStudySeeder
             db.ChangeTracker.Clear();
         }
 
+        // 4. Tổ chức đang DÙNG THỬ thực sự (chưa mua khóa học, đã công bố kết quả khảo sát 90 câu)
+        if (includeTrialProspect)
+        {
+            var trialStats = await SeedTrialProspectCaseStudyAsync(db, passwordHasher, accounts, cancellationToken);
+            orgsSeeded += trialStats.Seeded ? 1 : 0;
+            usersCreated += trialStats.UsersCreated;
+            employeesCreated += trialStats.EmployeesCreated;
+            db.ChangeTracker.Clear();
+        }
+
         var mergedAccounts = accounts
             .Where(a => a.ExportToCsv)
             .Select(a => a.Password.StartsWith("(đã tồn tại", StringComparison.Ordinal) && previousPasswords.TryGetValue(a.Email, out var prevPwd)
@@ -211,7 +225,8 @@ public static class DemoCaseStudySeeder
         IPasswordHasher passwordHasher,
         string csvOutputPath,
         int trialOrgCount = 10,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool includeTrialProspect = false)
     {
         var now = DateTimeOffset.UtcNow;
         var demoUsers = await db.Users
@@ -265,6 +280,17 @@ public static class DemoCaseStudySeeder
 
             orgsFound++;
             await CollectExistingAccountsForCsvAsync(db, org, $"Demo DN {i:00}", $"dn{i:00}", isMainOrg: false, accounts, cancellationToken);
+        }
+
+        if (includeTrialProspect)
+        {
+            var prospectOrg = await db.Organizations.AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Code == TrialProspectOrgCode, cancellationToken);
+            if (prospectOrg != null)
+            {
+                orgsFound++;
+                await CollectExistingTrialProspectForCsvAsync(db, prospectOrg, accounts, cancellationToken);
+            }
         }
 
         var exported = accounts
@@ -322,11 +348,12 @@ public static class DemoCaseStudySeeder
         string csvOutputPath,
         int trialOrgCount = 10,
         Action<string>? log = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool includeTrialProspect = false)
     {
         await DeleteDemoDataAsync(db, log, cancellationToken);
         db.ChangeTracker.Clear();
-        return await SeedAsync(db, passwordHasher, csvOutputPath, trialOrgCount, cancellationToken);
+        return await SeedAsync(db, passwordHasher, csvOutputPath, trialOrgCount, cancellationToken, includeTrialProspect);
     }
 
     public static async Task DeleteDemoDataAsync(AppDbContext db, Action<string>? log = null, CancellationToken cancellationToken = default)
@@ -1635,12 +1662,21 @@ public static class DemoCaseStudySeeder
             });
         }
 
+        await SeedCeilingsAsync(db, organizationId, ownerUserId, departments);
+    }
+
+    private static async Task SeedCeilingsAsync(
+        AppDbContext db,
+        Guid organizationId,
+        Guid ownerUserId,
+        IReadOnlyDictionary<string, Department> departments)
+    {
         var categories = await db.CompetencyCategories.AsNoTracking()
             .Where(c => c.OrganizationId == organizationId)
             .OrderBy(c => c.SortOrder)
             .ToListAsync();
 
-        // Trần cấp doanh nghiệp (DepartmentId = null): khớp với các khóa đã mua (D1=2, D2=2, D3=1, D4=2, D5=1, D6=1)
+        // Trần cấp doanh nghiệp (DepartmentId = null): khớp với mục tiêu nâng cấp (D1=2, D2=2, D3=1, D4=2, D5=1, D6=1)
         var orgCeilings = new[] { 2, 2, 1, 2, 1, 1 };
         for (var i = 0; i < categories.Count && i < orgCeilings.Length; i++)
         {
@@ -1672,6 +1708,157 @@ public static class DemoCaseStudySeeder
         }
 
         await db.SaveChangesAsync();
+    }
+
+    private static async Task<(bool Seeded, int UsersCreated, int EmployeesCreated)> SeedTrialProspectCaseStudyAsync(
+        AppDbContext db,
+        IPasswordHasher passwordHasher,
+        List<DemoSeedAccountRecord> accounts,
+        CancellationToken cancellationToken)
+    {
+        var existingOrg = await db.Organizations.AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Code == TrialProspectOrgCode, cancellationToken);
+        if (existingOrg != null)
+        {
+            await CollectExistingTrialProspectForCsvAsync(db, existingOrg, accounts, cancellationToken);
+            return (false, 0, 0);
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var usersCreated = 0;
+        var employeesCreated = 0;
+
+        var org = new Organization
+        {
+            Code = TrialProspectOrgCode,
+            Name = TrialProspectOrgName,
+            Status = Statuses.Organization.Active,
+            SetupCompletedAt = now.AddDays(-10),
+        };
+        db.Organizations.Add(org);
+        await db.SaveChangesAsync(cancellationToken);
+
+        var (owner, ownerCreated, ownerPwd) = await EnsureOrgUserAsync(
+            db, passwordHasher, org.Id, TrialProspectOwnerEmail, FictionalName(99, 100), Roles.Owner);
+        if (ownerCreated) usersCreated++;
+        accounts.Add(new DemoSeedAccountRecord(
+            TrialProspectOrgName, TrialProspectOrgCode, Roles.Owner, owner.DisplayName,
+            "Ban Giám đốc", "Chủ doanh nghiệp", "Dùng thử (đã khảo sát)", owner.Email, ownerPwd, ExportToCsv: true));
+
+        // Tổ chức đang DÙNG THỬ: ConvertedAt = null, EndsAt ở tương lai, KHÔNG tạo CourseOrders và KHÔNG tạo Subscription trả phí.
+        // Đã có kết quả khảo sát được công bố (ReportPublishedAt != null) để Owner xem ngay báo cáo trên /enterprise/trial.
+        db.TrialWorkspaces.Add(new TrialWorkspace
+        {
+            OrganizationId = org.Id,
+            OwnerUserId = owner.Id,
+            MentorUserId = null,
+            MentorAssignedAt = null,
+            RequestedAt = now.AddDays(-10),
+            TestDeadline = now.AddDays(-2),
+            ReportPublishedAt = now.AddDays(-1),
+            Industry = "Dịch vụ văn phòng",
+            Size = "50",
+            Goal = "Khảo sát năng lực số ban đầu trước khi lựa chọn mua khóa học",
+            StartedAt = now.AddDays(-12),
+            EndsAt = now.AddDays(48),
+            PolicyJson = "{}",
+        });
+        await db.SaveChangesAsync(cancellationToken);
+
+        var competencies = SkillGapSeeder.SeedFramework(db, org.Id);
+        await db.SaveChangesAsync(cancellationToken);
+
+        var departments = await SeedDepartmentsAsync(db, org.Id);
+        var positions = await SeedPositionsAndRequirementsAsync(db, org.Id, owner.Id, competencies);
+        await SkillGapSeeder.EnsureOrganizationFrameworkAndCoursesAsync(db, org.Id, owner.Id);
+        await PulseContentSeeder.SeedAsync(db, org.Id, owner.Id);
+        await SeedCeilingsAsync(db, org.Id, owner.Id, departments);
+
+        var catalog = new PulseCatalogReader(db);
+        var modulesReader = new PulseModuleReader(db);
+        var trialPaper = new TrialAssessmentPaper(db, catalog, modulesReader);
+        var skillGapRunService = new SkillGapRunService(db, new SkillGapSettingsProvider(db, NullLogger<SkillGapSettingsProvider>.Instance));
+        var domains = await trialPaper.LoadDomainsAsync(org.Id);
+
+        var trialRoster = new (int Index, string DepartmentCode, string PositionCode, int[] GapDomains)[]
+        {
+            (1,  "ACC",      "ACCOUNTANT", new[] { 1, 2 }),
+            (2,  "ACC",      "ACCOUNTANT", new[] { 4 }),
+            (3,  "ACC",      "CEO",        new[] { 1, 4 }),
+            (4,  "ACC",      "ACCOUNTANT", Array.Empty<int>()),
+            (5,  "BIZ_OPS",  "SALES_CRM",  new[] { 2, 4 }),
+            (6,  "BIZ_OPS",  "MARKETING",  new[] { 1 }),
+            (7,  "BIZ_OPS",  "SALES_CRM",  new[] { 2 }),
+            (8,  "BIZ_OPS",  "MARKETING",  Array.Empty<int>()),
+            (9,  "HR_ADMIN", "HR",         new[] { 2, 4 }),
+            (10, "HR_ADMIN", "HR",         new[] { 4 }),
+            (11, "HR_ADMIN", "HR",         new[] { 2 }),
+            (12, "HR_ADMIN", "HR",         Array.Empty<int>()),
+        };
+
+        foreach (var member in trialRoster)
+        {
+            var dept = departments[member.DepartmentCode];
+            var pos = positions[member.PositionCode];
+            var posSpec = PositionSpecs.Single(p => p.Code == member.PositionCode);
+            var email = $"emp{member.Index:00}.trial{DemoEmailDomain}";
+            var fullName = FictionalName(99, member.Index);
+
+            var (empUser, empCreated, _) = await EnsureOrgUserAsync(
+                db, passwordHasher, org.Id, email, fullName, Roles.Employee);
+            if (empCreated) usersCreated++;
+
+            var emp = new Employee
+            {
+                OrganizationId = org.Id,
+                DepartmentId = dept.Id,
+                JobPositionId = pos.Id,
+                UserId = empUser.Id,
+                EmployeeCode = $"TRIAL-{member.Index:00}",
+                FullName = fullName,
+                WorkEmail = email,
+                Status = Statuses.Employee.Active,
+            };
+            db.Employees.Add(emp);
+            await db.SaveChangesAsync(cancellationToken);
+            employeesCreated++;
+
+            var isMet = member.GapDomains.Length == 0;
+            await SeedBaselineSurvey90Async(
+                db, trialPaper, org.Id, emp, domains, posSpec.DomainLevels, isMet, member.GapDomains,
+                submittedAt: now.AddDays(-5));
+            await SeedBaselineEvidencesFromTargetsAsync(
+                db, emp, owner.Id, competencies, posSpec, member.GapDomains, assessedAt: now.AddDays(-5));
+            await skillGapRunService.StageRunsAsync(new[] { emp }, org.Id, Statuses.SkillGapGeneratedBy.UserRequest);
+            await db.SaveChangesAsync(cancellationToken);
+            db.ChangeTracker.Clear();
+        }
+
+        return (true, usersCreated, employeesCreated);
+    }
+
+    private static async Task CollectExistingTrialProspectForCsvAsync(
+        AppDbContext db,
+        Organization org,
+        List<DemoSeedAccountRecord> accounts,
+        CancellationToken cancellationToken)
+    {
+        var owner = await (
+            from u in db.Users.AsNoTracking()
+            join ur in db.UserRoles.AsNoTracking() on u.Id equals ur.UserId
+            join r in db.Roles.AsNoTracking() on ur.RoleId equals r.Id
+            where u.OrganizationId == org.Id && r.Code == Roles.Owner
+            orderby u.CreatedAt
+            select u
+        ).FirstOrDefaultAsync(cancellationToken);
+
+        if (owner != null)
+        {
+            accounts.Add(new DemoSeedAccountRecord(
+                TrialProspectOrgName, org.Code, Roles.Owner, owner.DisplayName,
+                "Ban Giám đốc", "Chủ doanh nghiệp", "Dùng thử (đã khảo sát)", owner.Email,
+                "(đã tồn tại — giữ nguyên mật khẩu cũ; chạy reset-seed-demo để cấp lại)", ExportToCsv: true));
+        }
     }
 
     private static async Task<(User User, bool Created, string Password)> EnsurePlatformUserAsync(

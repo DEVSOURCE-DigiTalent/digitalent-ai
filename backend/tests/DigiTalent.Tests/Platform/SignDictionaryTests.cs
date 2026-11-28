@@ -265,4 +265,32 @@ public class SignDictionaryTests
         var badRegion = () => Add("Miền Bắc");
         (await badRegion.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("INVALID_GLOSS");
     }
+
+    [Fact]
+    public async Task TheVariantsOfAWord_KeepOneOrderFromPageToPage()
+    {
+        await using var world = await CreateWorldAsync();
+        foreach (var (region, variant) in new[]
+                 {
+                     (SignLanguage.Region.Central, "QIPEDC W1"), (SignLanguage.Region.South, "QIPEDC W1"),
+                     (SignLanguage.Region.North, "QIPEDC W1"), (SignLanguage.Region.North, "Người ra dấu B"),
+                 })
+        {
+            await new CreateSignGlossUseCase(world.Context, world.User).ExecuteAsync(new CreateSignGlossUseCaseInput
+            {
+                Gloss = "Bạn", Kind = SignLanguage.Kind.Word, Region = region, Variant = variant,
+            });
+        }
+
+        var pages = new List<SignGlossDto>();
+        for (var index = 1; index <= 4; index++)
+        {
+            pages.AddRange((await new GetSignGlossesUseCase(world.Context).ExecuteAsync(
+                new GetSignGlossesUseCaseInput { PageIndex = index, PageSize = 1 })).Items);
+        }
+
+        pages.Select(g => $"{g.Region} {g.Variant}").Should().Equal(
+            $"{SignLanguage.Region.North} Người ra dấu B", $"{SignLanguage.Region.North} QIPEDC W1",
+            $"{SignLanguage.Region.South} QIPEDC W1", $"{SignLanguage.Region.Central} QIPEDC W1");
+    }
 }
