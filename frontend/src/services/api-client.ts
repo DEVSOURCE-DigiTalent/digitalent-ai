@@ -1,6 +1,17 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { getLoginPath } from '../features/auth/auth-redirect';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /**
+     * A signed link (`…/content?exp=&sig=`) authorises itself, so it goes without the bearer token: the server may
+     * redirect it to a presigned object-storage address, and MinIO refuses a request that also carries an
+     * Authorization header (400 "request has multiple authentication types").
+     */
+    signedLink?: boolean;
+  }
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const apiClient = axios.create({
@@ -17,7 +28,7 @@ if (import.meta.env.VITE_USE_MOCK === 'true') {
 
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
-  if (token && config.headers) {
+  if (token && config.headers && !config.signedLink) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
