@@ -1,6 +1,7 @@
 import axios from 'axios';
 import apiClient from './api-client';
 import type { ApiResponse } from '../types/api';
+import type { CaptionCue } from '@/lib/captions';
 
 /**
  * Platform Admin v2 — frameworks, catalog versions and the course builder. Mirrors
@@ -199,6 +200,27 @@ export interface QuestionInput {
   options?: { text: string; isCorrect: boolean }[];
 }
 
+/** NONE = no captions yet; PROCESSING = the AI is working; FAILED = the last AI run failed (the old draft is kept). */
+export type CaptionStatus = 'NONE' | 'PROCESSING' | 'READY' | 'FAILED';
+
+/** Captions of a video (schema v3.11): the draft the Platform Admin edits and what learners see. */
+export interface AssetCaptions {
+  assetId: string;
+  language: string;
+  status: CaptionStatus;
+  source: 'AI' | 'MANUAL' | null;
+  model: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  draftCues: CaptionCue[];
+  publishedCues: CaptionCue[] | null;
+  publishedAt: string | null;
+  hasUnpublishedChanges: boolean;
+  /** A Gemini key is set on the server, so "Tạo lời thoại bằng AI" can run. */
+  aiConfigured: boolean;
+  updatedAt: string | null;
+}
+
 export interface BlockInput {
   bodyHtml?: string;
   assetId?: string;
@@ -278,6 +300,13 @@ export const platformCatalogService = {
     unwrap<CatalogCourseDetail>(apiClient.put(`${course(versionNo, courseId)}/questions/${questionId}`, body)),
   removeQuestion: (versionNo: number, courseId: string, questionId: string) =>
     unwrap<CatalogCourseDetail>(apiClient.delete(`${course(versionNo, courseId)}/questions/${questionId}`)),
+
+  /** Transcript of a lesson video (step 1 of its sign-language video, not shown to learners): the AI runs only when asked (generate answers at once with PROCESSING; ask again until READY / FAILED). */
+  getCaptions: (assetId: string) => unwrap<AssetCaptions>(apiClient.get(`/platform/assets/${assetId}/captions`)),
+  generateCaptions: (assetId: string) => unwrap<AssetCaptions>(apiClient.post(`/platform/assets/${assetId}/captions/generate`)),
+  saveCaptions: (assetId: string, cues: CaptionCue[]) =>
+    unwrap<AssetCaptions>(apiClient.put(`/platform/assets/${assetId}/captions`, { cues })),
+  /** The saved draft becomes what learners see, at once (no new catalog version needed). */
 
   /** Uploads an image (≤ 10 MB), PDF (≤ 50 MB), or video (≤ 500 MB) directly to Object Storage when enabled, falling back to API proxy; onProgress receives 0..100. */
   uploadAsset: async (file: File, onProgress?: (percent: number) => void): Promise<PlatformAsset> => {
