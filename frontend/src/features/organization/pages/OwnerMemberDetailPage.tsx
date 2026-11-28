@@ -1,6 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useId, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { backTarget } from '@/lib/back-target';
 import { ArrowLeft, BadgeCheck, BriefcaseBusiness, ChevronRight, CircleAlert, Mail, ShieldCheck, UserRoundCog } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useMember } from '@/hooks/use-members';
@@ -12,7 +13,7 @@ import { assignableRoles, canManageMember } from '@/lib/role-policy';
 import { ConfirmLevelDialog } from '@/features/intelligence/components/ConfirmLevelDialog';
 import type { SkillGapRunDetail, EmployeeLearningNeeds } from '@/services/intelligence.service';
 import { levelLabel } from '@/lib/competency-levels';
-import { formatDate } from '@/lib/utils';
+import { formatDate, personInitials } from '@/lib/utils';
 import type { EmployeeCapability } from '@/services/workforce.service';
 import {
   ChangeRoleModal,
@@ -82,6 +83,8 @@ function toRun(capability: EmployeeCapability, profile?: EmployeeLearningNeeds):
 export function OwnerMemberDetailPage() {
   useUiLanguage();
   const { id } = useParams();
+  // From the member list: back with its tab and filters.
+  const back = backTarget(useLocation().state, { path: '/enterprise/members', label: 'Nhân sự' });
   const user = useCurrentUser((s) => s.user)!;
   const can = useCurrentUser((s) => s.hasPermission);
 
@@ -128,7 +131,7 @@ export function OwnerMemberDetailPage() {
             style={{ color: 'var(--po-ink)' }}
           >{translateUi("Không tìm thấy thành viên")}</h2>
           <Link
-            to="/enterprise/members"
+            to={back.path}
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
             style={{ color: 'var(--po-accent)' }}
           >
@@ -159,13 +162,7 @@ export function OwnerMemberDetailPage() {
   const canConfirm = can(PERMISSIONS.EVIDENCE_CREATE_MANUAL) && !isSelf && Boolean(learningProfile && ['MET', 'NEEDS_LEARNING'].includes(learningProfile.state));
   const run = capData ? toRun(capData, learningProfile) : null;
 
-  const initials = member.fullName
-    .split(' ')
-    .slice(-2)
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = personInitials(member.fullName);
 
   const statusColor =
     member.status === 'ACTIVE'
@@ -188,7 +185,7 @@ export function OwnerMemberDetailPage() {
     >
       {/* ── Header ── */}
       <section className="member-detail-container pt-7 pb-5">
-        <Link to="/enterprise/members" className="member-detail-back"><ArrowLeft size={16} />{translateUi(" Nhân sự")}</Link>
+        <Link to={back.path} className="member-detail-back"><ArrowLeft size={16} />{translateUi(back.label)}</Link>
         <div className="member-detail-hero">
           <div className="member-detail-identity">
             <span className="member-detail-avatar" aria-hidden="true">{initials}</span>

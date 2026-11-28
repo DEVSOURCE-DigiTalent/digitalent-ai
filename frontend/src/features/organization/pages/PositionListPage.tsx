@@ -1,6 +1,7 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { backTarget } from '@/lib/back-target';
 import { ArrowLeft, BriefcaseBusiness, CircleCheck, Plus, Edit2, Trash2, UsersRound } from 'lucide-react';
 import { DataTable, StatusBadge, getStatusVariant, type Column } from '@/components/shared';
 import { useJobPositions, useDeleteJobPosition } from '@/hooks/use-job-positions';
@@ -29,6 +30,9 @@ const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang dùng', INACTIVE:
 export function PositionListPage() {
   useUiLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Opened from Nhân sự or Khung năng lực số: back leads there; a direct visit goes to Nhân sự, where the menu puts this page.
+  const back = backTarget(location.state, { path: '/enterprise/members', label: 'Nhân sự' });
   const { can } = usePermission();
   const canManagePositions = can(PERMISSIONS.JOB_POSITION_CREATE_UPDATE);
 
@@ -192,7 +196,7 @@ export function PositionListPage() {
     <div className="positions-page -m-4 min-h-screen space-y-6 px-5 py-7 md:-m-6 md:px-7 xl:px-10">
       <div className="positions-heading">
         <div>
-          <Link to="/enterprise/setup?tab=positions" className="positions-back"><ArrowLeft className="size-4" />{translateUi(" Khung năng lực số")}</Link>
+          <Link to={back.path} className="positions-back"><ArrowLeft className="size-4" />{translateUi(back.label)}</Link>
           <div className="positions-eyebrow"><BriefcaseBusiness className="size-4" />{translateUi(" CẤU TRÚC TỔ CHỨC")}</div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.04em] heading-gradient">{translateUi("Quản lý vị trí công việc")}</h1>
           <p className="mt-1 text-sm text-slate-600">{translateUi("Mỗi phòng ban có một vị trí công việc. Nhân sự dùng vị trí của phòng ban mình.")}</p>
@@ -226,7 +230,7 @@ export function PositionListPage() {
         searchValue={search}
         onSearchChange={resetPage(setSearch)}
         searchPlaceholder={translateUi("Tìm theo tên hoặc mã vị trí")}
-        onRowClick={(row) => navigate(`/enterprise/positions/${row.id}`)}
+        onRowClick={(row) => navigate(`/enterprise/positions/${row.id}`, { state: location.state })}
         emptyTitle="Chưa có vị trí công việc"
         emptyDescription="Tạo vị trí công việc để thiết lập bộ yêu cầu năng lực cho tổ chức."
         filters={

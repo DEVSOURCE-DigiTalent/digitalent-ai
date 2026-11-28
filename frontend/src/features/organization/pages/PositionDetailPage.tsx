@@ -1,6 +1,6 @@
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, BriefcaseBusiness, ClipboardList, UsersRound, CalendarDays, Layers3 } from 'lucide-react';
 import { EmptyState, LevelBadge, StatusBadge, Tabs, getStatusVariant } from '@/components/shared';
 import { PageLoading } from '@/components/shared/LoadingState';
@@ -21,6 +21,8 @@ const STATUS_LABELS: Record<string, string> = { ACTIVE: 'Đang áp dụng', DRAF
 export function PositionDetailPage() {
   useUiLanguage();
   const { id = '' } = useParams();
+  // Handed on to the list so its own back link still leads to the page that opened it.
+  const listState = useLocation().state;
   const position = useJobPosition(id);
   const requirements = usePositionRequirements(id);
   const workforce = useWorkforce({ jobPositionId: id, pageSize: 100 });
@@ -41,7 +43,7 @@ export function PositionDetailPage() {
     return (
       <div role="alert" className="grid gap-3">
         <p className="text-sm text-red-600">{translateUi("Không tìm thấy vị trí này.")}</p>
-        <Link to="/enterprise/positions" className="text-sm font-medium text-primary-700 underline">{translateUi("Quay lại danh sách")}</Link>
+        <Link to="/enterprise/positions" state={listState} className="text-sm font-medium text-primary-700 underline">{translateUi("Quay lại danh sách")}</Link>
       </div>
     );
   }
@@ -49,7 +51,7 @@ export function PositionDetailPage() {
 
   return (
     <div className="position-detail -m-4 min-h-screen px-5 py-7 md:-m-6 md:px-7 xl:px-10">
-      <Link to="/enterprise/positions" className="position-detail-back">
+      <Link to="/enterprise/positions" state={listState} className="position-detail-back">
         <ArrowLeft className="size-4" aria-hidden="true" />{translateUi("Vị trí công việc")}</Link>
       <header className="position-detail-hero">
         <div className="position-detail-hero__icon"><BriefcaseBusiness size={25} /></div>
