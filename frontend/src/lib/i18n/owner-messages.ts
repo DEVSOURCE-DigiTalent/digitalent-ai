@@ -1198,4 +1198,40 @@ Công ty đã có R&D: R&D xem và quyết định áp dụng hay giữ bản đ
 Tính năng R&D đang tắt nên chủ doanh nghiệp quyết định bản cập nhật này.|The R&D feature is off, so the business owner decides on this update.
 {count} khóa thay đổi. R&D của công ty đang xem và quyết định.|{count} courses changed. Your company's R&D is reviewing and deciding.
 Tùy chỉnh khóa học|Course customisation
+Cần xử lý|To do
+{count} lời mời chưa kích hoạt|{count} invitations not activated
+{count} người chưa có vị trí|{count} people without a position
+{count} phòng ban chưa có trưởng phòng|{count} departments without a manager
+{count} người khớp bộ lọc|{count} people match the filters
+{count} người chưa kích hoạt tài khoản|{count} people have not activated their account
+Gửi lại lời mời cho cả {count} người|Resend the invitation to all {count} people
+Gửi lại lời mời cho {count} người?|Resend the invitation to {count} people?
+Đã gửi lại lời mời cho {count} người|Invitation resent to {count} people
+Mỗi người nhận một email mới có liên kết kích hoạt.|Each person gets a new email with an activation link.
+Gửi lời mời|Send invitations
+Tìm tên, email hoặc mã nhân viên|Search name, email or employee code
+Mọi vị trí|All positions
+Chưa có vị trí|No position
+Không có ai khớp bộ lọc|Nobody matches the filters
+Chưa có ai trong tổ chức|Nobody in the organization yet
+Phòng ban · Vị trí|Department · Position
+Lần vào gần nhất|Last sign-in
+Chưa có tài khoản|No account yet
+Chưa đăng nhập|Never signed in
+Nhắc lại|Remind
+Chọn trưởng phòng|Choose a manager
+Chờ trưởng phòng kích hoạt|Waiting for the manager to activate
+Chưa có trưởng phòng|No manager
+Phòng ban nào cũng đã có trưởng phòng|Every department has a manager
+Thêm, đổi tên hoặc lưu trữ phòng ban|Add, rename or archive departments
+Đặt làm trưởng phòng|Make manager
+Người được chọn có thêm vai trò Quản lý và là quản lý trực tiếp của cả phòng.|The person chosen also gets the Manager role and becomes the direct manager of the whole department.
+Phòng chưa có ai có tài khoản đang hoạt động để làm trưởng phòng.|Nobody in this department has an active account to be its manager.
+Mời người vào phòng|Invite someone to the department
+Đang tải nhân sự của phòng…|Loading the department's people…
+Lọc phòng ban|Filter departments
+Đang tải danh sách nhân sự|Loading the people list
+Đang tải phòng ban|Loading departments
+Chưa đặt được trưởng phòng. Thử lại.|Could not set the manager. Try again.
+Số người mỗi trang|People per page
 `.trim().split('\n').map(line => { const index=line.indexOf('|'); return [line.slice(0,index),line.slice(index+1)]; }));
