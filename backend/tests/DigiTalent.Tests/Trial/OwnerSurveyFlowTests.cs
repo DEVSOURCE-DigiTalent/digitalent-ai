@@ -314,6 +314,22 @@ public class OwnerSurveyFlowTests
     }
 
     [Fact]
+    public async Task An_organization_that_did_not_register_for_the_trial_has_no_survey_and_never_becomes_a_trial()
+    {
+        // A paying company whose owner opens the survey address used to get a trial workspace on the spot, which
+        // turned it into "trial, no course bought" and locked most of the owner's menu.
+        using var world = await PulseTestWorld.CreateAsync();
+        var asOwner = await TrialAsAsync(world, PulseTestWorld.OwnerEmail, Roles.Owner, registered: false);
+        var asEmployee = await TrialAsAsync(world, PulseTestWorld.EmployeeEmail, Roles.Employee, registered: false);
+
+        await FluentActions.Awaiting(() => asOwner.Program.ExecuteAsync(new GetTrialProgramUseCaseInput()))
+            .Should().ThrowAsync<NotFoundException>();
+        await FluentActions.Awaiting(() => asEmployee.Mine.ExecuteAsync(new GetMyTrialAssessmentUseCaseInput()))
+            .Should().ThrowAsync<NotFoundException>();
+        (await world.Context.TrialWorkspaces.AnyAsync()).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Deadline_publishes_only_submitted_results_and_never_invents_zero_results_for_absentees()
     {
         using var world = await PulseTestWorld.CreateAsync();
@@ -397,10 +413,26 @@ public class OwnerSurveyFlowTests
         PulseReviewScope ReviewScope,
         CapabilityCeilingReader Ceilings);
 
-    private static async Task<TrialUseCases> TrialAsAsync(PulseTestWorld world, string email, string role)
+    /// <summary>The organization registered for the trial (the workspace is no longer created on the first visit).</summary>
+    private static async Task EnsureRegisteredTrialAsync(PulseTestWorld world, Guid organizationId)
+    {
+        if (await world.Context.TrialWorkspaces.AnyAsync(t => t.OrganizationId == organizationId)) return;
+        var owner = await world.UserAsync(PulseTestWorld.OwnerEmail);
+        world.Context.TrialWorkspaces.Add(new TrialWorkspace
+        {
+            OrganizationId = organizationId,
+            OwnerUserId = owner.Id,
+            StartedAt = world.Clock.Now,
+            EndsAt = world.Clock.Now.AddDays(60),
+        });
+        await world.Context.SaveChangesAsync();
+    }
+
+    private static async Task<TrialUseCases> TrialAsAsync(PulseTestWorld world, string email, string role, bool registered = true)
     {
         var context = world.Context;
         var user = await world.UserAsync(email);
+        if (registered) await EnsureRegisteredTrialAsync(world, user.OrganizationId!.Value);
         var employee = await context.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.UserId == user.Id);
         var current = new Mock<ICurrentUser>();
         if (user.OrganizationId is { } organizationId)

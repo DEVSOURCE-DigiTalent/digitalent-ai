@@ -36,25 +36,16 @@ public class TrialProgramReader
 
     public Guid UserId => _currentUser.UserId ?? throw new ForbiddenException("Bạn cần đăng nhập.");
 
-    /// <summary>Doanh nghiệp dùng thử của chủ doanh nghiệp đang đăng nhập.</summary>
+    /// <summary>
+    /// Doanh nghiệp dùng thử của chủ doanh nghiệp đang đăng nhập. Không gian dùng thử chỉ được tạo khi đăng ký dùng thử
+    /// (<c>/business/try</c>); một tổ chức không đăng ký (đã trả tiền) không có khảo sát → 404, không tạo mới: tạo ở đây
+    /// từng biến một công ty đang trả tiền thành "đang dùng thử, chưa mua khóa nào" và khóa gần hết menu của chủ.
+    /// </summary>
     public async Task<TrialWorkspace> ForOwnerAsync()
     {
         var organizationId = _currentUser.GetRequiredOrganizationId();
-        var trial = await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == organizationId);
-        if (trial == null)
-        {
-            var ownerUserId = _currentUser.UserId ?? Guid.Empty;
-            trial = new TrialWorkspace
-            {
-                OrganizationId = organizationId,
-                OwnerUserId = ownerUserId,
-                StartedAt = Now,
-                EndsAt = Now.AddDays(60),
-            };
-            _context.TrialWorkspaces.Add(trial);
-            await _context.SaveChangesAsync();
-        }
-        return trial;
+        return await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == organizationId)
+               ?? throw NotOnTrial();
     }
 
     /// <summary>Doanh nghiệp dùng thử được phân công cho mentor đang đăng nhập; không được phân công → 404.</summary>
@@ -65,26 +56,14 @@ public class TrialProgramReader
                ?? throw new NotFoundException("Không tìm thấy doanh nghiệp được phân công cho bạn.");
     }
 
-    /// <summary>Doanh nghiệp dùng thử của nhân viên; tự động đảm bảo có không gian đánh giá cho tổ chức.</summary>
-    public async Task<TrialWorkspace> ForEmployeeAsync(Employee employee)
-    {
-        var trial = await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == employee.OrganizationId);
-        if (trial == null)
-        {
-            trial = new TrialWorkspace
-            {
-                OrganizationId = employee.OrganizationId,
-                OwnerUserId = Guid.Empty,
-                StartedAt = Now,
-                EndsAt = Now.AddDays(60),
-            };
-            _context.TrialWorkspaces.Add(trial);
-            await _context.SaveChangesAsync();
-        }
-        return trial;
-    }
+    /// <summary>Doanh nghiệp dùng thử của nhân viên; tổ chức không đăng ký dùng thử → 404 (xem <see cref="ForOwnerAsync"/>).</summary>
+    public async Task<TrialWorkspace> ForEmployeeAsync(Employee employee) =>
+        await _context.TrialWorkspaces.FirstOrDefaultAsync(t => t.OrganizationId == employee.OrganizationId)
+        ?? throw NotOnTrial();
 
-    /// <summary>Vì sao nhân viên chưa vào phòng thi được lúc này (null = vào được).</summary>
+    private static NotFoundException NotOnTrial() =>
+        new("Doanh nghiệp không đăng ký dùng thử nên không có khảo sát năng lực số.");
+
     public static string? ClosedReason(TrialWorkspace trial, TrialAssessment? assessment, DateTimeOffset now)
     {
         if (assessment != null)
