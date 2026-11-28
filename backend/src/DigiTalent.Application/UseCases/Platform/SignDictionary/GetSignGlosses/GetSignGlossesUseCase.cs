@@ -40,10 +40,15 @@ public class GetSignGlossesUseCase : IUseCase<GetSignGlossesUseCaseInput, PagedL
         if (search.Length > 0) query = query.Where(g => g.Normalized.Contains(search));
 
         var total = await query.CountAsync();
+        // The regional variants of a word share its text: region, variant and id keep their order the same on every
+        // page, otherwise PostgreSQL may return a variant on two pages and skip another.
         var page = await query
             .OrderBy(g => g.Kind == "WORD" ? 1 : 0)
             .ThenBy(g => g.Kind)
             .ThenBy(g => g.Normalized)
+            .ThenBy(g => g.Region)
+            .ThenBy(g => g.Variant)
+            .ThenBy(g => g.Id)
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

@@ -152,10 +152,12 @@ export const signDictionaryService = {
     })),
   /**
    * The sign's video as a local blob: MediaPipe must read its pixels, which a cross-origin <video> does not allow.
-   * `url` is the signed path of the asset (relative to the API root).
+   * `url` is the signed path of the asset (relative to the API root); it goes without the bearer token, which
+   * object storage refuses next to its own signature once the server redirects there.
    */
   videoBlob: (url: string, onProgress?: (loaded: number, total: number) => void) =>
     apiClient.get<Blob>(url.replace(/^\//, ''), {
+      signedLink: true,
       responseType: 'blob',
       timeout: 0,
       onDownloadProgress: onProgress ? (event) => onProgress(event.loaded, event.total ?? 0) : undefined,
