@@ -1,10 +1,14 @@
 using System.Text;
+using System.Text.Json;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Platform.Catalog;
 using DigiTalent.Application.UseCases.Platform.Common;
 using DigiTalent.Application.UseCases.Platform.Framework;
+using DigiTalent.Application.UseCases.Learning.Content;
+using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Domain.Constants;
+using DigiTalent.Domain.Entities;
 using DigiTalent.Infrastructure.Auth;
 using DigiTalent.Infrastructure.Content;
 using DigiTalent.Infrastructure.Persistence;
@@ -66,6 +70,60 @@ public class PlatformCatalogTests
         var currentUser = new Mock<ICurrentUser>();
         currentUser.Setup(c => c.UserId).Returns(AdminId);
         return currentUser.Object;
+    }
+
+    [Fact]
+    public async Task UpdatesCurrentFinalWeightsInPlace_AndKeepsCompanyRubricAndGate()
+    {
+        await using var world = await CreateWorldAsync();
+        var db = world.Context;
+        var courseId = await world.CourseIdAsync("M1-F");
+        var row = await db.PlatformCatalogCourses.SingleAsync(c => c.CourseId == courseId);
+        var sourceCriteria = PlatformCourseContentReader.Criteria(row.FinalCriteria);
+        var versions = await db.PlatformCatalogVersions.CountAsync();
+        var current = await world.CourseAsync(1, courseId);
+        var rubric = current.FinalRubric!;
+        var standard = new Course { Code = current.Code, OrganizationId = Guid.NewGuid(), Status = Statuses.Course.Published };
+        var company = new Course { Code = current.Code, OrganizationId = Guid.NewGuid(), Status = Statuses.Course.Published };
+        var legacy = new Course { Code = current.Code, OrganizationId = Guid.NewGuid(), Status = Statuses.Course.Published };
+        db.Courses.AddRange(standard, company, legacy);
+        db.PracticalTaskTemplates.AddRange(
+            new PracticalTaskTemplate
+            {
+                OrganizationId = standard.OrganizationId, RelatedCourseId = standard.Id, Status = "ACTIVE",
+                GeneralMarkingCriteria = JsonSerializer.Serialize(new { track = "general", criteria = sourceCriteria, catalogCourseId = row.Id }),
+            },
+            new PracticalTaskTemplate
+            {
+                OrganizationId = company.OrganizationId, RelatedCourseId = company.Id, Status = "ACTIVE",
+                GeneralMarkingCriteria = JsonSerializer.Serialize(new { track = "general", criteria = new[] { "Tiêu chí doanh nghiệp" } }),
+            });
+        await db.SaveChangesAsync();
+        var update = new UpdatePlatformCourseFinalUseCase(db, world.Editor, world.Reader);
+        var input = new UpdatePlatformCourseFinalUseCaseInput
+        {
+            VersionNo = 1, CourseId = courseId, Title = current.Final.Title,
+            Criteria = rubric.Select(c => c.Title).ToList(),
+            ExpectedCriterionWeights = rubric.Select(c => c.WeightPercent).ToList(),
+            CriterionWeights = new() { 25, 25, 20, 30 },
+        };
+
+        var updated = await update.ExecuteAsync(input);
+        updated.FinalRubric!.Select(c => c.WeightPercent).Should().Equal(25, 25, 20, 30);
+        updated.FinalRubric!.Last().IsRequired.Should().BeTrue();
+        updated.Final.Title.Should().Be(current.Final.Title);
+        (await db.PlatformCatalogVersions.CountAsync()).Should().Be(versions);
+        (await db.Courses.CountAsync()).Should().Be(3);
+        var finals = await new LearningContentReader(db).FinalsAsync(new[] { standard.Id, company.Id, legacy.Id });
+        foreach (var id in new[] { standard.Id, legacy.Id })
+        {
+            var learnerRubric = PulseEssayRubric.Build(null, current.DomainName, current.Level, finals[id].Criteria, current.Code);
+            learnerRubric.Select(c => c.WeightPercent).Should().Equal(25, 25, 20, 30);
+            learnerRubric.Last().IsRequired.Should().BeTrue();
+        }
+        finals[company.Id].Criteria.Should().Equal("Tiêu chí doanh nghiệp");
+        var repeatStaleUpdate = () => update.ExecuteAsync(input);
+        await repeatStaleUpdate.Should().ThrowAsync<ConflictException>();
     }
 
     [Fact]

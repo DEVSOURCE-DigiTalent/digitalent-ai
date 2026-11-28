@@ -9,18 +9,47 @@ import { RichTextEditor } from './RichTextEditor';
 import { GraduationCap, FileText, CheckSquare, Plus, CheckCircle2, X } from 'lucide-react';
 
 const MAX_CRITERIA = 10;
+const TRAILING_WEIGHT = /\s*\((\d{1,3})\s*%\)$/;
+const evenWeight = (count: number, index: number) => String(Math.floor(100 / count) + (index < 100 % count ? 1 : 0));
 
 /** The course-final assignment: title, brief (rich text) and the criteria the department manager grades. */
-export function FinalEditor({ course, editable, edit, internal = false }: {
+export function FinalEditor({ course, editable, edit, internal = false, showWeights = false, editCurrentWeights = false }: {
   course: CatalogCourseDetail; editable: boolean; edit: CourseEdit; internal?: boolean;
+  showWeights?: boolean; editCurrentWeights?: boolean;
 }) {
   useUiLanguage();
   const service = useCourseBuilderService();
-  const initial = { title: course.final.title, promptHtml: course.final.promptHtml, criteria: course.final.criteria };
+  const rubric = showWeights && !internal ? course.finalRubric : null;
+  const legacy = course.final.criteria.map((criterion) => ({
+    title: criterion.replace(TRAILING_WEIGHT, '').trim(),
+    weight: criterion.match(TRAILING_WEIGHT)?.[1],
+  }));
+  const hasLegacyWeights = legacy.some((criterion) => criterion.weight !== undefined);
+  const useRubric = Boolean(rubric && !hasLegacyWeights);
+  const canEditWeights = showWeights && (editable || editCurrentWeights);
+  const initial = {
+    title: course.final.title,
+    promptHtml: course.final.promptHtml,
+    criteria: useRubric && rubric ? rubric.map((item) => item.title)
+      : showWeights ? legacy.map((item) => item.title) : course.final.criteria,
+    weights: !showWeights ? [] : useRubric && rubric ? rubric.map((item) => String(item.weightPercent))
+      : legacy.map((item, index) => hasLegacyWeights ? item.weight ?? '' : evenWeight(legacy.length, index)),
+  };
   const [form, setForm] = useState(initial);
   const [saving, setSaving] = useState(false);
   const dirty = JSON.stringify(form) !== JSON.stringify(initial);
-  const valid = form.title.trim().length > 0;
+  const weights = form.weights.map(Number);
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  const validWeights = !showWeights || (
+    weights.length > 0 && total === 100 && weights.every((weight) => Number.isInteger(weight) && weight > 0)
+    && form.criteria.every((criterion) => criterion.trim().length > 0 && !TRAILING_WEIGHT.test(criterion.trim()))
+  );
+  const valid = (editCurrentWeights || form.title.trim().length > 0) && validWeights;
+
+  const distributeWeights = () => setForm((f) => {
+    const count = f.criteria.length;
+    return { ...f, weights: f.criteria.map((_, index) => evenWeight(count, index)) };
+  });
 
   const setCriterion = (index: number, value: string) =>
     setForm((f) => ({ ...f, criteria: f.criteria.map((c, i) => (i === index ? value : c)) }));
@@ -32,9 +61,11 @@ export function FinalEditor({ course, editable, edit, internal = false }: {
         title: form.title.trim(),
         promptHtml: form.promptHtml,
         criteria: form.criteria.map((c) => c.trim()).filter(Boolean),
+        ...(showWeights && { criterionWeights: weights }),
+        ...(editCurrentWeights && { expectedCriterionWeights: rubric?.map((criterion) => criterion.weightPercent) }),
       }),
     )
-      .then(() => toast.success('Đã lưu bài cuối khóa.'))
+      .then(() => toast.success(editCurrentWeights ? 'Đã cập nhật trọng số cho phiên bản đang dùng.' : 'Đã lưu bài cuối khóa.'))
       .catch((err) => toast.error(errorMessage(err)))
       .finally(() => setSaving(false));
   };
@@ -133,7 +164,9 @@ export function FinalEditor({ course, editable, edit, internal = false }: {
               </h2>
             </div>
             <div className="pa-cb-panel-desc">
-              {translateUi('Quản lý phòng ban đánh giá từng tiêu chí đạt hoặc chưa đạt khi chấm bài của nhân viên.')}
+              {translateUi(showWeights
+                ? 'Trọng số quyết định mức đóng góp của từng tiêu chí vào điểm tự luận.'
+                : 'Quản lý phòng ban đánh giá từng tiêu chí đạt hoặc chưa đạt khi chấm bài của nhân viên.')}
             </div>
           </div>
           <span
@@ -151,6 +184,22 @@ export function FinalEditor({ course, editable, edit, internal = false }: {
         </div>
 
         <div className="pa-cb-panel-body">
+          {showWeights && (
+            <div className="pa-cb-weight-summary">
+              <span className="pa-cb-weight-total" data-valid={validWeights} aria-live="polite">
+                {translateUi('Tổng trọng số')} <strong>{total}% / 100%</strong>
+              </span>
+              {canEditWeights && (
+                <button type="button" className="btn btn-outline btn-small" onClick={distributeWeights} disabled={!form.criteria.length}>
+                  {translateUi('Chia đều')}
+                </button>
+              )}
+              {editCurrentWeights && <p>Trọng số mới áp dụng ngay cho bài chờ chấm đang dùng bộ tiêu chí này.</p>}
+              {!validWeights && canEditWeights && (
+                <p>Nhập trọng số ở ô % riêng. Mỗi tiêu chí cần có trọng số từ 1% và tổng phải đúng 100%.</p>
+              )}
+            </div>
+          )}
           <div className="pa-criteria">
             {form.criteria.map((criterion, index) => (
               <div className="pa-cb-criterion-row" key={index}>
@@ -164,13 +213,30 @@ export function FinalEditor({ course, editable, edit, internal = false }: {
                   placeholder={translateUi(`Nhập tiêu chí chấm điểm ${index + 1}...`)}
                   aria-label={translateUi(`Tiêu chí ${index + 1}`)}
                 />
+                {showWeights && (
+                  <label className="pa-cb-criterion-weight">
+                    <input
+                      type="number" min={1} max={100} step={1}
+                      value={form.weights[index] ?? ''}
+                      readOnly={!canEditWeights}
+                      aria-label={translateUi(`Trọng số tiêu chí ${index + 1}`)}
+                      onChange={(e) => {
+                        const value = e.currentTarget.value;
+                        setForm((f) => ({ ...f, weights: f.weights.map((w, i) => i === index ? value : w) }));
+                      }}
+                    />
+                    <span aria-hidden="true">%</span>
+                  </label>
+                )}
                 {editable && (
                   <button
                     type="button"
                     className="btn btn-ghost btn-small pa-danger-text"
                     aria-label={translateUi(`Xóa tiêu chí ${index + 1}`)}
                     disabled={form.criteria.length <= 1}
-                    onClick={() => setForm((f) => ({ ...f, criteria: f.criteria.filter((_, i) => i !== index) }))}
+                    onClick={() => setForm((f) => ({
+                      ...f, criteria: f.criteria.filter((_, i) => i !== index), weights: f.weights.filter((_, i) => i !== index),
+                    }))}
                   >
                     <X size={14} aria-hidden="true" />
                   </button>
@@ -185,7 +251,7 @@ export function FinalEditor({ course, editable, edit, internal = false }: {
                 type="button"
                 className="btn btn-outline btn-small inline-flex items-center gap-1.5"
                 disabled={form.criteria.length >= MAX_CRITERIA}
-                onClick={() => setForm((f) => ({ ...f, criteria: [...f.criteria, ''] }))}
+                onClick={() => setForm((f) => ({ ...f, criteria: [...f.criteria, ''], weights: [...f.weights, ''] }))}
               >
                 <Plus size={14} />
                 <span>{translateUi('Thêm tiêu chí')}</span>
@@ -202,7 +268,7 @@ export function FinalEditor({ course, editable, edit, internal = false }: {
       </div>
 
       {/* ✦ THANH TÁC VỤ CHÂN TRANG */}
-      {editable && (
+      {(editable || canEditWeights) && (
         <div className="pa-cb-action-footer">
           <span style={{ fontSize: 13, color: dirty ? '#d97706' : '#64748b', fontWeight: dirty ? 600 : 400 }}>
             {dirty ? translateUi('Có thay đổi chưa lưu.') : translateUi('Đã lưu mọi thay đổi.')}
@@ -214,7 +280,7 @@ export function FinalEditor({ course, editable, edit, internal = false }: {
             disabled={!dirty || !valid || saving}
           >
             <CheckCircle2 size={14} />
-            <span>{saving ? translateUi('Đang lưu…') : translateUi('Lưu bài cuối khóa')}</span>
+            <span>{saving ? translateUi('Đang lưu…') : translateUi(editCurrentWeights ? 'Lưu trọng số' : 'Lưu bài cuối khóa')}</span>
           </button>
         </div>
       )}

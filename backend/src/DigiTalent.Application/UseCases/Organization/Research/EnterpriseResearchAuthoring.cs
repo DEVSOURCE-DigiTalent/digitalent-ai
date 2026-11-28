@@ -5,6 +5,7 @@ using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Platform.Catalog;
+using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
@@ -51,6 +52,9 @@ public sealed partial class EnterpriseResearch
                 throw new ConflictException("Bản nháp đã thay đổi. Tải lại khóa học trước khi tiếp tục.");
             var content = new AuthoringContent(input.Modules, input.Final);
             Validate(content, sanitizer, apply: false);
+            var previous = (state.Draft ?? state.Applied)?.Final ?? source.Final;
+            if (!content.Final.Criteria.SequenceEqual(previous.Criteria))
+                ValidateFinalWeights(content.Final);
             await RefreshAssetsAsync(orgId, source, content, reader, state.Draft, state.Applied);
             state = new AuthoringState(state.Revision + 1, content, state.Applied);
             await WriteAsync(orgId, AuthoringPrefix + source.Code, state);
@@ -169,6 +173,7 @@ public sealed partial class EnterpriseResearch
         Check(content.Final.Title is { Length: > 0 and <= 250 } && content.Final.Criteria is { Count: <= 10 } &&
             content.Final.Criteria.All(c => c is { Length: <= 1000 }) && content.Final.PromptHtml is { Length: <= 250000 });
         content.Final.PromptHtml = sanitizer.Sanitize(content.Final.PromptHtml);
+        if (apply) ValidateFinalWeights(content.Final);
         var ids = new HashSet<Guid>();
         for (var i = 0; i < content.Modules.Count; i++)
         {
@@ -203,6 +208,16 @@ public sealed partial class EnterpriseResearch
             }
         }
         bool AddId(Guid id) => id != Guid.Empty && ids.Add(id);
+    }
+
+    private static void ValidateFinalWeights(PlatformCourseFinalDto final)
+    {
+        if (final.Criteria.Any(PulseEssayRubric.HasStatedWeight) &&
+            PulseEssayRubric.ReadStatedWeights(final.Criteria) == null)
+        {
+            throw new BadRequestException("Tổng trọng số của bộ tiêu chí phải đúng 100%.",
+                "criterionWeights", "INVALID_CRITERION_WEIGHTS");
+        }
     }
 
     private static async Task<AuthoringState> ReadAuthoringAsync(IApplicationDbContext db, Guid orgId, string code)

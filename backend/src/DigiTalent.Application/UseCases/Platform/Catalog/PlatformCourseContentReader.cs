@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
+using DigiTalent.Application.UseCases.Pulse;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,7 @@ public class PlatformCourseContentReader
         var assets = await _context.PlatformAssets.AsNoTracking().Where(a => assetIds.Contains(a.Id)).ToDictionaryAsync(a => a.Id);
 
         var editable = version.Status == Statuses.PlatformCatalogVersion.Draft;
+        var finalCriteria = Criteria(c.FinalCriteria);
         return new PlatformCatalogCourseDetail
         {
             VersionNo = version.VersionNo,
@@ -74,8 +76,9 @@ public class PlatformCourseContentReader
             {
                 Title = c.FinalTitle,
                 PromptHtml = c.FinalPrompt,
-                Criteria = Criteria(c.FinalCriteria),
+                Criteria = finalCriteria,
             },
+            FinalRubric = PulseEssayRubric.Build(null, row.Domain.Name, c.Level, finalCriteria, row.Code),
             Modules = modules.Select((m, index) => new PlatformModuleDto
             {
                 ModuleId = m.Id,

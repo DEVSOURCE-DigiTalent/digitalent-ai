@@ -245,7 +245,7 @@ function ResearchEditor({ course, actions, readOnly }: { course: ResearchCourse;
               edit={(operation) => operation(builder.versionNo, builder.courseId)} onNavigate={go}
             />}
             {section === 'final' && <FinalEditor key={JSON.stringify(builder.final)} course={builder} editable={!readOnly}
-              edit={(operation) => operation(builder.versionNo, builder.courseId)} internal
+              edit={(operation) => operation(builder.versionNo, builder.courseId)} internal showWeights
             />}
           </CourseBuilderServiceContext.Provider>
         ) : <form id={formId} onSubmit={onSubmit}>

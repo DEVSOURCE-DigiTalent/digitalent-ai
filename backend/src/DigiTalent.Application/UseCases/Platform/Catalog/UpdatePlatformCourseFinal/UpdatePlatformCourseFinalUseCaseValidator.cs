@@ -6,7 +6,9 @@ public class UpdatePlatformCourseFinalUseCaseValidator : AbstractValidator<Updat
 {
     public UpdatePlatformCourseFinalUseCaseValidator()
     {
-        RuleFor(x => x.Title).NotEmpty().WithMessage("Bài cuối khóa cần có tên.").MaximumLength(250);
+        RuleFor(x => x.Title).NotEmpty().WithMessage("Bài cuối khóa cần có tên.")
+            .When(x => x.ExpectedCriterionWeights == null);
+        RuleFor(x => x.Title).MaximumLength(250);
         RuleFor(x => x.PromptHtml).MaximumLength(PlatformCourseRules.MaxHtmlLength);
         RuleFor(x => x.Criteria).Must(c => c.Count <= 10).WithMessage("Tối đa 10 tiêu chí.");
         RuleForEach(x => x.Criteria).MaximumLength(250);

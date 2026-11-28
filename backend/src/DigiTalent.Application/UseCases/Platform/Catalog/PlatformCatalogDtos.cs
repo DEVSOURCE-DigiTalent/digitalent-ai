@@ -77,6 +77,7 @@ public class PlatformPublishCheck
 /// <summary>The whole content of a course in a version, as the course builder edits it.</summary>
 public class PlatformCatalogCourseDetail
 {
+    public IReadOnlyList<DigiTalent.Application.UseCases.Pulse.PulseCriterionDto>? FinalRubric { get; set; }
     public int VersionNo { get; set; }
     public string VersionStatus { get; set; } = string.Empty;
     /// <summary>Only courses of the draft version can be edited.</summary>
