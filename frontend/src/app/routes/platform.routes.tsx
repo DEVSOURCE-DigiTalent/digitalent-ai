@@ -11,6 +11,7 @@ const SecuritySettingsPage = lazyPage(() => import('../../features/account/pages
 const NotificationsPage = lazyPage(() => import('../../features/notifications/pages/NotificationsPage'), 'NotificationsPage');
 const PlatformOverviewPage = lazyPage(() => import('../../features/platform/console/PlatformOverviewPage'), 'PlatformOverviewPage');
 const PlatformFrameworkPage = lazyPage(() => import('../../features/platform/console/PlatformFrameworkPage'), 'PlatformFrameworkPage');
+const SignDictionaryPage = lazyPage(() => import('../../features/platform/sign-dictionary/SignDictionaryPage'), 'SignDictionaryPage');
 const PlatformReferencePositionsPage = lazyPage(() => import('../../features/platform/console/PlatformReferencePositions'), 'PlatformReferencePositionsPage');
 const PlatformVersionsPage = lazyPage(() => import('../../features/platform/console/PlatformVersionsPage'), 'PlatformVersionsPage');
 const PlatformCourseBuilderPage = lazyPage(() => import('../../features/platform/console/PlatformCourseBuilderPage'), 'PlatformCourseBuilderPage');
@@ -39,6 +40,7 @@ const PLATFORM_PAGES: PageRegistry = {
   'PA-01': PlatformOverviewPage,
   'PA-02': PlatformFrameworkPage,
   'PA-13': PlatformReferencePositionsPage,
+  'PA-18': SignDictionaryPage,
   'PA-03': PlatformVersionsPage,
   'PA-12': PlatformVersionsPage,
   'PA-04': PlatformCourseBuilderPage,

@@ -1612,7 +1612,9 @@ dialog.pa-cmd-dialog::backdrop {
 }
 
 .pa-route-stage {
-  animation: pa-stage-enter 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* backwards, not both: a transform kept after the animation would make this stage the containing block of every
+     position: fixed dialog of the page (.pa-overlay), trapping it inside the content area under the topbar. */
+  animation: pa-stage-enter 160ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 /* Reduced Motion Respect */
