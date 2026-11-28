@@ -64,8 +64,8 @@ describe('owner overview helpers', () => {
     expect(wheel.map((c) => [c.code, c.owned])).toEqual([['M1-F', true], ['M1-I', true], ['M1-A', false], ['M2-F', true]]);
     // Bình needs Advanced in data, not bought: the cart opens with it
     expect(todoItems({ pendingInvites: 2, people: progress.people, courses: wheel })).toEqual([
-      { key: 'invites', count: 2, label: '2 lời mời chưa kích hoạt', to: '/enterprise/members' },
-      { key: 'positions', count: 1, label: '1 người chưa có vị trí', to: '/enterprise/members' },
+      { key: 'invites', count: 2, label: '2 lời mời chưa kích hoạt', to: '/enterprise/members?status=PENDING' },
+      { key: 'positions', count: 1, label: '1 người chưa có vị trí', to: '/enterprise/members?position=none' },
       { key: 'courses', count: 1, label: '1 khóa cần mua cho người còn thiếu', to: '/enterprise/courses?selected=M1-A' },
     ]);
     expect(todoItems({ pendingInvites: 0, people: [progress.people[0]], courses: wheel })).toEqual([]);
@@ -85,7 +85,7 @@ describe('OW-01 Tổng quan', () => {
     renderPage();
     expect(screen.getByRole('heading', { level: 1, name: 'Tổng quan' })).toBeInTheDocument();
     const todo = screen.getByRole('region', { name: 'Cần làm' });
-    expect(within(todo).getByRole('link', { name: /2 lời mời chưa kích hoạt/ })).toHaveAttribute('href', '/enterprise/members');
+    expect(within(todo).getByRole('link', { name: /2 lời mời chưa kích hoạt/ })).toHaveAttribute('href', '/enterprise/members?status=PENDING');
     expect(within(todo).getByRole('link', { name: /1 khóa cần mua cho người còn thiếu/ })).toHaveAttribute('href', '/enterprise/courses?selected=M1-A');
     // the old survey participation tabs are gone
     expect(screen.queryByRole('tab')).toBeNull();
