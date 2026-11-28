@@ -109,3 +109,27 @@ public class PlatformAsset : BaseEntity
     public string StorageKey { get; set; } = string.Empty;
     public Guid? UploadedByUserId { get; set; }
 }
+
+/// <summary>
+/// Table platform_asset_captions (schema v3.11): the captions of one video in one language. DraftCues is what the
+/// Platform Admin edits (made by the AI on request, or typed); PublishedCues is what learners see, copied from the
+/// draft on "Xuất bản phụ đề". Captions belong to the file, so every catalog version showing the video has them.
+/// </summary>
+public class PlatformAssetCaption : BaseEntity
+{
+    public Guid AssetId { get; set; }
+    public string Language { get; set; } = string.Empty;
+    /// <summary>State of the draft: PROCESSING (the AI is working) / READY / FAILED.</summary>
+    public string Status { get; set; } = string.Empty;
+    /// <summary>Who made the draft: AI / MANUAL.</summary>
+    public string Source { get; set; } = string.Empty;
+    /// <summary>JSON array of {startMs, endMs, text} (jsonb).</summary>
+    public string DraftCues { get; set; } = "[]";
+    /// <summary>JSON array of {startMs, endMs, text} (jsonb); null = learners have no captions yet.</summary>
+    public string? PublishedCues { get; set; }
+    public DateTimeOffset? PublishedAt { get; set; }
+    public Guid? PublishedByUserId { get; set; }
+    public string? Model { get; set; }
+    public string? ErrorCode { get; set; }
+    public Guid? RequestedByUserId { get; set; }
+}

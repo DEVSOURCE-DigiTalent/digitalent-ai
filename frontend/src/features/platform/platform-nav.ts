@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Anchor,
+  HandMetal,
   BriefcaseBusiness,
   Bug,
   Building2,
@@ -101,6 +102,13 @@ export const PLATFORM_NAV_GROUPS: readonly PlatformNavGroup[] = [
         icon: Anchor,
         description: 'Bản đang dùng, bản nháp và công bố',
       },
+      {
+        to: '/platform/sign-dictionary',
+        label: 'Từ điển ký hiệu',
+        glyph: '',
+        icon: HandMetal,
+        description: 'Video ký hiệu và chuyển động cho nhân vật 3D ra dấu',
+      },
     ],
   },
   {
@@ -151,6 +159,7 @@ export const PLATFORM_NAV: readonly PlatformNavItem[] = [
   { to: '/platform/frameworks', label: 'Khung năng lực số', glyph: '', icon: Gem },
   { to: '/platform/reference-positions', label: 'Vị trí tham chiếu', glyph: '', icon: BriefcaseBusiness },
   { to: '/platform/versions', label: 'Phiên bản khóa học', glyph: '', icon: Anchor },
+  { to: '/platform/sign-dictionary', label: 'Từ điển ký hiệu', glyph: '', icon: HandMetal },
   { to: '/platform/organizations', label: 'Tổ chức', glyph: '', icon: Building2 },
   { to: '/platform/trials', label: 'Đánh giá dùng thử', glyph: '', icon: FlaskConical },
   { to: '/platform/mentors', label: 'Mentor', glyph: '', icon: GraduationCap, badgeKey: 'pendingTrials' },

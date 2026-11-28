@@ -1,4 +1,4 @@
-import { Anchor, BriefcaseBusiness, Bug, Building2, FlaskConical, Gem, GraduationCap, LayoutDashboard, MessageSquare, ReceiptText, ScrollText, Users } from 'lucide-react';
+import { Anchor, BriefcaseBusiness, HandMetal, Bug, Building2, FlaskConical, Gem, GraduationCap, LayoutDashboard, MessageSquare, ReceiptText, ScrollText, Users } from 'lucide-react';
 import type { SidebarConfig } from './types';
 
 /**
@@ -10,6 +10,7 @@ export const PLATFORM_SIDEBAR: SidebarConfig = [
   { label: 'Khung năng lực số', icon: Gem, screenId: 'PA-02', activeFor: ['PLT-04'] },
   { label: 'Vị trí tham chiếu', icon: BriefcaseBusiness, screenId: 'PA-13' },
   { label: 'Phiên bản khóa học', icon: Anchor, screenId: 'PA-03', activeFor: ['PA-12', 'PA-04', 'PLT-05', 'PLT-06', 'PLT-06E'] },
+  { label: 'Từ điển ký hiệu', icon: HandMetal, screenId: 'PA-18' },
   { label: 'Tổ chức', icon: Building2, screenId: 'PA-05', activeFor: ['PA-06', 'PLT-02', 'PLT-03'] },
   { label: 'Đánh giá dùng thử', icon: FlaskConical, screenId: 'PA-14' },
   { label: 'Mentor', icon: GraduationCap, screenId: 'PA-17' },

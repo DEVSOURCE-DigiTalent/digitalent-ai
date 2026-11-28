@@ -45,9 +45,9 @@ public sealed class GeminiService : IGeminiService
 
     /// <summary>
     /// Khóa Gemini: Gemini:ApiKey; không có thì dùng khóa trợ lý (Assistant:ApiKey = ASSISTANT_API_KEY trong .env) khi trợ lý
-    /// chạy Gemini — một khóa cho cả chatbot và chấm bài; cuối cùng GEMINI_API_KEY / GOOGLE_API_KEY.
+    /// chạy Gemini — một khóa cho cả chatbot, chấm bài và phụ đề video; cuối cùng GEMINI_API_KEY / GOOGLE_API_KEY.
     /// </summary>
-    private static string ResolveApiKey(IConfiguration config)
+    internal static string ResolveApiKey(IConfiguration config)
     {
         var key = config["Gemini:ApiKey"];
         if (!string.IsNullOrWhiteSpace(key)) return key.Trim();

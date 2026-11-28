@@ -15,6 +15,7 @@ import { RichTextEditor } from './RichTextEditor';
 import { BLOCK_TYPES, type CourseEdit } from './builder-types';
 import { IMAGE_ACCEPT, PDF_ACCEPT, VIDEO_ACCEPT, fileProblem, formatSize, useAssetUpload } from './use-asset-upload';
 import { CatalogLessonContent } from './CatalogLessonContent';
+import { SignLanguageVideoEditor } from './SignLanguageVideoEditor';
 
 interface BlockCardProps {
   courseCode?: string;
@@ -297,6 +298,7 @@ function MediaEditor({ block, kind, save }: { block: CatalogBlock; kind: 'IMAGE'
   useUiLanguage();
   const { upload, progress, fileName } = useAssetUpload();
   const input = useRef<HTMLInputElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
   const isImage = kind === 'IMAGE';
 
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -325,7 +327,7 @@ function MediaEditor({ block, kind, save }: { block: CatalogBlock; kind: 'IMAGE'
     <div className="stack">
       {block.asset ? (
         <figure className="pa-media">
-          {isImage ? <img src={assetUrl(block.asset)} alt={translateUi(block.altText ?? '')} /> : <video src={assetUrl(block.asset)} controls preload="metadata" />}
+          {isImage ? <img src={assetUrl(block.asset)} alt={translateUi(block.altText ?? '')} /> : <video ref={video} src={assetUrl(block.asset)} controls preload="metadata" />}
           <figcaption className="pa-hint">{block.asset.fileName} · {formatSize(block.asset.sizeBytes)}</figcaption>
         </figure>
       ) : (
@@ -354,6 +356,7 @@ function MediaEditor({ block, kind, save }: { block: CatalogBlock; kind: 'IMAGE'
           </label>
         )}
       </div>
+      {!isImage && block.asset && <SignLanguageVideoEditor key={`sign-${block.asset.assetId}`} asset={block.asset} videoRef={video} />}
       <input ref={input} type="file" accept={isImage ? IMAGE_ACCEPT : VIDEO_ACCEPT} hidden onChange={onFile} />
     </div>
   );

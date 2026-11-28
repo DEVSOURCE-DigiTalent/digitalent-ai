@@ -124,6 +124,27 @@ public static class DependencyInjection
         services.AddHttpClient<IGeminiService, DigiTalent.Infrastructure.AI.GeminiService>();
         services.AddSingleton<ITt02Framework, DigiTalent.Infrastructure.AI.Frameworks.Tt02Framework>();
 
+        // Phụ đề video bằng AI (Gemini Files API): video tới 500 MB nên không đặt timeout chung cho HttpClient —
+        // mỗi bước tự giới hạn thời gian. Việc chạy nền, mỗi lần một video (docs/specs/2026-11-24-ai-video-captions.md).
+        services.AddHttpClient<ICaptionTranscriber, DigiTalent.Infrastructure.AI.GeminiCaptionTranscriber>(
+            client => client.Timeout = Timeout.InfiniteTimeSpan);
+        services.AddSingleton<DigiTalent.Infrastructure.BackgroundServices.CaptionJobQueue>();
+        services.AddSingleton<ICaptionJobQueue>(sp => sp.GetRequiredService<DigiTalent.Infrastructure.BackgroundServices.CaptionJobQueue>());
+        services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.CaptionWorker>();
+
+        // Video ngôn ngữ ký hiệu (docs/specs/2026-11-24-sign-language-video.md): nhân vật 3D do trình duyệt dựng rồi máy chủ
+        // ghép bằng FFmpeg (mặc định), hoặc ghép video của một người ra dấu (đường dẫn, thư mục tạm, chất lượng: mục "SignVideo").
+        var signVideoSettings = configuration.GetSection(DigiTalent.Infrastructure.SignVideoRendering.SignVideoSettings.SectionName)
+            .Get<DigiTalent.Infrastructure.SignVideoRendering.SignVideoSettings>() ?? new DigiTalent.Infrastructure.SignVideoRendering.SignVideoSettings();
+        services.AddSingleton(signVideoSettings);
+        services.AddSingleton<DigiTalent.Infrastructure.SignVideoRendering.FfmpegToolCheck>();
+        services.AddSingleton<ISignAvatarTrackStore, DigiTalent.Infrastructure.SignVideoRendering.SignAvatarTrackStore>();
+        services.AddSingleton<ISignVideoRenderer, DigiTalent.Infrastructure.SignVideoRendering.ClipSequenceRenderer>();
+        services.AddSingleton<ISignVideoRenderer, DigiTalent.Infrastructure.SignVideoRendering.AvatarMotionRenderer>();
+        services.AddSingleton<DigiTalent.Infrastructure.BackgroundServices.SignVideoJobQueue>();
+        services.AddSingleton<ISignVideoJobQueue>(sp => sp.GetRequiredService<DigiTalent.Infrastructure.BackgroundServices.SignVideoJobQueue>());
+        services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.SignVideoWorker>();
+
         // Background Service: Auto-remind approaching deadlines
         services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.DeadlineReminderBackgroundService>();
 

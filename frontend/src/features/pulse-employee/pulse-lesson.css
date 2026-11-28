@@ -2661,3 +2661,90 @@
   font-weight: 700;
   text-decoration: none;
 }
+
+/* ── Lesson video (LessonVideo): the bar under the video with the sign-language switch ───────────────────────── */
+.pu-cv {
+  display: grid;
+}
+
+.pu-cv-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.pu-cv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.pu-cv-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1e40af;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pu-cv-toggle:hover {
+  border-color: #1e40af;
+}
+
+.pu-cv-toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* ── Sign-language video in the player (LessonVideo, docs/specs/2026-11-24-sign-language-video.md) ───────────
+   TRACK_ONLY: the signer track sits at the bottom left over the lesson video, half its height. */
+.pu-cv-stage {
+  position: relative;
+}
+
+.pu-cv-sign {
+  position: absolute;
+  left: 1.7%;
+  bottom: 3%;
+  height: 50%;
+  width: auto;
+  max-width: 36%;
+  aspect-ratio: 8 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #1e293b;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
+  pointer-events: none;
+}
+
+.pu-cv-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.pu-cv-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pu-cv-toggle[aria-pressed='true'] {
+  border-color: #1e40af;
+  background: #eff6ff;
+}

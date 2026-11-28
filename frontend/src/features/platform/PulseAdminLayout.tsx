@@ -24,6 +24,7 @@ import {
   Bell,
   BookOpen,
   BriefcaseBusiness,
+  HandMetal,
   Building2,
   Bug,
   CheckCheck,
@@ -73,6 +74,7 @@ const PLATFORM_ROUTE_ITEMS: readonly QuickSearchRouteItem[] = [
   { id: 'r-users', title: 'Người dùng', subtitle: 'Tra cứu, khóa và mở khóa tài khoản', category: 'Khách hàng', path: '/platform/users', icon: Users },
   { id: 'r-fw', title: 'Khung năng lực số', subtitle: '6 lĩnh vực năng lực số và các khóa học', category: 'Nội dung', path: '/platform/frameworks', icon: Gem },
   { id: 'r-pos', title: 'Vị trí tham chiếu', subtitle: 'Mức năng lực yêu cầu của 5 vị trí mẫu', category: 'Nội dung', path: '/platform/reference-positions', icon: BriefcaseBusiness },
+  { id: 'r-sign', title: 'Từ điển ký hiệu', subtitle: 'Video ký hiệu và chuyển động cho nhân vật 3D ra dấu', category: 'Nội dung', path: '/platform/sign-dictionary', icon: HandMetal },
   { id: 'r-ver', title: 'Phiên bản khóa học', subtitle: 'Sửa khóa học trong bản nháp và công bố', category: 'Nội dung', path: '/platform/versions', icon: Anchor },
   { id: 'r-com', title: 'Giá và đơn hàng', subtitle: 'Giá khóa học và lịch sử mua khóa', category: 'Doanh thu', path: '/platform/commerce', icon: ReceiptText },
   { id: 'r-aud', title: 'Nhật ký hoạt động', subtitle: 'Ai đã làm gì, lúc nào và vì sao', category: 'Hệ thống', path: '/platform/audit-log', icon: ScrollText },
@@ -110,6 +112,9 @@ function getPlatformBreadcrumb(pathname: string): BreadcrumbInfo {
   }
   if (pathname.startsWith('/platform/frameworks')) {
     return { groupLabel: 'Nội dung', groupPath: '/platform/frameworks', current: 'Khung năng lực số' };
+  }
+  if (pathname.startsWith('/platform/sign-dictionary')) {
+    return { groupLabel: 'Nội dung', groupPath: '/platform/frameworks', current: 'Từ điển ký hiệu' };
   }
   if (pathname.startsWith('/platform/reference-positions')) {
     return { groupLabel: 'Nội dung', groupPath: '/platform/frameworks', current: 'Vị trí tham chiếu' };

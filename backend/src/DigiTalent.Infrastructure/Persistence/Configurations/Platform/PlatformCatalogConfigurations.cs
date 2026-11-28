@@ -213,6 +213,37 @@ public class PlatformAssetConfiguration : IEntityTypeConfiguration<PlatformAsset
 }
 
 /// <summary>
+/// Table "platform_asset_captions" — SQL v3.11: captions of a video (draft + what learners see).
+/// </summary>
+public class PlatformAssetCaptionConfiguration : IEntityTypeConfiguration<PlatformAssetCaption>
+{
+    public void Configure(EntityTypeBuilder<PlatformAssetCaption> builder)
+    {
+        builder.ToTable("platform_asset_captions", table =>
+        {
+            table.HasCheckConstraint("ck_platform_asset_captions_language", "language IN ('vi')");
+            table.HasCheckConstraint("ck_platform_asset_captions_status", "status IN ('PROCESSING','READY','FAILED')");
+            table.HasCheckConstraint("ck_platform_asset_captions_source", "source IN ('AI','MANUAL')");
+            table.HasCheckConstraint("ck_platform_asset_captions_published", "(published_cues IS NULL) = (published_at IS NULL)");
+            table.HasCheckConstraint("ck_platform_asset_captions_error", "status = 'FAILED' OR error_code IS NULL");
+        });
+        builder.HasKey(c => c.Id);
+        builder.Property(c => c.Language).IsRequired().HasMaxLength(10).HasDefaultValue("vi");
+        builder.Property(c => c.Status).IsRequired().HasMaxLength(20);
+        builder.Property(c => c.Source).IsRequired().HasMaxLength(20);
+        builder.Property(c => c.DraftCues).IsRequired().HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(c => c.PublishedCues).HasColumnType("jsonb");
+        builder.Property(c => c.Model).HasMaxLength(100);
+        builder.Property(c => c.ErrorCode).HasMaxLength(50);
+        builder.HasIndex(c => new { c.AssetId, c.Language }).IsUnique().HasDatabaseName("uq_platform_asset_captions_asset_language");
+        builder.HasIndex(c => c.UpdatedAt).HasDatabaseName("ix_platform_asset_captions_processing").HasFilter("status = 'PROCESSING'");
+        builder.HasOne<PlatformAsset>().WithMany().HasForeignKey(c => c.AssetId);
+        builder.HasOne<User>().WithMany().HasForeignKey(c => c.PublishedByUserId);
+        builder.HasOne<User>().WithMany().HasForeignKey(c => c.RequestedByUserId);
+    }
+}
+
+/// <summary>
 /// Table "platform_module_blocks".
 /// </summary>
 public class PlatformModuleBlockConfiguration : IEntityTypeConfiguration<PlatformModuleBlock>
@@ -282,5 +313,158 @@ public class PlatformQuestionOptionConfiguration : IEntityTypeConfiguration<Plat
         builder.HasIndex(o => new { o.QuestionId, o.SortOrder }).HasDatabaseName("ix_platform_question_options_question");
         builder.HasIndex(o => o.QuestionId).IsUnique().HasFilter("is_correct").HasDatabaseName("ux_platform_question_options_correct");
         builder.HasOne<PlatformModuleQuestion>().WithMany().HasForeignKey(o => o.QuestionId);
+    }
+}
+
+/// <summary>
+/// Table "sign_glosses" — SQL v3.12: the sign-language dictionary of the 3D signing avatar.
+/// </summary>
+public class SignGlossConfiguration : IEntityTypeConfiguration<SignGloss>
+{
+    public void Configure(EntityTypeBuilder<SignGloss> builder)
+    {
+        builder.ToTable("sign_glosses", table =>
+        {
+            table.HasCheckConstraint("ck_sign_glosses_kind", "kind IN ('WORD','LETTER','DIGIT','TONE')");
+            table.HasCheckConstraint("ck_sign_glosses_status", "status IN ('DRAFT','PUBLISHED','ARCHIVED')");
+            table.HasCheckConstraint(
+                "ck_sign_glosses_motion",
+                "(motion_data IS NULL) = (motion_layout IS NULL) AND (motion_data IS NULL) = (motion_fps IS NULL) AND (motion_data IS NULL) = (motion_frames IS NULL)");
+            table.HasCheckConstraint("ck_sign_glosses_fps", "motion_fps IS NULL OR motion_fps BETWEEN 5 AND 60");
+            table.HasCheckConstraint("ck_sign_glosses_frames", "motion_frames IS NULL OR motion_frames BETWEEN 1 AND 1800");
+            table.HasCheckConstraint("ck_sign_glosses_trim", "motion_start_ms IS NULL OR motion_end_ms IS NULL OR motion_end_ms > motion_start_ms");
+            table.HasCheckConstraint("ck_sign_glosses_published", "status <> 'PUBLISHED' OR (motion_data IS NOT NULL AND published_at IS NOT NULL)");
+            // v3.13: variants and rights
+            table.HasCheckConstraint("ck_sign_glosses_sign_language", "sign_language ~ '^[A-Z]{2,10}$'");
+            table.HasCheckConstraint("ck_sign_glosses_region", "region ~ '^[A-Z]{2}(-[A-Z]{2,10})?$'");
+            table.HasCheckConstraint("ck_sign_glosses_synonyms", "jsonb_typeof(synonyms) = 'array'");
+            table.HasCheckConstraint("ck_sign_glosses_video_duration", "video_duration_ms IS NULL OR video_duration_ms > 0");
+        });
+        builder.HasKey(g => g.Id);
+        builder.Property(g => g.Gloss).IsRequired().HasMaxLength(100);
+        builder.Property(g => g.Normalized).IsRequired().HasMaxLength(100);
+        builder.Property(g => g.Kind).IsRequired().HasMaxLength(20);
+        builder.Property(g => g.Status).IsRequired().HasMaxLength(20);
+        builder.Property(g => g.SourceName).HasMaxLength(200);
+        builder.Property(g => g.SourceUrl).HasMaxLength(500);
+        builder.Property(g => g.LicenseNote).HasMaxLength(500);
+        builder.Property(g => g.MotionData).HasColumnType("bytea");
+        builder.Property(g => g.Mirrored).HasDefaultValue(false);
+        builder.Property(g => g.SignLanguage).IsRequired().HasMaxLength(10).HasDefaultValue("VSL");
+        builder.Property(g => g.Region).IsRequired().HasMaxLength(13).HasDefaultValue("VN");
+        builder.Property(g => g.Variant).HasMaxLength(50);
+        builder.Property(g => g.IsPreferred).HasDefaultValue(false);
+        builder.Property(g => g.Priority).HasDefaultValue((short)0);
+        builder.Property(g => g.Synonyms).IsRequired().HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(g => g.ConsentConfirmed).HasDefaultValue(false);
+        builder.Property(g => g.SignerName).HasMaxLength(200);
+        // One sign in use per text × kind × sign language × region × variant (a missing variant counts as one value).
+        builder.HasIndex(g => new { g.Normalized, g.Kind, g.SignLanguage, g.Region, g.Variant })
+            .IsUnique()
+            .AreNullsDistinct(false)
+            .HasDatabaseName("ux_sign_glosses_variant")
+            .HasFilter("status <> 'ARCHIVED'");
+        // At most one default sign per text × kind × sign language.
+        builder.HasIndex(g => new { g.Normalized, g.Kind, g.SignLanguage })
+            .IsUnique()
+            .HasDatabaseName("ux_sign_glosses_preferred")
+            .HasFilter("is_preferred AND status <> 'ARCHIVED'");
+        builder.HasIndex(g => g.Status).HasDatabaseName("ix_sign_glosses_status");
+        builder.HasOne<PlatformAsset>().WithMany().HasForeignKey(g => g.VideoAssetId);
+        builder.HasOne<User>().WithMany().HasForeignKey(g => g.CreatedByUserId);
+        builder.HasOne<User>().WithMany().HasForeignKey(g => g.PublishedByUserId);
+    }
+}
+
+/// <summary>
+/// Table "platform_sign_language_tracks" — SQL v3.13: the sign-language video of a lesson video (draft + published output).
+/// </summary>
+public class PlatformSignLanguageTrackConfiguration : IEntityTypeConfiguration<PlatformSignLanguageTrack>
+{
+    public void Configure(EntityTypeBuilder<PlatformSignLanguageTrack> builder)
+    {
+        builder.ToTable("platform_sign_language_tracks", table =>
+        {
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_language", "language IN ('vi')");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_sign_language", "sign_language ~ '^[A-Z]{2,10}$'");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_region", "region ~ '^[A-Z]{2}(-[A-Z]{2,10})?$'");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_caption_source", "caption_source IN ('PUBLISHED','DRAFT')");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_render_mode", "render_mode IN ('OVERLAY','FULLSCREEN','TRACK_ONLY')");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_renderer", "renderer IN ('CLIP','AVATAR')");
+            table.HasCheckConstraint(
+                "ck_platform_sign_language_tracks_status",
+                "status IN ('ANALYZING','MISSING_GLOSSES','READY_TO_RENDER','RENDERING','READY','FAILED','PUBLISHED')");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_progress", "progress BETWEEN 0 AND 100");
+            table.HasCheckConstraint(
+                "ck_platform_sign_language_tracks_progress_stage",
+                "progress_stage IS NULL OR progress_stage IN ('QUEUED','DOWNLOADING','PREPARING_CLIPS','JOINING','COMPOSING','CHECKING','SAVING')");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_error", "status = 'FAILED' OR error_code IS NULL");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_ready", "status NOT IN ('READY','PUBLISHED') OR output_asset_id IS NOT NULL");
+            table.HasCheckConstraint(
+                "ck_platform_sign_language_tracks_published",
+                "(published_output_asset_id IS NULL) = (published_at IS NULL) AND (published_output_asset_id IS NULL) = (published_render_mode IS NULL)");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_published_mode", "published_render_mode IS NULL OR published_render_mode IN ('OVERLAY','FULLSCREEN','TRACK_ONLY')");
+            table.HasCheckConstraint(
+                "ck_platform_sign_language_tracks_output_meta",
+                "(output_duration_ms IS NULL OR output_duration_ms > 0) AND (output_width IS NULL OR output_width > 0) AND (output_height IS NULL OR output_height > 0)");
+            table.HasCheckConstraint("ck_platform_sign_language_tracks_settings", "jsonb_typeof(settings) = 'object'");
+        });
+        builder.HasKey(t => t.Id);
+        builder.Property(t => t.Language).IsRequired().HasMaxLength(10).HasDefaultValue("vi");
+        builder.Property(t => t.SignLanguage).IsRequired().HasMaxLength(10).HasDefaultValue("VSL");
+        builder.Property(t => t.Region).IsRequired().HasMaxLength(13).HasDefaultValue("VN");
+        builder.Property(t => t.Variant).HasMaxLength(50);
+        builder.Property(t => t.CaptionSource).IsRequired().HasMaxLength(20);
+        builder.Property(t => t.CaptionFingerprint).IsRequired().HasMaxLength(64);
+        builder.Property(t => t.RenderMode).IsRequired().HasMaxLength(20);
+        builder.Property(t => t.Renderer).IsRequired().HasMaxLength(20);
+        builder.Property(t => t.Status).IsRequired().HasMaxLength(30);
+        builder.Property(t => t.Settings).IsRequired().HasColumnType("jsonb").HasDefaultValueSql("'{}'::jsonb");
+        builder.Property(t => t.Progress).HasDefaultValue((short)0);
+        builder.Property(t => t.ProgressStage).HasMaxLength(30);
+        builder.Property(t => t.ProgressDetail).HasMaxLength(200);
+        builder.Property(t => t.RenderAttempts).HasDefaultValue(0);
+        builder.Property(t => t.ErrorCode).HasMaxLength(50);
+        builder.Property(t => t.ErrorMessage).HasMaxLength(500);
+        builder.Property(t => t.RenderedFingerprint).HasMaxLength(64);
+        builder.Property(t => t.PublishedRenderMode).HasMaxLength(20);
+        builder.Property(t => t.PublishedSnapshot).HasColumnType("jsonb");
+        builder.HasIndex(t => new { t.SourceAssetId, t.SignLanguage }).IsUnique().HasDatabaseName("uq_platform_sign_language_tracks_asset_sign_language");
+        builder.HasIndex(t => t.UpdatedAt).HasDatabaseName("ix_platform_sign_language_tracks_rendering").HasFilter("status = 'RENDERING'");
+        builder.HasOne<PlatformAsset>().WithMany().HasForeignKey(t => t.SourceAssetId);
+        builder.HasOne<PlatformAsset>().WithMany().HasForeignKey(t => t.OutputAssetId);
+        builder.HasOne<PlatformAsset>().WithMany().HasForeignKey(t => t.PublishedOutputAssetId);
+        builder.HasOne<User>().WithMany().HasForeignKey(t => t.CreatedByUserId);
+        builder.HasOne<User>().WithMany().HasForeignKey(t => t.RequestedByUserId);
+        builder.HasOne<User>().WithMany().HasForeignKey(t => t.PublishedByUserId);
+    }
+}
+
+/// <summary>
+/// Table "platform_sign_language_segments" — SQL v3.13: one caption sentence of a sign-language track and its signs.
+/// </summary>
+public class PlatformSignLanguageSegmentConfiguration : IEntityTypeConfiguration<PlatformSignLanguageSegment>
+{
+    public void Configure(EntityTypeBuilder<PlatformSignLanguageSegment> builder)
+    {
+        builder.ToTable("platform_sign_language_segments", table =>
+        {
+            table.HasCheckConstraint("ck_platform_sign_language_segments_index", "segment_index >= 0");
+            table.HasCheckConstraint("ck_platform_sign_language_segments_time", "start_ms >= 0 AND end_ms > start_ms");
+            table.HasCheckConstraint("ck_platform_sign_language_segments_review", "review_status IN ('PENDING','APPROVED','SKIPPED')");
+            table.HasCheckConstraint("ck_platform_sign_language_segments_reviewed", "review_status = 'PENDING' OR reviewed_at IS NOT NULL");
+            table.HasCheckConstraint("ck_platform_sign_language_segments_confidence", "confidence BETWEEN 0 AND 1");
+            table.HasCheckConstraint("ck_platform_sign_language_segments_sequence", "jsonb_typeof(sequence) = 'array' AND jsonb_typeof(missing) = 'array'");
+        });
+        builder.HasKey(s => s.Id);
+        builder.Property(s => s.CaptionText).IsRequired().HasMaxLength(200);
+        builder.Property(s => s.Sequence).IsRequired().HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(s => s.Missing).IsRequired().HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        builder.Property(s => s.Confidence).HasPrecision(4, 3);
+        builder.Property(s => s.ReviewStatus).IsRequired().HasMaxLength(20).HasDefaultValue("PENDING");
+        builder.Property(s => s.ReviewNote).HasMaxLength(500);
+        builder.HasIndex(s => new { s.TrackId, s.SegmentIndex }).IsUnique().HasDatabaseName("uq_platform_sign_language_segments_track_index");
+        builder.HasOne<PlatformSignLanguageTrack>().WithMany().HasForeignKey(s => s.TrackId);
+        builder.HasOne<User>().WithMany().HasForeignKey(s => s.ReviewedByUserId);
     }
 }

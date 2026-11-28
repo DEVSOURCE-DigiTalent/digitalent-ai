@@ -343,6 +343,40 @@ public static class Statuses
         public const string Retired = "RETIRED";
     }
 
+    /// <summary>sign_glosses.status — only PUBLISHED signs are used for learners (schema v3.12).</summary>
+    public static class SignGloss
+    {
+        public const string Draft = "DRAFT";
+        public const string Published = "PUBLISHED";
+        public const string Archived = "ARCHIVED";
+    }
+
+    /// <summary>
+    /// platform_sign_language_tracks.status — state of the sign-language video draft (schema v3.13). No row = NONE.
+    /// PUBLISHED = the draft is what learners see; learners keep the published output while the draft changes.
+    /// </summary>
+    public static class SignLanguageTrack
+    {
+        /// <summary>Reserved for an AI ordering pass; the dictionary matching of the MVP runs inside the request.</summary>
+        public const string Analyzing = "ANALYZING";
+        public const string MissingGlosses = "MISSING_GLOSSES";
+        public const string ReadyToRender = "READY_TO_RENDER";
+        public const string Rendering = "RENDERING";
+        public const string Ready = "READY";
+        public const string Failed = "FAILED";
+        public const string Published = "PUBLISHED";
+
+        public static readonly string[] All = { Analyzing, MissingGlosses, ReadyToRender, Rendering, Ready, Failed, Published };
+    }
+
+    /// <summary>platform_asset_captions.status — state of the caption draft (schema v3.11).</summary>
+    public static class PlatformAssetCaption
+    {
+        public const string Processing = "PROCESSING";
+        public const string Ready = "READY";
+        public const string Failed = "FAILED";
+    }
+
     /// <summary>file_objects.access_level</summary>
     public static class FileAccessLevel
     {
