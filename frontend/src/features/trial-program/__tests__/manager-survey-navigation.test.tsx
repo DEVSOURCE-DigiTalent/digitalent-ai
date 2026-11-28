@@ -8,7 +8,8 @@ import { PULSE_PATHS } from '@/features/pulse-employee/lib/paths';
 
 const scenario = vi.hoisted(() => ({ status: 'NOT_STARTED', canStart: false }));
 vi.mock('@/hooks/use-current-user', () => ({
-  useCurrentUser: (select: (state: { user: { roles: string[] } }) => unknown) => select({ user: { roles: ['MANAGER'] } }),
+  useCurrentUser: (select: (state: { user: { roles: string[]; enterpriseTrialStatus: string } }) => unknown) =>
+    select({ user: { roles: ['MANAGER'], enterpriseTrialStatus: 'trial_active' } }),
 }));
 vi.mock('@/hooks/use-trial-program', () => ({
   useIsEnterpriseTrial: () => true,

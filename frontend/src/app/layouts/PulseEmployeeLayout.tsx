@@ -17,6 +17,7 @@ import { trialGateOf } from '../../features/pulse-employee/lib/trial-gate';
 import '../../features/pulse-employee/pulse-trial.css';
 import { useIsEnterpriseTrial, useMyTrialAssessment } from '../../hooks/use-trial-program';
 import { usePulseOverview } from '../../hooks/use-pulse';
+import { useSurveyOver } from '../../hooks/use-survey-over';
 import { AssistantWidget } from '../../features/assistant/components/AssistantWidget';
 import { RoleTutorialContainer } from '../../features/onboarding-tutorial';
 import '../../features/pulse-employee/pulse.css';
@@ -50,10 +51,15 @@ function OwnerLearningShell({ pathname: _pathname }: { pathname: string }) {
 export function PulseEmployeeLayout() {
   const { pathname } = useLocation();
   const exam = isExamPath(pathname);
-  const trial = useIsEnterpriseTrial();
+  // A trial company that bought a course is a customer: the survey is over (the owner no longer runs it), so its
+  // employees are not held on the survey page any more and learn as in any company.
+  const surveyOver = useSurveyOver();
+  const trial = useIsEnterpriseTrial() && !surveyOver;
   const owner = useCurrentUser((s) => Boolean(s.user?.roles.includes(ROLES.OWNER)));
   const manager = useCurrentUser((s) => Boolean(s.user?.roles.includes(ROLES.MANAGER)));
-  const { data: myTrial, isLoading: isTrialLoading } = useMyTrialAssessment(trial);
+  // Another component (the header) may have the survey in the query cache: once the survey is over it is ignored here.
+  const { data: myTrialData, isLoading: isTrialLoading } = useMyTrialAssessment(trial);
+  const myTrial = trial ? myTrialData : undefined;
   const gate = trialGateOf(myTrial, undefined, owner);
   const { data: overview } = usePulseOverview(trial && !owner && myTrial?.status === 'REVIEWED');
   const trialLearning = trial && !owner && myTrial?.status === 'REVIEWED' &&

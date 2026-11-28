@@ -18,9 +18,9 @@ export interface CourseUpdateCourse {
   kind: 'UPDATED' | 'ADDED';
   /** Basic, or bought: employees can learn it. */
   owned: boolean;
-  /** Employees learning it now: applying makes them start again from the beginning. */
+  /** Employees learning it now: they move to the new content at once or after the grace the decider chooses. */
   learnersInProgress: number;
-  /** Employees who passed it: applying makes them learn it again (the level stops counting, the certificate stays). */
+  /** Employees who passed it: they keep their result (a major change makes them learn it again). */
   learnersPassed: number;
   /** Employees learn the company version R&D applied: applying gives them DigiTalent's content, R&D keeps its version as a draft. */
   companyVersion: boolean;
@@ -54,7 +54,10 @@ async function unwrap<T>(request: Promise<{ data: ApiResponse<T> }>): Promise<T>
 
 export const courseUpdateService = {
   get: () => unwrap<CourseUpdates>(apiClient.get('/course-updates')),
-  apply: (versionNo: number) => unwrap<CourseUpdates>(apiClient.post('/course-updates/apply', { versionNo })),
+  /** graceDays: 0 = employees learning a changed course move to the new content at once; 7 / 14 / 30 = days to finish the old one. */
+  /** majorChange: the old content is wrong now, employees who finished a changed course learn it again. */
+  apply: (versionNo: number, graceDays: number, majorChange = false) =>
+    unwrap<CourseUpdates>(apiClient.post('/course-updates/apply', { versionNo, graceDays, majorChange })),
   keep: (versionNo: number, reason: string) =>
     unwrap<CourseUpdates>(apiClient.post('/course-updates/keep', { versionNo, reason })),
 };

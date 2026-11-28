@@ -133,7 +133,7 @@ public class PlatformCatalogApplyTests
     }
 
     [Fact]
-    public async Task Going_back_needs_a_reason_and_brings_the_old_content_as_a_new_revision_without_moving_learners()
+    public async Task Going_back_needs_a_reason_and_brings_the_old_content_as_a_new_revision_learners_go_on_with()
     {
         await using var world = await CreateWorldAsync();
         var v2 = await world.PublishEditAsync("M1-F", "M1-F bản 2", applyToAll: false);
@@ -160,8 +160,8 @@ public class PlatformCatalogApplyTests
         restored.Title.Should().Be(v1Title);
         restored.SupersedesCourseId.Should().Be(learning.Id);
         var learner = await world.Context.Enrollments.AsNoTracking().SingleAsync(e => e.Id == enrollment.Id);
-        learner.CourseId.Should().Be(learning.Id, "tiến độ cũ được giữ làm lịch sử");
-        learner.Status.Should().Be(Statuses.Enrollment.Cancelled, "nội dung đổi thì người đang học học lại từ đầu");
+        learner.CourseId.Should().Be(restored.Id, "thay đổi nhỏ (mặc định): người đang học học tiếp trên nội dung mới");
+        learner.Status.Should().Be(Statuses.Enrollment.InProgress, "tiến trình được giữ");
 
         await world.ApplyAsync(world.OrgA, v2);
         var forward = await world.LatestAsync(world.OrgA, "M1-F");

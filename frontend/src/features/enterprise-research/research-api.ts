@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { MEMBERS_KEY } from '@/hooks/use-members';
 import apiClient from '@/services/api-client';
 import type { PulseSlide } from '@/services/pulse.service';
 
@@ -21,7 +22,16 @@ export interface ResearchCourse extends ResearchCourseVersion {
   description?: string;
   tier: number;
   modules: string[];
+  /** Modules or final edited and not applied yet (the information draft is `draft`). */
+  hasContentDraft?: boolean;
+  /** Editor revision, sent back when the course is applied with others. */
+  editorRevision?: number;
+  learnersInProgress?: number;
+  learnersFinished?: number;
 }
+
+/** Edited and not applied: content or information. */
+export const hasUnappliedDraft = (course: ResearchCourse) => Boolean(course.hasContentDraft || course.draft);
 
 const resource = '/enterprise/rnd';
 /**
@@ -36,6 +46,8 @@ export interface ResearchAccess {
   canView: boolean;
   canEdit: boolean;
   reason?: string | null;
+  /** R&D invitations not activated yet (owner only); switching R&D off revokes them. */
+  pendingInvitations?: number;
 }
 
 export const researchKeys = {
@@ -75,6 +87,8 @@ export function useSetResearchEnabled() {
       client.setQueryData(researchKeys.settings(userId), enabled);
       await client.invalidateQueries({ queryKey: researchKeys.access(userId) });
       await client.invalidateQueries({ queryKey: researchKeys.courses(userId) });
+      // Switching off revokes the open R&D invitations.
+      if (!enabled) await client.invalidateQueries({ queryKey: MEMBERS_KEY });
     },
   });
 }

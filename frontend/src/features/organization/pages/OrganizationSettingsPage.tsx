@@ -20,9 +20,11 @@ export function OrganizationSettingsPage(){
   const research = useResearchSettings();
   const access = useResearchAccess();
   const setResearch = useSetResearchEnabled();
-  // Switching R&D off while R&D accounts work: they lose access and the owner takes over, so ask first.
+  // Switching R&D off while R&D accounts work or are invited: they lose access (open invitations are revoked) and the
+  // owner takes over, so ask first.
   const [confirmOff, setConfirmOff] = useState(false);
   const researchers = access.data?.researchers ?? 0;
+  const pendingInvitations = access.data?.pendingInvitations ?? 0;
   const toggleResearch = async (enabled: boolean) => {
     try {
       await setResearch.mutateAsync(enabled);
@@ -42,12 +44,13 @@ export function OrganizationSettingsPage(){
       <section className="aw-card">
         <div className="aw-section-title"><span className="aw-icon"><FlaskConical size={20} /></span><div>
           <h2>R&D doanh nghiệp</h2>
-          <p>Bật khi công ty có bộ phận R&D: mời hoặc cấp vai trò R&D, tài khoản R&D sửa, áp dụng khóa học và quyết bản cập nhật, bạn chỉ xem. Công ty không có R&D thì để tắt: bạn tự làm. Đổi qua lại thì khóa đã áp dụng vẫn giữ cho nhân viên.</p>
+          <p>Bật khi công ty có bộ phận R&D: R&D sửa và áp dụng khóa học, bạn chỉ xem.</p>
         </div></div>
         {research.isError ? <button type="button" className="aw-secondary" onClick={() => void research.refetch()}>Tải lại cài đặt R&D</button> : (
-          <label className="inline-flex items-center gap-2 text-sm font-semibold">
+          <label className="aw-switch">
             <input type="checkbox" role="switch" checked={research.data === true}
-              disabled={research.isPending || setResearch.isPending} onChange={(event) => { if (!event.target.checked && researchers > 0) setConfirmOff(true); else void toggleResearch(event.target.checked); }} />
+              disabled={research.isPending || setResearch.isPending} onChange={(event) => { if (!event.target.checked && researchers + pendingInvitations > 0) setConfirmOff(true); else void toggleResearch(event.target.checked); }} />
+            <span className="aw-switch__track" aria-hidden="true"><span className="aw-switch__thumb" /></span>
             Bật tính năng R&D
           </label>
         )}
@@ -57,7 +60,11 @@ export function OrganizationSettingsPage(){
           <button type="button" className="aw-secondary" disabled={setResearch.isPending} onClick={() => setConfirmOff(false)}>Hủy</button>
           <button type="button" className="aw-primary" disabled={setResearch.isPending} onClick={() => void toggleResearch(false)}>Tắt R&D</button>
         </>}>
-        <p>{researchers} tài khoản R&D sẽ không sửa được khóa học nữa. Từ giờ bạn tự sửa, áp dụng khóa học và quyết bản cập nhật. Khóa R&D đã áp dụng vẫn giữ cho nhân viên.</p>
+        <ul className="list-disc space-y-1 pl-5">
+          {researchers > 0 && <li>{researchers} tài khoản R&D sẽ không sửa được khóa học nữa.</li>}
+          {pendingInvitations > 0 && <li>{pendingInvitations} lời mời R&D chưa kích hoạt sẽ bị thu hồi.</li>}
+        </ul>
+        <p className="mt-2">Từ giờ bạn tự sửa, áp dụng khóa học và quyết bản cập nhật. Khóa R&D đã áp dụng vẫn giữ cho nhân viên.</p>
       </Modal>
       <form onSubmit={onSubmit} noValidate className="aw-org-form">
         <section className="aw-card"><div className="aw-section-title"><span className="aw-icon"><Building2 size={20}/></span><div><h2>{translateUi("Thông tin doanh nghiệp")}</h2><p>{translateUi("Thông tin sử dụng trong không gian làm việc.")}</p></div></div>

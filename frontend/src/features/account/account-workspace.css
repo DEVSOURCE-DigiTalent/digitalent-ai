@@ -140,3 +140,14 @@ to{opacity:1;transform:translateY(0)}
 }
 @media(prefers-reduced-motion:reduce){.account-workspace,.account-workspace *{animation:none!important;transition:none!important}
 }
+/* On/off switch (R&D): the native checkbox stays for keyboard and screen readers, the track is what is seen */
+.aw-switch{position:relative;display:inline-flex;align-items:center;gap:12px;color:#234454;font-size:14px;font-weight:650;cursor:pointer;user-select:none}
+.aw-switch input{position:absolute;width:1px;height:1px;margin:0;opacity:0;pointer-events:none}
+.aw-switch__track{position:relative;flex-shrink:0;width:44px;height:26px;border-radius:999px;background:#d3e0e6;box-shadow:inset 0 1px 2px #0f3d5422;transition:background .2s ease}
+.aw-switch__thumb{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0f3d5440;transition:transform .2s ease}
+.aw-switch input:checked+.aw-switch__track{background:linear-gradient(120deg,#147d85,#15998d)}
+.aw-switch input:checked+.aw-switch__track .aw-switch__thumb{transform:translateX(18px)}
+.aw-switch input:focus-visible+.aw-switch__track{outline:2px solid #148f86;outline-offset:2px}
+.aw-switch:has(input:disabled){cursor:not-allowed}
+.aw-switch input:disabled+.aw-switch__track{opacity:.5}
+@media (prefers-reduced-motion:reduce){.aw-switch__track,.aw-switch__thumb{transition:none}}

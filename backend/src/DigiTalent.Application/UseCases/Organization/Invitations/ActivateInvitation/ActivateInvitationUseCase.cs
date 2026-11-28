@@ -3,6 +3,7 @@ using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
 using DigiTalent.Application.UseCases.Departments;
 using DigiTalent.Application.UseCases.Organization.Members;
+using DigiTalent.Application.UseCases.Organization.Research;
 using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using DigiTalent.Domain.Entities;
@@ -14,9 +15,14 @@ namespace DigiTalent.Application.UseCases.Organization.Invitations;
 /// Activates an invitation (public page /activate/:token): creates the account with the chosen password, grants
 /// the invited role, creates the employee profile placed as invited, and marks the invitation ACCEPTED — all in
 /// one save. The invitee then signs in normally.
+/// R&D builds the company's courses and is not a learner: an R&D account gets no employee profile (no department,
+/// position or manager), so it is not counted in the workforce; turning R&D off revokes the open R&D invitations.
 /// </summary>
 public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput, ActivateInvitationUseCaseOutput>
 {
+    public const string ResearchOffMessage =
+        "Doanh nghiệp đã tắt R&D nên lời mời này không còn dùng được. Hãy liên hệ chủ doanh nghiệp.";
+
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
 
@@ -59,6 +65,12 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
             throw new ConflictException("An account with this e-mail already exists.");
         }
 
+        var roleCode = await _context.Roles.Where(r => r.Id == invitation.RoleId).Select(r => r.Code).SingleAsync();
+        if (roleCode == Roles.Research && !await EnterpriseResearch.IsEnabledAsync(_context, invitation.OrganizationId))
+        {
+            throw new ConflictException(ResearchOffMessage);
+        }
+
         // 3. Account + role
         var fullName = string.IsNullOrWhiteSpace(input.FullName) ? invitation.FullName : input.FullName.Trim();
         var user = new User
@@ -79,8 +91,7 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
             AssignedAt = now,
         });
 
-        // 4. Employee profile, placed as invited (falls back to the first active department)
-        var roleCode = await _context.Roles.Where(r => r.Id == invitation.RoleId).Select(r => r.Code).SingleAsync();
+        // 4. Employee profile, placed as invited (R&D and an Owner without a department get none)
         var employee = await CreateEmployeeAsync(invitation, user, fullName, roleCode);
 
         var isManager = roleCode == Roles.Manager;
@@ -131,9 +142,13 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
         };
     }
 
-    /// <returns>The linked or new profile, or null when the organization has no active department yet.</returns>
+    /// <returns>The linked or new profile; null for R&D, for an Owner invited without a department (placed later, like
+    /// the Owner who signed up) and when the organization has no active department yet.</returns>
     private async Task<Employee?> CreateEmployeeAsync(MemberInvitation invitation, User user, string fullName, string roleCode)
     {
+        if (roleCode == Roles.Research)
+            return null;
+
         // HR may already have created a profile without account for this person (employees API): link it
         // instead of creating a duplicate (work e-mail is unique per organization)
         var existing = await _context.Employees.FirstOrDefaultAsync(e =>
@@ -153,11 +168,14 @@ public class ActivateInvitationUseCase : IUseCase<ActivateInvitationUseCaseInput
         var activeDepartments = _context.Departments
             .Where(d => d.OrganizationId == invitation.OrganizationId && d.Status == Statuses.MasterData.Active);
 
+        // Only an employee or manager invitation from before departments were required falls back to the first one.
         var department = invitation.DepartmentId.HasValue
             ? await activeDepartments.FirstOrDefaultAsync(d => d.Id == invitation.DepartmentId.Value)
             : existing != null
                 ? await activeDepartments.FirstOrDefaultAsync(d => d.Id == existing.DepartmentId)
-                : await activeDepartments.OrderBy(d => d.Code).FirstOrDefaultAsync();
+                : roleCode is Roles.Employee or Roles.Manager
+                    ? await activeDepartments.OrderBy(d => d.Code).FirstOrDefaultAsync()
+                    : null;
         if ((invitation.DepartmentId.HasValue || existing != null) && department == null)
             throw new ConflictException("Phòng ban trong lời mời không còn hoạt động. Hãy nhờ doanh nghiệp gửi lại lời mời.");
         if (department == null)

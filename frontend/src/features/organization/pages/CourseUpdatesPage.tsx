@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { ArrowLeft, CheckCircle2, History, RefreshCw, ShieldCheck, Sparkles, Users } from 'lucide-react';
 import { PERMISSIONS, usePermission } from '@/hooks/use-permission';
 import { Modal, PageHeader } from '@/components/shared';
+import { ChangeSizeChoice } from '@/components/shared/ChangeSizeChoice';
+import { GraceDaysChoice } from '@/components/shared/GraceDaysChoice';
+import { DEFAULT_GRACE_DAYS, switchDay, type GraceDays } from '@/lib/grace-days';
 import { PageLoading } from '@/components/shared/LoadingState';
 import { useApplyCourseUpdate, useCourseUpdates, useKeepCourseVersion } from '@/hooks/use-course-updates';
 import { organizationErrorMessage } from '@/lib/organization-errors';
@@ -176,10 +179,14 @@ function ApplyDialog({ data, open, onClose }: { data: CourseUpdates; open: boole
   const learning = data.courses.reduce((sum, course) => sum + course.learnersInProgress, 0);
   const passed = data.courses.reduce((sum, course) => sum + course.learnersPassed, 0);
   const companyVersions = data.courses.filter((course) => course.companyVersion).length;
+  const [graceDays, setGraceDays] = useState<GraceDays>(DEFAULT_GRACE_DAYS);
+  const [majorChange, setMajorChange] = useState(false);
   const submit = async () => {
     try {
-      await apply.mutateAsync(data.latestVersionNo);
-      toast.success(translateUi(`Đã áp dụng v${data.latestVersionNo} cho công ty`));
+      await apply.mutateAsync({ versionNo: data.latestVersionNo, graceDays, majorChange });
+      toast.success(learning > 0 && graceDays > 0
+        ? translateUi(`Đã áp dụng v${data.latestVersionNo}. Người đang học có tới ${switchDay(graceDays)} để học xong bản cũ.`)
+        : translateUi(`Đã áp dụng v${data.latestVersionNo} cho công ty`));
       onClose();
     } catch (error) {
       toast.error(organizationErrorMessage(error, translateUi('Không áp dụng được bản cập nhật')));
@@ -202,21 +209,24 @@ function ApplyDialog({ data, open, onClose }: { data: CourseUpdates; open: boole
       )}
     >
       <ul className="list-disc space-y-1.5 pl-5 text-sm text-ent-fg-2">
-        <li>{translateUi(`${data.courses.length} khóa đổi sang nội dung mới; ai học các khóa này đều học lại từ đầu.`)}</li>
+        <li>{translateUi(`${data.courses.length} khóa đổi sang nội dung mới: người bắt đầu học từ giờ học bản mới.`)}</li>
         <li>
           {learning > 0
-            ? translateUi(`${learning} người đang học dở mất tiến độ cũ; bài cuối khóa đang chờ chấm bị hủy.`)
+            ? translateUi(`${learning} người đang học dở: chọn bên dưới họ có bao lâu để học xong bản cũ.`)
             : translateUi('Không ai đang học dở các khóa này.')}
         </li>
         <li>
-          {passed > 0
-            ? translateUi(`${passed} người đã đạt phải học lại; mức từ các khóa này không còn tính, chứng nhận đã cấp vẫn giữ.`)
-            : translateUi('Chưa ai đạt các khóa này.')}
+          {passed === 0 ? translateUi('Chưa ai học xong các khóa này.')
+            : majorChange ? translateUi(`${passed} người đã học xong học lại để lấy chứng nhận mới; chứng nhận cũ vẫn giữ.`)
+            : translateUi(`${passed} người đã học xong vẫn giữ kết quả.`)}
         </li>
         {companyVersions > 0 && (
           <li>{translateUi(`${companyVersions} khóa đang dùng bản doanh nghiệp sẽ đổi sang nội dung DigiTalent mới; bản doanh nghiệp được giữ làm bản nháp để R&D xem lại.`)}</li>
         )}
       </ul>
+      <ChangeSizeChoice major={majorChange} onChange={setMajorChange} disabled={apply.isPending} />
+      <GraceDaysChoice value={graceDays} onChange={setGraceDays} disabled={apply.isPending} major={majorChange} />
+      <p className="mt-3 text-xs text-ent-fg-2">{translateUi('Mọi nhân viên nhận thông báo về nội dung mới.')}</p>
     </Modal>
   );
 }

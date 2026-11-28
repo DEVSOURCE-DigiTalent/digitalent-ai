@@ -75,9 +75,9 @@ it('saves the information as a draft and applies the company version with one bu
 
   fireEvent.click(screen.getByRole('button', { name: /Áp dụng cho doanh nghiệp/ }));
   const dialog = await screen.findByRole('dialog');
-  expect(dialog).toHaveTextContent('học lại từ đầu');
+  expect(within(dialog).getByRole('radio', { name: /30 ngày/ })).toBeChecked();
   fireEvent.click(within(dialog).getByRole('button', { name: 'Áp dụng' }));
-  await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('/enterprise/rnd/courses/basic-1/apply', { revision: 3, info: content }));
+  await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('/enterprise/rnd/courses/basic-1/apply', { revision: 3, info: content, graceDays: 30, majorChange: false }));
   await screen.findByText('Đang dùng bản doanh nghiệp');
   expect(screen.getByRole('button', { name: 'Gỡ bản doanh nghiệp' })).toBeInTheDocument();
 });
@@ -126,6 +126,9 @@ it('uses the shared module editor for adding, renaming and removing a module in 
   fireEvent.blur(title);
   await screen.findByRole('button', { name: /Quy trình nội bộ/ });
   await waitFor(() => expect(course.modules[0]?.title).toBe('Quy trình nội bộ'));
+  // The course list learns about the draft at once (no reload): it is marked and counted for "apply them all".
+  expect(await screen.findByText(/Còn 1 khóa có bản nháp chưa áp dụng: M1-F/)).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'M1-F · Khóa Basic · Bản nháp' })).toBeInTheDocument();
   // R&D gets the same AI help as the admin builder on its company draft.
   expect(screen.getByRole('heading', { name: 'Trợ lý soạn nội dung theo Thông tư 02' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Kiểm tra theo Thông tư' })).toBeInTheDocument();
@@ -159,4 +162,35 @@ it('lets the owner of a company with R&D only view what R&D did', async () => {
   expect(screen.queryByRole('button', { name: 'Lưu nháp' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Thêm mô đun' })).toBeNull();
   expect(screen.getByRole('textbox', { name: 'Mục tiêu học tập của doanh nghiệp' })).toBeDisabled();
+});
+
+it('applies every edited course at once, asking only the change size and the time', async () => {
+  const list = [
+    { courseId: 'basic-1', code: 'M1-F', tier: 1, title: 'Khai thác dữ liệu', modules: ['Nguồn dữ liệu'], draft: null, applied: null },
+    { courseId: 'basic-2', code: 'M2-F', tier: 1, title: 'Giao tiếp số', modules: ['Kênh'], draft: null, applied: null,
+      hasContentDraft: true, editorRevision: 5, learnersInProgress: 1, learnersFinished: 0 },
+  ];
+  vi.mocked(apiClient.get).mockImplementation(async (path) => ({
+    data: {
+      data: path.endsWith('/access') ? ACCESS
+        : path.endsWith('/editor') ? { course: detail(), revision: 3, hasDraft: true, hasApplied: false, problems: [] }
+        : list,
+    },
+  }));
+  vi.mocked(apiClient.post).mockResolvedValue({ data: { data: { applied: ['M1-F', 'M2-F'] } } });
+  renderPage();
+
+  expect(await screen.findByText(/Còn 1 khóa có bản nháp chưa áp dụng: M2-F/)).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'M2-F · Giao tiếp số · Bản nháp' })).toBeInTheDocument();
+  fireEvent.click(await screen.findByRole('button', { name: /Áp dụng cho doanh nghiệp/ }));
+  const dialog = await screen.findByRole('dialog', { name: 'Áp dụng cho doanh nghiệp?' });
+  expect(dialog).toHaveTextContent('Áp dụng cùng lúc 2 khóa đã sửa: M1-F, M2-F.');
+  expect(within(dialog).queryByRole('checkbox')).toBeNull();
+  expect(within(dialog).getByRole('radio', { name: /Nhỏ/ })).toBeChecked();
+  expect(within(dialog).getByRole('radio', { name: /30 ngày/ })).toBeChecked();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Áp dụng' }));
+  await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('/enterprise/rnd/apply', expect.objectContaining({
+    courses: [expect.objectContaining({ courseId: 'basic-1', revision: 3 }), { courseId: 'basic-2', revision: 5 }],
+    graceDays: 30, majorChange: false,
+  })));
 });

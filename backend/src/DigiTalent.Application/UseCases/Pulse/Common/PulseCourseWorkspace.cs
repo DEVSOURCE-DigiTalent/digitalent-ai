@@ -50,14 +50,26 @@ public class PulseCourseWorkspace
     public async Task<(PulseLearnerSnapshot Snapshot, PulseCourseState Course)> ResolveForAnswerAsync(Guid courseId)
     {
         var (snapshot, state) = await ResolveAsync(courseId);
-        if (state.Course.CourseId != courseId && state.Enrollment?.CourseId != courseId
-            && await _context.Enrollments.AsNoTracking().AnyAsync(e => e.CourseId == courseId
-                && e.EmployeeId == snapshot.Employee.Id && e.Status == Statuses.Enrollment.Cancelled))
+        if (state.Course.CourseId != courseId && state.Enrollment?.CourseId != courseId)
         {
-            throw new ConflictException(RelearnMessage);
+            if (await _context.Enrollments.AsNoTracking().AnyAsync(e => e.CourseId == courseId
+                    && e.EmployeeId == snapshot.Employee.Id && e.Status == Statuses.Enrollment.Cancelled))
+                throw new ConflictException(RelearnMessage);
+            // A minor change moved this employee's enrollment to the new content, progress kept, while the old page was open.
+            if (state.Enrollment is { Status: not Statuses.Enrollment.Cancelled } enrollment)
+            {
+                var versions = await _context.Courses.AsNoTracking()
+                    .Where(c => c.Id == courseId || c.Id == enrollment.CourseId)
+                    .ToDictionaryAsync(c => c.Id, c => c.VersionNo);
+                if (versions.TryGetValue(courseId, out var asked) && versions.TryGetValue(enrollment.CourseId, out var learning) && asked < learning)
+                    throw new ConflictException(MovedMessage);
+            }
         }
         return (snapshot, state);
     }
+
+    public const string MovedMessage =
+        "Khóa học vừa cập nhật nội dung mới, tiến trình của bạn được giữ. Tải lại trang để học tiếp trên nội dung mới.";
 
     public static PulseModuleInfo FindModule(PulseCourseState state, Guid moduleId) =>
         state.Modules.FirstOrDefault(m => m.ModuleId == moduleId)

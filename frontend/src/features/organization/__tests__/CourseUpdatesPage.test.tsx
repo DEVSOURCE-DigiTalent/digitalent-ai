@@ -40,14 +40,37 @@ describe('CourseUpdatesPage', () => {
     expect(screen.getByText(/Chưa mua: áp dụng để khi mua có sẵn bản mới/)).toBeInTheDocument();
   });
 
-  it('applies the newest version after confirming', async () => {
+  it('applies the newest version after confirming, with 30 days for the people half-way by default', async () => {
     const { apply } = renderPage(offer);
     fireEvent.click(screen.getByRole('button', { name: 'Áp dụng v3' }));
     const dialog = screen.getByRole('dialog', { name: 'Áp dụng v3 cho cả công ty?' });
-    expect(dialog).toHaveTextContent('3 người đang học dở mất tiến độ cũ; bài cuối khóa đang chờ chấm bị hủy.');
-    expect(dialog).toHaveTextContent('2 người đã đạt phải học lại; mức từ các khóa này không còn tính, chứng nhận đã cấp vẫn giữ.');
+    expect(dialog).toHaveTextContent('3 người đang học dở: chọn bên dưới họ có bao lâu để học xong bản cũ.');
+    expect(dialog).toHaveTextContent('2 người đã học xong vẫn giữ kết quả.');
+    expect(within(dialog).getByRole('radio', { name: /30 ngày/ })).toBeChecked();
+    const grace = within(dialog).getByRole('group', { name: /bao lâu để học xong bản cũ/ });
+    expect(within(grace).getAllByRole('radio').map((radio) => (radio as HTMLInputElement).value)).toEqual(['0', '7', '14', '30']);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Áp dụng' }));
-    await waitFor(() => expect(apply).toHaveBeenCalledWith(3));
+    await waitFor(() => expect(apply).toHaveBeenCalledWith({ versionNo: 3, graceDays: 30, majorChange: false }));
+  });
+
+  it('makes the people who finished learn again only when the change is major', async () => {
+    const { apply } = renderPage(offer);
+    fireEvent.click(screen.getByRole('button', { name: 'Áp dụng v3' }));
+    const dialog = screen.getByRole('dialog', { name: 'Áp dụng v3 cho cả công ty?' });
+    expect(within(dialog).getByRole('radio', { name: /Nhỏ/ })).toBeChecked();
+    fireEvent.click(within(dialog).getByRole('radio', { name: /Lớn/ }));
+    expect(dialog).toHaveTextContent('2 người đã học xong học lại để lấy chứng nhận mới; chứng nhận cũ vẫn giữ.');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Áp dụng' }));
+    await waitFor(() => expect(apply).toHaveBeenCalledWith({ versionNo: 3, graceDays: 30, majorChange: true }));
+  });
+
+  it('applies at once when the old content has an error to fix', async () => {
+    const { apply } = renderPage(offer);
+    fireEvent.click(screen.getByRole('button', { name: 'Áp dụng v3' }));
+    const dialog = screen.getByRole('dialog', { name: 'Áp dụng v3 cho cả công ty?' });
+    fireEvent.click(within(dialog).getByRole('radio', { name: /Áp dụng ngay/ }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Áp dụng' }));
+    await waitFor(() => expect(apply).toHaveBeenCalledWith({ versionNo: 3, graceDays: 0, majorChange: false }));
   });
 
   it('keeps the current version only with a reason of ten characters', async () => {

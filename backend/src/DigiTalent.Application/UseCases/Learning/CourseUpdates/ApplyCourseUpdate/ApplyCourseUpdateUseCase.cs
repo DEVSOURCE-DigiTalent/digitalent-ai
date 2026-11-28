@@ -7,7 +7,8 @@ namespace DigiTalent.Application.UseCases.Learning.CourseUpdates;
 
 /// <summary>
 /// The organization applies the newest course version: the changed courses get a new revision in the organization.
-/// Employees who started a course keep the version they started on; the others learn the new content.
+/// Finished courses are kept; employees learning a changed one move to the new content at once or after the chosen grace
+/// (<see cref="CourseRelearn"/>); the others learn the new content.
 /// </summary>
 public class ApplyCourseUpdateUseCase : IUseCase<ApplyCourseUpdateUseCaseInput, CourseUpdatesOutput>
 {
@@ -27,6 +28,7 @@ public class ApplyCourseUpdateUseCase : IUseCase<ApplyCourseUpdateUseCaseInput, 
     public async Task<CourseUpdatesOutput> ExecuteAsync(ApplyCourseUpdateUseCaseInput input)
     {
         var organizationId = _currentUser.GetRequiredOrganizationId();
+        CourseRelearn.EnsureGraceDays(input.GraceDays);
         await CourseUpdateDeciders.EnsureCanDecideAsync(_context, organizationId, _currentUser.UserId);
         var applier = new PlatformCatalogApplier(_context);
         var (organization, _, latest, applied) = await OrganizationCatalogVersionReader.LoadAsync(_context, applier, organizationId);
@@ -39,7 +41,7 @@ public class ApplyCourseUpdateUseCase : IUseCase<ApplyCourseUpdateUseCaseInput, 
         var changes = new List<PlatformCatalogApplyChange>();
         await _context.ExecuteInTransactionAsync(async () =>
         {
-            changes = await applier.ApplyAsync(organizationId, applied, latest, _currentUser.UserId, _time.GetUtcNow());
+            changes = await applier.ApplyAsync(organizationId, applied, latest, _currentUser.UserId, _time.GetUtcNow(), input.GraceDays, input.MajorChange);
             await _context.SaveChangesAsync();
         });
 
@@ -48,7 +50,7 @@ public class ApplyCourseUpdateUseCase : IUseCase<ApplyCourseUpdateUseCaseInput, 
             "organizations",
             organizationId,
             new { versionNo = applied },
-            new { versionNo = latest.VersionNo, courses = changes.Select(c => c.Code).ToList() },
+            new { versionNo = latest.VersionNo, courses = changes.Select(c => c.Code).ToList(), graceDays = input.GraceDays, majorChange = input.MajorChange },
             $"{organization.Name} · v{applied} → v{latest.VersionNo}");
 
         return await CourseUpdateReader.ReadAsync(_context, organizationId, _currentUser.UserId);

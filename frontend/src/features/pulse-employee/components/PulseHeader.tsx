@@ -28,6 +28,7 @@ import { usePulseOverview } from '@/hooks/use-pulse';
 import { translateUi, useUiLanguage } from '@/lib/i18n';
 import { initials } from '../lib/labels';
 import { PULSE_PATHS } from '../lib/paths';
+import { useSurveyOver } from '@/hooks/use-survey-over';
 import { trialGateOf, type TrialGateState } from '../lib/trial-gate';
 
 type NavItem = { to: string; label: string; end?: boolean; match: string[]; screenId: string };
@@ -85,8 +86,11 @@ export function PulseHeader({ gate, isGateActive }: PulseHeaderProps = {}) {
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const roles = normalizeRoles(user?.roles ?? []);
-  const trial = Boolean(user && isEnterpriseTrial(user));
-  const { data: myTrial } = useMyTrialAssessment(trial);
+  // A trial company that bought a course: the survey is over, the header is the regular one.
+  const surveyOver = useSurveyOver();
+  const trial = Boolean(user && isEnterpriseTrial(user)) && !surveyOver;
+  const { data: myTrialData } = useMyTrialAssessment(trial);
+  const myTrial = trial ? myTrialData : undefined;
   const { data: overview } = usePulseOverview();
   const hasRoadmap = Boolean(overview?.hasPosition && overview.hasTargets && !overview.awaitingFramework);
 

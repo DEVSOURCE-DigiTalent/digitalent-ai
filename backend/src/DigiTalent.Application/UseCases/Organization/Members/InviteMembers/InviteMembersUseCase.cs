@@ -105,6 +105,15 @@ public class InviteMembersUseCase : IUseCase<InviteMembersUseCaseInput, InviteMe
                 var fullName = row.FullName?.Trim() ?? string.Empty;
                 var employeeCode = string.IsNullOrWhiteSpace(row.EmployeeCode) ? null : row.EmployeeCode.Trim().ToUpperInvariant();
                 var roleCode = MemberRoles.ToRoleCode(row.Role);
+                // R&D is not a learner: no department or position, whatever the form or the file says.
+                var research = roleCode == Roles.Research;
+                if (research)
+                {
+                    row.DepartmentId = null;
+                    row.DepartmentName = null;
+                    row.JobPositionId = null;
+                    row.JobPositionName = null;
+                }
 
                 var department = row.DepartmentId.HasValue
                     ? allDepartments.FirstOrDefault(d => d.Id == row.DepartmentId.Value)

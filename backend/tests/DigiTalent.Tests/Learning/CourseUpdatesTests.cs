@@ -57,10 +57,10 @@ public class CourseUpdatesTests
         public Task<CourseUpdatesOutput> ReadAsync() =>
             new GetCourseUpdatesUseCase(Context, User(OwnerId, Company)).ExecuteAsync(new GetCourseUpdatesUseCaseInput());
 
-        public async Task<CourseUpdatesOutput> ApplyAsync(int versionNo)
+        public async Task<CourseUpdatesOutput> ApplyAsync(int versionNo, int graceDays = 0, bool majorChange = false)
         {
             var output = await new ApplyCourseUpdateUseCase(Context, User(OwnerId, Company), TimeProvider.System, _audit)
-                .ExecuteAsync(new ApplyCourseUpdateUseCaseInput { VersionNo = versionNo });
+                .ExecuteAsync(new ApplyCourseUpdateUseCaseInput { VersionNo = versionNo, GraceDays = graceDays, MajorChange = majorChange });
             Context.ChangeTracker.Clear();
             return output;
         }
@@ -72,6 +72,24 @@ public class CourseUpdatesTests
             Context.ChangeTracker.Clear();
             return output;
         }
+
+        /// <summary>An active employee of the company with an account (notifications go to the account).</summary>
+        public async Task<(Guid EmployeeId, Guid UserId)> EmployeeAsync(string name)
+        {
+            var userId = Guid.NewGuid();
+            var employee = new Employee
+            {
+                OrganizationId = Company, UserId = userId, DepartmentId = Guid.NewGuid(), EmployeeCode = name.ToUpperInvariant(),
+                FullName = name, Status = Statuses.Employee.Active,
+            };
+            Context.Users.Add(new User { Id = userId, OrganizationId = Company, Email = $"{name}@example.com", DisplayName = name });
+            Context.Employees.Add(employee);
+            await Context.SaveChangesAsync();
+            return (employee.Id, userId);
+        }
+
+        public Task<List<Notification>> NotificationsAsync(Guid userId) =>
+            Context.Notifications.AsNoTracking().Where(n => n.RecipientUserId == userId).OrderBy(n => n.CreatedAt).ToListAsync();
 
         public Task<Course> LatestAsync(Guid organizationId, string code) =>
             Context.Courses.AsNoTracking()
@@ -172,7 +190,7 @@ public class CourseUpdatesTests
     }
 
     [Fact]
-    public async Task Applying_makes_everyone_learn_the_course_again_and_keeps_the_certificates()
+    public async Task A_minor_change_at_once_moves_learners_to_the_new_content_with_their_progress_and_keeps_finished_courses()
     {
         await using var world = await CreateWorldAsync();
         var started = await world.LatestAsync(world.Company, "M1-F");
@@ -202,8 +220,10 @@ public class CourseUpdatesTests
 
         var wrongVersion = () => world.ApplyAsync(v2 + 1);
         (await wrongVersion.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("VERSION_NOT_LATEST");
+        var wrongGrace = () => world.ApplyAsync(v2, graceDays: 10);
+        (await wrongGrace.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("INVALID_GRACE_DAYS");
 
-        var after = await world.ApplyAsync(v2);
+        var after = await world.ApplyAsync(v2, graceDays: 0);
         after.Status.Should().Be(CourseUpdateStatus.UpToDate);
         after.CurrentVersionNo.Should().Be(v2);
         after.Courses.Should().BeEmpty();
@@ -212,15 +232,161 @@ public class CourseUpdatesTests
         newest.SupersedesCourseId.Should().Be(started.Id);
 
         var enrollments = await world.Context.Enrollments.AsNoTracking().ToDictionaryAsync(e => e.Id);
-        enrollments[learning.Id].Status.Should().Be(Statuses.Enrollment.Cancelled, "đang học dở thì học lại từ đầu bản mới");
-        enrollments[waiting.Id].Status.Should().Be(Statuses.Enrollment.Cancelled, "bài chờ chấm bị hủy cùng tiến độ cũ");
-        enrollments[passed.Id].Status.Should().Be(Statuses.Enrollment.Cancelled, "đã đạt cũng học lại, mức từ khóa này không còn tính");
+        enrollments[learning.Id].Status.Should().Be(Statuses.Enrollment.InProgress, "thay đổi nhỏ: học tiếp");
+        enrollments[learning.Id].CourseId.Should().Be(newest.Id, "trên nội dung mới");
+        enrollments[waiting.Id].CourseId.Should().Be(newest.Id);
+        enrollments[waiting.Id].Status.Should().Be(Statuses.Enrollment.InProgress, "bài chờ chấm vẫn của lượt học");
+        enrollments[passed.Id].Status.Should().Be(Statuses.Enrollment.Completed, "đã học xong thì giữ kết quả");
+
         enrollments[untouched.Id].Status.Should().Be(Statuses.Enrollment.InProgress, "khóa không đổi thì không ảnh hưởng");
         (await world.Context.CourseFinalSubmissions.AsNoTracking().SingleAsync(s => s.Id == certificate.Id)).Decision
             .Should().Be(Statuses.FinalSubmissionDecision.Passed, "chứng nhận cũ vẫn giữ");
+        (await world.Context.SystemSettings.AnyAsync(s => s.Key.StartsWith(CourseRelearn.GracePrefix))).Should().BeFalse();
 
         var again = () => world.ApplyAsync(v2);
         (await again.Should().ThrowAsync<BadRequestException>()).Which.Errors.Single().Code.Should().Be("ALREADY_ON_VERSION");
+    }
+
+    [Fact]
+    public async Task A_grace_lets_learners_finish_the_old_content_with_reminders_then_moves_whoever_has_not()
+    {
+        await using var world = await CreateWorldAsync();
+        var started = await world.LatestAsync(world.Company, "M1-F");
+        var (anId, anUser) = await world.EmployeeAsync("an");       // learning M1-F
+        var (binhId, binhUser) = await world.EmployeeAsync("binh"); // final waiting for the mentor
+        var (chiId, chiUser) = await world.EmployeeAsync("chi");    // finished M1-F
+        var (_, dungUser) = await world.EmployeeAsync("dung");      // never opened M1-F
+        var learning = new Enrollment { CourseId = started.Id, EmployeeId = anId, Status = Statuses.Enrollment.InProgress, ProgressPercent = 40 };
+        var waiting = new Enrollment { CourseId = started.Id, EmployeeId = binhId, Status = Statuses.Enrollment.InProgress, ProgressPercent = 100 };
+        var passed = new Enrollment
+        {
+            CourseId = started.Id, EmployeeId = chiId, Status = Statuses.Enrollment.Completed, ProgressPercent = 100, CompletedAt = DateTimeOffset.UtcNow,
+        };
+        world.Context.Enrollments.AddRange(learning, waiting, passed);
+        var pending = new CourseFinalSubmission { EnrollmentId = waiting.Id, AttemptNo = 1, EvidenceText = "Bài chờ chấm", SubmittedAt = DateTimeOffset.UtcNow };
+        world.Context.CourseFinalSubmissions.Add(pending);
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+        var v2 = await world.PublishEditAsync("M1-F", "M1-F bản 2");
+
+        var applied = DateTimeOffset.UtcNow;
+        await world.ApplyAsync(v2, graceDays: 30);
+
+        // Nobody is moved yet; the grace is written; every employee gets one notification saying what it means for them.
+        var enrollments = await world.Context.Enrollments.AsNoTracking().ToDictionaryAsync(e => e.Id);
+        enrollments[learning.Id].Status.Should().Be(Statuses.Enrollment.InProgress);
+        enrollments[waiting.Id].Status.Should().Be(Statuses.Enrollment.InProgress);
+        enrollments[passed.Id].Status.Should().Be(Statuses.Enrollment.Completed);
+        var switchAt = (await CourseRelearn.GraceEndsAsync(world.Context, world.Company))["M1-F"];
+        switchAt.Should().BeCloseTo(applied.AddDays(30), TimeSpan.FromMinutes(1));
+        var day = CourseRelearn.Day(switchAt);
+        var toAn = (await world.NotificationsAsync(anUser)).Should().ContainSingle().Subject;
+        toAn.Title.Should().Be("Cập nhật nhỏ 1 khóa học");
+        var today = CourseRelearn.Day(applied);
+        var general = $"Công ty vừa cập nhật nhỏ 1 khóa học (M1-F bản 2), áp dụng từ ngày {today}. Đây là thay đổi nhỏ, ai đã học xong không cần học lại. "
+            + $"Ai đang học dở hãy học xong trước ngày {day} để giữ kết quả; chưa xong thì học tiếp trên nội dung mới, tiến trình được giữ.";
+        toAn.Message.Should().Be(general, "một thông báo chung cho mọi người");
+        (await world.NotificationsAsync(chiUser)).Should().ContainSingle().Which.Message.Should().Be(general);
+        (await world.NotificationsAsync(dungUser)).Should().ContainSingle().Which.Title.Should().Be("Cập nhật nhỏ 1 khóa học");
+
+        // 7 days and 1 day before: one reminder each, only to those still on the old content.
+        (await CourseRelearn.ProcessGraceAsync(world.Context, applied.AddDays(10))).Should().Be(0);
+        await CourseRelearn.ProcessGraceAsync(world.Context, applied.AddDays(23.5));
+        await CourseRelearn.ProcessGraceAsync(world.Context, applied.AddDays(24));
+        await CourseRelearn.ProcessGraceAsync(world.Context, applied.AddDays(29.5));
+        world.Context.ChangeTracker.Clear();
+        var reminders = (await world.NotificationsAsync(anUser)).Where(n => n.Type == CourseRelearn.ReminderNotificationType).ToList();
+        reminders.Select(n => n.Title).Should().Equal("Còn 7 ngày để học xong khóa M1-F bản 2", "Còn 1 ngày để học xong khóa M1-F bản 2");
+        (await world.NotificationsAsync(chiUser)).Should().HaveCount(1, "người đã học xong không bị nhắc");
+
+        // The day comes (minor change): An goes on with the new content, progress kept; the final of Binh waits for the mentor.
+        await CourseRelearn.ProcessGraceAsync(world.Context, applied.AddDays(30.1));
+        world.Context.ChangeTracker.Clear();
+        enrollments = await world.Context.Enrollments.AsNoTracking().ToDictionaryAsync(e => e.Id);
+        var newest = await world.LatestAsync(world.Company, "M1-F");
+        enrollments[learning.Id].Status.Should().Be(Statuses.Enrollment.InProgress);
+        enrollments[learning.Id].CourseId.Should().Be(newest.Id);
+        enrollments[waiting.Id].CourseId.Should().Be(started.Id, "bài chờ chấm được chấm xong đã");
+        var moved = (await world.NotificationsAsync(anUser)).Last();
+        moved.Type.Should().Be(CourseRelearn.UpdatedNotificationType);
+        moved.Message.Should().Contain("Tiến trình của bạn được giữ");
+        (await CourseRelearn.GraceEndsAsync(world.Context, world.Company)).Should().ContainKey("M1-F");
+
+        // The mentor passes Binh: the course is kept and the grace is closed.
+        var tracked = await world.Context.Enrollments.SingleAsync(e => e.Id == waiting.Id);
+        tracked.Status = Statuses.Enrollment.Completed;
+        tracked.CompletedAt = applied.AddDays(31);
+        (await world.Context.CourseFinalSubmissions.SingleAsync(s => s.Id == pending.Id)).Decision = Statuses.FinalSubmissionDecision.Passed;
+        await world.Context.SaveChangesAsync();
+        await CourseRelearn.ProcessGraceAsync(world.Context, applied.AddDays(31));
+        world.Context.ChangeTracker.Clear();
+        (await world.Context.Enrollments.AsNoTracking().SingleAsync(e => e.Id == waiting.Id)).Status.Should().Be(Statuses.Enrollment.Completed);
+        (await CourseRelearn.GraceEndsAsync(world.Context, world.Company)).Should().BeEmpty();
+        (await world.NotificationsAsync(binhUser)).Should().NotContain(n => n.Type == CourseRelearn.NotificationType);
+    }
+
+    [Fact]
+    public async Task A_major_change_makes_whoever_finished_the_changed_course_learn_it_again_for_a_new_certificate()
+    {
+        await using var world = await CreateWorldAsync();
+        var basic = await world.LatestAsync(world.Company, "M1-F");
+        var intermediate = await world.LatestAsync(world.Company, "M1-I");
+        var (anId, anUser) = await world.EmployeeAsync("an");
+        var finishedBasic = new Enrollment
+        {
+            CourseId = basic.Id, EmployeeId = anId, Status = Statuses.Enrollment.Completed, ProgressPercent = 100, CompletedAt = DateTimeOffset.UtcNow,
+        };
+        var finishedIntermediate = new Enrollment
+        {
+            CourseId = intermediate.Id, EmployeeId = anId, Status = Statuses.Enrollment.Completed, ProgressPercent = 100, CompletedAt = DateTimeOffset.UtcNow,
+        };
+        var (binhId, _) = await world.EmployeeAsync("binh");
+        var learningBasic = new Enrollment { CourseId = basic.Id, EmployeeId = binhId, Status = Statuses.Enrollment.InProgress, ProgressPercent = 50 };
+        world.Context.Enrollments.AddRange(finishedBasic, finishedIntermediate, learningBasic);
+        var certificate = new CourseFinalSubmission
+        {
+            EnrollmentId = finishedBasic.Id, AttemptNo = 1, EvidenceText = "Bài đã đạt", SubmittedAt = DateTimeOffset.UtcNow,
+            Decision = Statuses.FinalSubmissionDecision.Passed, ReviewedAt = DateTimeOffset.UtcNow,
+        };
+        world.Context.CourseFinalSubmissions.Add(certificate);
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+        var v2 = await world.PublishEditAsync("M1-F", "M1-F bản 2");
+
+        await world.ApplyAsync(v2, graceDays: 0, majorChange: true);
+
+        var enrollments = await world.Context.Enrollments.AsNoTracking().ToDictionaryAsync(e => e.Id);
+        enrollments[learningBasic.Id].Status.Should().Be(Statuses.Enrollment.Cancelled, "thay đổi lớn, áp dụng ngay: học lại từ đầu");
+        enrollments[finishedBasic.Id].Status.Should().Be(Statuses.Enrollment.Cancelled, "thay đổi lớn: học lại khóa bị sửa");
+        enrollments[finishedIntermediate.Id].Status.Should().Be(Statuses.Enrollment.Completed, "khóa không bị sửa giữ nguyên");
+        (await world.Context.CourseFinalSubmissions.AsNoTracking().SingleAsync(s => s.Id == certificate.Id)).Decision
+            .Should().Be(Statuses.FinalSubmissionDecision.Passed, "chứng nhận cũ vẫn giữ");
+        var notice = (await world.NotificationsAsync(anUser)).Should().ContainSingle().Subject;
+        notice.Type.Should().Be(CourseRelearn.NotificationType);
+        notice.Title.Should().Be("Cập nhật lớn 1 khóa học");
+        notice.Message.Should().Be($"Công ty vừa cập nhật lớn 1 khóa học (M1-F bản 2), áp dụng từ ngày {CourseRelearn.Day(DateTimeOffset.UtcNow)}. "
+            + "Nội dung cũ không còn đúng nên ai đã học xong các khóa này cần học lại để lấy chứng nhận mới; chứng nhận cũ vẫn giữ. "
+            + "Ai đang học dở học lại từ đầu theo nội dung mới.");
+    }
+
+    [Fact]
+    public async Task A_week_of_grace_is_announced_once_then_reminded_only_on_the_last_day()
+    {
+        await using var world = await CreateWorldAsync();
+        var started = await world.LatestAsync(world.Company, "M1-F");
+        var (anId, anUser) = await world.EmployeeAsync("an");
+        world.Context.Enrollments.Add(new Enrollment { CourseId = started.Id, EmployeeId = anId, Status = Statuses.Enrollment.InProgress, ProgressPercent = 30 });
+        await world.Context.SaveChangesAsync();
+        world.Context.ChangeTracker.Clear();
+        var v2 = await world.PublishEditAsync("M1-F", "M1-F bản 2");
+        var applied = DateTimeOffset.UtcNow;
+        await world.ApplyAsync(v2, graceDays: 7);
+
+        await CourseRelearn.ProcessGraceAsync(world.Context, applied.AddMinutes(30));
+        await CourseRelearn.ProcessGraceAsync(world.Context, applied.AddDays(6.5));
+        world.Context.ChangeTracker.Clear();
+        (await world.NotificationsAsync(anUser)).Select(n => n.Type)
+            .Should().Equal(CourseRelearn.UpdatedNotificationType, CourseRelearn.ReminderNotificationType);
     }
 
     [Fact]

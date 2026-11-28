@@ -1,6 +1,7 @@
 using DigiTalent.Application.Common.Exceptions;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.UseCases.Learning.CourseUpdates;
+using DigiTalent.Domain.Constants;
 using DigiTalent.Domain.Constants.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,9 +12,10 @@ namespace DigiTalent.Application.UseCases.Organization.Research;
 /// <paramref name="InCharge"/> = who customises courses and decides on DigiTalent updates: RND when the company has R&amp;D
 /// switched on and an active R&amp;D account, else OWNER (a small company without R&amp;D: the owner does it all).
 /// <paramref name="Reason"/> = why the page is closed when <paramref name="CanView"/> is false.
+/// <paramref name="PendingInvitations"/> = R&amp;D invitations not activated yet (revoked when R&amp;D is switched off).
 /// </summary>
 public sealed record ResearchAccess(bool Enabled, bool Purchased, string InCharge, int Researchers, bool CanView, bool CanEdit,
-    string? Reason);
+    string? Reason, int PendingInvitations = 0);
 
 public sealed partial class EnterpriseResearch
 {
@@ -47,8 +49,18 @@ public sealed partial class EnterpriseResearch
             : null;
         var canView = reason is null;
         var canEdit = canView && ((isResearch && enabled) || (isOwner && !researchInCharge));
+        var pending = isOwner ? await OpenResearchInvitations(db, organizationId).CountAsync() : 0;
         return new ResearchAccess(enabled, purchased, researchInCharge ? CourseUpdateDeciders.Research : CourseUpdateDeciders.Owner,
-            researchInCharge ? deciders.UserIds.Count : 0, canView, canEdit, reason);
+            researchInCharge ? deciders.UserIds.Count : 0, canView, canEdit, reason, pending);
+    }
+
+    /// <summary>R&amp;D invitations that can still be activated.</summary>
+    internal static IQueryable<Domain.Entities.MemberInvitation> OpenResearchInvitations(IApplicationDbContext db, Guid organizationId)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return db.MemberInvitations.Where(invitation => invitation.OrganizationId == organizationId
+            && invitation.Status == Statuses.MemberInvitation.Pending && invitation.ExpiresAt > now
+            && db.Roles.Any(role => role.Id == invitation.RoleId && role.Code == Roles.Research));
     }
 
     public async Task<ResearchAccess> GetAccessAsync() =>

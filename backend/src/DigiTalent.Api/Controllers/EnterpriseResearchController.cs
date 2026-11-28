@@ -2,6 +2,7 @@ using DigiTalent.Api.Authorization;
 using DigiTalent.Api.Common;
 using DigiTalent.Application.Common.Interfaces;
 using DigiTalent.Application.Common.UseCases;
+using DigiTalent.Application.UseCases.Learning.CourseUpdates;
 using DigiTalent.Application.UseCases.Organization.Research;
 using DigiTalent.Application.UseCases.Platform.Catalog;
 using DigiTalent.Domain.Constants.Authorization;
@@ -60,6 +61,13 @@ public sealed class EnterpriseResearchController(EnterpriseResearch research) : 
         [FromServices] PlatformCourseContentReader reader, [FromServices] IHtmlContentSanitizer sanitizer) =>
         ApiResponse<ResearchAuthoringVersion>.Ok(await research.DiscardDraftAsync(id, revision, reader, sanitizer));
 
+    /// <summary>Applies the company version of several courses at once (all or nothing), one notification per employee.</summary>
+    [HttpPost("apply")]
+    [HasPermission(Permissions.Research.ManageCourses)]
+    public async Task<ApiResponse<ResearchApplyManyResult>> ApplyMany(ResearchApplyManyInput input,
+        [FromServices] PlatformCourseContentReader reader, [FromServices] IHtmlContentSanitizer sanitizer) =>
+        ApiResponse<ResearchApplyManyResult>.Ok(await research.ApplyCompanyVersionsAsync(input, reader, sanitizer));
+
     /// <summary>Applies the company version: a new course revision employees learn and take tests on.</summary>
     [HttpPost("courses/{id:guid}/apply")]
     [HasPermission(Permissions.Research.ManageCourses)]
@@ -71,8 +79,9 @@ public sealed class EnterpriseResearchController(EnterpriseResearch research) : 
     [HttpDelete("courses/{id:guid}/apply")]
     [HasPermission(Permissions.Research.ManageCourses)]
     public async Task<ApiResponse<ResearchAuthoringVersion>> RemoveApplied(Guid id, [FromQuery] int revision,
-        [FromServices] PlatformCourseContentReader reader, [FromServices] IHtmlContentSanitizer sanitizer) =>
-        ApiResponse<ResearchAuthoringVersion>.Ok(await research.RemoveCompanyVersionAsync(id, revision, reader, sanitizer));
+        [FromServices] PlatformCourseContentReader reader, [FromServices] IHtmlContentSanitizer sanitizer,
+        [FromQuery] int graceDays = CourseRelearn.DefaultGraceDays, [FromQuery] bool majorChange = false) =>
+        ApiResponse<ResearchAuthoringVersion>.Ok(await research.RemoveCompanyVersionAsync(id, revision, reader, sanitizer, graceDays, majorChange));
 
     [HttpPost("courses/{id:guid}/editor/assets")]
     [HasPermission(Permissions.Research.ManageCourses)]
