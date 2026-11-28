@@ -11,7 +11,19 @@ using Microsoft.EntityFrameworkCore;
 namespace DigiTalent.Application.UseCases.Organization.Research;
 
 /// <summary>What R&D applies: the course content of its draft (or the content in use) and the course information form.</summary>
-public sealed record ResearchApplyInput(int Revision, ResearchCourseContent? Info);
+/// <param name="GraceDays">0 = employees learning the course move to the new content at once; 7 / 14 / 30 = they may finish the old one first.</param>
+/// <param name="MajorChange">The old content is wrong now: employees who finished the course learn it again (new certificate).</param>
+public sealed record ResearchApplyInput(int Revision, ResearchCourseContent? Info, int GraceDays = CourseRelearn.DefaultGraceDays,
+    bool MajorChange = false);
+
+/// <summary>One course of a multi-course apply: the editor revision seen, and the information form when it is open on screen.</summary>
+public sealed record ResearchApplyCourse(Guid CourseId, int Revision, ResearchCourseContent? Info = null);
+
+public sealed record ResearchApplyManyInput(List<ResearchApplyCourse> Courses, int GraceDays = CourseRelearn.DefaultGraceDays,
+    bool MajorChange = false);
+
+/// <summary>Canonical codes of the courses applied.</summary>
+public sealed record ResearchApplyManyResult(IReadOnlyList<string> Applied);
 
 /// <summary>
 /// The company version of a course. Applying it writes a new course revision in the organization, like a DigiTalent
@@ -29,47 +41,103 @@ public sealed partial class EnterpriseResearch
         PlatformCourseContentReader reader, IHtmlContentSanitizer sanitizer)
     {
         var info = Normalize(input.Info);
+        CourseRelearn.EnsureGraceDays(input.GraceDays);
         ResearchAuthoringVersion? result = null;
         await context.ExecuteInSerializableTransactionAsync(async () =>
         {
             var orgId = await RequireAccessAsync(write: true);
-            var source = await AuthoringSourceAsync(orgId, courseId, reader);
-            var state = await ReadAuthoringAsync(context, orgId, source.Code);
-            if (state.Revision != input.Revision)
-                throw new ConflictException("Bản nháp đã thay đổi. Tải lại khóa học trước khi tiếp tục.");
-            var content = state.Draft ?? state.Applied ?? new AuthoringContent(source.Modules, source.Final);
-            Validate(content, sanitizer, apply: true);
-            await RefreshAssetsAsync(orgId, source, content, reader, state.Draft, state.Applied);
-
-            var infoSetting = await context.SystemSettings.FirstOrDefaultAsync(s => s.OrganizationId == orgId && s.Key == Key(source.Code));
-            var saved = ReadVersion(infoSetting?.Value);
-            var applied = info ?? saved.Draft ?? saved.Applied;
-            var title = applied?.Title is { Length: > 0 } ownTitle ? ownTitle : source.Title;
-            var outcome = applied?.Objective is { Length: > 0 } objective ? objective : source.Outcome;
-            var problems = Problems(content, sanitizer);
-            if (outcome.Trim().Length < 10)
-                problems.Insert(0, "Mục tiêu học tập cần ít nhất 10 ký tự (để trống thì dùng mục tiêu của khóa chuẩn).");
-            if (problems.Count > 0)
-                throw new BadRequestException("Chưa áp dụng được: " + string.Join(" ", problems.Take(3))
-                    + (problems.Count > 3 ? $" (và {problems.Count - 3} mục khác)" : ""));
-
-            source.CourseId = (await WriteCompanyRevisionAsync(orgId, source, content, title, outcome)).Id;
-            await WriteAsync(orgId, RevisionsKey, (await CompanyRevisionIdsAsync(context, orgId)).Append(source.CourseId).ToList());
-            await CourseRelearn.ResetAsync(context, orgId, new[] { source.Code });
-            state = new AuthoringState(state.Revision + 1, null, content);
-            await WriteAsync(orgId, AuthoringPrefix + source.Code, state);
-            await WriteAsync(orgId, Key(source.Code), new ResearchCourseVersion(null, applied), infoSetting);
-            source.Modules = content.Modules;
-            source.Final = content.Final;
-            result = ToAuthoring(state, source, new List<string>());
+            var prepared = await PrepareApplyAsync(orgId, courseId, input.Revision, info, reader, sanitizer);
+            if (prepared.Problems.Count > 0)
+                throw new BadRequestException("Chưa áp dụng được: " + string.Join(" ", prepared.Problems.Take(3))
+                    + (prepared.Problems.Count > 3 ? $" (và {prepared.Problems.Count - 3} mục khác)" : ""));
+            result = await WriteApplyAsync(orgId, prepared);
+            await CourseRelearn.ApplyAsync(context, orgId, new[] { prepared.Source.Code }, input.GraceDays, Now(), input.MajorChange);
+            await context.SaveChangesAsync();
         });
         return result!;
     }
 
-    /// <summary>Employees go back to the standard content (a new revision too); R&D keeps its version as a draft.</summary>
-    public async Task<ResearchAuthoringVersion> RemoveCompanyVersionAsync(Guid courseId, int revision,
+    /// <summary>
+    /// Applies several courses at once (the company version of each, as R&amp;D or the owner left it): all or nothing — a
+    /// course that is not ready stops the whole apply with what to fix per course. One choice of grace and change size for
+    /// all; each employee gets one notification listing every course.
+    /// </summary>
+    public async Task<ResearchApplyManyResult> ApplyCompanyVersionsAsync(ResearchApplyManyInput input,
         PlatformCourseContentReader reader, IHtmlContentSanitizer sanitizer)
     {
+        CourseRelearn.EnsureGraceDays(input.GraceDays);
+        var courses = (input.Courses ?? new List<ResearchApplyCourse>()).DistinctBy(c => c.CourseId).ToList();
+        if (courses.Count is 0 or > 30)
+            throw new BadRequestException("Chọn từ 1 đến 30 khóa học để áp dụng.", "courses", "INVALID_COURSES");
+        var applied = new List<string>();
+        await context.ExecuteInSerializableTransactionAsync(async () =>
+        {
+            var orgId = await RequireAccessAsync(write: true);
+            var prepared = new List<PreparedApply>();
+            foreach (var course in courses)
+                prepared.Add(await PrepareApplyAsync(orgId, course.CourseId, course.Revision, Normalize(course.Info), reader, sanitizer));
+            var blocked = prepared.Where(p => p.Problems.Count > 0).ToList();
+            if (blocked.Count > 0)
+                throw new BadRequestException("Chưa áp dụng được: " + string.Join(" ", blocked.Select(p =>
+                    $"{CourseCodes.Canonical(p.Source.Code)} {p.Title}: {string.Join(" ", p.Problems.Take(2))}"
+                    + (p.Problems.Count > 2 ? $" (và {p.Problems.Count - 2} mục khác)" : ""))));
+            foreach (var course in prepared)
+            {
+                await WriteApplyAsync(orgId, course);
+                applied.Add(CourseCodes.Canonical(course.Source.Code));
+            }
+            await CourseRelearn.ApplyAsync(context, orgId, prepared.Select(p => p.Source.Code).ToList(), input.GraceDays, Now(), input.MajorChange);
+            await context.SaveChangesAsync();
+        });
+        return new ResearchApplyManyResult(applied);
+    }
+
+    private sealed record PreparedApply(PlatformCatalogCourseDetail Source, AuthoringState State, AuthoringContent Content,
+        ResearchCourseContent? Info, SystemSetting? InfoSetting, string Title, string Outcome, List<string> Problems);
+
+    /// <summary>Reads and checks one course to apply (nothing is written): the content, its information and what blocks it.</summary>
+    private async Task<PreparedApply> PrepareApplyAsync(Guid orgId, Guid courseId, int revision, ResearchCourseContent? info,
+        PlatformCourseContentReader reader, IHtmlContentSanitizer sanitizer)
+    {
+        var source = await AuthoringSourceAsync(orgId, courseId, reader);
+        var state = await ReadAuthoringAsync(context, orgId, source.Code);
+        if (state.Revision != revision)
+            throw new ConflictException("Bản nháp đã thay đổi. Tải lại khóa học trước khi tiếp tục.");
+        var content = state.Draft ?? state.Applied ?? new AuthoringContent(source.Modules, source.Final);
+        Validate(content, sanitizer, apply: true);
+        await RefreshAssetsAsync(orgId, source, content, reader, state.Draft, state.Applied);
+
+        var infoSetting = await context.SystemSettings.FirstOrDefaultAsync(s => s.OrganizationId == orgId && s.Key == Key(source.Code));
+        var saved = ReadVersion(infoSetting?.Value);
+        var applied = info ?? saved.Draft ?? saved.Applied;
+        var title = applied?.Title is { Length: > 0 } ownTitle ? ownTitle : source.Title;
+        var outcome = applied?.Objective is { Length: > 0 } objective ? objective : source.Outcome;
+        var problems = Problems(content, sanitizer);
+        if (outcome.Trim().Length < 10)
+            problems.Insert(0, "Mục tiêu học tập cần ít nhất 10 ký tự (để trống thì dùng mục tiêu của khóa chuẩn).");
+        return new PreparedApply(source, state, content, applied, infoSetting, title, outcome, problems);
+    }
+
+    /// <summary>Writes the new course revision and moves the course's R&amp;D state to "applied" (relearn is the caller's).</summary>
+    private async Task<ResearchAuthoringVersion> WriteApplyAsync(Guid orgId, PreparedApply prepared)
+    {
+        var source = prepared.Source;
+        source.CourseId = (await WriteCompanyRevisionAsync(orgId, source, prepared.Content, prepared.Title, prepared.Outcome)).Id;
+        await WriteAsync(orgId, RevisionsKey, (await CompanyRevisionIdsAsync(context, orgId)).Append(source.CourseId).ToList());
+        var state = new AuthoringState(prepared.State.Revision + 1, null, prepared.Content);
+        await WriteAsync(orgId, AuthoringPrefix + source.Code, state);
+        await WriteAsync(orgId, Key(source.Code), new ResearchCourseVersion(null, prepared.Info), prepared.InfoSetting);
+        source.Modules = prepared.Content.Modules;
+        source.Final = prepared.Content.Final;
+        return ToAuthoring(state, source, new List<string>());
+    }
+
+    /// <summary>Employees go back to the standard content (a new revision too); R&D keeps its version as a draft.</summary>
+    public async Task<ResearchAuthoringVersion> RemoveCompanyVersionAsync(Guid courseId, int revision,
+        PlatformCourseContentReader reader, IHtmlContentSanitizer sanitizer, int graceDays = CourseRelearn.DefaultGraceDays,
+        bool majorChange = false)
+    {
+        CourseRelearn.EnsureGraceDays(graceDays);
         var code = "";
         await context.ExecuteInSerializableTransactionAsync(async () =>
         {
@@ -87,7 +155,7 @@ public sealed partial class EnterpriseResearch
             // The publisher releases the company version (applied -> draft) for the course it writes.
             await new PlatformLearningPublisher(context).PublishAsync(origin.VersionId, currentUser.UserId, Now(), orgId,
                 onlyCourseIds: new[] { origin.PlatformCourseId }, reapply: true);
-            await CourseRelearn.ResetAsync(context, orgId, new[] { origin.Code });
+            await CourseRelearn.ApplyAsync(context, orgId, new[] { origin.Code }, graceDays, Now(), majorChange);
             await context.SaveChangesAsync();
         });
         // The course now has a new revision (a new id).

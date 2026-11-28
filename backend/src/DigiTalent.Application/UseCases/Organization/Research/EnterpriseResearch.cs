@@ -13,8 +13,13 @@ namespace DigiTalent.Application.UseCases.Organization.Research;
 
 public sealed record ResearchCourseContent(string Title, string Objective, string Practice);
 public sealed record ResearchCourseVersion(ResearchCourseContent? Draft, ResearchCourseContent? Applied);
+/// <param name="HasContentDraft">Modules or final edited and not applied yet (the information draft is <paramref name="Draft"/>).</param>
+/// <param name="EditorRevision">Revision of the course's editor state, sent back when the course is applied.</param>
+/// <param name="LearnersInProgress">Employees learning the course now (they get the grace chosen when new content is applied).</param>
+/// <param name="LearnersFinished">Employees who finished it.</param>
 public sealed record ResearchCourseItem(Guid CourseId, string Code, string Title, string? Description, int Tier,
-    IReadOnlyList<string> Modules, ResearchCourseContent? Draft, ResearchCourseContent? Applied);
+    IReadOnlyList<string> Modules, ResearchCourseContent? Draft, ResearchCourseContent? Applied,
+    bool HasContentDraft = false, int EditorRevision = 0, int LearnersInProgress = 0, int LearnersFinished = 0);
 public sealed record ResearchModulePreview(Guid Id, string Title, IReadOnlyList<PulseSlideDto> Lessons);
 
 public sealed partial class EnterpriseResearch(IApplicationDbContext context, ICurrentUser currentUser, PulseCatalogReader catalog,
@@ -76,14 +81,25 @@ public sealed partial class EnterpriseResearch(IApplicationDbContext context, IC
             .Select(module => new { module.CourseId, module.Title })
             .ToListAsync();
         var settings = await context.SystemSettings.AsNoTracking()
-            .Where(s => s.OrganizationId == orgId && s.Key.StartsWith(CoursePrefix))
+            .Where(s => s.OrganizationId == orgId && (s.Key.StartsWith(CoursePrefix) || s.Key.StartsWith(AuthoringPrefix)))
             .ToDictionaryAsync(s => s.Key, s => s.Value);
+        var learners = await (from enrollment in context.Enrollments.AsNoTracking()
+                              join course in context.Courses.AsNoTracking() on enrollment.CourseId equals course.Id
+                              where course.OrganizationId == orgId && enrollment.Status != Statuses.Enrollment.Cancelled
+                              select new { course.Code, Done = enrollment.Status == Statuses.Enrollment.Completed })
+            .ToListAsync();
         return courses.Select(course =>
         {
             var version = ReadVersion(settings.GetValueOrDefault(Key(course.Code)));
-            return new ResearchCourseItem(course.CourseId, CourseCodes.Canonical(course.Code), course.Title,
+            var editor = settings.GetValueOrDefault(AuthoringPrefix + course.Code) is { } value
+                ? JsonSerializer.Deserialize<AuthoringState>(value, JsonOptions)!
+                : new AuthoringState(0, null, null);
+            var canonical = CourseCodes.Canonical(course.Code);
+            var ofCourse = learners.Where(l => CourseCodes.Canonical(l.Code) == canonical).ToList();
+            return new ResearchCourseItem(course.CourseId, canonical, course.Title,
                 course.Description, course.Tier, modules.Where(m => m.CourseId == course.CourseId).Select(m => m.Title).ToList(),
-                version.Draft, version.Applied);
+                version.Draft, version.Applied, editor.Draft is not null, editor.Revision,
+                ofCourse.Count(l => !l.Done), ofCourse.Count(l => l.Done));
         }).ToList();
     }
 

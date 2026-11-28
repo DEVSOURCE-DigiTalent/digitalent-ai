@@ -136,17 +136,20 @@ public sealed class PlatformCatalogApplier(IApplicationDbContext context)
     }
 
     /// <summary>Gives one organization the content of <paramref name="target"/> and records the version.</summary>
+    /// <param name="graceDays">How long employees learning a changed course may finish its old content (0 = at once,
+    /// see <see cref="DigiTalent.Application.UseCases.Learning.CourseUpdates.CourseRelearn"/>).</param>
     public async Task<List<PlatformCatalogApplyChange>> ApplyAsync(
-        Guid organizationId, int fromVersionNo, PlatformCatalogVersion target, Guid? authorId, DateTimeOffset now)
+        Guid organizationId, int fromVersionNo, PlatformCatalogVersion target, Guid? authorId, DateTimeOffset now, int graceDays = 0,
+        bool relearnFinished = false)
     {
         var changes = await PlanAsync(fromVersionNo, target.VersionNo);
         if (changes.Count > 0)
         {
             await new PlatformLearningPublisher(context).PublishAsync(
                 target.Id, authorId, now, organizationId, onlyCourseIds: changes.Select(c => c.CourseId).ToList(), reapply: true);
-            // New content is learned again from the start by everyone (certificates stay).
-            await DigiTalent.Application.UseCases.Learning.CourseUpdates.CourseRelearn.ResetAsync(
-                context, organizationId, changes.Select(c => c.Code).ToList());
+            // Finished courses are kept; whoever is learning one moves to the new content at once or after the grace.
+            await DigiTalent.Application.UseCases.Learning.CourseUpdates.CourseRelearn.ApplyAsync(
+                context, organizationId, changes.Select(c => c.Code).ToList(), graceDays, now, relearnFinished);
         }
 
         await SetAsync(organizationId, target.VersionNo, authorId);

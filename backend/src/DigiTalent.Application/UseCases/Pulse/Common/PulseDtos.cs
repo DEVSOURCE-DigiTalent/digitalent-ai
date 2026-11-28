@@ -79,6 +79,10 @@ public class PulsePreAssessmentBriefDto
 public class PulseCourseSummaryDto
 {
     public Guid CourseId { get; set; }
+    /// <summary>Set while the employee learns old content of a course that got new content: the day it switches.</summary>
+    public DateTimeOffset? ContentSwitchAt { get; set; }
+    /// <summary>On that day a minor change keeps the employee's progress on the new content; a major one starts it again.</summary>
+    public bool ContentSwitchKeepsProgress { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public Guid CategoryId { get; set; }
@@ -261,6 +265,8 @@ public static class PulseMapping
     public static PulseCourseSummaryDto Course(PulseCourseState c) => new()
     {
         CourseId = c.Course.CourseId,
+        ContentSwitchAt = c.ContentSwitchAt,
+        ContentSwitchKeepsProgress = c.ContentSwitchKeepsProgress,
         Code = CourseCodes.Canonical(c.Course.Code),
         Title = c.Course.Title,
         CategoryId = c.Course.CategoryId,

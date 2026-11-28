@@ -148,6 +148,9 @@ public static class DependencyInjection
         // Background Service: Auto-remind approaching deadlines
         services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.DeadlineReminderBackgroundService>();
 
+        // New course content with a grace period: hourly reminders, then the move to the new content.
+        services.AddHostedService<DigiTalent.Infrastructure.BackgroundServices.CourseGraceBackgroundService>();
+
         // Báo cáo hành vi khi làm bài cuối khóa: AI phân tích nhật ký giám sát ở nền sau khi nộp bài (canonical v3.10).
         services.AddSingleton<DigiTalent.Infrastructure.BackgroundServices.BehaviorAnalysisQueue>();
         services.AddSingleton<IBehaviorAnalysisQueue>(provider =>

@@ -66,6 +66,13 @@ public sealed class PulseCourseState
     public bool InPath => Zone == PulseCourseZone.Path;
     public string Access { get; init; } = PulseCourseAccess.FreeFull;
     public Enrollment? Enrollment { get; init; }
+    /// <summary>
+    /// The course got new content while this employee was learning the old one with a grace period: the day they move to
+    /// the new content unless they finish first (<see cref="Learning.CourseUpdates.CourseRelearn"/>).
+    /// </summary>
+    public DateTimeOffset? ContentSwitchAt { get; init; }
+    /// <summary>A minor change: on <see cref="ContentSwitchAt"/> the employee goes on with the new content and keeps the progress.</summary>
+    public bool ContentSwitchKeepsProgress { get; init; }
     public bool Approved { get; init; }
     /// <summary>PRE_ASSESSMENT | FINAL | LEGACY khi đã được công nhận.</summary>
     public string? ApprovedVia { get; init; }
@@ -316,6 +323,17 @@ public class PulseLearnerReader
                     .First().Enrollment,
                 StringComparer.OrdinalIgnoreCase);
 
+        // The revision new learners start from, per code (an enrollment on another one learns older content).
+        var currentIdByCode = courses.GroupBy(c => CourseCodes.Canonical(c.Code), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().CourseId, StringComparer.OrdinalIgnoreCase);
+        var graces = await Learning.CourseUpdates.CourseRelearn.GracesAsync(_context, organizationId);
+
+        // The grace of a course whose old content this employee is still learning (none once finished or on the newest).
+        Learning.CourseUpdates.CourseRelearn.GraceState? OldContentGrace(Enrollment? enrollment, string code) =>
+            enrollment != null && enrollment.Status != Statuses.Enrollment.Completed
+            && currentIdByCode.TryGetValue(CourseCodes.Canonical(code), out var currentId) && currentId != enrollment.CourseId
+            && graces.TryGetValue(CourseCodes.Canonical(code), out var grace) ? grace : null;
+
         // Display the same revision as the enrollment's modules/questions, rather than a new title with old lessons.
         var enrolledCourseIds = enrollmentByCode.Values.Select(e => e.CourseId).Distinct().ToList();
         var enrolledCourses = await _context.Courses.AsNoTracking().Where(c => enrolledCourseIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id);
@@ -499,6 +517,8 @@ public class PulseLearnerReader
                     Zone = zone,
                     Access = access,
                     Enrollment = enrollment,
+                    ContentSwitchAt = OldContentGrace(enrollment, course.Code)?.SwitchAt,
+                    ContentSwitchKeepsProgress = OldContentGrace(enrollment, course.Code) is { Major: false },
                     Approved = approved,
                     ApprovedVia = approvedVia,
                     PrereqApproved = prereqApproved,
