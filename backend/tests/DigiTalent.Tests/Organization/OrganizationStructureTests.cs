@@ -69,6 +69,28 @@ public class OrganizationStructureTests
         var analysts = await f.ListMembers(new GetPagedMembersUseCaseInput { JobPositionId = f.World.DataAnalyst.Id });
         analysts.TotalItems.Should().Be(3);
 
+        // Counts of the whole organization, whatever the filters (OW-02 "Cần xử lý")
+        foreach (var page in new[] { all, pending, analysts })
+        {
+            page.Summary.Total.Should().Be(8);
+            page.Summary.Pending.Should().Be(1);
+            page.Summary.Inactive.Should().Be(1);
+            page.Summary.Active.Should().Be(6);
+        }
+
+        // "Chưa có vị trí": active people with a profile and no position — never invitations, accounts without a profile or inactive people
+        var placed = await f.Context.Employees.FirstAsync(e => e.Id == f.World.Analyst.Id);
+        placed.JobPositionId.Should().NotBeNull();
+        var unplaced = await f.Context.Employees.FirstAsync(e => e.OrganizationId == placed.OrganizationId && e.Status == Statuses.Employee.Active
+            && e.Id != f.World.Analyst.Id && e.JobPositionId != null);
+        unplaced.JobPositionId = null;
+        await f.Context.SaveChangesAsync();
+        var noPosition = await f.ListMembers(new GetPagedMembersUseCaseInput { NoPosition = true, PageSize = 100 });
+        noPosition.Items.Should().Contain(m => m.EmployeeId == unplaced.Id);
+        noPosition.Items.Should().NotContain(m => m.EmployeeId == f.World.Analyst.Id || m.EmployeeId == f.World.Inactive.Id);
+        noPosition.Items.Should().OnlyContain(m => m.Kind == MemberKinds.Member && m.Status == MemberStatuses.Active && m.EmployeeId != null && m.JobPositionId == null);
+        noPosition.TotalItems.Should().Be(noPosition.Summary.WithoutPosition);
+
         var search = await f.ListMembers(new GetPagedMembersUseCaseInput { Search = f.World.Analyst.EmployeeCode });
         search.Items.Should().ContainSingle().Which.ActiveCourses.Should().Be(0);
     }

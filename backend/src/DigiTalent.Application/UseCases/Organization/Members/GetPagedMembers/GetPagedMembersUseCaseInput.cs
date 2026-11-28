@@ -12,4 +12,7 @@ public class GetPagedMembersUseCaseInput : PaginationRequest
     public Guid? DepartmentId { get; set; }
     public Guid? JobPositionId { get; set; }
     public string? JobGrade { get; set; }      // G1 | G2 | G3
+
+    /// <summary>true = only active people with an employee profile and no position (they have no required level yet).</summary>
+    public bool NoPosition { get; set; }
 }

@@ -4,10 +4,18 @@ using DigiTalent.Domain.Constants.Authorization;
 namespace DigiTalent.Application.UseCases.Organization.Members;
 
 /// <summary>
-/// Business rules shared by the member write use cases (update, deactivate, reactivate).
+/// Business rules shared by the member use cases (list counts, update, deactivate, reactivate).
 /// </summary>
 public static class MemberRules
 {
+    /// <summary>
+    /// An active person with an employee profile but no position: no required level, so the competency screens cannot
+    /// compare them (the owner overview counts the same people as "chưa có vị trí").
+    /// </summary>
+    public static bool HasNoPosition(MemberListItem member) =>
+        member.Kind == MemberKinds.Member && member.Status == MemberStatuses.Active
+        && member.EmployeeId.HasValue && !member.JobPositionId.HasValue;
+
     /// <summary>Loads a member that can be changed: exists, is not an invitation and is not a platform administrator.</summary>
     public static async Task<MemberListItem> FindManageableAsync(MemberDirectory directory, Guid organizationId, Guid id)
     {

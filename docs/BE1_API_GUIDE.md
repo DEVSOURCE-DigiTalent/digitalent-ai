@@ -254,7 +254,7 @@ Thứ tự: thành viên trước, lời mời sau; trong mỗi nhóm sắp theo
 ```
 Quyền: user.read
 Query: pageIndex (≥1, mặc định 1), pageSize (1–100, mặc định 20), search,
-       status, role, departmentId, jobPositionId, jobGrade
+       status, role, departmentId, jobPositionId, jobGrade, noPosition
 ```
 
 | Query | Mô tả |
@@ -264,8 +264,9 @@ Query: pageIndex (≥1, mặc định 1), pageSize (1–100, mặc định 20), 
 | role | `OWNER` / `MANAGER` / `EMPLOYEE`; hồ sơ chưa có tài khoản được xem là EMPLOYEE |
 | departmentId, jobPositionId | Lọc theo phòng ban / vị trí (áp dụng cả cho lời mời) |
 | jobGrade | `G1` / `G2` / `G3` (cấp bậc của vị trí). Giá trị khác → 400 `JobGrade must be G1, G2 or G3.` |
+| noPosition | `true` = chỉ người đang hoạt động, có hồ sơ nhân viên mà chưa có vị trí (`MemberRules.HasNoPosition`; không gồm lời mời, tài khoản không có hồ sơ, người đã vô hiệu hóa) |
 
-Response `data` = `PagedList<MemberListItem>`: `{ items, pageIndex, pageSize, totalItems, totalPages }`. Các chỉ số `coveragePercent`, `highGapCount`, `activeCourses` chỉ tính cho các dòng của trang hiện tại.
+Response `data` = `PagedList<MemberListItem>` + `summary`: `{ items, pageIndex, pageSize, totalItems, totalPages, summary }`. Các chỉ số `coveragePercent`, `highGapCount`, `activeCourses` chỉ tính cho các dòng của trang hiện tại. `summary` = `{ total, active, pending, inactive, withoutPosition }` đếm trên **toàn tổ chức**, không theo bộ lọc (dải "Cần xử lý" của OW-02).
 
 Ví dụ (id rút gọn, giá trị minh họa):
 
@@ -295,7 +296,8 @@ Ví dụ (id rút gọn, giá trị minh họa):
         "joinedAt": null, "invitedAt": "2026-10-06T14:18:17+00:00", "lastActiveAt": null, "deactivatedReason": null
       }
     ],
-    "pageIndex": 1, "pageSize": 20, "totalItems": 2, "totalPages": 1
+    "pageIndex": 1, "pageSize": 20, "totalItems": 2, "totalPages": 1,
+    "summary": { "total": 2, "active": 1, "pending": 1, "inactive": 0, "withoutPosition": 0 }
   },
   "errors": []
 }

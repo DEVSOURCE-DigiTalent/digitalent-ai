@@ -5,7 +5,7 @@ namespace DigiTalent.Application.UseCases.Organization.Members;
 
 /// <summary>
 /// Member list of the caller's organization (OW-02): accounts, employee profiles and pending invitations,
-/// filtered and paged, with capability and learning metrics for the returned page.
+/// filtered and paged, with capability and learning metrics for the returned page and the organization-wide counts.
 /// </summary>
 public class GetPagedMembersUseCase : IUseCase<GetPagedMembersUseCaseInput, GetPagedMembersUseCaseOutput>
 {
@@ -52,6 +52,11 @@ public class GetPagedMembersUseCase : IUseCase<GetPagedMembersUseCaseInput, GetP
             query = query.Where(m => m.JobGrade == input.JobGrade);
         }
 
+        if (input.NoPosition)
+        {
+            query = query.Where(MemberRules.HasNoPosition);
+        }
+
         if (!string.IsNullOrWhiteSpace(input.Search))
         {
             var keyword = input.Search.Trim();
@@ -73,6 +78,14 @@ public class GetPagedMembersUseCase : IUseCase<GetPagedMembersUseCaseInput, GetP
             PageIndex = input.PageIndex,
             PageSize = input.PageSize,
             TotalItems = filtered.Count,
+            Summary = new MemberSummary
+            {
+                Total = members.Count,
+                Active = members.Count(m => m.Status == MemberStatuses.Active),
+                Pending = members.Count(m => m.Status == MemberStatuses.Pending),
+                Inactive = members.Count(m => m.Status == MemberStatuses.Inactive),
+                WithoutPosition = members.Count(MemberRules.HasNoPosition),
+            },
         };
     }
 
