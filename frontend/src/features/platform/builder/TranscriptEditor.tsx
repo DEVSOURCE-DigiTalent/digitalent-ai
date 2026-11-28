@@ -71,10 +71,14 @@ export function TranscriptEditor({ asset, videoRef, collapsed = false }: {
   const listRef = useRef<HTMLOListElement>(null);
   const previousStatus = useRef<string | undefined>(undefined);
 
-  // The saved transcript replaces the local copy unless the admin has unsaved edits.
-  useEffect(() => {
-    if (data && !dirty) setCues(data.draftCues);
-  }, [data, dirty]);
+  // The saved transcript replaces the local copy unless the admin has unsaved edits. Copied while
+  // rendering, not in an effect: an effect left one screen with the data but no lines (the
+  // "Tạo lời thoại bằng AI" button on a transcript that has lines).
+  const [syncedFrom, setSyncedFrom] = useState<AssetCaptions | undefined>(undefined);
+  if (data && !dirty && data !== syncedFrom) {
+    setSyncedFrom(data);
+    setCues(data.draftCues);
+  }
 
   // Tell the admin when a background AI job ends.
   useEffect(() => {
