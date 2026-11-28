@@ -3994,6 +3994,109 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformAssetCaption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DraftCues")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("draft_cues")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("error_code");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("vi")
+                        .HasColumnName("language");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("model");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid?>("PublishedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_by_user_id");
+
+                    b.Property<string>("PublishedCues")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("published_cues");
+
+                    b.Property<Guid?>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_asset_captions");
+
+                    b.HasIndex("PublishedByUserId")
+                        .HasDatabaseName("ix_platform_asset_captions_published_by_user_id");
+
+                    b.HasIndex("RequestedByUserId")
+                        .HasDatabaseName("ix_platform_asset_captions_requested_by_user_id");
+
+                    b.HasIndex("UpdatedAt")
+                        .HasDatabaseName("ix_platform_asset_captions_processing")
+                        .HasFilter("status = 'PROCESSING'");
+
+                    b.HasIndex("AssetId", "Language")
+                        .IsUnique()
+                        .HasDatabaseName("uq_platform_asset_captions_asset_language");
+
+                    b.ToTable("platform_asset_captions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_platform_asset_captions_error", "status = 'FAILED' OR error_code IS NULL");
+
+                            t.HasCheckConstraint("ck_platform_asset_captions_language", "language IN ('vi')");
+
+                            t.HasCheckConstraint("ck_platform_asset_captions_published", "(published_cues IS NULL) = (published_at IS NULL)");
+
+                            t.HasCheckConstraint("ck_platform_asset_captions_source", "source IN ('AI','MANUAL')");
+
+                            t.HasCheckConstraint("ck_platform_asset_captions_status", "status IN ('PROCESSING','READY','FAILED')");
+                        });
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformCatalogCourse", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4662,6 +4765,344 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_platform_question_options_question");
 
                     b.ToTable("platform_question_options", (string)null);
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformSignLanguageSegment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CaptionText")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("caption_text");
+
+                    b.Property<decimal>("Confidence")
+                        .HasPrecision(4, 3)
+                        .HasColumnType("numeric(4,3)")
+                        .HasColumnName("confidence");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("EndMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("end_ms");
+
+                    b.Property<string>("Missing")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("missing")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("review_note");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("PENDING")
+                        .HasColumnName("review_status");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<int>("SegmentIndex")
+                        .HasColumnType("integer")
+                        .HasColumnName("segment_index");
+
+                    b.Property<string>("Sequence")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("sequence")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<int>("StartMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("start_ms");
+
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("track_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_sign_language_segments");
+
+                    b.HasIndex("ReviewedByUserId")
+                        .HasDatabaseName("ix_platform_sign_language_segments_reviewed_by_user_id");
+
+                    b.HasIndex("TrackId", "SegmentIndex")
+                        .IsUnique()
+                        .HasDatabaseName("uq_platform_sign_language_segments_track_index");
+
+                    b.ToTable("platform_sign_language_segments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_platform_sign_language_segments_confidence", "confidence BETWEEN 0 AND 1");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_segments_index", "segment_index >= 0");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_segments_review", "review_status IN ('PENDING','APPROVED','SKIPPED')");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_segments_reviewed", "review_status = 'PENDING' OR reviewed_at IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_segments_sequence", "jsonb_typeof(sequence) = 'array' AND jsonb_typeof(missing) = 'array'");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_segments_time", "start_ms >= 0 AND end_ms > start_ms");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformSignLanguageTrack", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CaptionFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("caption_fingerprint");
+
+                    b.Property<string>("CaptionSource")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("caption_source");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("error_code");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("error_message");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("vi")
+                        .HasColumnName("language");
+
+                    b.Property<Guid?>("OutputAssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("output_asset_id");
+
+                    b.Property<int?>("OutputDurationMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("output_duration_ms");
+
+                    b.Property<int?>("OutputHeight")
+                        .HasColumnType("integer")
+                        .HasColumnName("output_height");
+
+                    b.Property<int?>("OutputWidth")
+                        .HasColumnType("integer")
+                        .HasColumnName("output_width");
+
+                    b.Property<short>("Progress")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0)
+                        .HasColumnName("progress");
+
+                    b.Property<string>("ProgressDetail")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("progress_detail");
+
+                    b.Property<string>("ProgressStage")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("progress_stage");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid?>("PublishedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_by_user_id");
+
+                    b.Property<Guid?>("PublishedOutputAssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_output_asset_id");
+
+                    b.Property<string>("PublishedRenderMode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("published_render_mode");
+
+                    b.Property<string>("PublishedSnapshot")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("published_snapshot");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)")
+                        .HasDefaultValue("VN")
+                        .HasColumnName("region");
+
+                    b.Property<int>("RenderAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("render_attempts");
+
+                    b.Property<string>("RenderMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("render_mode");
+
+                    b.Property<DateTimeOffset?>("RenderStartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("render_started_at");
+
+                    b.Property<DateTimeOffset?>("RenderedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rendered_at");
+
+                    b.Property<string>("RenderedFingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("rendered_fingerprint");
+
+                    b.Property<string>("Renderer")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("renderer");
+
+                    b.Property<Guid?>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Settings")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("settings")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<string>("SignLanguage")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("VSL")
+                        .HasColumnName("sign_language");
+
+                    b.Property<Guid>("SourceAssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_asset_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("Variant")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("variant");
+
+                    b.HasKey("Id")
+                        .HasName("pk_platform_sign_language_tracks");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_platform_sign_language_tracks_created_by_user_id");
+
+                    b.HasIndex("OutputAssetId")
+                        .HasDatabaseName("ix_platform_sign_language_tracks_output_asset_id");
+
+                    b.HasIndex("PublishedByUserId")
+                        .HasDatabaseName("ix_platform_sign_language_tracks_published_by_user_id");
+
+                    b.HasIndex("PublishedOutputAssetId")
+                        .HasDatabaseName("ix_platform_sign_language_tracks_published_output_asset_id");
+
+                    b.HasIndex("RequestedByUserId")
+                        .HasDatabaseName("ix_platform_sign_language_tracks_requested_by_user_id");
+
+                    b.HasIndex("UpdatedAt")
+                        .HasDatabaseName("ix_platform_sign_language_tracks_rendering")
+                        .HasFilter("status = 'RENDERING'");
+
+                    b.HasIndex("SourceAssetId", "SignLanguage")
+                        .IsUnique()
+                        .HasDatabaseName("uq_platform_sign_language_tracks_asset_sign_language");
+
+                    b.ToTable("platform_sign_language_tracks", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_caption_source", "caption_source IN ('PUBLISHED','DRAFT')");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_error", "status = 'FAILED' OR error_code IS NULL");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_language", "language IN ('vi')");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_output_meta", "(output_duration_ms IS NULL OR output_duration_ms > 0) AND (output_width IS NULL OR output_width > 0) AND (output_height IS NULL OR output_height > 0)");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_progress", "progress BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_progress_stage", "progress_stage IS NULL OR progress_stage IN ('QUEUED','DOWNLOADING','PREPARING_CLIPS','JOINING','COMPOSING','CHECKING','SAVING')");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_published", "(published_output_asset_id IS NULL) = (published_at IS NULL) AND (published_output_asset_id IS NULL) = (published_render_mode IS NULL)");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_published_mode", "published_render_mode IS NULL OR published_render_mode IN ('OVERLAY','FULLSCREEN','TRACK_ONLY')");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_ready", "status NOT IN ('READY','PUBLISHED') OR output_asset_id IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_region", "region ~ '^[A-Z]{2}(-[A-Z]{2,10})?$'");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_render_mode", "render_mode IN ('OVERLAY','FULLSCREEN','TRACK_ONLY')");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_renderer", "renderer IN ('CLIP','AVATAR')");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_settings", "jsonb_typeof(settings) = 'object'");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_sign_language", "sign_language ~ '^[A-Z]{2,10}$'");
+
+                            t.HasCheckConstraint("ck_platform_sign_language_tracks_status", "status IN ('ANALYZING','MISSING_GLOSSES','READY_TO_RENDER','RENDERING','READY','FAILED','PUBLISHED')");
+                        });
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformSlideItem", b =>
@@ -6043,6 +6484,214 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                     b.ToTable("scoring_config_items", null, t =>
                         {
                             t.HasCheckConstraint("ck_scoring_config_items_range", "max_value IS NULL OR min_value IS NULL OR max_value >= min_value");
+                        });
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.SignGloss", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("ConsentConfirmed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("consent_confirmed");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Gloss")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("gloss");
+
+                    b.Property<bool>("IsPreferred")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_preferred");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("LicenseNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("license_note");
+
+                    b.Property<bool>("Mirrored")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("mirrored");
+
+                    b.Property<byte[]>("MotionData")
+                        .HasColumnType("bytea")
+                        .HasColumnName("motion_data");
+
+                    b.Property<int?>("MotionEndMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("motion_end_ms");
+
+                    b.Property<short?>("MotionFps")
+                        .HasColumnType("smallint")
+                        .HasColumnName("motion_fps");
+
+                    b.Property<int?>("MotionFrames")
+                        .HasColumnType("integer")
+                        .HasColumnName("motion_frames");
+
+                    b.Property<short?>("MotionLayout")
+                        .HasColumnType("smallint")
+                        .HasColumnName("motion_layout");
+
+                    b.Property<int?>("MotionStartMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("motion_start_ms");
+
+                    b.Property<string>("Normalized")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized");
+
+                    b.Property<short>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0)
+                        .HasColumnName("priority");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid?>("PublishedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_by_user_id");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)")
+                        .HasDefaultValue("VN")
+                        .HasColumnName("region");
+
+                    b.Property<string>("SignLanguage")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("VSL")
+                        .HasColumnName("sign_language");
+
+                    b.Property<string>("SignerName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("signer_name");
+
+                    b.Property<string>("SourceName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("source_name");
+
+                    b.Property<string>("SourceUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("source_url");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Synonyms")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("synonyms")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("Variant")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("variant");
+
+                    b.Property<Guid?>("VideoAssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("video_asset_id");
+
+                    b.Property<int?>("VideoDurationMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("video_duration_ms");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sign_glosses");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_sign_glosses_created_by_user_id");
+
+                    b.HasIndex("PublishedByUserId")
+                        .HasDatabaseName("ix_sign_glosses_published_by_user_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_sign_glosses_status");
+
+                    b.HasIndex("VideoAssetId")
+                        .HasDatabaseName("ix_sign_glosses_video_asset_id");
+
+                    b.HasIndex("Normalized", "Kind", "SignLanguage")
+                        .IsUnique()
+                        .HasDatabaseName("ux_sign_glosses_preferred")
+                        .HasFilter("is_preferred AND status <> 'ARCHIVED'");
+
+                    b.HasIndex("Normalized", "Kind", "SignLanguage", "Region", "Variant")
+                        .IsUnique()
+                        .HasDatabaseName("ux_sign_glosses_variant")
+                        .HasFilter("status <> 'ARCHIVED'");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("Normalized", "Kind", "SignLanguage", "Region", "Variant"), false);
+
+                    b.ToTable("sign_glosses", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_sign_glosses_fps", "motion_fps IS NULL OR motion_fps BETWEEN 5 AND 60");
+
+                            t.HasCheckConstraint("ck_sign_glosses_frames", "motion_frames IS NULL OR motion_frames BETWEEN 1 AND 1800");
+
+                            t.HasCheckConstraint("ck_sign_glosses_kind", "kind IN ('WORD','LETTER','DIGIT','TONE')");
+
+                            t.HasCheckConstraint("ck_sign_glosses_motion", "(motion_data IS NULL) = (motion_layout IS NULL) AND (motion_data IS NULL) = (motion_fps IS NULL) AND (motion_data IS NULL) = (motion_frames IS NULL)");
+
+                            t.HasCheckConstraint("ck_sign_glosses_published", "status <> 'PUBLISHED' OR (motion_data IS NOT NULL AND published_at IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_sign_glosses_region", "region ~ '^[A-Z]{2}(-[A-Z]{2,10})?$'");
+
+                            t.HasCheckConstraint("ck_sign_glosses_sign_language", "sign_language ~ '^[A-Z]{2,10}$'");
+
+                            t.HasCheckConstraint("ck_sign_glosses_status", "status IN ('DRAFT','PUBLISHED','ARCHIVED')");
+
+                            t.HasCheckConstraint("ck_sign_glosses_synonyms", "jsonb_typeof(synonyms) = 'array'");
+
+                            t.HasCheckConstraint("ck_sign_glosses_trim", "motion_start_ms IS NULL OR motion_end_ms IS NULL OR motion_end_ms > motion_start_ms");
+
+                            t.HasCheckConstraint("ck_sign_glosses_video_duration", "video_duration_ms IS NULL OR video_duration_ms > 0");
                         });
                 });
 
@@ -8664,6 +9313,28 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_platform_assets_users_uploaded_by_user_id");
                 });
 
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformAssetCaption", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformAsset", null)
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_platform_asset_captions_platform_assets_asset_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_asset_captions_users_published_by_user_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_asset_captions_users_requested_by_user_id");
+                });
+
             modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformCatalogCourse", b =>
                 {
                     b.HasOne("DigiTalent.Domain.Entities.PlatformCourse", null)
@@ -8806,6 +9477,62 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_platform_question_options_platform_module_questions_questio");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformSignLanguageSegment", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_sign_language_segments_users_reviewed_by_user_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformSignLanguageTrack", null)
+                        .WithMany()
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_platform_sign_language_segments_platform_sign_language_trac");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformSignLanguageTrack", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_sign_language_tracks_users_created_by_user_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformAsset", null)
+                        .WithMany()
+                        .HasForeignKey("OutputAssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_sign_language_tracks_platform_assets_output_asset_");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_sign_language_tracks_users_published_by_user_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformAsset", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedOutputAssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_sign_language_tracks_platform_assets_published_out");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_platform_sign_language_tracks_users_requested_by_user_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformAsset", null)
+                        .WithMany()
+                        .HasForeignKey("SourceAssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_platform_sign_language_tracks_platform_assets_source_asset_");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.PlatformSlideItem", b =>
@@ -9146,6 +9873,27 @@ namespace DigiTalent.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_scoring_config_items_scoring_configs_scoring_config_id");
+                });
+
+            modelBuilder.Entity("DigiTalent.Domain.Entities.SignGloss", b =>
+                {
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_sign_glosses_users_created_by_user_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_sign_glosses_users_published_by_user_id");
+
+                    b.HasOne("DigiTalent.Domain.Entities.PlatformAsset", null)
+                        .WithMany()
+                        .HasForeignKey("VideoAssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_sign_glosses_platform_assets_video_asset_id");
                 });
 
             modelBuilder.Entity("DigiTalent.Domain.Entities.SkillGapItem", b =>

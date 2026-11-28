@@ -137,6 +137,10 @@ public interface IApplicationDbContext
     DbSet<PlatformModuleQuestion> PlatformModuleQuestions { get; }
     DbSet<PlatformQuestionOption> PlatformQuestionOptions { get; }
     DbSet<PlatformAsset> PlatformAssets { get; }
+    DbSet<PlatformAssetCaption> PlatformAssetCaptions { get; }
+    DbSet<SignGloss> SignGlosses { get; }
+    DbSet<PlatformSignLanguageTrack> PlatformSignLanguageTracks { get; }
+    DbSet<PlatformSignLanguageSegment> PlatformSignLanguageSegments { get; }
     DbSet<CourseOrder> CourseOrders { get; }
 
     // Shared

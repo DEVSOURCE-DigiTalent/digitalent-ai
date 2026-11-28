@@ -161,6 +161,10 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<PlatformModuleQuestion> PlatformModuleQuestions => Set<PlatformModuleQuestion>();
     public DbSet<PlatformQuestionOption> PlatformQuestionOptions => Set<PlatformQuestionOption>();
     public DbSet<PlatformAsset> PlatformAssets => Set<PlatformAsset>();
+    public DbSet<PlatformAssetCaption> PlatformAssetCaptions => Set<PlatformAssetCaption>();
+    public DbSet<SignGloss> SignGlosses => Set<SignGloss>();
+    public DbSet<PlatformSignLanguageTrack> PlatformSignLanguageTracks => Set<PlatformSignLanguageTrack>();
+    public DbSet<PlatformSignLanguageSegment> PlatformSignLanguageSegments => Set<PlatformSignLanguageSegment>();
     public DbSet<CourseOrder> CourseOrders => Set<CourseOrder>();
 
     // Shared
